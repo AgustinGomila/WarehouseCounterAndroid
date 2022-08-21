@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:key="general_settings"
+    android:title="@string/settings">
+    <Preference
+        android:id="@+id/application_settings"
+        android:fragment="com.dacosys.warehouseCounter.configuration.SettingsActivity$GeneralPreferenceFragment"
+        android:icon="@drawable/ic_settings"
+        android:summary="@string/application_summary"
+        android:textColor="@color/triad4"
+        android:title="@string/pref_header_application" />
+    <Preference
+        android:id="@+id/account_settings"
+        android:fragment="com.dacosys.warehouseCounter.configuration.SettingsActivity$AccountPreferenceFragment"
+        android:icon="@drawable/ic_account"
+        android:summary="@string/account_configuration_summary"
+        android:title="@string/account_configuration" />
+    <Preference
+        android:id="@+id/devices_settings"
+        android:fragment="com.dacosys.warehouseCounter.configuration.SettingsActivity$DevicesPreferenceFragment"
+        android:icon="@drawable/ic_devices"
+        android:summary="@string/device_configuration_summary"
+        android:title="@string/pref_header_devices" />
+    <Preference
+        android:id="@+id/imagecontrol_settings"
+        android:fragment="com.dacosys.warehouseCounter.configuration.SettingsActivity$ImageControlPreferenceFragment"
+        android:icon="@drawable/ic_imagecontrol"
+        android:summary="@string/imagecontrol_webservice_settings"
+        android:title="@string/pref_header_image_control_conf" />
+</androidx.preference.PreferenceScreen>

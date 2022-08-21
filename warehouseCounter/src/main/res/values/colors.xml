@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorAccent">#0E5A95</color>
+    <color name="colorSemitransparent">#50000000</color>
+    <color name="colorSemitransparent2">#508A8A8A</color>
+    <color name="colorSemitransparent3">#50ffffff</color>
+    <color name="colorHint">#50454B55</color>
+
+    <color name="warehouseCounter">#FFCC33</color>
+    <color name="warehouseCounterDark">#FFB300</color>
+
+    <color name="triad1">#FFCC33</color>
+    <color name="triad2">#296FA4</color>
+    <color name="triad3">#074473</color>
+    <color name="triad4">#074473</color>
+
+    <color name="beige">#96f5f5dc</color>
+    <color name="black">#222222</color>
+    <color name="brown">#A52A2A</color>
+    <color name="cadetblue">#5F9EA0</color>
+    <color name="coral">#FF7F50</color>
+    <color name="cornsilk">#FFF8DC</color>
+    <color name="darkslateblue">#483D8B</color>
+    <color name="darkslategray">#2f4f4f</color>
+    <color name="dimgray">#696969</color>
+    <color name="dodgerblue">#1e90ff</color>
+    <color name="firebrick">#b22222</color>
+    <color name="ghostwhite">#f8f8ff</color>
+    <color name="gold">#ffd700</color>
+    <color name="goldenrod">#daa520</color>
+    <color name="lightgoldenrodyellow">#fafad2</color>
+    <color name="lightskyblue">#87cefa</color>
+    <color name="deepskyblue">#00bfff</color>
+    <color name="lightgray">#d3d3d3</color>
+    <color name="orangered">#FF4500</color>
+    <color name="seagreen">#2e8b57</color>
+    <color name="silver">#C0C0C0</color>
+    <color name="steelblue">#4682b4</color>
+    <color name="teal">#008080</color>
+    <color name="white">#ffffff</color>
+    <color name="gray">#808080</color>
+    <color name="whitesmoke">#F5F5F5</color>
+    <color name="draker_gray">#323232</color>
+</resources>

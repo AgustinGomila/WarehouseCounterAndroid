@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/qtyPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/printerPanel">
+
+        <EditText
+            android:id="@+id/qtyEditText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="7dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="2dp"
+            android:ems="10"
+            android:hint="@string/quantity"
+            android:importantForAutofill="no"
+            android:inputType="number"
+            android:minWidth="100dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/moreButton"
+            app:layout_constraintStart_toEndOf="@+id/lessButton"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/printButton"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginBottom="2dp"
+            android:background="@drawable/rounded_corner_button_steelblue"
+            android:clickable="true"
+            android:contentDescription="@string/print"
+            android:elevation="1dp"
+            android:focusable="true"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:stateListAnimator="@null"
+            android:text="@string/print"
+            android:textColor="@color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/moreButton"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_printer"
+            app:tint="@color/whitesmoke" />
+
+        <ImageView
+            android:id="@+id/moreButton"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="2dp"
+            android:layout_weight=".5"
+            android:background="@drawable/rounded_corner_button_808f87"
+            android:contentDescription="@string/plus_symbol"
+            android:elevation="1dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:text="@string/plus_symbol"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/printButton"
+            app:layout_constraintStart_toEndOf="@+id/qtyEditText"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_arrow_up"
+            app:tint="@color/whitesmoke" />
+
+        <ImageView
+            android:id="@+id/lessButton"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="2dp"
+            android:layout_weight=".5"
+            android:background="@drawable/rounded_corner_button_808f87"
+            android:contentDescription="@string/minus_symbol"
+            android:elevation="1dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:text="@string/minus_symbol"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/qtyEditText"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_arrow_down"
+            app:tint="@color/whitesmoke" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/printerPanel"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/printerTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:dropDownHeight="200dp"
+            android:freezesText="true"
+            android:hint="@string/select_printer_"
+            android:lines="1"
+            android:maxLines="1"
+            android:paddingStart="4dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="4dp"
+            android:text=""
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/printerClearImageView"
+            app:layout_constraintStart_toEndOf="@+id/printerSearchImageView"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:layout_constraintLeft_creator="1"
+            tools:layout_constraintRight_creator="1"
+            tools:layout_constraintTop_creator="1" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/printerClearImageView"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginEnd="1dp"
+            android:alpha="0.5"
+            android:scaleType="fitCenter"
+            app:layout_constraintBottom_toBottomOf="@+id/printerTextView"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/printerTextView"
+            app:srcCompat="@drawable/ic_close_black" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/printerSearchImageView"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:alpha="0.5"
+            android:scaleType="fitCenter"
+            app:layout_constraintBottom_toBottomOf="@+id/printerTextView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/printerTextView"
+            app:srcCompat="@drawable/ic_search_black" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

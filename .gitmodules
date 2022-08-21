@@ -1,0 +1,7 @@
+[submodule "imageControl"]
+	path = imageControl
+	url = https://source.developers.google.com/p/assetcontrol/r/image_control_android
+
+[submodule "androidLibs"]
+	path = androidLibs
+	url = https://source.developers.google.com/p/assetcontrol/r/android_libs

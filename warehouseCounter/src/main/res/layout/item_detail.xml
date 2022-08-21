@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginBottom="8dp"
+    android:theme="@style/Theme.AppCompat.Light">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline500"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
+
+    <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        android:id="@+id/eanAutoResizeTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginEnd="2dp"
+        android:maxLines="1"
+        android:minLines="1"
+        android:text="@string/ean"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:autoSizeMaxTextSize="18sp"
+        app:autoSizeMinTextSize="12dp"
+        app:autoSizeStepGranularity="1sp"
+        app:autoSizeTextType="uniform"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        android:id="@+id/descriptionAutoResizeTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        android:maxLines="2"
+        android:minLines="1"
+        android:text="@string/description"
+        android:textSize="14sp"
+        app:autoSizeMaxTextSize="18sp"
+        app:autoSizeMinTextSize="12dp"
+        app:autoSizeStepGranularity="1sp"
+        app:autoSizeTextType="uniform"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/eanAutoResizeTextView" />
+
+    <TextView
+        android:id="@+id/idTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="2dp"
+        android:text="@string/id"
+        android:textColor="@color/darkslategray"
+        android:textSize="8sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/descriptionAutoResizeTextView" />
+
+    <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        android:id="@+id/idAutoResizeTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        android:text="@string/id"
+        app:layout_constraintEnd_toStartOf="@+id/guideline500"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/idTextView" />
+
+    <TextView
+        android:id="@+id/extIdTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="2dp"
+        android:text="@string/external_id"
+        android:textColor="@color/darkslategray"
+        android:textSize="8sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@+id/guideline500"
+        app:layout_constraintTop_toBottomOf="@+id/descriptionAutoResizeTextView" />
+
+    <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        android:id="@+id/extIdAutoResizeTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        android:text="@string/external_id"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/guideline500"
+        app:layout_constraintTop_toBottomOf="@+id/extIdTextView" />
+
+    <View
+        android:id="@+id/dividerInternal1"
+        android:layout_width="0dp"
+        android:layout_height="2dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        android:background="?android:attr/listDivider"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/idAutoResizeTextView" />
+
+    <TextView
+        android:id="@+id/categoryTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="2dp"
+        android:text="@string/category"
+        android:textColor="@color/darkslategray"
+        android:textSize="8sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerInternal1" />
+
+    <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        android:id="@+id/categoryAutoResizeTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        android:text="@string/category"
+        app:layout_constraintEnd_toStartOf="@+id/guideline500"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/categoryTextView" />
+
+    <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        android:id="@+id/priceAutoResizeTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        android:text="@string/price"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/categoryAutoResizeTextView"
+        app:layout_constraintTop_toBottomOf="@+id/priceTextView" />
+
+    <TextView
+        android:id="@+id/priceTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="2dp"
+        android:text="@string/price"
+        android:textColor="@color/darkslategray"
+        android:textSize="8sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@+id/guideline500"
+        app:layout_constraintTop_toBottomOf="@+id/dividerInternal1" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/itemCodeConstraintLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/categoryAutoResizeTextView">
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guidelineItemCode500"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.5" />
+
+        <TextView
+            android:id="@+id/codeTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="2dp"
+            android:text="@string/item_code"
+            android:textColor="@color/darkslategray"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+            android:id="@+id/codeAutoResizeTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:text="@string/item_code"
+            app:layout_constraintEnd_toStartOf="@+id/guidelineItemCode500"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/codeTextView" />
+
+        <TextView
+            android:id="@+id/qtyTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="2dp"
+            android:text="@string/qty"
+            android:textColor="@color/darkslategray"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="@+id/guidelineItemCode500"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+            android:id="@+id/qtyAutoResizeTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:text="@string/qty"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/guidelineItemCode500"
+            app:layout_constraintTop_toBottomOf="@+id/qtyTextView" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

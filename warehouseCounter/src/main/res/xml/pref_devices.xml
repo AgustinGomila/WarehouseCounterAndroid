@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:key="devices_settings"
+    android:title="@string/devices_configuration">
+    <androidx.preference.PreferenceScreen
+        android:icon="@drawable/ic_qrcode"
+        android:key="symbology"
+        android:title="@string/supported_symbologies">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="symbology_aztec"
+            android:title="@string/aztec" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="symbology_codabar"
+            android:title="@string/codabar" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="symbology_code_128"
+            android:title="@string/code_128" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="symbology_code_39"
+            android:title="@string/code_39" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="symbology_code_93"
+            android:title="@string/code_93" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="symbology_data_matrix"
+            android:title="@string/data_matrix" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="symbology_ean_13"
+            android:title="@string/ean_13" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="symbology_ean_8"
+            android:title="@string/ean_8" />
+        <!--<SwitchPreference
+            android:defaultValue="false"
+            android:key="symbology_itf"
+            android:title="@string/itf" />-->
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="symbology_maxicode"
+            android:title="@string/maxicode" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="symbology_pdf417"
+            android:title="@string/pdf417" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="symbology_qr_code"
+            android:title="@string/qr_code" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="symbology_rss_14"
+            android:title="@string/rss_14" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="symbology_rss_expanded"
+            android:title="@string/rss_expanded" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="symbology_upc_a"
+            android:title="@string/upc_a" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="symbology_upc_e"
+            android:title="@string/upc_e" />
+        <!--<SwitchPreference
+            android:defaultValue="false"
+            android:key="symbology_upc_ean_extension"
+            android:title="@string/upc_ean_extension" />-->
+    </androidx.preference.PreferenceScreen>
+    <SwitchPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="true"
+        android:icon="@drawable/ic_check_digit"
+        android:key="conf_check_barcode_digit"
+        android:summary="@string/send_check_digit"
+        android:title="@string/check_digit" />
+    <com.dacosys.warehouseCounter.collectorType.object.CollectorTypePreference
+        android:defaultValue="0"
+        android:icon="@drawable/ic_devices"
+        android:key="collector_type"
+        android:summary="%s"
+        android:title="@string/collector_type" />
+    <androidx.preference.PreferenceScreen
+        android:icon="@drawable/ic_printer"
+        android:key="printer"
+        android:summary="%s"
+        android:title="@string/printer">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="conf_printer_use_bt_default"
+            android:title="@string/printer_use_bt_default" />
+        <com.dacosys.warehouseCounter.configuration.DevicePreference
+            android:defaultValue="0"
+            android:dependency="conf_printer_use_bt_default"
+            android:key="printer_bt_address"
+            android:summary="%s"
+            android:title="@string/bluetooth_printer" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="conf_printer_use_net_default"
+            android:title="@string/use_net_printer" />
+        <EditTextPreference
+            android:defaultValue="0.0.0.0"
+            android:dependency="conf_printer_use_net_default"
+            android:digits="0123456789."
+            android:inputType="number|numberDecimal"
+            android:key="printer_net_ip"
+            android:summary="%s"
+            android:title="@string/printer_ip_net" />
+        <EditTextPreference
+            android:defaultValue="9100"
+            android:dependency="conf_printer_use_net_default"
+            android:inputType="number"
+            android:key="printer_net_port"
+            android:summary="%s"
+            android:title="@string/printer_port" />
+        <PreferenceCategory
+            android:textColor="@color/triad4"
+            android:title="@string/printer_preferences">
+            <EditTextPreference
+                android:defaultValue="5"
+                android:inputType="number"
+                android:key="printer_power"
+                android:summary="%s"
+                android:title="@string/printer_power" />
+            <EditTextPreference
+                android:defaultValue="1"
+                android:inputType="number"
+                android:key="printer_speed"
+                android:summary="%s"
+                android:title="@string/printer_speed" />
+        </PreferenceCategory>
+        <PreferenceCategory
+            android:textColor="@color/triad4"
+            android:title="@string/line_separator">
+            <SwitchPreference
+                android:defaultValue="false"
+                android:key="conf_printer_new_line_char_lf"
+                android:title="@string/new_line_char_lf" />
+            <SwitchPreference
+                android:defaultValue="true"
+                android:key="conf_printer_new_line_char_cr"
+                android:title="@string/new_line_char_cr" />
+        </PreferenceCategory>
+    </androidx.preference.PreferenceScreen>
+    <androidx.preference.PreferenceScreen
+        android:icon="@drawable/ic_rfid"
+        android:key="rfid"
+        android:summary="%s"
+        android:title="@string/rfid_scanner">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="conf_rfid_use_bt_default"
+            android:title="@string/use_rfid_device" />
+        <com.dacosys.warehouseCounter.configuration.DevicePreference
+            android:defaultValue="0"
+            android:dependency="conf_rfid_use_bt_default"
+            android:key="rfid_bt_address"
+            android:summary="%s"
+            android:title="@string/rfid_scanner" />
+        <EditTextPreference
+            android:dependency="conf_rfid_use_bt_default"
+            android:key="rfid_bluetooth_name"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/rfid_device_name" />
+        <SeekBarPreference
+            android:defaultValue="26"
+            android:dependency="conf_rfid_use_bt_default"
+            android:key="rfid_read_power"
+            android:summary="%s"
+            android:title="@string/rfid_read_power"
+            app:explain="Potencia de la antena del lector RFID (0-26 dB)"
+            app:maxValue="26"
+            app:padding="1"
+            app:unit="dB" />
+        <Preference
+            android:dependency="conf_rfid_use_bt_default"
+            android:icon="@drawable/ic_reset_sync_date"
+            android:key="rfid_reset_to_factory"
+            android:title="@string/reset_to_factory" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:dependency="conf_rfid_use_bt_default"
+            android:key="shock_on_rfid_read"
+            android:title="@string/vibration_in_reading" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:dependency="conf_rfid_use_bt_default"
+            android:key="play_sound_on_rfid_read"
+            android:title="@string/play_sound_in_reading" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:dependency="conf_rfid_use_bt_default"
+            android:key="skip_same_on_rfid_read"
+            android:title="@string/skip_repeated_readings" />
+    </androidx.preference.PreferenceScreen>
+    <SwitchPreference
+        android:defaultValue="false"
+        android:icon="@drawable/ic_nfc"
+        android:key="conf_nfc_use_default"
+        android:title="@string/use_nfc" />
+</androidx.preference.PreferenceScreen>

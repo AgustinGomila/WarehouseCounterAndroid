@@ -1,0 +1,327 @@
+package com.dacosys.warehouseCounter.user.fragment
+
+import android.content.Context
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.AdapterView
+import androidx.fragment.app.Fragment
+import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.databinding.FragmentSpinnerBinding
+import com.dacosys.warehouseCounter.user.`object`.User
+import com.dacosys.warehouseCounter.user.dbHelper.UserAdapter
+import com.dacosys.warehouseCounter.user.dbHelper.UserDbHelper
+import org.parceler.Parcels
+
+/**
+ * A simple [Fragment] subclass.
+ * Activities that contain this fragment must implement the
+ * [UserSpinnerFragment.OnItemSelectedListener] interface
+ * to handle interaction events.
+ * Use the [UserSpinnerFragment.newInstance] factory method to
+ * create an instance of this fragment.
+ */
+class UserSpinnerFragment : Fragment() {
+    interface OnSpinnerFillListener {
+        fun onSpinnerFill(status: Int)
+    }
+
+    interface OnItemSelectedListener {
+        fun onItemSelected(user: User?)
+    }
+
+    private var allUser: ArrayList<User>? = ArrayList()
+    private var showGeneralLevel = false
+    private var oldPos = -1
+    private var mCallback: OnItemSelectedListener? = null
+    private var mListener: OnSpinnerFillListener? = null
+    private var initialUserId: Long? = null
+
+    var selectedUser: User?
+        get() {
+            if (_binding == null) return null
+
+            val temp = binding.fragmentSpinner.selectedItem
+            return when {
+                temp != null -> {
+                    val r = temp as User
+                    when (r.userId) {
+                        0L -> null
+                        else -> r
+                    }
+                }
+                else -> null
+            }
+        }
+        set(user) {
+            initialUserId = user?.userId
+            if (_binding == null) return
+
+            if (user == null) {
+                activity?.runOnUiThread {
+                    binding.fragmentSpinner.setSelection(0)
+                }
+                return
+            }
+
+            val adapter = binding.fragmentSpinner.adapter as UserAdapter
+            for (i in 0 until adapter.count) {
+                if (equals(user, adapter.getItem(i))) {
+                    activity?.runOnUiThread {
+                        binding.fragmentSpinner.setSelection(i)
+                    }
+                    break
+                }
+            }
+        }
+
+    val selectedUserPass: String
+        get() {
+            if (_binding == null) return ""
+
+            val temp = binding.fragmentSpinner.selectedItem
+            return when {
+                temp != null -> {
+                    val r = temp as User
+                    when {
+                        r.userId <= 0 -> ""
+                        else -> r.password ?: ""
+                    }
+                }
+                else -> ""
+            }
+        }
+
+    var selectedUserId: Int?
+        get() {
+            if (_binding == null) return null
+
+            val temp = binding.fragmentSpinner.selectedItem
+            return when {
+                temp != null -> {
+                    val r = temp as User
+                    when (r.userId) {
+                        0L -> null
+                        else -> r.userId.toInt()
+                    }
+                }
+                else -> null
+            }
+        }
+        set(id) {
+            initialUserId = id?.toLong()
+            if (_binding == null) return
+
+            if (id == null || id <= 0) {
+                if (binding.fragmentSpinner.adapter != null) {
+                    activity?.runOnUiThread {
+                        binding.fragmentSpinner.setSelection(0)
+                    }
+                }
+                return
+            }
+
+            if (binding.fragmentSpinner.adapter != null) {
+                val adapter = binding.fragmentSpinner.adapter as UserAdapter
+                for (i in 0 until adapter.count) {
+                    if (adapter.getItem(i) == null) {
+                        continue
+                    }
+
+                    if (equals(id, adapter.getItem(i)!!.userId)) {
+                        activity?.runOnUiThread {
+                            binding.fragmentSpinner.setSelection(i)
+                        }
+                        break
+                    }
+                }
+            }
+        }
+
+    val count: Int
+        get() = when {
+            _binding == null -> 0
+            binding.fragmentSpinner.adapter != null -> binding.fragmentSpinner.adapter.count
+            else -> 0
+        }
+
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+
+        savedInstanceState.putInt("oldPos", oldPos)
+    }
+
+    // Este método es llamado cuando el fragmento se está creando.
+    // En el puedes inicializar todos los componentes que deseas guardar si el fragmento fue pausado o detenido.
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        if (savedInstanceState != null) {
+            oldPos = savedInstanceState.getInt("oldPos")
+        }
+
+        if (arguments != null) {
+            allUser = requireArguments().getParcelableArrayList(ARG_ALL_USER)
+            showGeneralLevel = requireArguments().getBoolean(ARG_SHOW_GENERAL_LEVEL)
+        }
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+
+        if (initialUserId != null) {
+            selectedUserId = initialUserId?.toInt()
+            initialUserId = null
+        }
+    }
+
+    private var _binding: FragmentSpinnerBinding? = null
+
+    // This property is only valid between onCreateView and
+    // onDestroyView.
+    private val binding get() = _binding!!
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View {
+        _binding = FragmentSpinnerBinding.inflate(inflater, container, false)
+        val view = binding.root
+
+        binding.autoResizeTextView.visibility = View.GONE
+        binding.fragmentSpinner.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>,
+                    view: View?,
+                    position: Int,
+                    id: Long,
+                ) {
+                    if (oldPos != position) {
+                        oldPos = position
+                        mCallback?.onItemSelected(parent.getItemAtPosition(position) as User)
+                    }
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>) {
+                    oldPos = -1
+                    mCallback?.onItemSelected(null)
+                }
+            }
+
+        return view
+    }
+
+    // Se llama cuando el fragmento esta visible ante el usuario.
+    // Obviamente depende del método onStart() de la actividad para saber si la actividad se está mostrando.
+    override fun onStart() {
+        super.onStart()
+        try {
+            mCallback = activity as OnItemSelectedListener
+        } catch (e: ClassCastException) {
+            throw ClassCastException(activity.toString() + " must implement OnItemSelectedListener")
+        }
+
+        try {
+            mListener = activity as OnSpinnerFillListener
+        } catch (e: ClassCastException) {
+            throw ClassCastException(activity.toString() + " must implement OnSpinnerFillListener")
+        }
+    }
+
+    // Se llama cuando el fragmento ya no está asociado a la actividad anfitriona.
+    override fun onDetach() {
+        super.onDetach()
+
+        mListener = null
+        mCallback = null
+    }
+
+    fun reFill() {
+        fillAdapter()
+    }
+
+    private fun fillAdapter() {
+        val x = UserDbHelper()
+
+        allUser = x.select()
+
+        if ((allUser == null || !allUser!!.any()) && Statics.superDemoMode) {
+            // En modo desarrollo o para mostrar sin datos reales
+            // y si no hay usuarios agregados, agrego
+            // DATOS FALSOS de 5 items de fantasía
+            val fantasyNames = arrayListOf<String>()
+            fantasyNames.add("miguel")
+            fantasyNames.add("adriana")
+            fantasyNames.add("milagros")
+            fantasyNames.add("arturo")
+            fantasyNames.add("agustin")
+            for (i in 1..5) {
+                User.add(
+                    fantasyNames[i - 1],
+                    true,
+                    "81dc9bdb52d04dc20036dbd8313ed055"
+                ) //1234
+            }
+            allUser = x.select()
+        }
+
+        allUser!!.sortWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+        val spinnerArrayAdapter = UserAdapter(
+            resource = R.layout.custom_spinner_dropdown_item,
+            user = allUser!!
+        )
+
+        activity?.runOnUiThread {
+            binding.fragmentSpinner.adapter = spinnerArrayAdapter
+            if (oldPos >= 0) {
+                binding.fragmentSpinner.setSelection(oldPos)
+            }
+            spinnerArrayAdapter.notifyDataSetChanged()
+        }
+
+        while (binding.fragmentSpinner.adapter == null) {
+            // Horrible wait for full load
+        }
+
+        if (mListener != null) {
+            mListener!!.onSpinnerFill(Statics.FINISHED)
+        }
+    }
+
+    companion object {
+        // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+        private const val ARG_ALL_USER = "allUser"
+        private const val ARG_SHOW_GENERAL_LEVEL = "showGeneralLevel"
+
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param allUser Parameter 1.
+         * @return A new instance of fragment user_binding.fragmentSpinner.
+         */
+        fun newInstance(allUser: ArrayList<User>, showGeneralLevel: Boolean): UserSpinnerFragment {
+            val fragment = UserSpinnerFragment()
+
+            val args = Bundle()
+            args.putParcelable(ARG_ALL_USER, Parcels.wrap(allUser))
+            args.putBoolean(ARG_SHOW_GENERAL_LEVEL, showGeneralLevel)
+
+            fragment.arguments = args
+            return fragment
+        }
+
+        fun equals(a: Any?, b: Any?): Boolean {
+            return a != null && a == b
+        }
+    }
+}

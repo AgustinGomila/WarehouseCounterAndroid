@@ -1,0 +1,62 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:key="pref_account"
+    android:title="@string/account_configuration">
+    <PreferenceCategory android:title="@string/account">
+        <EditTextPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/ic_alternate_email"
+            android:inputType="textEmailAddress|textNoSuggestions"
+            android:key="client_email"
+            android:maxLines="1"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/email" />
+        <EditTextPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/ic_password"
+            android:inputType="textVisiblePassword"
+            android:key="client_password"
+            android:maxLines="1"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/password" />
+        <Preference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/ic_change_app_package"
+            android:key="select_package"
+            android:title="@string/select_package" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/update_app">
+        <Preference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/ic_upgrade"
+            android:key="update_app"
+            android:title="@string/download_last_version" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/auto_configuration">
+        <Preference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/ic_qrcode"
+            android:key="ac_qr_code"
+            android:title="@string/generate_configuration_qr_code" />
+        <Preference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/ic_qrcode_scan"
+            android:key="scan_config_code"
+            android:summary="@string/if_you_have_a_configuration_barcode_you_can_capture_it_here"
+            android:title="@string/capture_configuration_barcode" />
+        <Preference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/ic_code"
+            android:key="input_config_code"
+            android:summary="@string/if_you_have_a_configuration_code_you_can_enter_it_here"
+            android:title="@string/enter_configuration_text_code" />
+    </PreferenceCategory>
+</PreferenceScreen>

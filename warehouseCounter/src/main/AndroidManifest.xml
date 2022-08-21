@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.DEFAULT_SCOPED_STORAGE" />
+    <uses-permission android:name="android.permission.FORCE_ENABLE_SCOPED_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Honeywell Broadcast Permission -->
+    <uses-permission android:name="com.honeywell.decode.permission.DECODE" />
+
+    <!-- Necesarios para actualizar la app programáticamente -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.nfc"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.bluetooth"
+        android:required="false" />
+
+    <application
+        android:name="com.dacosys.warehouseCounter.Statics$WarehouseCounter"
+        android:hardwareAccelerated="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/WarehouseCounterTheme"
+        android:usesCleartextTraffic="true"
+        tools:ignore="GoogleAppIndexingWarning"
+        tools:targetApi="n">
+
+        <!-- HONEYWELL Native support -->
+        <uses-library
+            android:name="com.honeywell"
+            android:required="false" />
+
+        <!-- HONEYWELL Receiver -->
+        <receiver
+            android:name=".scanners.honeywell.HoneywellBroadcastReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.dacosys.stockControl.intent.action.BARCODE" />
+            </intent-filter>
+        </receiver>
+        <!-- END HONEYWELL -->
+
+        <!-- ZEBRA Receiver -->
+        <receiver
+            android:name=".scanners.zebra.ZebraBroadcastReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <!-- Actions to be handled should be registered here -->
+                <action android:name="com.zebra.datacapture1.ACTION" />
+                <action android:name="com.symbol.datawedge.api.NOTIFICATION_ACTION" />
+                <action android:name="com.symbol.datawedge.api.RESULT_ACTION" />
+            </intent-filter>
+        </receiver>
+        <!-- END ZEBRA -->
+
+        <!-- Para descargar y actualizar la app -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths" />
+        </provider>
+
+        <activity
+            android:name="com.dacosys.warehouseCounter.HomeActivity"
+            android:exported="true"
+            android:theme="@style/Theme.App.SplashScreen"
+            android:windowSoftInputMode="stateAlwaysHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.dacosys.warehouseCounter.LoginActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:label="@string/title_activity_login"
+            android:launchMode="singleTop" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.configuration.SettingsActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:label="@string/title_activity_settings">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".HomeActivity" />
+        </activity>
+        <activity
+            android:name="com.dacosys.warehouseCounter.codeCheck.CodeCheckActivity"
+            android:configChanges="keyboardHidden"
+            android:exported="false"
+            android:label="@string/code_read">
+            <!-- NFC Tech Filter -->
+            <intent-filter>
+                <action android:name="android.nfc.action.TECH_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.nfc.action.TECH_DISCOVERED"
+                android:resource="@xml/nfc_tech_filter" />
+        </activity>
+        <activity
+            android:name="com.dacosys.warehouseCounter.linkCode.LinkCodeActivity"
+            android:configChanges="keyboardHidden"
+            android:exported="false"
+            android:label="@string/code_link" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.orderRequest.activities.NewCountActivity"
+            android:configChanges="keyboardHidden"
+            android:exported="false"
+            android:label="@string/setup_new_count" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.orderRequest.activities.OrderRequestContentActivity"
+            android:exported="false"
+            android:label="@string/count"
+            android:windowSoftInputMode="stateAlwaysHidden" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.log.activities.LogContentActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:label="@string/log" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.orderRequest.activities.OrderRequestConfirmActivity"
+            android:exported="false"
+            android:label="@string/confirm_count"
+            android:windowSoftInputMode="stateAlwaysHidden" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.sync.activities.InboxActivity"
+            android:configChanges="keyboardHidden"
+            android:exported="false"
+            android:label="@string/count_select" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.sync.activities.OutboxActivity"
+            android:configChanges="keyboardHidden"
+            android:exported="false"
+            android:label="@string/completed_counts" />
+        <activity android:name="com.dacosys.warehouseCounter.misc.snackBar.MakeText" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.misc.QtySelectorActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:excludeFromRecents="true"
+            android:label="@string/enter_qty"
+            android:theme="@style/Theme.AppCompat.DayNight.Dialog" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.misc.MultiplierSelectActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:excludeFromRecents="true"
+            android:label="@string/select_multiplier"
+            android:theme="@style/Theme.AppCompat.DayNight.Dialog" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.configuration.InitConfigActivity"
+            android:configChanges="orientation|screenSize"
+            android:exported="false"
+            android:label="@string/initial_configuration" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.misc.EnterCodeActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.AppCompat.DayNight.Dialog"
+            android:windowSoftInputMode="stateAlwaysVisible" />
+        <activity android:name="com.dacosys.warehouseCounter.misc.ObservationsActivity" />
+        <activity android:name=".orderRequest.activities.OrderRequestDetailActivity" />
+        <activity android:name=".item.activities.ItemSelectActivity" />
+        <activity
+            android:name=".client.activities.ClientSelectActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.AppCompat.Translucent"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".item.activities.CodeSelectActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Translucent"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".itemCategory.activities.ItemCategorySelectActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.AppCompat.Translucent"
+            android:windowSoftInputMode="adjustResize" />
+
+        <meta-data
+            android:name="com.google.android.gms.vision.DEPENDENCIES"
+            android:value="barcode" />
+
+        <property
+            android:name="android.content.MEDIA_CAPABILITIES"
+            android:resource="@xml/media_capabilities" />
+
+    </application>
+
+</manifest>
