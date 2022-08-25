@@ -50,7 +50,6 @@ import com.dacosys.warehouseCounter.itemRegex.`object`.ItemRegex.CREATOR.RegexRe
 import com.dacosys.warehouseCounter.log.`object`.Log
 import com.dacosys.warehouseCounter.log.`object`.LogContent
 import com.dacosys.warehouseCounter.log.activities.LogContentActivity
-import com.dacosys.warehouseCounter.lot.dbHelper.LotDbHelper
 import com.dacosys.warehouseCounter.misc.EnterCodeActivity
 import com.dacosys.warehouseCounter.misc.MultiplierSelectActivity
 import com.dacosys.warehouseCounter.misc.Preference
@@ -109,6 +108,7 @@ class OrderRequestContentActivity :
     private val menuItemRandomIt = 999001
     private val menuItemManualCode = 999002
     private val menuItemRandomOnListL = 999003
+    private val menuRegexItem = 999004
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -123,6 +123,7 @@ class OrderRequestContentActivity :
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
             menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
+            menu.add(Menu.NONE, menuRegexItem, Menu.NONE, "Regex")
         }
 
         if (menu is MenuBuilder) {
@@ -181,6 +182,10 @@ class OrderRequestContentActivity :
                 enterCode()
                 return super.onOptionsItemSelected(item)
             }
+            menuRegexItem -> {
+                scannerCompleted("0SM20220721092826007792261002857001038858")
+                return super.onOptionsItemSelected(item)
+            }
         }
         return true
     }
@@ -211,8 +216,6 @@ class OrderRequestContentActivity :
                 orc = orc,
                 qty = qty ?: 1.toDouble()
             )
-
-            lastRegexResult = null
         } else {
             if (partial || partialBlock) {
                 setQtyManually(orc)
@@ -229,7 +232,12 @@ class OrderRequestContentActivity :
         // Check LOT ENABLED
         val item = orc.item ?: return
         if ((item.itemId ?: 0) > 0 && item.lotEnabled == true) {
-            lotCodeDialog(orc)
+            if (lastRegexResult != null && lastRegexResult?.lot != null) {
+                setLotCode(orc, lastRegexResult?.lot ?: "")
+                lastRegexResult = null
+            } else {
+                lotCodeDialog(orc)
+            }
         }
     }
 
@@ -1461,7 +1469,7 @@ class OrderRequestContentActivity :
         scannerCompleted(scanCode)
     }
 
-    //endregion READERS Reception    
+    //endregion READERS Reception
 
     public override fun onResume() {
         super.onResume()
@@ -1593,27 +1601,30 @@ class OrderRequestContentActivity :
             }
         }
 
-    private fun setLotCode(orc: OrderRequestContent, code: String) {
+    private fun setLotCode(orc: OrderRequestContent, lotId: String) {
+        val lotCode = orc.item?.codeRead ?: ""
+        if (lotCode == "") return
+
+        val longLotId: Long
+        try {
+            longLotId = lotId.toLong()
+        } catch (ex: Exception) {
+            return
+        }
+
+        if (longLotId < 0) return
+
         for (i in 0 until (orcAdapter?.count ?: 0)) {
             val t = orcAdapter?.getItem(i)
             if (t?.lot != null) {
-                if (equals(t.lot?.code, code)) {
-                    // Encontrado!
+                if (equals(t.lot?.lotId, longLotId)) {
+                    // Encontrado, volver!
                     return
                 }
             }
         }
 
-        // No lo encontró
-        val dbLot = LotDbHelper().selectByCode(code).firstOrNull()
-        val lotId = if (dbLot != null) {
-            dbLot.lotId
-        } else {
-            val r = Random()
-            r.nextInt(-888888 - -999999).toLong()
-        }
-
-        val lot = Lot(lotId, code, true)
+        val lot = Lot(longLotId, lotCode, true)
 
         for (i in 0 until (orcAdapter?.count ?: 0)) {
             val t = orcAdapter?.getItem(i)
@@ -1657,6 +1668,7 @@ class OrderRequestContentActivity :
         total: Boolean = false,
     ) {
         if (orc == null || qty <= 0 && !manualAdd) {
+            lastRegexResult = null
             return
         }
 
@@ -1690,6 +1702,7 @@ class OrderRequestContentActivity :
 
                     if (tempQty <= 0) {
                         removeItem()
+                        lastRegexResult = null
                         return
                     }
 

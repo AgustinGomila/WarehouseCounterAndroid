@@ -578,4 +578,5 @@
     <string name="rss_expanded">RSS Expanded</string>
     <string name="upc_e">UPC E</string>
     <string name="upc_ean_extension">UPC/EAN extension</string>
+    <string name="lot_id">Lote Id</string>
 </resources>

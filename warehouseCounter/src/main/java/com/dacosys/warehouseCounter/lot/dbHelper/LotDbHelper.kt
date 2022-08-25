@@ -175,6 +175,32 @@ class LotDbHelper {
         }
     }
 
+    fun selectByLotId(lotId: String): ArrayList<Lot> {
+        val sqLiteDatabase = StaticDbHelper.getReadableDb()
+
+        var where = ""
+        if (lotId.isNotEmpty()) {
+            where =
+                " WHERE $TABLE_NAME.$LOT_ID LIKE '$lotId%'"
+        }
+
+        val rawQuery = "SELECT " +
+                TABLE_NAME + "." + LOT_ID + "," +
+                TABLE_NAME + "." + CODE + "," +
+                TABLE_NAME + "." + ACTIVE + ","
+        " FROM " + TABLE_NAME +
+                where +
+                " ORDER BY " + TABLE_NAME + "." + CODE
+
+        return try {
+            val c = sqLiteDatabase.rawQuery(rawQuery, null)
+            fromCursor(c)
+        } catch (ex: SQLException) {
+            ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
+            ArrayList()
+        }
+    }
+
     fun selectByCode(code: String): ArrayList<Lot> {
         val sqLiteDatabase = StaticDbHelper.getReadableDb()
 

@@ -166,8 +166,10 @@
                 app:autoSizeTextType="uniform"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/editQty"
+                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0" />
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/editQty"
@@ -277,20 +279,23 @@
             android:text="@string/item_id"
             android:textColor="@color/text_dark"
             android:textSize="14sp"
-            app:layout_constraintEnd_toStartOf="@+id/guideline500"
+            app:layout_constraintEnd_toStartOf="@+id/view"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/itemIdLabelTextView" />
 
         <View
+            android:id="@+id/view"
             android:layout_width="1dp"
             android:layout_height="0dp"
             android:layout_marginTop="1dp"
             android:layout_marginBottom="1dp"
             android:background="?android:attr/listDivider"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/guideline500"
-            app:layout_constraintStart_toStartOf="@+id/guideline500"
-            app:layout_constraintTop_toBottomOf="@+id/dividerInternal5" />
+            app:layout_constraintEnd_toStartOf="@+id/guideline3"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="@+id/guideline3"
+            app:layout_constraintTop_toBottomOf="@+id/dividerInternal5"
+            app:layout_constraintVertical_bias="1.0" />
 
         <TextView
             android:id="@+id/extIdLabelTextView"
@@ -309,15 +314,57 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="2dp"
-            android:layout_marginEnd="1dp"
+            android:layout_marginEnd="2dp"
             android:layout_weight="1"
             android:gravity="start"
             android:text="@string/external_id"
             android:textColor="@color/text_dark"
             android:textSize="14sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/guideline500"
+            app:layout_constraintEnd_toStartOf="@+id/view2"
+            app:layout_constraintStart_toEndOf="@+id/view"
             app:layout_constraintTop_toBottomOf="@+id/extIdLabelTextView" />
+
+        <View
+            android:id="@+id/view2"
+            android:layout_width="1dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginBottom="1dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/guideline750"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="@+id/guideline750"
+            app:layout_constraintTop_toBottomOf="@+id/dividerInternal5"
+            app:layout_constraintVertical_bias="1.0" />
+
+        <TextView
+            android:id="@+id/lotIdLabelTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:text="@string/lot_id"
+            android:textColor="@color/darkslategray"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="@+id/lotIdCheckedTextView"
+            app:layout_constraintTop_toBottomOf="@+id/dividerInternal5" />
+
+        <CheckedTextView
+            android:id="@+id/lotIdCheckedTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="1dp"
+            android:layout_weight="1"
+            android:gravity="start"
+            android:text="@string/lot_id"
+            android:textColor="@color/text_dark"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toEndOf="@+id/view2"
+            app:layout_constraintTop_toBottomOf="@+id/lotIdLabelTextView" />
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline3"

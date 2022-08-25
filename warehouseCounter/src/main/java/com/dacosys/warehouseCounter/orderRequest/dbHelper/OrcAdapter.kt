@@ -667,6 +667,15 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         holder.eanTextView = v.findViewById(R.id.eanTextView)
         holder.itemIdTextView = v.findViewById(R.id.itemIdCheckedTextView)
         holder.extIdTextView = v.findViewById(R.id.extIdCheckedTextView)
+        holder.lotIdTextView = v.findViewById(R.id.lotIdCheckedTextView)
+
+        holder.qtyReqTitleTextView = v.findViewById(R.id.qtyReqTitleTextView)
+        holder.qtyTitleTextView = v.findViewById(R.id.qtyTitleTextView)
+        holder.itemIdLabelTextView = v.findViewById(R.id.itemIdLabelTextView)
+        holder.extIdLabelTextView = v.findViewById(R.id.extIdLabelTextView)
+        holder.lotIdLabelTextView = v.findViewById(R.id.lotIdLabelTextView)
+        holder.categoryLabelTextView = v.findViewById(R.id.categoryLabelTextView)
+        holder.priceLabelTextView = v.findViewById(R.id.priceLabelTextView)
 
         holder.qtyPanel = v.findViewById(R.id.qtyPanel)
         holder.qtyReqPanel = v.findViewById(R.id.qtyReqPanel)
@@ -751,7 +760,9 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
 
                 holder.itemIdTextView?.text = item.itemId?.toString() ?: 0.toString()
                 holder.extIdTextView?.text = item.externalId ?: 0.toString()
-// region Category
+                holder.lotIdTextView?.text = orc.lot?.lotId.toString() ?: ""
+
+                // region Category
                 val category = item.itemCategoryStr
                 val price = item.price
 
@@ -910,7 +921,16 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                 holder.qtyRequestedTextView?.setTextColor(foreColor)
                 holder.itemIdTextView?.setTextColor(foreColor)
                 holder.extIdTextView?.setTextColor(foreColor)
+                holder.lotIdTextView?.setTextColor(foreColor)
                 holder.checkBox?.buttonTintList = ColorStateList.valueOf(titleForeColor)
+
+                holder.qtyReqTitleTextView?.setTextColor(titleForeColor)
+                holder.qtyTitleTextView?.setTextColor(titleForeColor)
+                holder.itemIdLabelTextView?.setTextColor(titleForeColor)
+                holder.extIdLabelTextView?.setTextColor(titleForeColor)
+                holder.lotIdLabelTextView?.setTextColor(titleForeColor)
+                holder.categoryLabelTextView?.setTextColor(titleForeColor)
+                holder.priceLabelTextView?.setTextColor(titleForeColor)
             }
 
             if (listView != null) {
@@ -934,10 +954,11 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         holder.descriptionTextView = v.findViewById(R.id.descriptionTextView)
         holder.eanTextView = v.findViewById(R.id.eanTextView)
 
+        holder.qtyReqTitleTextView = v.findViewById(R.id.qtyReqTitleTextView)
+        holder.qtyTitleTextView = v.findViewById(R.id.qtyTitleTextView)
+
         holder.qtyPanel = v.findViewById(R.id.qtyPanel)
         holder.qtyReqPanel = v.findViewById(R.id.qtyReqPanel)
-        holder.qtyReqTitle = v.findViewById(R.id.qtyReqTitleTextView)
-        holder.qtyTitle = v.findViewById(R.id.qtyTitleTextView)
         holder.eanDivider = v.findViewById(R.id.eanDivider)
 
         holder.qtyCollectedTextView = v.findViewById(R.id.qtyCollectedTextView)
@@ -1106,6 +1127,9 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                 holder.qtyCollectedTextView?.setTextColor(foreColor)
                 holder.qtyRequestedTextView?.setTextColor(foreColor)
                 holder.checkBox?.buttonTintList = ColorStateList.valueOf(titleForeColor)
+
+                holder.qtyReqTitleTextView?.setTextColor(titleForeColor)
+                holder.qtyTitleTextView?.setTextColor(titleForeColor)
             }
 
             if (listView != null) {
@@ -1191,10 +1215,11 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         var descriptionTextView: AutoResizeTextView? = null
         var eanTextView: AutoResizeTextView? = null
 
+        var qtyReqTitleTextView: TextView? = null
+        var qtyTitleTextView: TextView? = null
+
         var qtyPanel: ConstraintLayout? = null
         var qtyReqPanel: ConstraintLayout? = null
-        var qtyReqTitle: TextView? = null
-        var qtyTitle: TextView? = null
         var eanDivider: View? = null
 
         var qtyCollectedTextView: AutoResizeTextView? = null
@@ -1208,6 +1233,15 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         var eanTextView: AutoResizeTextView? = null
         var itemIdTextView: CheckedTextView? = null
         var extIdTextView: CheckedTextView? = null
+        var lotIdTextView: CheckedTextView? = null
+
+        var qtyReqTitleTextView: TextView? = null
+        var qtyTitleTextView: TextView? = null
+        var itemIdLabelTextView: TextView? = null
+        var extIdLabelTextView: TextView? = null
+        var lotIdLabelTextView: TextView? = null
+        var categoryLabelTextView: TextView? = null
+        var priceLabelTextView: TextView? = null
 
         var qtyPanel: ConstraintLayout? = null
         var qtyReqPanel: ConstraintLayout? = null
