@@ -58,25 +58,31 @@ class CheckCode {
         mCallback?.onCheckCodeEnded(orc, itemCode)
     }
 
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+    fun cancel() {
+        scope.cancel()
+    }
+
     fun execute() {
         preExecute()
-        val it = doInBackground()
-        postExecute(it)
+        scope.launch {
+            val it = doInBackground()
+            postExecute(it)
+        }
     }
 
     private var deferred: Deferred<OrderRequestContent?>? = null
-    private fun doInBackground(): OrderRequestContent? {
+    private suspend fun doInBackground(): OrderRequestContent? {
         var result: OrderRequestContent? = null
-        runBlocking {
+        coroutineScope {
             deferred = async { suspendFunction() }
             result = deferred?.await()
         }
         return result
     }
 
-    private suspend fun suspendFunction(): OrderRequestContent? = withContext(
-        Dispatchers.IO
-    ) {
+    private suspend fun suspendFunction(): OrderRequestContent? = withContext(Dispatchers.IO) {
         try {
             if (Statics.demoMode) {
                 if (orcAdapter!!.count >= 5) {

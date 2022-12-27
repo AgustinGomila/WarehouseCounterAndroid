@@ -1,125 +1,120 @@
 package com.dacosys.warehouseCounter.misc.snackBar
 
-import android.graphics.drawable.Drawable
-import androidx.core.content.res.ResourcesCompat
+import android.os.Parcelable
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.Statics.WarehouseCounter.Companion.getContext
 import java.util.*
 
-class SnackBarType(
-    snackBarTypeId: Int,
-    var description: String,
-    var duration: Int,
-    var backColor: Drawable?,
-    var foreColor: Int,
-) {
-    var id: Int = snackBarTypeId
-
+class SnackBarType : Parcelable {
     override fun toString(): String {
         return description
     }
 
+    constructor(
+        snackBarTypeId: Int,
+        description: String,
+        duration: Int,
+        backColor: Int,
+        foreColor: Int,
+    ) {
+        this.snackBarTypeId = snackBarTypeId
+        this.description = description
+        this.duration = duration
+        this.backColor = backColor
+        this.foreColor = foreColor
+    }
+
+    var snackBarTypeId: Int = 0
+    var description: String = ""
+    var duration: Int = 0
+    var backColor: Int = 0
+    var foreColor: Int = 0
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    constructor(parcel: android.os.Parcel) {
+        snackBarTypeId = parcel.readInt()
+        description = parcel.readString() ?: ""
+        duration = parcel.readInt()
+        backColor = parcel.readInt()
+        foreColor = parcel.readInt()
+    }
+
+    override fun writeToParcel(parcel: android.os.Parcel, flags: Int) {
+        parcel.writeInt(snackBarTypeId)
+        parcel.writeString(description)
+        parcel.writeInt(duration)
+        parcel.writeInt(backColor)
+        parcel.writeInt(foreColor)
+    }
+
     override fun equals(other: Any?): Boolean {
-        return if (other !is SnackBarType) {
-            false
-        } else this.id == other.id
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as SnackBarType
+
+        if (snackBarTypeId != other.snackBarTypeId) return false
+
+        return true
     }
 
     override fun hashCode(): Int {
-        return this.id
+        return snackBarTypeId
     }
 
     companion object CREATOR {
+
         var ERROR = SnackBarType(
             snackBarTypeId = 0,
-            description = Statics.WarehouseCounter.getContext().getString(R.string.error),
+            description = getContext().getString(R.string.error),
             duration = 3500,
-            backColor = ResourcesCompat.getDrawable(
-                Statics.WarehouseCounter.getContext().resources, R.drawable.snackbar_error, null
-            ),
-            foreColor = Statics.getBestContrastColor(
-                "#" + Integer.toHexString(
-                    Statics.WarehouseCounter.getContext().getColor(R.color.firebrick)
-                )
-            )
+            backColor = R.drawable.snackbar_error,
+            foreColor = R.color.firebrick
         )
         var INFO = SnackBarType(
             snackBarTypeId = 1,
-            description = Statics.WarehouseCounter.getContext().getString(R.string.information),
+            description = getContext().getString(R.string.information),
             duration = 1500,
-            backColor = ResourcesCompat.getDrawable(
-                Statics.WarehouseCounter.getContext().resources, R.drawable.snackbar_info, null
-            ),
-            foreColor = Statics.getBestContrastColor(
-                "#" + Integer.toHexString(
-                    Statics.WarehouseCounter.getContext().getColor(R.color.goldenrod)
-                )
-            )
+            backColor = R.drawable.snackbar_info,
+            foreColor = R.color.goldenrod
         )
         var RUNNING = SnackBarType(
             snackBarTypeId = 2,
-            description = Statics.WarehouseCounter.getContext().getString(R.string.running),
+            description = getContext().getString(R.string.running),
             duration = 750,
-            backColor = ResourcesCompat.getDrawable(
-                Statics.WarehouseCounter.getContext().resources, R.drawable.snackbar_running, null
-            ),
-            foreColor = Statics.getBestContrastColor(
-                "#" + Integer.toHexString(
-                    Statics.WarehouseCounter.getContext().getColor(R.color.lightskyblue)
-                )
-            )
+            backColor = R.drawable.snackbar_running,
+            foreColor = R.color.lightskyblue
         )
         var SUCCESS = SnackBarType(
             3,
-            Statics.WarehouseCounter.getContext().getString(R.string.success),
+            getContext().getString(R.string.success),
             duration = 1500,
-            backColor = ResourcesCompat.getDrawable(
-                Statics.WarehouseCounter.getContext().resources, R.drawable.snackbar_success, null
-            ),
-            foreColor = Statics.getBestContrastColor(
-                "#" + Integer.toHexString(
-                    Statics.WarehouseCounter.getContext().getColor(R.color.seagreen)
-                )
-            )
+            backColor = R.drawable.snackbar_success,
+            foreColor = R.color.seagreen
         )
         var ADD = SnackBarType(
             snackBarTypeId = 4,
-            description = Statics.WarehouseCounter.getContext().getString(R.string.add),
+            description = getContext().getString(R.string.add),
             duration = 1000,
-            backColor = ResourcesCompat.getDrawable(
-                Statics.WarehouseCounter.getContext().resources, R.drawable.snackbar_add, null
-            ),
-            foreColor = Statics.getBestContrastColor(
-                "#" + Integer.toHexString(
-                    Statics.WarehouseCounter.getContext().getColor(R.color.cadetblue)
-                )
-            )
+            backColor = R.drawable.snackbar_add,
+            foreColor = R.color.cadetblue
         )
         var UPDATE = SnackBarType(
             snackBarTypeId = 5,
-            description = Statics.WarehouseCounter.getContext().getString(R.string.update),
+            description = getContext().getString(R.string.update),
             duration = 1000,
-            backColor = ResourcesCompat.getDrawable(
-                Statics.WarehouseCounter.getContext().resources, R.drawable.snackbar_update, null
-            ),
-            foreColor = Statics.getBestContrastColor(
-                "#" + Integer.toHexString(
-                    Statics.WarehouseCounter.getContext().getColor(R.color.steelblue)
-                )
-            )
+            backColor = R.drawable.snackbar_update,
+            foreColor = R.color.steelblue
         )
         var REMOVE = SnackBarType(
             snackBarTypeId = 6,
-            description = Statics.WarehouseCounter.getContext().getString(R.string.remove),
+            description = getContext().getString(R.string.remove),
             duration = 1000,
-            backColor = ResourcesCompat.getDrawable(
-                Statics.WarehouseCounter.getContext().resources, R.drawable.snackbar_remove, null
-            ),
-            foreColor = Statics.getBestContrastColor(
-                "#" + Integer.toHexString(
-                    Statics.WarehouseCounter.getContext().getColor(R.color.orangered)
-                )
-            )
+            backColor = R.drawable.snackbar_remove,
+            foreColor = R.color.orangered
         )
 
         fun getAll(): ArrayList<SnackBarType> {
@@ -135,11 +130,11 @@ class SnackBarType(
                 REMOVE
             )
 
-            return ArrayList(allSections.sortedWith(compareBy { it.id }))
+            return ArrayList(allSections.sortedWith(compareBy { it.snackBarTypeId }))
         }
 
-        fun getById(snackBarTypeId: Int): SnackBarType {
-            return getAll().firstOrNull { it.id == snackBarTypeId } ?: INFO
+        fun getById(typeId: Int): SnackBarType {
+            return getAll().firstOrNull { it.snackBarTypeId == typeId } ?: INFO
         }
     }
 }

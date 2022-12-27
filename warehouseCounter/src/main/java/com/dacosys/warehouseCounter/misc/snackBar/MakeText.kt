@@ -7,7 +7,10 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.content.res.ResourcesCompat
+import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.Statics.WarehouseCounter.Companion.getContext
 import com.google.android.material.snackbar.BaseTransientBottomBar.ANIMATION_MODE_FADE
 import com.google.android.material.snackbar.Snackbar
 import java.lang.ref.WeakReference
@@ -16,7 +19,7 @@ class MakeText : AppCompatActivity() {
     companion object {
         fun makeText(activity: AppCompatActivity, text: String, snackBarType: SnackBarType) {
             makeText(
-                WeakReference(activity.window.decorView.findViewById(android.R.id.content)),
+                WeakReference(activity.window.decorView.findViewById(R.id.content)),
                 text,
                 snackBarType
             )
@@ -28,31 +31,43 @@ class MakeText : AppCompatActivity() {
 
         private fun makeText(v: WeakReference<View>, text: String, snackBarType: SnackBarType) {
             if (snackBarType == SnackBarType.ERROR) {
-                Log.e(Statics.WarehouseCounter.getContext().toString(), text)
+                Log.e(getContext().toString(), text)
             }
 
-            val snackbar = Snackbar.make(v.get() ?: return, text, snackBarType.duration)
-            val snackbarView = snackbar.view
+            val snackBar = Snackbar.make(v.get() ?: return, text, snackBarType.duration)
+            val sbView = snackBar.view
 
-            val params = snackbar.view.layoutParams
+            val params = snackBar.view.layoutParams
             if (params is CoordinatorLayout.LayoutParams) {
                 params.gravity = Gravity.CENTER
             } else {
                 (params as FrameLayout.LayoutParams).gravity = Gravity.CENTER
             }
-            snackbar.view.layoutParams = params
+            snackBar.view.layoutParams = params
 
-            snackbarView.background = snackBarType.backColor
-            snackbarView.elevation = 6f
+            sbView.background = ResourcesCompat.getDrawable(
+                getContext().resources,
+                snackBarType.backColor,
+                null
+            )
+            sbView.elevation = 6f
 
-            snackbar.animationMode = ANIMATION_MODE_FADE
-            snackbar.setTextColor(snackBarType.foreColor)
+            snackBar.animationMode = ANIMATION_MODE_FADE
+
+            val fc = ResourcesCompat.getColor(
+                getContext().resources,
+                snackBarType.foreColor,
+                null
+            )
+
+            snackBar.setTextColor(
+                Statics.getBestContrastColor("#" + Integer.toHexString(fc)))
 
             val textView =
-                snackbarView.findViewById<View>(com.google.android.material.R.id.snackbar_text) as TextView
+                sbView.findViewById<View>(com.google.android.material.R.id.snackbar_text) as TextView
             textView.maxLines = 4 // show multiple line
 
-            snackbar.show()
+            snackBar.show()
         }
     }
 }

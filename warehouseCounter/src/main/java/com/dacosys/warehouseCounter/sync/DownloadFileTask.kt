@@ -42,12 +42,6 @@ class DownloadFileTask {
         this.mCallback = listener
     }
 
-    fun execute(): Boolean {
-        preExecute()
-        val result = doInBackground()
-        return postExecute(result)
-    }
-
     private fun preExecute() {
         // take CPU lock to prevent CPU from going off if the user
         // presses the power button during download
@@ -89,12 +83,24 @@ class DownloadFileTask {
         return result
     }
 
-    private var deferred: Deferred<Boolean>? = null
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
-    private fun doInBackground(): Boolean {
-        if (urlDestination == null) return false
+    fun cancel() {
+        scope.cancel()
+    }
+
+    fun execute() {
+        preExecute()
+        scope.launch {
+            val it = doInBackground()
+            postExecute(it)
+        }
+    }
+
+    private var deferred: Deferred<Boolean>? = null
+    private suspend fun doInBackground(): Boolean {
         var result = false
-        runBlocking {
+        coroutineScope {
             deferred = async { suspendFunction() }
             result = deferred?.await() ?: false
         }

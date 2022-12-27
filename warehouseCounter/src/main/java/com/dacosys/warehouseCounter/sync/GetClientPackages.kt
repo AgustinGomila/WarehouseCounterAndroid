@@ -52,7 +52,7 @@ class GetClientPackages {
         progressStatus = ProgressStatus.starting
     }
 
-    private fun postExecute(result: Boolean): Boolean {
+    private fun postExecute() {
         mCallback?.onTaskGetPackagesEnded(
             progressStatus,
             jsonObjArray,
@@ -60,19 +60,26 @@ class GetClientPackages {
             password,
             msg
         )
-        return result
     }
 
-    fun execute(): Boolean {
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+    fun cancel() {
+        scope.cancel()
+    }
+
+    fun execute() {
         preExecute()
-        val result = doInBackground()
-        return postExecute(result)
+        scope.launch {
+            doInBackground()
+            postExecute()
+        }
     }
 
     private var deferred: Deferred<Boolean>? = null
-    private fun doInBackground(): Boolean {
+    private suspend fun doInBackground(): Boolean {
         var result = false
-        runBlocking {
+        coroutineScope {
             deferred = async { suspendFunction() }
             result = deferred?.await() ?: false
         }

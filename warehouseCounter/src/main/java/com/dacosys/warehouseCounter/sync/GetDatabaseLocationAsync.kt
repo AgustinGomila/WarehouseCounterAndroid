@@ -23,7 +23,7 @@ class GetDatabaseLocation {
 
     var mCallback: TaskGetDatabaseLocationEnded? = null
 
-    private val urlRequest = "${Statics.urlPanel}/webjson/database/location"
+    private val urlRequest = "${Statics.apiUrl}/database/location"
     private var progressStatus = ProgressStatus.unknown
     private var msg = ""
 
@@ -47,16 +47,24 @@ class GetDatabaseLocation {
         )
     }
 
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+    fun cancel() {
+        scope.cancel()
+    }
+
     fun execute() {
         preExecute()
-        doInBackground()
-        postExecute()
+        scope.launch {
+            doInBackground()
+            postExecute()
+        }
     }
 
     private var deferred: Deferred<Boolean>? = null
-    private fun doInBackground(): Boolean {
+    private suspend fun doInBackground(): Boolean {
         var result = false
-        runBlocking {
+        coroutineScope {
             deferred = async { suspendFunction() }
             result = deferred?.await() ?: false
         }

@@ -37,14 +37,20 @@ class GetCompletedOrderRequest {
         this.taskCode = TASK_CODE
     }
 
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+    fun cancel() {
+        scope.cancel()
+    }
+
     fun execute() {
-        doInBackground()
+        scope.launch { doInBackground() }
     }
 
     private var deferred: Deferred<Boolean>? = null
-    private fun doInBackground(): Boolean {
+    private suspend fun doInBackground(): Boolean {
         var result = false
-        runBlocking {
+        coroutineScope {
             deferred = async { suspendFunction() }
             result = deferred?.await() ?: false
         }

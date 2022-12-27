@@ -136,7 +136,10 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
         null // File(weakRef!!.get()!!.cacheDir.absolutePath + "/" + dbFilename)
 
     private var timeFileUrl = "" // "${Statics.urlPanel}/$dbDirectory/$timeFilename"
+    private val completeTimeFileUrl = "${Statics.urlPanel}/$timeFileUrl"
+
     private var dbFileUrl = "" // "${Statics.urlPanel}/$dbDirectory/$dbFilename"
+    private val completeDbFileUrl = "${Statics.urlPanel}/$dbFileUrl"
 
     // endregion Constantes //
     //////////////////////////
@@ -171,12 +174,6 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
             File(Statics.WarehouseCounter.getContext().cacheDir.absolutePath + "/" + dbFilename)
     }
 
-    private fun preExecute() {
-        if (Statics.downloadDbRequired) {
-            deleteTimeFile()
-        }
-    }
-
     private fun postExecute(result: Boolean) {
         if (result) {
             Log.d(
@@ -189,16 +186,25 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
         }
     }
 
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+    fun cancel() {
+        scope.cancel()
+    }
+
     fun execute() {
-        preExecute()
-        val it = doInBackground()
-        postExecute(it)
+        if (Statics.downloadDbRequired) deleteTimeFile()
+
+        scope.launch {
+            val it = doInBackground()
+            postExecute(it)
+        }
     }
 
     private var deferred: Deferred<Boolean>? = null
-    private fun doInBackground(): Boolean {
+    private suspend fun doInBackground(): Boolean {
         var result = false
-        runBlocking {
+        coroutineScope {
             deferred = async { suspendFunction() }
             result = deferred?.await() ?: false
         }
@@ -275,7 +281,7 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
             downloadStatus = null
             downloadTask.addParams(
                 UrlDestParam(
-                    url = "${Statics.urlPanel}/$timeFileUrl",
+                    url = completeTimeFileUrl,
                     destination = destinationTimeFile!!
                 ),
                 this,
@@ -301,7 +307,7 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
                             downloadTask = DownloadFileTask()
                             downloadTask.addParams(
                                 UrlDestParam(
-                                    url = "${Statics.urlPanel}/$timeFileUrl",
+                                    url = completeTimeFileUrl,
                                     destination = destinationTimeFile!!
                                 ),
                                 this,
@@ -354,7 +360,7 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
                 downloadTask = DownloadFileTask()
                 downloadTask.addParams(
                     UrlDestParam(
-                        url = "${Statics.urlPanel}/$dbFileUrl",
+                        url = completeDbFileUrl,
                         destination = destinationDbFile!!
                     ),
                     this,
@@ -422,8 +428,8 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
     private fun deleteTimeFile() {
         destinationTimeFile =
             File(Statics.WarehouseCounter.getContext().cacheDir.absolutePath + "/" + timeFilename)
-        if (destinationTimeFile != null && destinationTimeFile!!.exists()) {
-            destinationTimeFile!!.delete()
+        if (destinationTimeFile?.exists() == true) {
+            destinationTimeFile?.delete()
         }
     }
 

@@ -24,7 +24,6 @@ import androidx.fragment.app.Fragment
 import androidx.preference.*
 import androidx.preference.Preference
 import androidx.preference.Preference.OnPreferenceClickListener
-import com.dacosys.imageControl.wsObject.UserAuthResultObject
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
@@ -44,6 +43,7 @@ import com.dacosys.warehouseCounter.configuration.SettingsActivity.AccountPrefer
 import com.dacosys.warehouseCounter.databinding.SettingsActivityBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.misc.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.SUCCESS
@@ -1544,12 +1544,7 @@ class SettingsActivity :
                 )
                 return
             }
-
-            thread {
-                val x = ImageControlCheckUser()
-                x.addParams(requireView())
-                x.execute()
-            }
+            ImageControlCheckUser { showSnackBar(it) }.execute()
         }
 
         override fun onTaskGetPackagesEnded(
@@ -1612,6 +1607,12 @@ class SettingsActivity :
                     ERROR
                 )
             }
+        }
+
+        private fun showSnackBar(it: SnackBarEventData) {
+            if (requireActivity().isDestroyed || requireActivity().isFinishing) return
+
+            makeText(requireView(), it.text, it.snackBarType)
         }
     }
 
@@ -1760,7 +1761,7 @@ class SettingsActivity :
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
@@ -1795,74 +1796,5 @@ class SettingsActivity :
             JotterListener.lockScanner(this, false)
         }
     }
-
-    class ImageControlCheckUser {
-        private var weakRefView: WeakReference<View>? = null
-        private var parentView: View?
-            get() {
-                return weakRefView?.get()
-            }
-            set(value) {
-                weakRefView = if (value != null) WeakReference(value) else null
-            }
-
-        fun addParams(parentView: View) {
-            this.parentView = parentView
-        }
-
-        private fun postExecute(result: UserAuthResultObject?): UserAuthResultObject? {
-            var fReturn = false
-            var fError = false
-
-            when (result) {
-                null -> fError = true
-                else -> fReturn = result.access
-            }
-
-            if (parentView != null) {
-                makeText(
-                    parentView!!,
-                    when {
-                        fError -> getContext()
-                            .getString(R.string.connection_error)
-                        !fReturn -> getContext()
-                            .getString(R.string.incorrect_username_password_combination)
-                        else -> getContext().getString(R.string.ok)
-                    },
-                    when {
-                        fError -> ERROR
-                        !fReturn -> ERROR
-                        else -> SUCCESS
-                    }
-                )
-            }
-            return result
-        }
-
-        fun execute(): UserAuthResultObject? {
-            val result = doInBackground()
-            return postExecute(result)
-        }
-
-        private var deferred: Deferred<UserAuthResultObject?>? = null
-        private fun doInBackground(): UserAuthResultObject? {
-            var result: UserAuthResultObject? = null
-            runBlocking {
-                deferred = async { suspendFunction() }
-                result = deferred?.await()
-            }
-            return result
-        }
-
-        private suspend fun suspendFunction(): UserAuthResultObject? = withContext(Dispatchers.IO) {
-            return@withContext try {
-                Statics.setupImageControl()
-                com.dacosys.imageControl.Statics.getWebservice().imageControlUserCheck()
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                ErrorLog.writeLog(null, this::class.java.simpleName, ex)
-                null
-            }
-        }
-    }
 }
+

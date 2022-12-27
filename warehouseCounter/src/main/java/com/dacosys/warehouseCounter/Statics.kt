@@ -196,7 +196,7 @@ class Statics {
         // endregion
 
         fun closeImageControl() {
-            com.dacosys.imageControl.Statics.isInitialized = false
+            com.dacosys.imageControl.Statics.cleanInstance()
         }
 
         fun setupImageControl() {
@@ -206,7 +206,7 @@ class Statics {
 
             com.dacosys.imageControl.Statics.currentUserId = currentUserId
             com.dacosys.imageControl.Statics.currentUserName = currentUserName
-            com.dacosys.imageControl.Statics.isInitialized = true
+            com.dacosys.imageControl.Statics.newInstance()
 
             com.dacosys.imageControl.Statics.useImageControl = useImageControl
             com.dacosys.imageControl.Statics.wsIcUrl = wsIcUrl
@@ -812,6 +812,10 @@ class Statics {
                     return prefsGetString(Preference.urlPanel)
                 }
             }
+
+        private const val api: String = "api"
+
+        val apiUrl = "$urlPanel/$api"
 
         val proxy: String
             get() {

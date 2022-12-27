@@ -23,7 +23,7 @@ class SendNewItemCode {
 
     var mCallback: TaskSendItemCodeEnded? = null
 
-    private val urlRequest = Statics.urlPanel + "/webjson/item-code/send"
+    private val urlRequest = "${Statics.apiUrl}/item-code/send"
     private var itemCodeArray: ArrayList<ItemCode> = ArrayList()
     private var itemCodeSuccess: ArrayList<ItemCode> = ArrayList()
 
@@ -68,16 +68,24 @@ class SendNewItemCode {
         }
     }
 
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+    fun cancel() {
+        scope.cancel()
+    }
+
     fun execute() {
         preExecute()
-        val it = doInBackground()
-        postExecute(it)
+        scope.launch {
+            val it = doInBackground()
+            postExecute(it)
+        }
     }
 
     private var deferred: Deferred<Boolean>? = null
-    private fun doInBackground(): Boolean {
+    private suspend fun doInBackground(): Boolean {
         var result = false
-        runBlocking {
+        coroutineScope {
             deferred = async { suspendFunction() }
             result = deferred?.await() ?: false
         }

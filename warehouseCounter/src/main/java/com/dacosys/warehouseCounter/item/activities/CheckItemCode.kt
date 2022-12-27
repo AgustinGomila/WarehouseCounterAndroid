@@ -57,16 +57,24 @@ class CheckItemCode {
         mCallback?.onCheckCodeEnded(scannedCode ?: "", item, itemCode)
     }
 
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+    fun cancel() {
+        scope.cancel()
+    }
+
     fun execute() {
         preExecute()
-        val it = doInBackground()
-        postExecute(it)
+        scope.launch {
+            val it = doInBackground()
+            postExecute(it)
+        }
     }
 
     private var deferred: Deferred<Item?>? = null
-    private fun doInBackground(): Item? {
+    private suspend fun doInBackground(): Item? {
         var result: Item? = null
-        runBlocking {
+        coroutineScope {
             deferred = async { suspendFunction() }
             result = deferred?.await()
         }
