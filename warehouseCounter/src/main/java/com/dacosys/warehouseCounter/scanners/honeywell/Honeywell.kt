@@ -9,8 +9,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.misc.Preference
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.honeywell.Honeywell.Constants.PROPERTY_DATA_PROCESSOR_DATA_INTENT
 import java.util.concurrent.atomic.AtomicBoolean
@@ -35,8 +35,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
         /**
          * Get the result of decoded data
          */
-        const val ACTION_BARCODE_DATA =
-            "com.dacosys.warehouseCounter.intent.action.BARCODE"
+        const val ACTION_BARCODE_DATA = "com.dacosys.warehouseCounter.intent.action.BARCODE"
 
         /**
          * Honeywell DataCollection Intent API
@@ -178,85 +177,35 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
     }
 
     private fun loadProperties() {
+        val sv = settingViewModel()
         properties = Bundle()
 
         // Barcode camera scanner view
-        properties?.putBoolean(
-            Constants.PROPERTY_PDF_417_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyPDF417)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_AZTEC_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyAztec)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_QR_CODE_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyQRCode)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_CODABAR_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyCODABAR)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_CODE_128_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyCode128)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_CODE_39_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyCode39)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_CODE_93_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyCode93)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_DATAMATRIX_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyDataMatrix)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_EAN_13_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyEAN13)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_EAN_8_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyEAN8)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_MAXICODE_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyMaxiCode)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_RSS_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyRSS14)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_RSS_EXPANDED_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyRSSExpanded)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_UPC_A_ENABLE,
-            Statics.prefsGetBoolean(Preference.symbologyUPCA)
-        )
-        properties?.putBoolean(
-            Constants.PROPERTY_UPC_E_ENABLED,
-            Statics.prefsGetBoolean(Preference.symbologyUPCE)
-        )
+        properties?.putBoolean(Constants.PROPERTY_PDF_417_ENABLED, sv.symbologyPDF417)
+        properties?.putBoolean(Constants.PROPERTY_AZTEC_ENABLED, sv.symbologyAztec)
+        properties?.putBoolean(Constants.PROPERTY_QR_CODE_ENABLED, sv.symbologyQRCode)
+        properties?.putBoolean(Constants.PROPERTY_CODABAR_ENABLED, sv.symbologyCODABAR)
+        properties?.putBoolean(Constants.PROPERTY_CODE_128_ENABLED, sv.symbologyCode128)
+        properties?.putBoolean(Constants.PROPERTY_CODE_39_ENABLED, sv.symbologyCode39)
+        properties?.putBoolean(Constants.PROPERTY_CODE_93_ENABLED, sv.symbologyCode93)
+        properties?.putBoolean(Constants.PROPERTY_DATAMATRIX_ENABLED, sv.symbologyDataMatrix)
+        properties?.putBoolean(Constants.PROPERTY_EAN_13_ENABLED, sv.symbologyEAN13)
+        properties?.putBoolean(Constants.PROPERTY_EAN_8_ENABLED, sv.symbologyEAN8)
+        properties?.putBoolean(Constants.PROPERTY_MAXICODE_ENABLED, sv.symbologyMaxiCode)
+        properties?.putBoolean(Constants.PROPERTY_RSS_ENABLED, sv.symbologyRSS14)
+        properties?.putBoolean(Constants.PROPERTY_RSS_EXPANDED_ENABLED, sv.symbologyRSSExpanded)
+        properties?.putBoolean(Constants.PROPERTY_UPC_A_ENABLE, sv.symbologyUPCA)
+        properties?.putBoolean(Constants.PROPERTY_UPC_E_ENABLED, sv.symbologyUPCE)
 
-        val sendDigit = Statics.prefsGetBoolean(Preference.sendBarcodeCheckDigit)
-        properties?.putBoolean(
-            Constants.PROPERTY_EAN_13_CHECK_DIGIT_TRANSMIT_ENABLED,
-            sendDigit
-        )
+        val sendDigit = sv.sendBarcodeCheckDigit
+
+        properties?.putBoolean(Constants.PROPERTY_EAN_13_CHECK_DIGIT_TRANSMIT_ENABLED, sendDigit)
         properties?.putBoolean(Constants.PROPERTY_EAN_8_CHECK_DIGIT_TRANSMIT_ENABLED, sendDigit)
         properties?.putBoolean(Constants.PROPERTY_UPC_A_CHECK_DIGIT_TRANSMIT_ENABLED, sendDigit)
 
-        properties?.putString(
-            Constants.PROPERTY_CODE_39_CHECK_DIGIT_MODE,
-            if (sendDigit)
-                Constants.CODE_39_CHECK_DIGIT_MODE_CHECK
-            else
-                Constants.CODE_39_CHECK_DIGIT_MODE_NO_CHECK
-        )
+        properties?.putString(Constants.PROPERTY_CODE_39_CHECK_DIGIT_MODE,
+            if (sendDigit) Constants.CODE_39_CHECK_DIGIT_MODE_CHECK
+            else Constants.CODE_39_CHECK_DIGIT_MODE_NO_CHECK)
 
         // Set Max Code 39 barcode length
         properties?.putInt(Constants.PROPERTY_CODE_39_MAXIMUM_LENGTH, 10)
@@ -273,10 +222,8 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
         loadProperties()
         for ((key, value1) in mapProperties) {
             if (value1 is String) properties!!.putString(key, value1.toString())
-            if (value1 is Boolean) properties!!.putBoolean(
-                key,
-                java.lang.Boolean.valueOf(value1.toString())
-            )
+            if (value1 is Boolean) properties!!.putBoolean(key,
+                java.lang.Boolean.valueOf(value1.toString()))
             if (value1 is Int) properties!!.putInt(key, Integer.valueOf(value1.toString()))
             if (value1 is Long) properties!!.putLong(key, java.lang.Long.valueOf(value1.toString()))
         }
@@ -298,14 +245,12 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
     }
 
     private fun startScanner() {
-        val intent = Intent(Constants.EXTRA_CONTROL)
-            .putExtra(Constants.EXTRA_SCAN, true)
+        val intent = Intent(Constants.EXTRA_CONTROL).putExtra(Constants.EXTRA_SCAN, true)
         sendBroadcast(intent)
     }
 
     private fun stopScanner() {
-        val intent = Intent(Constants.EXTRA_CONTROL)
-            .putExtra(Constants.EXTRA_SCAN, false)
+        val intent = Intent(Constants.EXTRA_CONTROL).putExtra(Constants.EXTRA_SCAN, false)
         sendBroadcast(intent)
     }
 
@@ -322,8 +267,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
     private fun resumeScanner(): Boolean {
         registerReceiver()
         try {
-            if (properties == null)
-                properties = Bundle()
+            if (properties == null) properties = Bundle()
 
             //When we press the scan button and read a barcode, a new Broadcast intent will be launched by the service
             properties?.putBoolean(PROPERTY_DATA_PROCESSOR_DATA_INTENT, true)
@@ -331,21 +275,18 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
             //That intent will have the action "ACTION_BARCODE_DATA"
             // We will capture the intents with that action (every scan event while in the application)
             // in our BroadcastReceiver barcodeDataReceiver.
-            properties?.putString(
-                Constants.PROPERTY_DATA_PROCESSOR_DATA_INTENT_ACTION,
-                Constants.ACTION_BARCODE_DATA
-            )
+            properties?.putString(Constants.PROPERTY_DATA_PROCESSOR_DATA_INTENT_ACTION,
+                Constants.ACTION_BARCODE_DATA)
 
-            val intent = Intent(Constants.ACTION_CLAIM_SCANNER)
-                .putExtra(Constants.EXTRA_SCANNER, Constants.EXTRA_SCANNER_VALUE_IMAGER)
+            val intent = Intent(Constants.ACTION_CLAIM_SCANNER).putExtra(Constants.EXTRA_SCANNER,
+                Constants.EXTRA_SCANNER_VALUE_IMAGER)
                 .putExtra(Constants.EXTRA_PROPERTIES, properties)
                 /*
                 We are using "WarehouseCounter", so a profile with this name has to be created in Scanner settings:
                        Android Settings > Honeywell Settings > Scanning > Internal scanner > "+"
                 - If we use "DEFAULT" it will apply the settings from the Default profile in Scanner settings
                 - If not found, it will use Factory default settings.
-                 */
-                .putExtra(Constants.EXTRA_PROFILE, Constants.appProfile)
+                 */.putExtra(Constants.EXTRA_PROFILE, Constants.appProfile)
 
             sendBroadcast(intent)
             isOpened = true
@@ -362,13 +303,11 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
             /*
              * We use setPackage() in order to send an Explicit Broadcast Intent, since it is a requirement
              * after API Level 26+ (Android 8)
-             */
-            .setPackage(Constants.SCANNER_PACKAGE)
+             */.setPackage(Constants.SCANNER_PACKAGE)
 
             /*
              * Always provide a non-empty category, for example "android.intent.category.DEFAULT"
-             */
-            .addCategory(Constants.defaultCategory)
+             */.addCategory(Constants.defaultCategory)
 
         if (sdkVersion < 26) {
             Log.v(this::class.java.simpleName, "Send $intent (${activityName})")
@@ -381,16 +320,14 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
     }
 
     private fun sendImplicitBroadcast(i: Intent) {
-        val appContext = Statics.WarehouseCounter.getContext()
+        val appContext = context()
         val pm: PackageManager = appContext.packageManager
         val matches = pm.queryBroadcastReceivers(i, 0)
         if (matches.size > 0) {
             for (resolveInfo in matches) {
                 val explicit = Intent(i)
-                val cn = ComponentName(
-                    resolveInfo.activityInfo.applicationInfo.packageName,
-                    resolveInfo.activityInfo.name
-                )
+                val cn = ComponentName(resolveInfo.activityInfo.applicationInfo.packageName,
+                    resolveInfo.activityInfo.name)
                 explicit.component = cn
                 Log.v(this::class.java.simpleName, "Send $explicit (${activityName})")
                 appContext.sendBroadcast(explicit)

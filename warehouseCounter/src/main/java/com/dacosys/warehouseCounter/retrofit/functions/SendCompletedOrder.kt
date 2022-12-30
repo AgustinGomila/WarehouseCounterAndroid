@@ -1,9 +1,12 @@
-package com.dacosys.warehouseCounter.sync
+package com.dacosys.warehouseCounter.retrofit.functions
 
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
 import com.dacosys.warehouseCounter.Statics.Companion.getDeviceData
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.orderRequest.`object`.OrderRequest
+import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.user.`object`.User
 import kotlinx.coroutines.*
 import org.json.JSONObject
@@ -12,9 +15,10 @@ import java.io.DataOutputStream
 import java.io.File
 import java.io.InputStreamReader
 import java.net.*
+import javax.net.ssl.HttpsURLConnection
 
 
-class SendCompletedOrderRequest {
+class SendCompletedOrder {
     interface TaskSendOrderRequestEnded {
         // Define data you like to return from AysncTask
         fun onTaskSendOrderRequestEnded(
@@ -25,7 +29,9 @@ class SendCompletedOrderRequest {
 
     var mCallback: TaskSendOrderRequestEnded? = null
 
-    private val urlRequest = "${Statics.apiUrl}/order/send"
+    private val api = "api"
+    private val urlPanel = "${settingViewModel().urlPanel}/$api"
+    private val urlRequest = "${urlPanel}/order/send"
     private var orderRequestArray: ArrayList<OrderRequest> = ArrayList()
     private var filesSuccess: ArrayList<String> = ArrayList()
 
@@ -39,11 +45,6 @@ class SendCompletedOrderRequest {
     ) {
         this.mCallback = callback
         this.orderRequestArray = orderRequestArray
-    }
-
-    private fun preExecute() {
-        progressStatus = ProgressStatus.starting
-        currentUser = Statics.getCurrentUser()
     }
 
     private fun postExecute(result: Boolean) {
@@ -61,13 +62,10 @@ class SendCompletedOrderRequest {
         }
 
         if (!isOk) {
-            mCallback?.onTaskSendOrderRequestEnded(
-                ProgressStatus.crashed,
-                Statics.WarehouseCounter.getContext()
-                    .getString(R.string.an_error_occurred_while_deleting_counts)
-            )
+            mCallback?.onTaskSendOrderRequestEnded(status = ProgressStatus.crashed,
+                msg = context().getString(R.string.an_error_occurred_while_deleting_counts))
         } else {
-            mCallback?.onTaskSendOrderRequestEnded(progressStatus, msg)
+            mCallback?.onTaskSendOrderRequestEnded(status = progressStatus, msg = msg)
         }
     }
 
@@ -78,7 +76,9 @@ class SendCompletedOrderRequest {
     }
 
     fun execute() {
-        preExecute()
+        progressStatus = ProgressStatus.starting
+        currentUser = Statics.getCurrentUser()
+
         scope.launch {
             val it = doInBackground()
             postExecute(it)
@@ -108,27 +108,21 @@ class SendCompletedOrderRequest {
         try {
             //Create connection
             url = URL(urlRequest)
-
-            connection = if (Statics.useProxy) {
+            val sv = settingViewModel()
+            connection = if (sv.useProxy) {
                 val authenticator = object : Authenticator() {
                     override fun getPasswordAuthentication(): PasswordAuthentication {
-                        return PasswordAuthentication(
-                            Statics.proxyUser,
-                            Statics.proxyPass.toCharArray()
-                        )
+                        return PasswordAuthentication(sv.proxyUser,
+                            sv.proxyPass.toCharArray())
                     }
                 }
                 Authenticator.setDefault(authenticator)
 
-                val proxy = Proxy(
-                    Proxy.Type.HTTP, InetSocketAddress(
-                        Statics.proxy,
-                        Statics.proxyPort
-                    )
-                )
-                url.openConnection(proxy) as HttpURLConnection
+                val proxy =
+                    Proxy(Proxy.Type.HTTP, InetSocketAddress(sv.proxy, sv.proxyPort))
+                url.openConnection(proxy) as HttpsURLConnection
             } else {
-                url.openConnection() as HttpURLConnection
+                url.openConnection() as HttpsURLConnection
             }
 
             connection.doOutput = true
@@ -142,9 +136,7 @@ class SendCompletedOrderRequest {
 
             // USER DATA //////////////////
             val userAuthData = JSONObject()
-            userAuthData
-                .put("username", currentUser!!.name)
-                .put("password", currentUser!!.password)
+            userAuthData.put("username", currentUser!!.name).put("password", currentUser!!.password)
             jsonParam.put("userauthdata", userAuthData)
             // END USER DATA //////////////
 
@@ -176,7 +168,7 @@ class SendCompletedOrderRequest {
         } catch (ex: Exception) {
             progressStatus = ProgressStatus.crashed
             msg = "${
-                Statics.WarehouseCounter.getContext().getString(R.string.exception_error)
+                context().getString(R.string.exception_error)
             }: ${ex.message}"
             isOk = false
         } finally {
@@ -216,11 +208,11 @@ class SendCompletedOrderRequest {
             }
 
             progressStatus = ProgressStatus.finished
-            msg = Statics.WarehouseCounter.getContext().getString(R.string.ok)
+            msg = context().getString(R.string.ok)
         } catch (ex: Exception) {
             progressStatus = ProgressStatus.crashed
             msg = "${
-                Statics.WarehouseCounter.getContext().getString(R.string.exception_error)
+                context().getString(R.string.exception_error)
             }: ${ex.message}"
         }
 

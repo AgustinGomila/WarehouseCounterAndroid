@@ -2,12 +2,10 @@ package com.dacosys.warehouseCounter
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Application
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.DialogInterface
-import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -35,30 +33,32 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.ColorInt
-import androidx.annotation.NonNull
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.FragmentActivity
-import androidx.preference.PreferenceManager
-import com.dacosys.warehouseCounter.Statics.WarehouseCounter.Companion.getContext
-import com.dacosys.warehouseCounter.collectorType.`object`.CollectorType
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.retrofit
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.configuration.QRConfigType
 import com.dacosys.warehouseCounter.configuration.QRConfigType.CREATOR.QRConfigApp
 import com.dacosys.warehouseCounter.configuration.QRConfigType.CREATOR.QRConfigClientAccount
 import com.dacosys.warehouseCounter.configuration.QRConfigType.CREATOR.QRConfigImageControl
 import com.dacosys.warehouseCounter.configuration.QRConfigType.CREATOR.QRConfigWebservice
+import com.dacosys.warehouseCounter.data.token.TokenObject
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.itemCode.`object`.ItemCode
 import com.dacosys.warehouseCounter.itemCode.dbHelper.ItemCodeDbHelper
-import com.dacosys.warehouseCounter.misc.Preference
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.misc.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.ERROR
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.vh75.Vh75Bt
-import com.dacosys.warehouseCounter.sync.GetClientPackages
+import com.dacosys.warehouseCounter.settings.Preference
+import com.dacosys.warehouseCounter.settings.SettingsRepository.Companion.getByKey
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.user.`object`.User
 import com.google.android.material.textfield.TextInputEditText
@@ -68,8 +68,6 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.WriterException
 import com.google.zxing.qrcode.QRCodeWriter
 import com.journeyapps.barcodescanner.ScanOptions
-import id.pahlevikun.jotter.Jotter
-import id.pahlevikun.jotter.event.ActivityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import org.json.JSONObject
 import java.io.*
@@ -84,52 +82,7 @@ import kotlin.concurrent.thread
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-/**
- * Created by Agustin on 24/01/2017.
- */
-
 class Statics {
-    class WarehouseCounter : Application() {
-        override fun onCreate() {
-            super.onCreate()
-            sApplication = this
-
-            // Setup ImageControl context
-            com.dacosys.imageControl.Statics.ImageControl().setAppContext(this)
-
-            // Eventos del ciclo de vida de las actividades
-            // que nos interesa interceptar para conectar y
-            // desconectar los medios de lectura de códigos.
-            Jotter
-                .Builder(this)
-                .setLogEnable(true)
-                .setActivityEventFilter(
-                    listOf(
-                        ActivityEvent.CREATE,
-                        ActivityEvent.RESUME,
-                        ActivityEvent.PAUSE,
-                        ActivityEvent.DESTROY
-                    )
-                )
-                //.setFragmentEventFilter(listOf(FragmentEvent.VIEW_CREATE, FragmentEvent.PAUSE))
-                .setJotterListener(JotterListener)
-                .build()
-                .startListening()
-        }
-
-        companion object {
-            fun getContext(): Context {
-                return getApplication()!!.applicationContext
-            }
-
-            private fun getApplication(): Application? {
-                return sApplication
-            }
-
-            private var sApplication: Application? = null
-        }
-    }
-
     companion object : DialogInterface.OnMultiChoiceClickListener {
         const val testMode = false
 
@@ -138,12 +91,18 @@ class Statics {
         // Este flag es para reinicializar el colector después de cambiar en Settings.
         var collectorTypeChanged = false
 
+        var Token: TokenObject = TokenObject()
+
+        fun cleanToken() {
+            Token = TokenObject("", "")
+        }
+
         // region Operaciones de escritura en almacenamiento de Ordenes
 
         fun writeJsonToFile(v: View, filename: String, value: String, completed: Boolean): Boolean {
             if (!isExternalStorageWritable) {
-                val res = getContext()
-                    .getString(R.string.error_external_storage_not_available_for_reading_or_writing)
+                val res =
+                    context().getString(R.string.error_external_storage_not_available_for_reading_or_writing)
                 Log.e(this::class.java.simpleName, res)
                 makeText(v, res, ERROR)
                 return false
@@ -159,8 +118,8 @@ class Statics {
                     if (file.exists()) file.delete()
                 }
             } else {
-                val res = getContext()
-                    .getString(R.string.an_error_occurred_while_trying_to_save_the_count)
+                val res =
+                    context().getString(R.string.an_error_occurred_while_trying_to_save_the_count)
                 Log.e(this::class.java.simpleName, res)
                 makeText(v, res, ERROR)
                 error = true
@@ -200,33 +159,33 @@ class Statics {
         }
 
         fun setupImageControl() {
+            val sv = settingViewModel()
             // Setup ImageControl
-            com.dacosys.imageControl.Statics.appAllowScreenRotation =
-                prefsGetBoolean(Preference.allowScreenRotation)
+            com.dacosys.imageControl.Statics.appAllowScreenRotation = sv.allowScreenRotation
 
             com.dacosys.imageControl.Statics.currentUserId = currentUserId
             com.dacosys.imageControl.Statics.currentUserName = currentUserName
             com.dacosys.imageControl.Statics.newInstance()
 
-            com.dacosys.imageControl.Statics.useImageControl = useImageControl
-            com.dacosys.imageControl.Statics.wsIcUrl = wsIcUrl
-            com.dacosys.imageControl.Statics.wsIcNamespace = wsIcNamespace
-            com.dacosys.imageControl.Statics.wsIcProxy = wsIcProxy
-            com.dacosys.imageControl.Statics.wsIcProxyPort = wsIcProxyPort
-            com.dacosys.imageControl.Statics.wsIcUseProxy = wsIcUseProxy
-            com.dacosys.imageControl.Statics.wsIcProxyUser = wsIcProxyUser
-            com.dacosys.imageControl.Statics.wsIcProxyPass = wsIcProxyPass
-            com.dacosys.imageControl.Statics.icUser = icUser
-            com.dacosys.imageControl.Statics.icPass = icPass
-            com.dacosys.imageControl.Statics.wsIcUser = wsIcUser
-            com.dacosys.imageControl.Statics.wsIcPass = wsIcPass
-            com.dacosys.imageControl.Statics.maxHeightOrWidth = maxHeightOrWidth
+            com.dacosys.imageControl.Statics.useImageControl = sv.useImageControl
+            com.dacosys.imageControl.Statics.wsIcUrl = sv.icWsServer
+            com.dacosys.imageControl.Statics.wsIcNamespace = sv.icWsNamespace
+            com.dacosys.imageControl.Statics.wsIcProxy = sv.icWsProxy
+            com.dacosys.imageControl.Statics.wsIcProxyPort = sv.icWsProxyPort
+            com.dacosys.imageControl.Statics.wsIcUseProxy = sv.icWsUseProxy
+            com.dacosys.imageControl.Statics.wsIcProxyUser = sv.icWsProxyUser
+            com.dacosys.imageControl.Statics.wsIcProxyPass = sv.icWsProxyPass
+            com.dacosys.imageControl.Statics.icUser = sv.icUser
+            com.dacosys.imageControl.Statics.icPass = sv.icPass
+            com.dacosys.imageControl.Statics.wsIcUser = sv.icWsUser
+            com.dacosys.imageControl.Statics.wsIcPass = sv.icWsPass
+            com.dacosys.imageControl.Statics.maxHeightOrWidth = sv.icPhotoMaxHeightOrWidth
         }
 
         fun getScanOptions(): ScanOptions {
             val options = ScanOptions()
             options.setDesiredBarcodeFormats(ScanOptions.ALL_CODE_TYPES)
-            options.setPrompt(getContext().getString(R.string.place_the_code_in_the_rectangle_of_the_viewer_to_capture_it))
+            options.setPrompt(context().getString(R.string.place_the_code_in_the_rectangle_of_the_viewer_to_capture_it))
             options.setBeepEnabled(true)
             options.setBarcodeImageEnabled(true)
             options.setOrientationLocked(false)
@@ -243,10 +202,7 @@ class Statics {
          * Modo DEMO
          */
         var demoMode = false
-        var superDemoMode = false // BuildConfig.DEBUG
-        var demoQrConfigCode = """
-{"config":{"client_email":"super-clin.com","client_password":"123456"}}
-                    """.trimIndent()
+        var superDemoMode = false
 
         /**
          * Base de datos SQLite local
@@ -266,15 +222,15 @@ class Statics {
         private const val ERROR_LOG_PATH = "/error_log"
 
         fun getPendingPath(): File {
-            return File("${getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/$installationCode$PENDING_COUNT_PATH/")
+            return File("${context().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingViewModel().installationCode}$PENDING_COUNT_PATH/")
         }
 
         fun getCompletedPath(): File {
-            return File("${getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/$installationCode$COMPLETED_COUNT_PATH/")
+            return File("${context().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingViewModel().installationCode}$COMPLETED_COUNT_PATH/")
         }
 
         fun getLogPath(): File {
-            return File("${getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/$installationCode$ERROR_LOG_PATH/")
+            return File("${context().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingViewModel().installationCode}$ERROR_LOG_PATH/")
         }
 
         /**
@@ -289,8 +245,7 @@ class Statics {
 
         fun isOnline(): Boolean {
             val connectivityManager =
-                getContext()
-                    .getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                context().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
             val capabilities =
                 connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
             if (capabilities != null) {
@@ -319,9 +274,7 @@ class Statics {
 
         private fun removeImageControlDataBase() {
             // Path to the just created empty db
-            val outFileName =
-                getContext().getDatabasePath(IMAGE_CONTROL_DATABASE_NAME)
-                    .toString()
+            val outFileName = context().getDatabasePath(IMAGE_CONTROL_DATABASE_NAME).toString()
 
             try {
                 Log.i("IC DataBase", "Eliminando: $outFileName")
@@ -337,8 +290,7 @@ class Statics {
 
         private fun removeLocalDataBase() {
             // Path to the just created empty db
-            val outFileName =
-                getContext().getDatabasePath(DATABASE_NAME).toString()
+            val outFileName = context().getDatabasePath(DATABASE_NAME).toString()
 
             try {
                 Log.i("Local DataBase", "Eliminando: $outFileName")
@@ -353,7 +305,8 @@ class Statics {
         }
 
         fun initRequired(): Boolean {
-            return if (isRfidRequired()) {
+            val sv = settingViewModel()
+            return if (sv.useBtRfid) {
                 if (Rfid.rfidDevice == null) {
                     true
                 } else {
@@ -362,23 +315,6 @@ class Statics {
                     } else false
                 }
             } else false
-        }
-
-        fun isRfidRequired(): Boolean {
-            if (!prefsGetBoolean(Preference.useBtRfid)) {
-                return false
-            }
-
-            val btAddress = prefsGetString(Preference.rfidBtAddress)
-            return btAddress.isNotEmpty()
-        }
-
-        fun isNfcRequired(): Boolean {
-            return prefsGetBoolean(Preference.useNfc)
-        }
-
-        fun allowUnknownCodes(): Boolean {
-            return prefsGetBoolean(Preference.allowUnknownCodes)
         }
 
         // region Variables con valores predefinidos para el selector de cantidades
@@ -429,19 +365,6 @@ class Statics {
         }
         // endregion CURRENT USER
 
-        fun divisorChar(): String {
-            return prefsGetString(Preference.divisionChar)
-        }
-
-        // region COLLECTOR TYPE THINGS
-
-        val collectorType: CollectorType
-            get() {
-                return CollectorType.getById(prefsGetInt(Preference.collectorType))
-            }
-
-        // endregion COLLECTOR TYPE THINGS
-
         // region BLUETOOTH PRINTER THINGS
         var printerBluetoothDevice: BluetoothDevice? = null
             get() {
@@ -452,20 +375,19 @@ class Statics {
             }
 
         private fun refreshBluetoothPrinter() {
-            if (prefsGetBoolean(Preference.useBtPrinter)) {
-                val printerMacAddress = prefsGetString(Preference.printerBtAddress)
+            val sv = settingViewModel()
+            if (sv.useBtPrinter) {
+                val printerMacAddress = sv.printerBtAddress
                 if (printerMacAddress.isEmpty()) {
                     return
                 }
 
-                val bluetoothManager = getContext()
-                    .getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+                val bluetoothManager =
+                    context().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
                 val mBluetoothAdapter = bluetoothManager.adapter
 
-                if (ActivityCompat.checkSelfPermission(
-                        getContext(),
-                        Manifest.permission.BLUETOOTH_CONNECT
-                    ) != PackageManager.PERMISSION_GRANTED
+                if (ActivityCompat.checkSelfPermission(context(),
+                        Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
                 ) {
                     return
                 }
@@ -490,94 +412,66 @@ class Statics {
             scanCode: String,
             mode: QRConfigType,
         ) {
-            if (prefs == null) {
-                callback.onTaskGetPackagesEnded(
-                    status = ProgressStatus.crashed,
-                    result = ArrayList(),
-                    clientEmail = "",
-                    clientPassword = "",
-                    msg = getContext()
-                        .getString(R.string.configuration_not_loaded)
-                )
-                return
+            val mainJson = JSONObject(scanCode)
+            val mainTag = when {
+                mainJson.has("config") && mode == QRConfigClientAccount -> "config"
+                mainJson.has(appName) && mode != QRConfigClientAccount -> appName
+                else -> ""
             }
 
-            val mainJson = JSONObject(scanCode)
-            val mainTag =
-                when {
-                    mainJson.has("config") && mode == QRConfigClientAccount -> "config"
-                    mainJson.has(appName) && mode != QRConfigClientAccount -> appName
-                    else -> ""
-                }
-
             if (mainTag.isEmpty()) {
-                callback.onTaskGetPackagesEnded(
-                    status = ProgressStatus.crashed,
+                callback.onTaskGetPackagesEnded(status = ProgressStatus.crashed,
                     result = ArrayList(),
                     clientEmail = "",
                     clientPassword = "",
-                    msg = getContext()
-                        .getString(R.string.invalid_code)
-                )
+                    msg = context().getString(R.string.invalid_code))
                 return
             }
 
             val confJson = mainJson.getJSONObject(mainTag)
+            val sp = settingRepository()
 
             when (mode) {
                 QRConfigClientAccount -> {
                     // Package Client Setup
                     val installationCode =
-                        if (confJson.has(Preference.installationCode.key)) confJson.getString(
-                            Preference.installationCode.key
-                        ) else ""
+                        if (confJson.has(sp.installationCode.key)) confJson.getString(sp.installationCode.key) else ""
                     val email =
-                        if (confJson.has(Preference.clientEmail.key)) confJson.getString(Preference.clientEmail.key) else ""
+                        if (confJson.has(sp.clientEmail.key)) confJson.getString(sp.clientEmail.key) else ""
                     val password =
-                        if (confJson.has(Preference.clientPassword.key)) confJson.getString(
-                            Preference.clientPassword.key
-                        ) else ""
+                        if (confJson.has(sp.clientPassword.key)) confJson.getString(sp.clientPassword.key) else ""
 
                     if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
-                        getConfig(
-                            callback = callback,
+                        getConfig(callback = callback,
                             email = email,
                             password = password,
-                            installationCode = installationCode
-                        )
+                            installationCode = installationCode)
                     } else {
-                        callback.onTaskGetPackagesEnded(
-                            status = ProgressStatus.crashed,
+                        callback.onTaskGetPackagesEnded(status = ProgressStatus.crashed,
                             result = ArrayList(),
                             clientEmail = email,
                             clientPassword = password,
-                            msg = getContext().getString(R.string.invalid_code)
-                        )
+                            msg = context().getString(R.string.invalid_code))
                     }
                 }
                 QRConfigWebservice, QRConfigApp, QRConfigImageControl -> {
                     tryToLoadConfig(confJson)
-                    callback.onTaskGetPackagesEnded(
-                        status = ProgressStatus.success,
+                    callback.onTaskGetPackagesEnded(status = ProgressStatus.success,
                         result = ArrayList(),
                         clientEmail = "",
                         clientPassword = "",
-                        msg =
-                        when (mode) {
-                            QRConfigImageControl -> getContext().getString(R.string.imagecontrol_configured)
-                            QRConfigWebservice -> getContext().getString(R.string.server_configured)
-                            else -> getContext().getString(R.string.configuration_applied)
-                        }
-                    )
+                        msg = when (mode) {
+                            QRConfigImageControl -> context().getString(R.string.imagecontrol_configured)
+                            QRConfigWebservice -> context().getString(R.string.server_configured)
+                            else -> context().getString(R.string.configuration_applied)
+                        })
                 }
                 else -> {
-                    callback.onTaskGetPackagesEnded(
-                        status = ProgressStatus.crashed,
+                    callback.onTaskGetPackagesEnded(status = ProgressStatus.crashed,
                         result = ArrayList(),
                         clientEmail = "",
                         clientPassword = "",
-                        msg = getContext().getString(R.string.invalid_code)
-                    )
+                        msg = context().getString(R.string.invalid_code))
                 }
             }
         }
@@ -618,8 +512,7 @@ class Statics {
 
                 val imageView = ImageView(activity)
                 imageView.setImageBitmap(bmp)
-                val builder = AlertDialog.Builder(activity)
-                    .setTitle(R.string.configuration_qr_code)
+                val builder = AlertDialog.Builder(activity).setTitle(R.string.configuration_qr_code)
                     .setMessage(R.string.scan_the_code_below_with_another_device_to_copy_the_configuration)
                     .setPositiveButton(R.string.ok) { dialog, _ -> dialog.dismiss() }
                     .setView(imageView)
@@ -634,29 +527,29 @@ class Statics {
             val jsonObject = JSONObject()
 
             for (p in ps) {
-                if (p.defaultValue is Int) {
-                    val value = prefsGetInt(p)
-                    if (value != p.defaultValue) {
+                if (p.value is Int) {
+                    val value = getByKey(p.key)?.value as Int
+                    if (value != p.value) {
                         jsonObject.put(p.key, value)
                     }
-                } else if (p.defaultValue is Boolean) {
-                    val value = prefsGetBoolean(p)
-                    if (value != p.defaultValue) {
+                } else if (p.value is Boolean) {
+                    val value = getByKey(p.key)?.value as Boolean
+                    if (value != p.value) {
                         jsonObject.put(p.key, value)
                     }
-                } else if (p.defaultValue is String) {
-                    val value = prefsGetString(p)
-                    if (value != p.defaultValue && value.isNotEmpty()) {
+                } else if (p.value is String) {
+                    val value = getByKey(p.key)?.value as String
+                    if (value != p.value && value.isNotEmpty()) {
                         jsonObject.put(p.key, value)
                     }
-                } else if (p.defaultValue is Long) {
-                    val value = prefsGetLong(p)
-                    if (value != p.defaultValue) {
+                } else if (p.value is Long) {
+                    val value = getByKey(p.key)?.value as Long
+                    if (value != p.value) {
                         jsonObject.put(p.key, value)
                     }
-                } else if (p.defaultValue is Float) {
-                    val value = prefsGetFloat(p)
-                    if (value != p.defaultValue) {
+                } else if (p.value is Float) {
+                    val value = getByKey(p.key)?.value as Float
+                    if (value != p.value) {
                         jsonObject.put(p.key, value)
                     }
                 }
@@ -670,177 +563,35 @@ class Statics {
         }
 
         private fun getApplicationName(): String {
-            val applicationInfo = getContext().applicationInfo
+            val applicationInfo = context().applicationInfo
             return when (val stringId = applicationInfo.labelRes) {
                 0 -> applicationInfo.nonLocalizedLabel.toString()
-                else -> getContext().getString(stringId)
+                else -> context().getString(stringId)
             }
         }
 
         private fun tryToLoadConfig(conf: JSONObject) {
-            val availablePref = Preference.getConfigPreferences()
             for (prefName in conf.keys()) {
-
-                // No está permitido cargar configuraciones de cliente por esta vía.
-                if (!availablePref.any { it.key == prefName }) {
-                    continue
-                }
-
-                val p = prefs!!.edit()
-                val tempPref = prefs!!.all[prefName]
-                if (tempPref != null) {
-                    try {
-                        when (tempPref) {
-                            is String -> p.putString(prefName, conf.getString(prefName))
-                            is Boolean -> p.putBoolean(prefName, conf.getBoolean(prefName))
-                            is Int -> p.putInt(prefName, conf.getInt(prefName))
-                            is Float -> p.putFloat(prefName, conf.getDouble(prefName).toFloat())
-                            is Long -> p.putLong(prefName, conf.getLong(prefName))
-                            else -> p.putString(prefName, conf.getString(prefName))
-                        }
-                    } catch (ex: Exception) {
-                        ex.printStackTrace()
-                        Log.e(
-                            this::class.java.simpleName,
-                            "Imposible convertir valor de configuración: $prefName"
-                        )
-                        ErrorLog.writeLog(null, "tryToLoadConfig", ex)
+                val tempPref = getByKey(prefName) ?: continue
+                try {
+                    when (tempPref.value) {
+                        is String -> tempPref.value = conf.getString(prefName)
+                        is Boolean -> tempPref.value = conf.getBoolean(prefName)
+                        is Int -> tempPref.value = conf.getInt(prefName)
+                        is Float -> tempPref.value = conf.getDouble(prefName).toFloat()
+                        is Long -> tempPref.value = conf.getLong(prefName)
+                        else -> tempPref.value = conf.getString(prefName)
                     }
-                } else {
-                    val pref = Preference.getByKey(prefName)
-                    if (pref != null) {
-                        try {
-                            when (pref.defaultValue) {
-                                is String -> p.putString(prefName, conf.getString(prefName))
-                                is Boolean -> p.putBoolean(prefName, conf.getBoolean(prefName))
-                                is Int -> p.putInt(prefName, conf.getInt(prefName))
-                                is Float -> p.putFloat(prefName, conf.getDouble(prefName).toFloat())
-                                is Long -> p.putLong(prefName, conf.getLong(prefName))
-                                else -> p.putString(prefName, conf.getString(prefName))
-                            }
-                        } catch (ex: Exception) {
-                            ex.printStackTrace()
-                            Log.e(
-                                this::class.java.simpleName,
-                                "Imposible convertir valor de configuración: $prefName"
-                            )
-                            ErrorLog.writeLog(null, "tryToLoadConfig", ex)
-                        }
-                    }
-                }
-                p.apply()
-            }
-        }
-
-        fun setDebugConfigValues() {
-            // VALORES POR DEFECTO, SÓLO PARA DEBUG
-            if (prefs != null) {
-                if (isDebuggable() || BuildConfig.DEBUG) {
-                    val x = prefs!!.edit()
-
-                    // region WAREHOUSE COUNTER FTP
-                    if (urlPanel.isEmpty()) {
-                        x.putString(
-                            Preference.urlPanel.key,
-                            Preference.urlPanel.debugValue as String?
-                        )
-                    }
-                    // endregion
-
-                    // region IMAGE CONTROL WEBSERVICE
-                    if (wsIcUrl.isEmpty()) {
-                        x.putString(
-                            Preference.icWsServer.key,
-                            Preference.icWsServer.debugValue as String?
-                        )
-                    }
-
-                    if (wsIcNamespace.isEmpty()) {
-                        x.putString(
-                            Preference.icWsNamespace.key,
-                            Preference.icWsNamespace.debugValue as String?
-                        )
-                    }
-
-                    if (wsIcUser.isEmpty()) {
-                        x.putString(
-                            Preference.icWsUser.key,
-                            Preference.icWsUser.debugValue as String?
-                        )
-                    }
-
-                    if (wsIcPass.isEmpty()) {
-                        x.putString(
-                            Preference.icWsPass.key,
-                            Preference.icWsPass.debugValue as String?
-                        )
-                    }
-
-                    if (prefsGetString(Preference.icUser).isEmpty()
-                    ) {
-                        x.putString(
-                            Preference.icUser.key,
-                            Preference.icUser.debugValue as String?
-                        )
-                    }
-
-                    if (prefsGetString(Preference.icPass).isEmpty()
-                    ) {
-                        x.putString(Preference.icPass.key, Preference.icPass.debugValue as String?)
-                    }
-                    // endregion
-
-                    run {
-                        x.apply()
-                    }
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                    Log.e(this::class.java.simpleName,
+                        "Imposible convertir valor de configuración: $prefName")
+                    ErrorLog.writeLog(null, "tryToLoadConfig", ex)
                 }
             }
         }
 
         // endregion SOME CONFIG VALUES AND PREFERENCES FUNCTIONS
-
-        var installationCode: String = ""
-            get() {
-                return field.ifEmpty {
-                    return prefsGetString(Preference.installationCode)
-                }
-            }
-
-        var urlPanel: String = "" //"http://client.dacosys.com:80/7RDRHHAH/panel"
-            get() {
-                return field.ifEmpty {
-                    return prefsGetString(Preference.urlPanel)
-                }
-            }
-
-        private const val api: String = "api"
-
-        val apiUrl = "$urlPanel/$api"
-
-        val proxy: String
-            get() {
-                return prefsGetString(Preference.proxy)
-            }
-
-        val proxyPort: Int
-            get() {
-                return prefsGetInt(Preference.proxyPort)
-            }
-
-        val useProxy: Boolean
-            get() {
-                return prefsGetBoolean(Preference.useProxy)
-            }
-
-        val proxyUser: String
-            get() {
-                return prefsGetString(Preference.proxyUser)
-            }
-
-        val proxyPass: String
-            get() {
-                return prefsGetString(Preference.proxyPass)
-            }
 
         // region PROXY THINGS
         private var avoidSetupProxyDialog = false
@@ -868,44 +619,43 @@ class Statics {
                 return
             }
 
+            val sv = settingViewModel()
             avoidSetupProxyDialog = true
 
             val alert: AlertDialog.Builder = AlertDialog.Builder(activity)
-            alert.setTitle(
-                getContext().getString(R.string.configure_proxy_question)
-            )
+            alert.setTitle(context().getString(R.string.configure_proxy_question))
 
             val proxyEditText = EditText(activity)
-            proxyEditText.hint = getContext().getString(R.string.proxy)
+            proxyEditText.hint = context().getString(R.string.proxy)
             proxyEditText.isFocusable = true
             proxyEditText.isFocusableInTouchMode = true
 
             val proxyPortEditText = EditText(activity)
             proxyPortEditText.inputType = InputType.TYPE_CLASS_NUMBER
-            proxyPortEditText.hint = getContext().getString(R.string.port)
+            proxyPortEditText.hint = context().getString(R.string.port)
             proxyPortEditText.isFocusable = true
             proxyPortEditText.isFocusableInTouchMode = true
 
             val proxyUserEditText = EditText(activity)
             proxyUserEditText.inputType = InputType.TYPE_CLASS_TEXT
-            proxyUserEditText.hint = getContext().getString(R.string.user)
+            proxyUserEditText.hint = context().getString(R.string.user)
             proxyUserEditText.isFocusable = true
             proxyUserEditText.isFocusableInTouchMode = true
 
             val proxyPassEditText = TextInputEditText(activity)
             proxyPassEditText.inputType =
                 InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            proxyPassEditText.hint = getContext().getString(R.string.password)
+            proxyPassEditText.hint = context().getString(R.string.password)
             proxyPassEditText.isFocusable = true
             proxyPassEditText.isFocusableInTouchMode = true
             proxyPassEditText.typeface = Typeface.DEFAULT
             proxyPassEditText.transformationMethod = PasswordTransformationMethod()
 
-            val inputLayout = TextInputLayout(getContext())
+            val inputLayout = TextInputLayout(context())
             inputLayout.endIconMode = END_ICON_PASSWORD_TOGGLE
             inputLayout.addView(proxyPassEditText)
 
-            val layout = LinearLayout(getContext())
+            val layout = LinearLayout(context())
             layout.orientation = LinearLayout.VERTICAL
 
             layout.addView(proxyEditText)
@@ -915,49 +665,35 @@ class Statics {
 
             alert.setView(layout)
             alert.setNegativeButton(R.string.no) { _, _ ->
-                if (prefs == null) {
-                    return@setNegativeButton
-                }
-                val p = (prefs ?: return@setNegativeButton).edit()
-                p.putBoolean(Preference.useProxy.key, false)
-                p.apply()
+                sv.useProxy = false
             }
             alert.setPositiveButton(R.string.yes) { _, _ ->
-                if (prefs == null) {
-                    return@setPositiveButton
-                }
+
                 val proxy = proxyEditText.text
                 val port = proxyPortEditText.text
                 val user = proxyUserEditText.text
                 val pass = proxyPassEditText.text
 
-                val p = (prefs ?: return@setPositiveButton).edit()
-                if (proxy != null) {
-                    p.putBoolean(Preference.useProxy.key, true)
-                    p.putString(Preference.proxy.key, proxy.toString())
-                }
+                sv.useProxy = true
+                sv.proxy = proxy.toString()
 
                 if (port != null) {
-                    p.putInt(Preference.proxyPort.key, Integer.parseInt(port.toString()))
+                    sv.proxyPort = Integer.parseInt(port.toString())
                 }
 
                 if (user.isNotEmpty()) {
-                    p.putString(Preference.proxyUser.key, user.toString())
+                    sv.proxyUser = user.toString()
                 }
 
                 if (pass != null && pass.isNotEmpty()) {
-                    p.putString(Preference.proxyPass.key, pass.toString())
+                    sv.proxyPass = pass.toString()
                 }
-
-                p.apply()
             }
             alert.setOnDismissListener {
-                callback.onTaskSetupProxyEnded(
-                    status = ProgressStatus.finished,
+                callback.onTaskSetupProxyEnded(status = ProgressStatus.finished,
                     email = email,
                     password = password,
-                    installationCode = installationCode
-                )
+                    installationCode = installationCode)
                 avoidSetupProxyDialog = false
             }
 
@@ -1003,12 +739,12 @@ class Statics {
         }
 
         fun selectClientPackage(
-            parentView: View,
             callback: TaskConfigPanelEnded,
             weakAct: WeakReference<FragmentActivity>,
             allPackage: ArrayList<JSONObject>,
             email: String,
             password: String,
+            onEventData: (SnackBarEventData) -> Unit = {},
         ) {
             val activity = weakAct.get() ?: return
             if (activity.isFinishing) return
@@ -1022,36 +758,23 @@ class Statics {
             }
 
             if (!allProductsArray.any()) {
-                makeText(
-                    parentView,
-                    getContext()
-                        .getString(R.string.there_are_no_valid_products_for_the_selected_client),
-                    ERROR
-                )
+                onEventData(SnackBarEventData(context().getString(R.string.there_are_no_valid_products_for_the_selected_client),
+                    ERROR))
                 return
             }
 
             if (allProductsArray.size == 1) {
                 val productVersionId = allProductsArray[0].getString("product_version_id")
-                if (
-                    productVersionId == APP_VERSION_ID.toString() ||
-                    productVersionId == APP_VERSION_ID_IMAGECONTROL.toString()
-                ) {
-                    setConfigPanel(
-                        parentView = parentView,
-                        callback = callback,
+                if (productVersionId == APP_VERSION_ID.toString() || productVersionId == APP_VERSION_ID_IMAGECONTROL.toString()) {
+                    setConfigPanel(callback = callback,
                         packArray = arrayListOf(allProductsArray[0]),
                         email = email,
-                        password = password
-                    )
+                        password = password,
+                        onEventData = onEventData)
                     return
                 } else {
-                    makeText(
-                        parentView,
-                        getContext()
-                            .getString(R.string.there_are_no_valid_products_for_the_selected_client),
-                        ERROR
-                    )
+                    onEventData(SnackBarEventData(context().getString(R.string.there_are_no_valid_products_for_the_selected_client),
+                        ERROR))
                     return
                 }
             }
@@ -1065,10 +788,7 @@ class Statics {
                 val productVersionId = pack.getString("product_version_id")
 
                 // WarehouseCounter M12 o ImageControl M11
-                if (
-                    productVersionId == APP_VERSION_ID.toString() ||
-                    productVersionId == APP_VERSION_ID_IMAGECONTROL.toString()
-                ) {
+                if (productVersionId == APP_VERSION_ID.toString() || productVersionId == APP_VERSION_ID_IMAGECONTROL.toString()) {
                     validProducts = true
                     val clientPackage = pack.getString("client_package_content_description")
 
@@ -1078,12 +798,8 @@ class Statics {
             }
 
             if (!validProducts) {
-                makeText(
-                    parentView,
-                    getContext()
-                        .getString(R.string.there_are_no_valid_products_for_the_selected_client),
-                    ERROR
-                )
+                onEventData(SnackBarEventData(context().getString(R.string.there_are_no_valid_products_for_the_selected_client),
+                    ERROR))
                 return
             }
 
@@ -1094,20 +810,12 @@ class Statics {
 
             val title = TextView(activity)
             title.text =
-                String.format(
-                    "%s - %s",
-                    client,
-                    getContext().getString(R.string.select_package)
-                )
+                String.format("%s - %s", client, context().getString(R.string.select_package))
             title.textSize = 16F
             title.gravity = Gravity.CENTER_HORIZONTAL
             builder.setCustomTitle(title)
 
-            builder.setMultiChoiceItems(
-                listItems.toTypedArray(),
-                selected,
-                this
-            )
+            builder.setMultiChoiceItems(listItems.toTypedArray(), selected, this)
 
             builder.setPositiveButton(R.string.accept) { dialog, _ ->
                 val selectedPacks: ArrayList<JSONObject> = ArrayList()
@@ -1118,22 +826,18 @@ class Statics {
                 }
 
                 if (selectedPacks.size > 0) {
-                    setConfigPanel(
-                        parentView = parentView,
-                        callback = callback,
+                    setConfigPanel(callback = callback,
                         packArray = selectedPacks,
                         email = email,
-                        password = password
-                    )
+                        password = password,
+                        onEventData = onEventData)
                 }
                 dialog.dismiss()
             }
 
-            val layoutDefault = ResourcesCompat.getDrawable(
-                getContext().resources,
+            val layoutDefault = ResourcesCompat.getDrawable(context().resources,
                 R.drawable.layout_thin_border,
-                null
-            )
+                null)
             val inset = InsetDrawable(layoutDefault, 20)
 
             val dialog = builder.create()
@@ -1149,55 +853,44 @@ class Statics {
         }
 
         private fun setConfigPanel(
-            parentView: View,
             callback: TaskConfigPanelEnded,
             packArray: ArrayList<JSONObject>,
             email: String,
             password: String,
+            onEventData: (SnackBarEventData) -> Unit = {},
         ) {
             for (pack in packArray) {
                 val active = pack.getInt("active")
                 if (active == 0) {
-                    makeText(
-                        parentView,
-                        getContext().getString(R.string.inactive_installation),
-                        ERROR
-                    )
+                    onEventData(SnackBarEventData(context().getString(R.string.inactive_installation),
+                        ERROR))
                     continue
                 }
 
                 // PANEL DE CONFIGURACIÓN
                 val productId = pack.getString("product_version_id")
                 val panelJsonObj = pack.getJSONObject("panel")
-                val appUrl =
-                    when {
-                        panelJsonObj.has("url")
-                        -> panelJsonObj.getString("url") ?: ""
-                        else -> ""
-                    }
+                val appUrl = when {
+                    panelJsonObj.has("url") -> panelJsonObj.getString("url") ?: ""
+                    else -> ""
+                }
 
                 if (appUrl.isEmpty()) {
-                    makeText(
-                        parentView,
-                        getContext().getString(R.string.app_panel_url_can_not_be_obtained),
-                        ERROR
-                    )
+                    onEventData(SnackBarEventData(context().getString(R.string.app_panel_url_can_not_be_obtained),
+                        ERROR))
                     return
                 }
 
-                val clientPackage =
-                    when {
-                        pack.has("client_package_content_description")
-                        -> pack.getString("client_package_content_description") ?: ""
-                        else -> ""
-                    }
+                val clientPackage = when {
+                    pack.has("client_package_content_description") -> pack.getString("client_package_content_description")
+                        ?: ""
+                    else -> ""
+                }
 
-                val installationCode =
-                    when {
-                        pack.has("installation_code")
-                        -> pack.getString("installation_code") ?: ""
-                        else -> ""
-                    }
+                val installationCode = when {
+                    pack.has("installation_code") -> pack.getString("installation_code") ?: ""
+                    else -> ""
+                }
 
                 var url: String
                 var namespace: String
@@ -1218,27 +911,24 @@ class Statics {
                 icPass =
                     if (customOptJsonObj.has("ic_password")) customOptJsonObj.getString("ic_password") else ""
 
-                if (prefs == null) {
-                    return
-                }
-                val x = (prefs ?: return).edit()
+                val sv = settingViewModel()
                 if (productId == APP_VERSION_ID.toString()) {
-                    x.putString(Preference.urlPanel.key, appUrl)
-                    x.putString(Preference.installationCode.key, installationCode)
-                    x.putString(Preference.clientPackage.key, clientPackage)
-                    x.putString(Preference.clientEmail.key, email)
-                    x.putString(Preference.clientPassword.key, password)
-                } else if (productId == APP_VERSION_ID_IMAGECONTROL.toString()) {
-                    x.putBoolean(Preference.useImageControl.key, true)
+                    sv.urlPanel = appUrl
+                    sv.installationCode = installationCode
+                    sv.clientPackage = clientPackage
+                    sv.clientEmail = email
+                    sv.clientPassword = password
 
-                    x.putString(Preference.icWsServer.key, url)
-                    x.putString(Preference.icWsNamespace.key, namespace)
-                    x.putString(Preference.icWsUser.key, user)
-                    x.putString(Preference.icWsPass.key, pass)
-                    x.putString(Preference.icUser.key, icUser)
-                    x.putString(Preference.icPass.key, icPass)
+                    retrofit().refreshRetrofit()
+                } else if (productId == APP_VERSION_ID_IMAGECONTROL.toString()) {
+                    sv.useImageControl = true
+                    sv.icWsServer = url
+                    sv.icWsNamespace = namespace
+                    sv.icWsUser = user
+                    sv.icWsPass = pass
+                    sv.icUser = icUser
+                    sv.icPass = icPass
                 }
-                run { x.apply() }
             }
 
             downloadDbRequired = true
@@ -1255,19 +945,17 @@ class Statics {
             if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
                 thread {
                     val get = GetClientPackages()
-                    get.addParams(
-                        callback = callback,
+                    get.addParams(callback = callback,
                         email = email,
                         password = password,
-                        installationCode = installationCode
-                    )
+                        installationCode = installationCode)
                     get.execute()
                 }
             }
         }
 
         private fun isDebuggable(): Boolean {
-            return 0 != getContext().applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE
+            return 0 != context().applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE
         }
 
         fun roundToString(d: Double, decimalPlaces: Int): String {
@@ -1322,34 +1010,25 @@ class Statics {
         fun getDeviceData(): JSONObject {
             val ip = getIPAddress()
             val macAddress = getMACAddress()
-            val operatingSystem =
-                "Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})"
+            val operatingSystem = "Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})"
 
-            val pm = getContext().packageManager
-            val pInfo = pm.getPackageInfo(getContext().packageName, 0)
+            val pm = context().packageManager
+            val pInfo = pm.getPackageInfo(context().packageName, 0)
             var appName = "Unknown"
             if (pInfo != null) {
-                appName =
-                    "${pm.getApplicationLabel(pInfo.applicationInfo)} ${
-                        getContext().getString(R.string.app_milestone)
-                    } ${pInfo.versionName}"
+                appName = "${pm.getApplicationLabel(pInfo.applicationInfo)} ${
+                    context().getString(R.string.app_milestone)
+                } ${pInfo.versionName}"
             }
 
             val processorId =
-                Settings.Secure.getString(
-                    getContext().contentResolver,
-                    Settings.Secure.ANDROID_ID
-                )
+                Settings.Secure.getString(context().contentResolver, Settings.Secure.ANDROID_ID)
             val deviceName = "${Build.MANUFACTURER} ${Build.MODEL}"
 
             val collectorData = JSONObject()
-            collectorData
-                .put("ip", ip)
-                .put("macAddress", macAddress)
-                .put("operatingSystem", operatingSystem)
-                .put("appName", appName)
-                .put("processorId", processorId)
-                .put("deviceName", deviceName)
+            collectorData.put("ip", ip).put("macAddress", macAddress)
+                .put("operatingSystem", operatingSystem).put("appName", appName)
+                .put("processorId", processorId).put("deviceName", deviceName)
 
             return collectorData
         }
@@ -1371,15 +1050,13 @@ class Statics {
                             val isIPv4 = hostAddress.indexOf(':') < 0
 
                             if (useIPv4) {
-                                if (isIPv4)
-                                    return hostAddress
+                                if (isIPv4) return hostAddress
                             } else {
                                 if (!isIPv4) {
                                     val delimiter = hostAddress.indexOf('%') // drop ip6 zone suffix
                                     return if (delimiter < 0) hostAddress.uppercase(Locale.getDefault()) else hostAddress.substring(
                                         0,
-                                        delimiter
-                                    ).uppercase(Locale.getDefault())
+                                        delimiter).uppercase(Locale.getDefault())
                                 }
                             }
                         }
@@ -1411,21 +1088,21 @@ class Statics {
 
         fun getBestContrastColor(color: String): Int {
             val backColor = Color.parseColor(color)
-            val l = 0.2126 * Color.red(backColor) +
-                    0.7152 * Color.green(backColor) +
-                    0.0722 * Color.blue(backColor)
+            val l =
+                0.2126 * Color.red(backColor) + 0.7152 * Color.green(backColor) + 0.0722 * Color.blue(
+                    backColor)
             return if (l <= 128) textLightColor()
             else textDarkColor()
         }
 
         @ColorInt
         fun textLightColor(): Int {
-            return ResourcesCompat.getColor(getContext().resources, R.color.text_light, null)
+            return ResourcesCompat.getColor(context().resources, R.color.text_light, null)
         }
 
         @ColorInt
         fun textDarkColor(): Int {
-            return ResourcesCompat.getColor(getContext().resources, R.color.text_dark, null)
+            return ResourcesCompat.getColor(context().resources, R.color.text_dark, null)
         }
 
         fun manipulateColor(color: Int, factor: Float): Int {
@@ -1433,16 +1110,11 @@ class Statics {
             val r = (Color.red(color) * factor).roundToInt()
             val g = (Color.green(color) * factor).roundToInt()
             val b = (Color.blue(color) * factor).roundToInt()
-            return Color.argb(
-                a,
-                min(r, 255),
-                min(g, 255),
-                min(b, 255)
-            )
+            return Color.argb(a, min(r, 255), min(g, 255), min(b, 255))
         }
 
         fun getColorWithAlpha(colorId: Int, alpha: Int): Int {
-            val color = ResourcesCompat.getColor(getContext().resources, colorId, null)
+            val color = ResourcesCompat.getColor(context().resources, colorId, null)
 
             val red = Color.red(color)
             val blue = Color.blue(color)
@@ -1453,12 +1125,13 @@ class Statics {
 
         @SuppressLint("SourceLockedOrientationActivity")
         fun setScreenRotation(activity: FragmentActivity) {
+            val viewModel = settingViewModel()
+
             val rotation: Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val display = activity.display
                 display?.rotation ?: Surface.ROTATION_0
             } else {
-                @Suppress("DEPRECATION")
-                val display = activity.windowManager.defaultDisplay
+                @Suppress("DEPRECATION") val display = activity.windowManager.defaultDisplay
                 display.rotation
             }
             val height: Int
@@ -1468,7 +1141,7 @@ class Statics {
             height = displayMetrics.heightPixels
             width = displayMetrics.widthPixels
 
-            if (prefsGetBoolean(Preference.allowScreenRotation)) {
+            if (viewModel.allowScreenRotation) {
                 activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             } else {
                 when (rotation) {
@@ -1490,8 +1163,8 @@ class Statics {
                         else -> activity.requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                     }
-                    Surface.ROTATION_0 ->
-                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    Surface.ROTATION_0 -> activity.requestedOrientation =
+                        ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                     else -> when {
                         height > width -> activity.requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
@@ -1502,16 +1175,13 @@ class Statics {
             }
         }
 
-        fun getScreenWidth(@NonNull activity: FragmentActivity): Int {
+        fun getScreenWidth(activity: FragmentActivity): Int {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val windowMetrics = activity.windowManager.currentWindowMetrics
                 val bounds = windowMetrics.bounds
-                val insets: Insets = windowMetrics.windowInsets.getInsetsIgnoringVisibility(
-                    WindowInsets.Type.systemBars()
-                )
-                if (activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
-                    activity.resources.configuration.smallestScreenWidthDp < 600
-                ) { // landscape and phone
+                val insets: Insets =
+                    windowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
+                if (activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && activity.resources.configuration.smallestScreenWidthDp < 600) { // landscape and phone
                     val navigationBarSize: Int = insets.right + insets.left
                     bounds.width() - navigationBarSize
                 } else { // portrait or tablet
@@ -1519,22 +1189,18 @@ class Statics {
                 }
             } else {
                 val outMetrics = DisplayMetrics()
-                @Suppress("DEPRECATION")
-                activity.windowManager.defaultDisplay.getMetrics(outMetrics)
+                @Suppress("DEPRECATION") activity.windowManager.defaultDisplay.getMetrics(outMetrics)
                 outMetrics.widthPixels
             }
         }
 
-        fun getScreenHeight(@NonNull activity: FragmentActivity): Int {
+        fun getScreenHeight(activity: FragmentActivity): Int {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val windowMetrics = activity.windowManager.currentWindowMetrics
                 val bounds = windowMetrics.bounds
-                val insets: Insets = windowMetrics.windowInsets.getInsetsIgnoringVisibility(
-                    WindowInsets.Type.systemBars()
-                )
-                if (activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
-                    activity.resources.configuration.smallestScreenWidthDp < 600
-                ) { // landscape and phone
+                val insets: Insets =
+                    windowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
+                if (activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && activity.resources.configuration.smallestScreenWidthDp < 600) { // landscape and phone
                     bounds.height()
                 } else { // portrait or tablet
                     val navigationBarSize: Int = insets.bottom
@@ -1542,8 +1208,7 @@ class Statics {
                 }
             } else {
                 val outMetrics = DisplayMetrics()
-                @Suppress("DEPRECATION")
-                activity.windowManager.defaultDisplay.getMetrics(outMetrics)
+                @Suppress("DEPRECATION") activity.windowManager.defaultDisplay.getMetrics(outMetrics)
                 outMetrics.heightPixels
             }
         }
@@ -1576,13 +1241,13 @@ class Statics {
         }
 
         fun isTablet(): Boolean {
-            return getContext().resources.getBoolean(R.bool.isTab)
+            return context().resources.getBoolean(R.bool.isTab)
         }
 
         // region Keyboard
         fun isKeyboardVisible(): Boolean {
-            val imm = getContext()
-                .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+            val imm =
+                context().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
             return imm != null && imm.isActive
         }
 
@@ -1606,261 +1271,15 @@ class Statics {
         }
         // endregion
 
-        fun getMultiplier(): Int {
-            return prefs?.getInt(
-                Preference.scanMultiplier.key,
-                Preference.scanMultiplier.defaultValue as Int
-            ) ?: 1
-        }
-
-        fun setMultiplier(value: Int) {
-            with(prefs!!.edit())
-            {
-                putInt(Preference.scanMultiplier.key, value)
-                apply()
-            }
-        }
-
-        //region PREFERENCES
-        private var prefs: SharedPreferences? = null
-        fun startPrefs() {
-            prefs = PreferenceManager.getDefaultSharedPreferences(getContext())
-        }
-
-        fun prefsIsInitialized(): Boolean {
-            return prefs != null
-        }
-
-        fun cleanPrefs(): Boolean {
-            if (prefs == null) {
-                return false
-            }
-
-            return try {
-                prefs!!.edit().clear().apply()
-                true
-            } catch (ex: java.lang.Exception) {
-                ex.printStackTrace()
-                false
-            }
-        }
-
-        @Suppress("unused")
-        private fun prefsGetByKey(key: String): Any? {
-            if (prefs == null) {
-                return null
-            }
-
-            return prefs!!.all[key]
-        }
-
-        @Suppress("unused")
-        private fun prefsCleanKey(key: String): Boolean {
-            if (prefs == null) {
-                return false
-            }
-
-            return try {
-                with(prefs!!.edit())
-                {
-                    remove(key).apply()
-                }
-                true
-            } catch (ex: java.lang.Exception) {
-                ex.printStackTrace()
-                false
-            }
-        }
-
-        fun prefsPutInt(key: String, value: Int): Boolean {
-            if (prefs == null) {
-                return false
-            }
-
-            return try {
-                with(prefs!!.edit())
-                {
-                    putInt(key, value).apply()
-                }
-                true
-            } catch (ex: java.lang.Exception) {
-                ex.printStackTrace()
-                false
-            }
-        }
-
-        fun prefsPutBoolean(key: String, value: Boolean): Boolean {
-            if (prefs == null) {
-                return false
-            }
-
-            return try {
-                with(prefs!!.edit())
-                {
-                    putBoolean(key, value).apply()
-                }
-                true
-            } catch (ex: java.lang.Exception) {
-                ex.printStackTrace()
-                false
-            }
-        }
-
-        fun prefsPutString(key: String, value: String): Boolean {
-            if (prefs == null) {
-                return false
-            }
-
-            return try {
-                with(prefs!!.edit())
-                {
-                    putString(key, value).apply()
-                }
-                true
-            } catch (ex: java.lang.Exception) {
-                ex.printStackTrace()
-                false
-            }
-        }
-
-        fun prefsPutStringSet(key: String, value: Set<String>): Boolean {
-            if (prefs == null) {
-                return false
-            }
-
-            return try {
-                with(prefs!!.edit())
-                {
-                    putStringSet(key, value).apply()
-                }
-                true
-            } catch (ex: java.lang.Exception) {
-                ex.printStackTrace()
-                false
-            }
-        }
-
-        fun prefsGetStringSet(key: String, value: ArrayList<String>): Set<String>? {
-            if (prefs == null) {
-                return value.toSet()
-            }
-
-            return try {
-                prefs!!.getStringSet(key, value.toSet())
-            } catch (ex: java.lang.Exception) {
-                value.toSet()
-            }
-        }
-
-        fun prefsGetString(p: Preference): String {
-            return privPrefsGetString(p.key, p.defaultValue.toString())
-        }
-
-        private fun privPrefsGetString(key: String, defValue: String): String {
-            if (prefs == null) {
-                return defValue
-            }
-
-            return try {
-                prefs!!.getString(key, defValue) ?: defValue
-            } catch (ex: java.lang.Exception) {
-                defValue
-            }
-        }
-
-        fun prefsGetInt(p: Preference): Int {
-            return prefsGetInt(p.key, p.defaultValue as Int)
-        }
-
-        private fun prefsGetInt(key: String, defValue: Int): Int {
-            if (prefs == null) {
-                return defValue
-            }
-
-            return try {
-                prefs!!.getInt(key, defValue)
-            } catch (ex: java.lang.Exception) {
-                return try {
-                    prefs!!.getString(key, defValue.toString())?.toInt() ?: defValue
-                } catch (ex: java.lang.Exception) {
-                    return defValue
-                }
-            }
-        }
-
-        fun prefsGetLong(p: Preference): Long {
-            return prefsGetLong(p.key, p.defaultValue as Long)
-        }
-
-        private fun prefsGetLong(key: String, defValue: Long): Long {
-            if (prefs == null) {
-                return defValue
-            }
-
-            return try {
-                prefs!!.getLong(key, defValue)
-            } catch (ex: java.lang.Exception) {
-                return try {
-                    prefs!!.getString(key, defValue.toString())?.toLong() ?: defValue
-                } catch (ex: java.lang.Exception) {
-                    return defValue
-                }
-            }
-        }
-
-        fun prefsGetFloat(p: Preference): Float {
-            return prefsGetFloat(p.key, p.defaultValue as Float)
-        }
-
-        private fun prefsGetFloat(key: String, defValue: Float): Float {
-            if (prefs == null) {
-                return defValue
-            }
-
-            return try {
-                prefs!!.getFloat(key, defValue)
-            } catch (ex: java.lang.Exception) {
-                return try {
-                    prefs!!.getString(key, defValue.toString())?.toFloat() ?: defValue
-                } catch (ex: java.lang.Exception) {
-                    return defValue
-                }
-            }
-        }
-
-        fun prefsGetBoolean(p: Preference): Boolean {
-            return privPrefsGetBoolean(p.key, p.defaultValue as Boolean)
-        }
-
-        private fun privPrefsGetBoolean(key: String, defValue: Boolean): Boolean {
-            if (prefs == null) {
-                return defValue
-            }
-
-            return try {
-                prefs!!.getBoolean(key, defValue)
-            } catch (ex: java.lang.Exception) {
-                return try {
-                    prefs!!.getString(key, defValue.toString())?.toBoolean() ?: defValue
-                } catch (ex: java.lang.Exception) {
-                    return defValue
-                }
-            }
-        }
-        //endregion PREFERENCES
-
         fun getFiles(directoryPath: String): ArrayList<String>? {
             val filesArrayList = ArrayList<String>()
             val f = File(directoryPath)
 
             f.mkdirs()
             val files = f.listFiles()
-            if (files == null || files.isEmpty())
-                return null
+            if (files == null || files.isEmpty()) return null
             else {
-                files
-                    .filter { it.name.endsWith(".json") }
-                    .mapTo(filesArrayList) { it.name }
+                files.filter { it.name.endsWith(".json") }.mapTo(filesArrayList) { it.name }
             }
 
             return filesArrayList
@@ -1893,72 +1312,6 @@ class Statics {
 
             return jsonStr
         }
-
-        // region ImageControl CONF
-        val useImageControl: Boolean
-            get() {
-                return prefsGetBoolean(Preference.useImageControl)
-            }
-
-        val wsIcUrl: String //"https://dev.dacosys.com/Milestone11/ic/s1/service.php"
-            get() {
-                return prefsGetString(Preference.icWsServer)
-            }
-
-        val wsIcNamespace: String  //"https://dev.dacosys.com/Milestone11/ic/s1"
-            get() {
-                return prefsGetString(Preference.icWsNamespace)
-            }
-
-        val wsIcProxy: String
-            get() {
-                return prefsGetString(Preference.icWsProxy)
-            }
-
-        val wsIcProxyPort: Int
-            get() {
-                return prefsGetInt(Preference.icWsProxyPort)
-            }
-
-        val wsIcUseProxy: Boolean
-            get() {
-                return prefsGetBoolean(Preference.icWsUseProxy)
-            }
-
-        val wsIcProxyUser: String
-            get() {
-                return prefsGetString(Preference.icWsProxyUser)
-            }
-
-        val wsIcProxyPass: String
-            get() {
-                return prefsGetString(Preference.icWsProxyPass)
-            }
-
-        val icUser: String
-            get() {
-                return prefsGetString(Preference.icUser)
-            }
-
-        val icPass: String
-            get() {
-                return prefsGetString(Preference.icPass)
-            }
-
-        val wsIcUser: String
-            get() {
-                return prefsGetString(Preference.icWsUser)
-            }
-
-        val wsIcPass: String
-            get() {
-                return prefsGetString(Preference.icWsPass)
-            }
-
-        val maxHeightOrWidth: Int
-            get() {
-                return prefsGetInt(Preference.icPhotoMaxHeightOrWidth)
-            }
         // endregion
     }
 }

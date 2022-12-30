@@ -20,7 +20,7 @@ import org.parceler.Parcels
  * Use the [CollectorTypeSpinnerFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class CollectorTypeSpinnerFragment : androidx.fragment.app.Fragment() {
+class CollectorTypeSpinnerFragment : Fragment() {
     private var allCollectorType: ArrayList<CollectorType>? = ArrayList()
         set(value) {
             field = value

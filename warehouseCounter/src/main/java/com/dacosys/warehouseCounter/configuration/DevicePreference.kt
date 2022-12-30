@@ -11,7 +11,7 @@ import android.util.AttributeSet
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.preference.ListPreference
-import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 
 /**
  * Created by Agustin on 16/01/2017.
@@ -34,10 +34,8 @@ class DevicePreference
         try {
             //action to provide entry data in char sequence array for list
             val allCollector = getAll()
-            if (ActivityCompat.checkSelfPermission(
-                    Statics.WarehouseCounter.getContext(),
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) == PackageManager.PERMISSION_GRANTED
+            if (ActivityCompat.checkSelfPermission(context(),
+                    Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
             ) {
                 allDescription = allCollector.indices.map { allCollector[it].name }
             }
@@ -70,13 +68,10 @@ class DevicePreference
     private fun getAll(): ArrayList<BluetoothDevice> {
         val itemArray: ArrayList<BluetoothDevice> = ArrayList()
         try {
-            val bluetoothManager = Statics.WarehouseCounter.getContext()
-                .getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+            val bluetoothManager = context().getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
             val mBluetoothAdapter = bluetoothManager.adapter
-            if (ActivityCompat.checkSelfPermission(
-                    Statics.WarehouseCounter.getContext(),
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) == PackageManager.PERMISSION_GRANTED
+            if (ActivityCompat.checkSelfPermission(context(),
+                    Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
             ) {
                 val mPairedDevices = mBluetoothAdapter?.bondedDevices
                 if (mPairedDevices != null && mPairedDevices.size > 0) {

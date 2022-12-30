@@ -23,10 +23,11 @@ import androidx.core.graphics.BlendModeCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
 import com.dacosys.warehouseCounter.Statics.Companion.writeToFile
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.OutboxActivityBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.log.`object`.Log
-import com.dacosys.warehouseCounter.misc.Preference
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.ERROR
@@ -37,16 +38,14 @@ import com.dacosys.warehouseCounter.orderRequest.`object`.OrderRequestType
 import com.dacosys.warehouseCounter.orderRequest.activities.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.orderRequest.dbHelper.OrderRequestAdapter
 import com.dacosys.warehouseCounter.orderRequest.dbHelper.OrderRequestAdapter.Companion.getPrefVisibleStatus
+import com.dacosys.warehouseCounter.retrofit.functions.SendCompletedOrder
 import com.dacosys.warehouseCounter.sync.ProgressStatus
-import com.dacosys.warehouseCounter.sync.SendCompletedOrderRequest
 import org.parceler.Parcels
 import java.io.File
 import java.io.UnsupportedEncodingException
 import kotlin.concurrent.thread
 
-class OutboxActivity :
-    AppCompatActivity(),
-    SendCompletedOrderRequest.TaskSendOrderRequestEnded {
+class OutboxActivity : AppCompatActivity(), SendCompletedOrder.TaskSendOrderRequestEnded {
 
     private var isListViewFilling = false
     private var multiSelect = true
@@ -80,14 +79,10 @@ class OutboxActivity :
         savedInstanceState.putString("title", title.toString())
         savedInstanceState.putBoolean("multiSelect", multiSelect)
         if (arrayAdapter != null) {
-            savedInstanceState.putParcelableArrayList(
-                "completeList",
-                (arrayAdapter ?: return).getAll()
-            )
-            savedInstanceState.putIntegerArrayList(
-                "checkedIdArray",
-                arrayAdapter!!.getAllCheckedAsInt()
-            )
+            savedInstanceState.putParcelableArrayList("completeList",
+                (arrayAdapter ?: return).getAll())
+            savedInstanceState.putIntegerArrayList("checkedIdArray",
+                arrayAdapter!!.getAllCheckedAsInt())
             savedInstanceState.putParcelable("lastSelected", (arrayAdapter ?: return).currentItem())
             savedInstanceState.putInt("firstVisiblePos", (arrayAdapter ?: return).firstVisiblePos())
         }
@@ -110,9 +105,7 @@ class OutboxActivity :
 
         //If a layout container, iterate over children and seed recursion.
         if (view is ViewGroup) {
-            (0 until view.childCount)
-                .map { view.getChildAt(it) }
-                .forEach { setupUI(it) }
+            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
         }
     }
 
@@ -180,16 +173,11 @@ class OutboxActivity :
 
     private fun showDetail() {
         if (arrayAdapter != null && arrayAdapter!!.currentItem() != null) {
-            val intent = Intent(
-                Statics.WarehouseCounter.getContext(),
-                OrderRequestDetailActivity::class.java
-            )
+            val intent = Intent(context(), OrderRequestDetailActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-            intent.putExtra(
-                "orderRequest",
-                Parcels.wrap<OrderRequest>(arrayAdapter!!.currentItem())
-            )
+            intent.putExtra("orderRequest",
+                Parcels.wrap<OrderRequest>(arrayAdapter!!.currentItem()))
 
             // Valid content
             intent.putParcelableArrayListExtra("orcArray", arrayAdapter!!.currentItem()!!.content)
@@ -207,13 +195,11 @@ class OutboxActivity :
 
         val alert = AlertDialog.Builder(this)
         alert.setTitle(getString(R.string.send_counts))
-        alert.setMessage(
-            if (toSend.count() > 1) {
-                getString(R.string.do_you_want_to_send_the_selected_counts)
-            } else {
-                getString(R.string.do_you_want_to_send_the_selected_count)
-            }
-        )
+        alert.setMessage(if (toSend.count() > 1) {
+            getString(R.string.do_you_want_to_send_the_selected_counts)
+        } else {
+            getString(R.string.do_you_want_to_send_the_selected_count)
+        })
         alert.setNegativeButton(R.string.cancel, null)
         alert.setPositiveButton(R.string.ok) { _, _ ->
             sendSelected(toSend)
@@ -225,7 +211,7 @@ class OutboxActivity :
     private fun sendSelected(orArray: ArrayList<OrderRequest>) {
         try {
             thread {
-                val task = SendCompletedOrderRequest()
+                val task = SendCompletedOrder()
                 task.addParams(this, orArray)
                 task.execute()
             }
@@ -251,16 +237,15 @@ class OutboxActivity :
             }
         }
 
-        val msg =
-            when {
-                toReset.isNotEmpty() && toRemove.isNotEmpty() -> getString(R.string.do_you_want_to_delete_or_reset_the_selected_counts)
-                else -> when {
-                    toReset.count() > 1 -> getString(R.string.do_you_want_to_reset_the_selected_counts)
-                    toRemove.count() > 1 -> getString(R.string.do_you_want_to_delete_the_selected_counts)
-                    toReset.count() == 1 -> getString(R.string.do_you_want_to_reset_the_selected_count)
-                    else -> getString(R.string.do_you_want_to_delete_the_selected_count)
-                }
+        val msg = when {
+            toReset.isNotEmpty() && toRemove.isNotEmpty() -> getString(R.string.do_you_want_to_delete_or_reset_the_selected_counts)
+            else -> when {
+                toReset.count() > 1 -> getString(R.string.do_you_want_to_reset_the_selected_counts)
+                toRemove.count() > 1 -> getString(R.string.do_you_want_to_delete_the_selected_counts)
+                toReset.count() == 1 -> getString(R.string.do_you_want_to_reset_the_selected_count)
+                else -> getString(R.string.do_you_want_to_delete_the_selected_count)
             }
+        }
 
         val alert = AlertDialog.Builder(this)
         alert.setTitle(getString(R.string.cancel_count))
@@ -292,11 +277,9 @@ class OutboxActivity :
         }
 
         if (!isOk) {
-            makeText(
-                binding.root,
+            makeText(binding.root,
                 getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
-                ERROR
-            )
+                ERROR)
         }
 
         thread { fillAdapter(ArrayList()) }
@@ -313,9 +296,7 @@ class OutboxActivity :
 
             for (orderRequestContent in orderRequest.content) {
                 if (orderRequestContent.qty != null) {
-                    if (orderRequestContent.qty!!.qtyRequested == null ||
-                        orderRequestContent.qty!!.qtyRequested == 0.toDouble()
-                    ) {
+                    if (orderRequestContent.qty!!.qtyRequested == null || orderRequestContent.qty!!.qtyRequested == 0.toDouble()) {
                         orcToRemove.add(orderRequestContent)
                         continue
                     }
@@ -331,19 +312,13 @@ class OutboxActivity :
                 orJson = OrderRequest.toJson(orderRequest)
                 orderRequest.filename.substringAfterLast('/')
 
-                if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
-                        this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    )
+                if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(this,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 ) {
-                    write(
-                        orFileName,
-                        orJson
-                    )
+                    write(orFileName, orJson)
                 } else {
-                    requestPermissions(
-                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                        REQUEST_EXTERNAL_STORAGE
-                    )
+                    requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                        REQUEST_EXTERNAL_STORAGE)
                 }
             } catch (e: UnsupportedEncodingException) {
                 e.printStackTrace()
@@ -358,11 +333,9 @@ class OutboxActivity :
         }
 
         if (!isOk) {
-            makeText(
-                binding.root,
+            makeText(binding.root,
                 getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
-                ERROR
-            )
+                ERROR)
         }
 
         thread { fillAdapter(ArrayList()) }
@@ -397,11 +370,9 @@ class OutboxActivity :
         if (!temp.any()) {
             temp = getCompletedOrderRequests()
             if (temp.isEmpty()) {
-                makeText(
-                    binding.root,
+                makeText(binding.root,
                     this.getString(R.string.there_are_no_completed_counts),
-                    SnackBarType.INFO
-                )
+                    SnackBarType.INFO)
             }
         }
         completeList = temp
@@ -415,20 +386,16 @@ class OutboxActivity :
                     firstVisiblePos = (arrayAdapter ?: return@runOnUiThread).firstVisiblePos()
                 }
 
-                arrayAdapter = OrderRequestAdapter(
-                    activity = this,
+                arrayAdapter = OrderRequestAdapter(activity = this,
                     resource = R.layout.order_request_row,
                     itemList = completeList,
                     suggestedList = completeList,
                     checkedIdArray = checkedIdArray,
                     listView = binding.itemListView,
-                    multiSelect = multiSelect
-                )
+                    multiSelect = multiSelect)
 
-                arrayAdapter?.refreshListeners(
-                    checkedChangedListener = null,
-                    dataSetChangedListener = null
-                )
+                arrayAdapter?.refreshListeners(checkedChangedListener = null,
+                    dataSetChangedListener = null)
 
                 while (binding.itemListView.adapter == null) {
                     // Horrible wait for full load
@@ -459,14 +426,8 @@ class OutboxActivity :
 
         // Opciones de visibilidad del menú
         for (i in OrderRequestType.getAll()) {
-            menu.add(
-                0,
-                i.id.toInt(),
-                i.id.toInt(),
-                i.description
-            )
-                .setChecked(getPrefVisibleStatus().contains(i))
-                .isCheckable = true
+            menu.add(0, i.id.toInt(), i.id.toInt(), i.description)
+                .setChecked(getPrefVisibleStatus().contains(i)).isCheckable = true
         }
 
         //region Icon colors
@@ -485,16 +446,10 @@ class OutboxActivity :
         //endregion Icon colors
 
         for (i in OrderRequestType.getAll()) {
-            val icon = ResourcesCompat.getDrawable(
-                Statics.WarehouseCounter.getContext().resources,
-                R.drawable.ic_lens,
-                null
-            )
+            val icon = ResourcesCompat.getDrawable(context().resources, R.drawable.ic_lens, null)
             icon?.mutate()?.colorFilter =
-                BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                    colors[i.id.toInt() - 1],
-                    BlendModeCompat.SRC_IN
-                )
+                BlendModeColorFilterCompat.createBlendModeColorFilterCompat(colors[i.id.toInt() - 1],
+                    BlendModeCompat.SRC_IN)
 
             val item = menu.getItem(i.id.toInt() - 1)
             item.icon = icon
@@ -502,8 +457,7 @@ class OutboxActivity :
             // Keep the popup menu open
             item.setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW)
             item.actionView = View(this)
-            item.setOnActionExpandListener(object :
-                MenuItem.OnActionExpandListener {
+            item.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
                 override fun onMenuItemActionExpand(item: MenuItem): Boolean {
                     return false
                 }
@@ -535,36 +489,41 @@ class OutboxActivity :
         val visibleStatus = arrayAdapter!!.getVisibleStatus()
 
         when (id) {
-            OrderRequestType.deliveryAudit.id.toInt() ->
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.deliveryAudit)) {
-                    arrayAdapter!!.addVisibleStatus(OrderRequestType.deliveryAudit)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.deliveryAudit)) {
-                    arrayAdapter!!.removeVisibleStatus(OrderRequestType.deliveryAudit)
-                }
-            OrderRequestType.prepareOrder.id.toInt() ->
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.prepareOrder)) {
-                    arrayAdapter!!.addVisibleStatus(OrderRequestType.prepareOrder)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.prepareOrder)) {
-                    arrayAdapter!!.removeVisibleStatus(OrderRequestType.prepareOrder)
-                }
-            OrderRequestType.receptionAudit.id.toInt() ->
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.receptionAudit)) {
-                    arrayAdapter!!.addVisibleStatus(OrderRequestType.receptionAudit)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.receptionAudit)) {
-                    arrayAdapter!!.removeVisibleStatus(OrderRequestType.receptionAudit)
-                }
-            OrderRequestType.stockAudit.id.toInt() ->
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.stockAudit)) {
-                    arrayAdapter!!.addVisibleStatus(OrderRequestType.stockAudit)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAudit)) {
-                    arrayAdapter!!.removeVisibleStatus(OrderRequestType.stockAudit)
-                }
-            OrderRequestType.stockAuditFromDevice.id.toInt() ->
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.stockAuditFromDevice)) {
-                    arrayAdapter!!.addVisibleStatus(OrderRequestType.stockAuditFromDevice)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAuditFromDevice)) {
-                    arrayAdapter!!.removeVisibleStatus(OrderRequestType.stockAuditFromDevice)
-                }
+            OrderRequestType.deliveryAudit.id.toInt() -> if (item.isChecked && !visibleStatus.contains(
+                    OrderRequestType.deliveryAudit)
+            ) {
+                arrayAdapter!!.addVisibleStatus(OrderRequestType.deliveryAudit)
+            } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.deliveryAudit)) {
+                arrayAdapter!!.removeVisibleStatus(OrderRequestType.deliveryAudit)
+            }
+            OrderRequestType.prepareOrder.id.toInt() -> if (item.isChecked && !visibleStatus.contains(
+                    OrderRequestType.prepareOrder)
+            ) {
+                arrayAdapter!!.addVisibleStatus(OrderRequestType.prepareOrder)
+            } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.prepareOrder)) {
+                arrayAdapter!!.removeVisibleStatus(OrderRequestType.prepareOrder)
+            }
+            OrderRequestType.receptionAudit.id.toInt() -> if (item.isChecked && !visibleStatus.contains(
+                    OrderRequestType.receptionAudit)
+            ) {
+                arrayAdapter!!.addVisibleStatus(OrderRequestType.receptionAudit)
+            } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.receptionAudit)) {
+                arrayAdapter!!.removeVisibleStatus(OrderRequestType.receptionAudit)
+            }
+            OrderRequestType.stockAudit.id.toInt() -> if (item.isChecked && !visibleStatus.contains(
+                    OrderRequestType.stockAudit)
+            ) {
+                arrayAdapter!!.addVisibleStatus(OrderRequestType.stockAudit)
+            } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAudit)) {
+                arrayAdapter!!.removeVisibleStatus(OrderRequestType.stockAudit)
+            }
+            OrderRequestType.stockAuditFromDevice.id.toInt() -> if (item.isChecked && !visibleStatus.contains(
+                    OrderRequestType.stockAuditFromDevice)
+            ) {
+                arrayAdapter!!.addVisibleStatus(OrderRequestType.stockAuditFromDevice)
+            } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAuditFromDevice)) {
+                arrayAdapter!!.removeVisibleStatus(OrderRequestType.stockAuditFromDevice)
+            }
             else -> return super.onOptionsItemSelected(item)
         }
 
@@ -573,7 +532,7 @@ class OutboxActivity :
         for (i in visibleStatus) {
             set.add(i.id.toString())
         }
-        Statics.prefsPutStringSet(Preference.orderRequestVisibleStatus.key, set)
+        settingViewModel().orderRequestVisibleStatus = set
 
         return true
     }
@@ -587,10 +546,9 @@ class OutboxActivity :
             REQUEST_EXTERNAL_STORAGE -> {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    makeText(
-                        binding.root,
-                        getString(R.string.cannot_write_to_external_storage), ERROR
-                    )
+                    makeText(binding.root,
+                        getString(R.string.cannot_write_to_external_storage),
+                        ERROR)
                 } else {
                     write(orFileName, orJson)
                 }

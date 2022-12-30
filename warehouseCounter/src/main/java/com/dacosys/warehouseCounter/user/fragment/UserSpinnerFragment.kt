@@ -254,7 +254,7 @@ class UserSpinnerFragment : Fragment() {
 
         allUser = x.select()
 
-        if ((allUser == null || !allUser!!.any()) && Statics.superDemoMode) {
+        if (!allUser!!.any() && Statics.superDemoMode) {
             // En modo desarrollo o para mostrar sin datos reales
             // y si no hay usuarios agregados, agrego
             // DATOS FALSOS de 5 items de fantasía
@@ -265,20 +265,14 @@ class UserSpinnerFragment : Fragment() {
             fantasyNames.add("arturo")
             fantasyNames.add("agustin")
             for (i in 1..5) {
-                User.add(
-                    fantasyNames[i - 1],
-                    true,
-                    "81dc9bdb52d04dc20036dbd8313ed055"
-                ) //1234
+                User.add(fantasyNames[i - 1], true, "81dc9bdb52d04dc20036dbd8313ed055") //1234
             }
             allUser = x.select()
         }
 
         allUser!!.sortWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
-        val spinnerArrayAdapter = UserAdapter(
-            resource = R.layout.custom_spinner_dropdown_item,
-            user = allUser!!
-        )
+        val spinnerArrayAdapter =
+            UserAdapter(resource = R.layout.custom_spinner_dropdown_item, user = allUser!!)
 
         activity?.runOnUiThread {
             binding.fragmentSpinner.adapter = spinnerArrayAdapter

@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.misc.Preference
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.UTCDataTime
 import java.io.*
 import java.text.SimpleDateFormat
@@ -35,17 +35,13 @@ class ErrorLog {
 
         private fun verifyPermissions(activity: AppCompatActivity) {
             // Check if we have write permission
-            val storagePermission = ActivityCompat.checkSelfPermission(
-                activity,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
+            val storagePermission = ActivityCompat.checkSelfPermission(activity,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
             if (storagePermission != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                    activity,
+                ActivityCompat.requestPermissions(activity,
                     PERMISSIONS_STORAGE,
-                    REQUEST_EXTERNAL_STORAGE
-                )
+                    REQUEST_EXTERNAL_STORAGE)
             } else {
                 reallyWriteLog()
             }
@@ -101,7 +97,7 @@ class ErrorLog {
         private fun reallyWriteLog() {
             Log.e(tClassName, tMsg)
 
-            val writeLog = Statics.prefsGetBoolean(Preference.registryError)
+            val writeLog = settingViewModel().registryError
             if (writeLog) {
                 val logFileName = getFileName()
                 val logPath = errorLogPath

@@ -23,7 +23,8 @@ import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.Statics.Companion.prefsGetString
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.configuration.SettingsActivity
 import com.dacosys.warehouseCounter.databinding.PrintLabelFragmentBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
@@ -31,7 +32,6 @@ import com.dacosys.warehouseCounter.item.`object`.Item
 import com.dacosys.warehouseCounter.item.dbHelper.ItemDbHelper
 import com.dacosys.warehouseCounter.itemCategory.`object`.ItemCategory
 import com.dacosys.warehouseCounter.misc.CounterHandler
-import com.dacosys.warehouseCounter.misc.Preference
 import com.dacosys.warehouseCounter.misc.UTCDataTime
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
@@ -100,10 +100,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     }
 
     private fun sendMessage() {
-        fragmentListener?.onFilterChanged(
-            printer = printer,
-            qty = qty
-        )
+        fragmentListener?.onFilterChanged(printer = printer, qty = qty)
     }
 
     private fun saveSharedPreferences() {}
@@ -156,10 +153,8 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
     override fun run() {
         try {
-            if (ActivityCompat.checkSelfPermission(
-                    Statics.WarehouseCounter.getContext(),
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) != PackageManager.PERMISSION_GRANTED
+            if (ActivityCompat.checkSelfPermission(context(),
+                    Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
             ) {
                 // here to request the missing permissions, and then overriding
                 //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
@@ -206,25 +201,21 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
     private fun initializePrinter() {
         if (Statics.printerBluetoothDevice != null) {
-            val bluetoothManager = Statics.WarehouseCounter.getContext()
-                .getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
+            val bluetoothManager =
+                context().getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
             val mBluetoothAdapter = bluetoothManager.adapter
             if (mBluetoothAdapter == null) {
-                makeText(
-                    binding.root,
+                makeText(binding.root,
                     getString(R.string.there_are_no_bluetooth_devices),
-                    SnackBarType.ERROR
-                )
+                    SnackBarType.ERROR)
             } else {
                 if (!mBluetoothAdapter.isEnabled) {
                     if (!rejectNewInstances) {
                         rejectNewInstances = true
                         val enablePrinter = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                         enablePrinter.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        if (ActivityCompat.checkSelfPermission(
-                                requireActivity(),
-                                Manifest.permission.BLUETOOTH_CONNECT
-                            ) != PackageManager.PERMISSION_GRANTED
+                        if (ActivityCompat.checkSelfPermission(requireActivity(),
+                                Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
                         ) {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                                 requestConnectPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
@@ -285,15 +276,12 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         binding.printerTextView.setOnClickListener { configApp() }
 
         // Esta clase controla el comportamiento de los botones (+) y (-)
-        ch = CounterHandler.Builder()
-            .incrementalView(binding.moreButton)
-            .decrementalView(binding.lessButton)
-            .minRange(1.0) // cant go any less than -50
+        ch = CounterHandler.Builder().incrementalView(binding.moreButton)
+            .decrementalView(binding.lessButton).minRange(1.0) // cant go any less than -50
             .maxRange(100.0) // cant go any further than 50
             .isCycle(true) // 49,50,-50,-49 and so on
             .counterDelay(50) // speed of counter
-            .startNumber(qty.toDouble())
-            .counterStep(1)  // steps e.g. 0,2,4,6...
+            .startNumber(qty.toDouble()).counterStep(1)  // steps e.g. 0,2,4,6...
             .listener(this) // to listen counter results and show them in app
             .build()
 
@@ -349,19 +337,15 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
         binding.printButton.setOnClickListener {
             if (printer.isEmpty()) {
-                makeText(
-                    binding.root,
+                makeText(binding.root,
                     getString(R.string.you_must_select_a_printer),
-                    SnackBarType.ERROR
-                )
+                    SnackBarType.ERROR)
                 return@setOnClickListener
             }
             if (qty <= 0) {
-                makeText(
-                    binding.root,
+                makeText(binding.root,
                     getString(R.string.you_must_select_the_amount_of_labels_to_print),
-                    SnackBarType.ERROR
-                )
+                    SnackBarType.ERROR)
                 return@setOnClickListener
             }
 
@@ -374,7 +358,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     }
 
     private fun configApp() {
-        val realPass = prefsGetString(Preference.confPassword)
+        val realPass = settingViewModel().confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
@@ -420,10 +404,8 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = prefsGetString(Preference.confPassword)
+        val realPass = settingViewModel().confPassword
         if (password == realPass) {
-            Statics.setDebugConfigValues()
-
             if (!rejectNewInstances) {
                 rejectNewInstances = true
 
@@ -433,19 +415,12 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             }
             isReturnedFromSettings = true
         } else {
-            makeText(
-                binding.root,
-                getString(R.string.invalid_password),
-                SnackBarType.ERROR
-            )
+            makeText(binding.root, getString(R.string.invalid_password), SnackBarType.ERROR)
         }
     }
 
     private fun requestPrint() {
-        fragmentListener?.onPrintRequested(
-            printer = printer,
-            qty = qty
-        )
+        fragmentListener?.onPrintRequested(printer = printer, qty = qty)
     }
 
     fun setListener(listener: FragmentListener) {
@@ -461,11 +436,9 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
     fun printItemById(itemIdArray: ArrayList<Long>) {
         if (itemIdArray.isEmpty()) {
-            makeText(
-                binding.root,
+            makeText(binding.root,
                 getString(R.string.you_must_select_at_least_one_item),
-                SnackBarType.ERROR
-            )
+                SnackBarType.ERROR)
             return
         }
 
@@ -484,20 +457,16 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
     private fun printItem(items: ArrayList<Item>) {
         if (items.isEmpty()) {
-            makeText(
-                binding.root,
+            makeText(binding.root,
                 getString(R.string.you_must_select_at_least_one_item),
-                SnackBarType.ERROR
-            )
+                SnackBarType.ERROR)
             return
         }
 
         if (mBluetoothDevice == null) {
-            makeText(
-                binding.root,
+            makeText(binding.root,
                 getString(R.string.there_is_no_selected_printer),
-                SnackBarType.ERROR
-            )
+                SnackBarType.ERROR)
             return
         }
 
@@ -516,11 +485,9 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                     }
                     os.flush()
                 } catch (e: Exception) {
-                    ErrorLog.writeLog(
-                        requireActivity(),
+                    ErrorLog.writeLog(requireActivity(),
                         this::class.java.simpleName,
-                        "${getString(R.string.exception_error)}: " + e.message
-                    )
+                        "${getString(R.string.exception_error)}: " + e.message)
                 }
             }
         }
@@ -557,30 +524,18 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         }
 
         val template = getString(R.string.wc_barcode_label_default)
-        return String.format(
-            template,
+        return String.format(template,
             ean,
             normalizeStrings(description),
             normalizeStrings(itemCategoryStr),
             normalizeStrings(price),
-            UTCDataTime.getUTCDateTimeAsString()
-        )
+            UTCDataTime.getUTCDateTimeAsString())
     }
 
     private fun normalizeStrings(name: String): String {
-        return name
-            .replace('á', 'a')
-            .replace('é', 'e')
-            .replace('í', 'i')
-            .replace('ó', 'o')
-            .replace('ú', 'u')
-            .replace('ñ', 'n')
-            .replace('Á', 'A')
-            .replace('É', 'E')
-            .replace('Í', 'I')
-            .replace('Ó', 'O')
-            .replace('Ú', 'U')
-            .replace('Ñ', 'N')
+        return name.replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o')
+            .replace('ú', 'u').replace('ñ', 'n').replace('Á', 'A').replace('É', 'E')
+            .replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U').replace('Ñ', 'N')
     }
 
     private fun setPrinterText() {
@@ -640,10 +595,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             val integerPart: String
             if (validText.contains(decimalSeparator)) {
                 decimalPart =
-                    validText.substring(
-                        validText.indexOf(decimalSeparator) + 1,
-                        validText.length
-                    )
+                    validText.substring(validText.indexOf(decimalSeparator) + 1, validText.length)
                 integerPart = validText.substring(0, validText.indexOf(decimalSeparator))
             } else {
                 integerPart = validText
@@ -660,13 +612,8 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             // la cantidad permitida de decimales.
             val result = if (maxDecimalPlaces == 0) {
                 integerPart
-            } else
-                integerPart +
-                        decimalSeparator +
-                        decimalPart.substring(
-                            0,
-                            if (decimalPart.length > maxDecimalPlaces) maxDecimalPlaces else decimalPart.length
-                        )
+            } else integerPart + decimalSeparator + decimalPart.substring(0,
+                if (decimalPart.length > maxDecimalPlaces) maxDecimalPlaces else decimalPart.length)
 
             // Devolver sólo si son valores positivos diferentes a los de originales.
             // NULL si no hay que hacer cambios sobre el texto original.
@@ -728,11 +675,9 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         class ConnectHandler(private val activity: PrintLabelFragment) :
             Handler(Looper.getMainLooper()) {
             override fun handleMessage(msg: Message) {
-                makeText(
-                    activity.binding.root,
+                makeText(activity.binding.root,
                     activity.getString(R.string.device_connected),
-                    SnackBarType.INFO
-                )
+                    SnackBarType.INFO)
             }
         }
     }

@@ -21,24 +21,27 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
+import com.dacosys.imageControl.dbHelper.ImageControlDbHelper
 import com.dacosys.warehouseCounter.Statics.Companion.appName
 import com.dacosys.warehouseCounter.Statics.Companion.closeKeyboard
-import com.dacosys.warehouseCounter.Statics.Companion.prefsGetString
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.configuration.QRConfigType.CREATOR.QRConfigApp
 import com.dacosys.warehouseCounter.configuration.QRConfigType.CREATOR.QRConfigClientAccount
 import com.dacosys.warehouseCounter.configuration.SettingsActivity
+import com.dacosys.warehouseCounter.dataBaseHelper.DataBaseHelper
 import com.dacosys.warehouseCounter.databinding.LoginActivityBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.Md5
-import com.dacosys.warehouseCounter.misc.Preference
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.misc.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.ERROR
+import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages
+import com.dacosys.warehouseCounter.retrofit.functions.GetDatabaseLocation
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.sync.DownloadDb
-import com.dacosys.warehouseCounter.sync.GetClientPackages
-import com.dacosys.warehouseCounter.sync.GetDatabaseLocation
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.user.`object`.User
 import com.dacosys.warehouseCounter.user.dbHelper.UserDbHelper
@@ -52,15 +55,10 @@ import org.parceler.Parcels
 import java.lang.ref.WeakReference
 import kotlin.concurrent.thread
 
-class LoginActivity :
-    AppCompatActivity(),
-    UserSpinnerFragment.OnItemSelectedListener,
-    UserSpinnerFragment.OnSpinnerFillListener,
-    Scanner.ScannerListener,
-    Statics.Companion.TaskSetupProxyEnded,
-    GetClientPackages.TaskGetPackagesEnded,
-    Statics.Companion.TaskConfigPanelEnded,
-    GetDatabaseLocation.TaskGetDatabaseLocationEnded,
+class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedListener,
+    UserSpinnerFragment.OnSpinnerFillListener, Scanner.ScannerListener,
+    Statics.Companion.TaskSetupProxyEnded, GetClientPackages.TaskGetPackagesEnded,
+    Statics.Companion.TaskConfigPanelEnded, GetDatabaseLocation.DatabaseLocationEnded,
     DownloadDb.DownloadDbTask {
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
@@ -90,14 +88,12 @@ class LoginActivity :
         if (status == ProgressStatus.finished) {
             if (result.isNotEmpty()) {
                 runOnUiThread {
-                    Statics.selectClientPackage(
-                        parentView = binding.root,
-                        weakAct = WeakReference(this),
+                    Statics.selectClientPackage(weakAct = WeakReference(this),
                         callback = this,
                         allPackage = result,
                         email = clientEmail,
-                        password = clientPassword
-                    )
+                        password = clientPassword,
+                        onEventData = { showSnackBar(it) })
                 }
             } else {
                 makeText(binding.root, msg, SnackBarType.INFO)
@@ -109,7 +105,7 @@ class LoginActivity :
         }
     }
 
-    override fun onTaskGetDatabaseLocationEnded(
+    override fun onDatabaseLocationEnded(
         status: ProgressStatus,
         timeFileUrl: String,
         dbFileUrl: String,
@@ -137,16 +133,18 @@ class LoginActivity :
             ProgressStatus.finished -> {
                 thread {
                     val sync = DownloadDb()
-                    sync.addParams(
-                        parentView = binding.root,
-                        callBack = this,
+                    sync.addParams(callBack = this,
                         timeFileUrl = timeFileUrl,
-                        dbFileUrl = dbFileUrl
-                    )
+                        dbFileUrl = dbFileUrl,
+                        onEventData = { showSnackBar(it) })
                     sync.execute()
                 }
             }
         }
+    }
+
+    private fun showSnackBar(it: SnackBarEventData) {
+        makeText(binding.root, it.text, it.snackBarType)
     }
 
     override fun onDownloadDbTask(downloadStatus: DownloadDb.DownloadStatus) {
@@ -203,12 +201,10 @@ class LoginActivity :
         installationCode: String,
     ) {
         if (status == ProgressStatus.finished) {
-            Statics.getConfig(
-                callback = this,
+            Statics.getConfig(callback = this,
                 email = email,
                 password = password,
-                installationCode = installationCode
-            )
+                installationCode = installationCode)
         }
     }
 
@@ -253,59 +249,34 @@ class LoginActivity :
         runOnUiThread {
             binding.loginImageView.setImageResource(R.drawable.ic_refresh)
             binding.loginImageView.background =
-                ResourcesCompat.getDrawable(
-                    resources,
-                    R.drawable.rounded_corner_button_gold,
-                    null
-                )
+                ResourcesCompat.getDrawable(resources, R.drawable.rounded_corner_button_gold, null)
             binding.loginImageView.contentDescription = getString(R.string.retry_connection)
-            binding.loginImageView.foregroundTintList = ColorStateList.valueOf(
-                ResourcesCompat.getColor(
-                    resources,
-                    R.color.black,
-                    null
-                )
-            )
+            binding.loginImageView.foregroundTintList =
+                ColorStateList.valueOf(ResourcesCompat.getColor(resources, R.color.black, null))
         }
     }
 
     private fun setWaitButton() {
         runOnUiThread {
             binding.loginImageView.setImageResource(R.drawable.ic_hourglass)
-            binding.loginImageView.background =
-                ResourcesCompat.getDrawable(
-                    resources,
-                    R.drawable.rounded_corner_button_steelblue,
-                    null
-                )
+            binding.loginImageView.background = ResourcesCompat.getDrawable(resources,
+                R.drawable.rounded_corner_button_steelblue,
+                null)
             binding.loginImageView.contentDescription = getString(R.string.connecting)
-            binding.loginImageView.foregroundTintList = ColorStateList.valueOf(
-                ResourcesCompat.getColor(
-                    resources,
-                    R.color.white,
-                    null
-                )
-            )
+            binding.loginImageView.foregroundTintList =
+                ColorStateList.valueOf(ResourcesCompat.getColor(resources, R.color.white, null))
         }
     }
 
     private fun setLoginButton() {
         runOnUiThread {
             binding.loginImageView.setImageResource(R.drawable.ic_check)
-            binding.loginImageView.background =
-                ResourcesCompat.getDrawable(
-                    resources,
-                    R.drawable.rounded_corner_button_seagreen,
-                    null
-                )
+            binding.loginImageView.background = ResourcesCompat.getDrawable(resources,
+                R.drawable.rounded_corner_button_seagreen,
+                null)
             binding.loginImageView.contentDescription = getString(R.string.sign_in)
-            binding.loginImageView.foregroundTintList = ColorStateList.valueOf(
-                ResourcesCompat.getColor(
-                    resources,
-                    R.color.cornsilk,
-                    null
-                )
-            )
+            binding.loginImageView.foregroundTintList =
+                ColorStateList.valueOf(ResourcesCompat.getColor(resources, R.color.cornsilk, null))
         }
     }
 
@@ -371,9 +342,7 @@ class LoginActivity :
 
         //If a layout container, iterate over children and seed recursion.
         if (view is ViewGroup) {
-            (0 until view.childCount)
-                .map { view.getChildAt(it) }
-                .forEach { setupUI(it) }
+            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
         }
     }
 
@@ -432,10 +401,7 @@ class LoginActivity :
 
         binding.passwordEditText.setText(password, TextView.BufferType.EDITABLE)
         binding.passwordEditText.setOnKeyListener { _, keyCode, keyEvent ->
-            if (keyEvent.action == KeyEvent.ACTION_UP &&
-                (keyCode == KeyEvent.KEYCODE_ENTER ||
-                        keyCode == KeyEvent.KEYCODE_DPAD_CENTER)
-            ) {
+            if (keyEvent.action == KeyEvent.ACTION_UP && (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 binding.loginImageView.performClick()
                 true
             } else {
@@ -513,14 +479,31 @@ class LoginActivity :
 
         setButton(ButtonStyle.BUSY)
 
-        if (Statics.urlPanel.isEmpty()) {
+        if (settingViewModel().urlPanel.isEmpty()) {
             makeText(binding.root, text = getString(R.string.server_is_not_configured), ERROR)
 
             setButton(ButtonStyle.REFRESH)
             attemptSync = false
         } else {
             try {
+                /* Des-inicializamos IC para evitar que se
+                   suban imágenes pendientes antes de loggearse.
+                   Escenario en el que el usuario ha vuelto a esta
+                   actividad después haber estado loggeado.
+                */
                 Statics.closeImageControl()
+
+                /////////////// BASE DE DATOS SQLITE ///////////////////
+                // Acá arranca la base de datos, si no existe se crea //
+                // Si existe una sesión previa se cierra.             //
+                DataBaseHelper.beginDataBase()
+
+                // Acá arranca la base de datos de ImageControl, si no existe se crea.
+                if (settingViewModel().useImageControl) {
+                    ImageControlDbHelper.beginDataBase()
+                }
+                ///////////// FIN INICIALIZACIÓN SQLITE ////////////////
+
                 initSync()
             } catch (ex: Exception) {
                 showProgressBar(false, "")
@@ -534,7 +517,7 @@ class LoginActivity :
     }
 
     private fun configApp() {
-        val realPass = prefsGetString(Preference.confPassword)
+        val realPass = settingViewModel().confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
@@ -580,15 +563,15 @@ class LoginActivity :
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = prefsGetString(Preference.confPassword)
+        val realPass = settingViewModel().confPassword
         if (password == realPass) {
-            Statics.setDebugConfigValues()
+            // TODO: Otro
+            // Statics.setDebugConfigValues()
 
             if (!rejectNewInstances) {
                 rejectNewInstances = true
 
-                val intent =
-                    Intent(Statics.WarehouseCounter.getContext(), SettingsActivity::class.java)
+                val intent = Intent(context(), SettingsActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                 startActivity(intent)
             }
@@ -612,10 +595,10 @@ class LoginActivity :
 
     private fun resize(image: Drawable): Drawable {
         val bitmap = (image as BitmapDrawable).bitmap
-        val bitmapResized = Bitmap.createScaledBitmap(
-            bitmap,
-            (bitmap.width * 0.5).toInt(), (bitmap.height * 0.5).toInt(), false
-        )
+        val bitmapResized = Bitmap.createScaledBitmap(bitmap,
+            (bitmap.width * 0.5).toInt(),
+            (bitmap.height * 0.5).toInt(),
+            false)
         return BitmapDrawable(resources, bitmapResized)
     }
 
@@ -679,16 +662,20 @@ class LoginActivity :
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+            this,
+            requestCode,
+            permissions,
+            grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (Statics.prefsGetBoolean(Preference.showScannedCode) && BuildConfig.DEBUG)
-            makeText(binding.root, scanCode, SnackBarType.INFO)
+        if (settingViewModel().showScannedCode && BuildConfig.DEBUG) makeText(binding.root,
+            scanCode,
+            SnackBarType.INFO)
 
         JotterListener.lockScanner(this, true)
 
@@ -713,11 +700,7 @@ class LoginActivity :
                         makeText(binding.root, getString(R.string.invalid_user), ERROR)
                     }
                 } else {
-                    makeText(
-                        binding.root,
-                        getString(R.string.invalid_code),
-                        ERROR
-                    )
+                    makeText(binding.root, getString(R.string.invalid_code), ERROR)
                 }
                 return
             }
@@ -732,11 +715,9 @@ class LoginActivity :
                         adb.setNegativeButton(R.string.cancel, null)
                         adb.setPositiveButton(R.string.accept) { _, _ ->
                             Statics.downloadDbRequired = true
-                            Statics.getConfigFromScannedCode(
-                                callback = this,
+                            Statics.getConfigFromScannedCode(callback = this,
                                 scanCode = scanCode,
-                                mode = QRConfigClientAccount
-                            )
+                                mode = QRConfigClientAccount)
                         }
                         adb.show()
                     } catch (ex: java.lang.Exception) {
@@ -746,26 +727,17 @@ class LoginActivity :
                 }
                 mainJson.has(appName) -> {
                     // APP CONFIGURATION
-                    Statics.getConfigFromScannedCode(
-                        callback = this,
+                    Statics.getConfigFromScannedCode(callback = this,
                         scanCode = scanCode,
-                        mode = QRConfigApp
-                    )
+                        mode = QRConfigApp)
                 }
                 else -> {
-                    makeText(
-                        binding.root,
-                        getString(R.string.invalid_code),
-                        ERROR
-                    )
+                    makeText(binding.root, getString(R.string.invalid_code), ERROR)
                 }
             }
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(
-                binding.root,
-                ex.message.toString(), ERROR
-            )
+            makeText(binding.root, ex.message.toString(), ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial
@@ -781,11 +753,11 @@ class LoginActivity :
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_login, menu)
 
-        if (!Statics.prefsGetBoolean(Preference.showConfButton)) {
+        if (!settingViewModel().showConfButton) {
             menu.removeItem(menu.findItem(R.id.action_settings).itemId)
         }
 
-        if (!Statics.isRfidRequired()) {
+        if (!settingViewModel().useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -844,10 +816,8 @@ class LoginActivity :
                 showProgressBar(false, "")
                 if (userSpinnerFragment!!.count < 1) {
                     setButton(ButtonStyle.REFRESH)
-                    Log.d(
-                        this::class.java.simpleName,
-                        getString(R.string.there_are_no_users_in_the_database)
-                    )
+                    Log.d(this::class.java.simpleName,
+                        getString(R.string.there_are_no_users_in_the_database))
                 } else {
                     setButton(ButtonStyle.READY)
                 }

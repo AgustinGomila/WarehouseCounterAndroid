@@ -20,9 +20,10 @@ import androidx.core.graphics.BlendModeCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.InboxActivityBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.misc.Preference
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.orderRequest.`object`.OrderRequest
@@ -60,14 +61,10 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         savedInstanceState.putString("title", title.toString())
         savedInstanceState.putBoolean("multiSelect", multiSelect)
         if (arrayAdapter != null) {
-            savedInstanceState.putParcelableArrayList(
-                "completeList",
-                (arrayAdapter ?: return).getAll()
-            )
-            savedInstanceState.putIntegerArrayList(
-                "checkedIdArray",
-                arrayAdapter!!.getAllCheckedAsInt()
-            )
+            savedInstanceState.putParcelableArrayList("completeList",
+                (arrayAdapter ?: return).getAll())
+            savedInstanceState.putIntegerArrayList("checkedIdArray",
+                arrayAdapter!!.getAllCheckedAsInt())
             savedInstanceState.putParcelable("lastSelected", (arrayAdapter ?: return).currentItem())
             savedInstanceState.putInt("firstVisiblePos", (arrayAdapter ?: return).firstVisiblePos())
         }
@@ -90,9 +87,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
 
         //If a layout container, iterate over children and seed recursion.
         if (view is ViewGroup) {
-            (0 until view.childCount)
-                .map { view.getChildAt(it) }
-                .forEach { setupUI(it) }
+            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
         }
     }
 
@@ -137,12 +132,10 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         title = tempTitle
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
-        binding.swipeRefreshItem.setColorSchemeResources(
-            android.R.color.holo_blue_bright,
+        binding.swipeRefreshItem.setColorSchemeResources(android.R.color.holo_blue_bright,
             android.R.color.holo_green_light,
             android.R.color.holo_orange_light,
-            android.R.color.holo_red_light
-        )
+            android.R.color.holo_red_light)
 
         binding.okButton.setOnClickListener { continueOrder() }
         binding.removeButton.setOnClickListener { removeDialog() }
@@ -168,16 +161,11 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
 
     private fun showDetail() {
         if (arrayAdapter != null && arrayAdapter!!.currentItem() != null) {
-            val intent = Intent(
-                Statics.WarehouseCounter.getContext(),
-                OrderRequestDetailActivity::class.java
-            )
+            val intent = Intent(context(), OrderRequestDetailActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-            intent.putExtra(
-                "orderRequest",
-                Parcels.wrap<OrderRequest>(arrayAdapter!!.currentItem())
-            )
+            intent.putExtra("orderRequest",
+                Parcels.wrap<OrderRequest>(arrayAdapter!!.currentItem()))
 
             // Valid content
             intent.putParcelableArrayListExtra("orcArray", arrayAdapter!!.currentItem()!!.content)
@@ -193,11 +181,10 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
             else -> return
         }
 
-        val msg =
-            when {
-                toRemove.count() > 1 -> getString(R.string.do_you_want_to_delete_the_selected_counts)
-                else -> getString(R.string.do_you_want_to_delete_the_selected_count)
-            }
+        val msg = when {
+            toRemove.count() > 1 -> getString(R.string.do_you_want_to_delete_the_selected_counts)
+            else -> getString(R.string.do_you_want_to_delete_the_selected_count)
+        }
 
         val alert = AlertDialog.Builder(this)
         alert.setTitle(getString(R.string.cancel_count))
@@ -226,11 +213,9 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         }
 
         if (!isOk) {
-            MakeText.makeText(
-                binding.root,
+            MakeText.makeText(binding.root,
                 getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
-                SnackBarType.ERROR
-            )
+                SnackBarType.ERROR)
         }
 
         thread { fillAdapter(ArrayList()) }
@@ -241,20 +226,15 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
             Statics.closeKeyboard(this)
 
             val data = Intent()
-            data.putParcelableArrayListExtra(
-                "orderRequests",
-                arrayListOf(arrayAdapter!!.currentItem())
-            )
+            data.putParcelableArrayListExtra("orderRequests",
+                arrayListOf(arrayAdapter!!.currentItem()))
             setResult(RESULT_OK, data)
             finish()
         } else if (multiSelect && ((arrayAdapter?.countChecked()) ?: 0) > 0) {
             Statics.closeKeyboard(this)
 
             val data = Intent()
-            data.putParcelableArrayListExtra(
-                "orderRequests",
-                arrayAdapter!!.getAllChecked()
-            )
+            data.putParcelableArrayListExtra("orderRequests", arrayAdapter!!.getAllChecked())
             setResult(RESULT_OK, data)
             finish()
         }
@@ -278,11 +258,9 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         if (!temp.any()) {
             temp = OrderRequest.getPendingOrderRequests()
             if (temp.isEmpty()) {
-                MakeText.makeText(
-                    binding.root,
+                MakeText.makeText(binding.root,
                     getString(R.string.there_are_no_pending_counts),
-                    SnackBarType.INFO
-                )
+                    SnackBarType.INFO)
             }
         }
         completeList = temp
@@ -296,20 +274,16 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
                     firstVisiblePos = (arrayAdapter ?: return@runOnUiThread).firstVisiblePos()
                 }
 
-                arrayAdapter = OrderRequestAdapter(
-                    activity = this,
+                arrayAdapter = OrderRequestAdapter(activity = this,
                     resource = R.layout.order_request_row,
                     itemList = completeList,
                     suggestedList = completeList,
                     checkedIdArray = checkedIdArray,
                     listView = binding.itemListView,
-                    multiSelect = multiSelect
-                )
+                    multiSelect = multiSelect)
 
-                arrayAdapter?.refreshListeners(
-                    checkedChangedListener = null,
-                    dataSetChangedListener = null
-                )
+                arrayAdapter?.refreshListeners(checkedChangedListener = null,
+                    dataSetChangedListener = null)
 
                 while (binding.itemListView.adapter == null) {
                     // Horrible wait for full load
@@ -340,14 +314,9 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
 
         // Opciones de visibilidad del menú
         for (i in OrderRequestType.getAll()) {
-            menu.add(
-                0,
-                i.id.toInt(),
-                i.id.toInt(),
-                i.description
-            )
-                .setChecked(OrderRequestAdapter.getPrefVisibleStatus().contains(i))
-                .isCheckable = true
+            menu.add(0, i.id.toInt(), i.id.toInt(), i.description)
+                .setChecked(OrderRequestAdapter.getPrefVisibleStatus().contains(i)).isCheckable =
+                true
         }
 
         //region Icon colors
@@ -366,16 +335,10 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         //endregion Icon colors
 
         for (i in OrderRequestType.getAll()) {
-            val icon = ResourcesCompat.getDrawable(
-                Statics.WarehouseCounter.getContext().resources,
-                R.drawable.ic_lens,
-                null
-            )
+            val icon = ResourcesCompat.getDrawable(context().resources, R.drawable.ic_lens, null)
             icon?.mutate()?.colorFilter =
-                BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                    colors[i.id.toInt() - 1],
-                    BlendModeCompat.SRC_IN
-                )
+                BlendModeColorFilterCompat.createBlendModeColorFilterCompat(colors[i.id.toInt() - 1],
+                    BlendModeCompat.SRC_IN)
 
             val item = menu.getItem(i.id.toInt() - 1)
             item.icon = icon
@@ -383,8 +346,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
             // Keep the popup menu open
             item.setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW)
             item.actionView = View(this)
-            item.setOnActionExpandListener(object :
-                MenuItem.OnActionExpandListener {
+            item.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
                 override fun onMenuItemActionExpand(item: MenuItem): Boolean {
                     return false
                 }
@@ -416,36 +378,41 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         val visibleStatus = arrayAdapter!!.getVisibleStatus()
 
         when (id) {
-            OrderRequestType.deliveryAudit.id.toInt() ->
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.deliveryAudit)) {
-                    arrayAdapter!!.addVisibleStatus(OrderRequestType.deliveryAudit)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.deliveryAudit)) {
-                    arrayAdapter!!.removeVisibleStatus(OrderRequestType.deliveryAudit)
-                }
-            OrderRequestType.prepareOrder.id.toInt() ->
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.prepareOrder)) {
-                    arrayAdapter!!.addVisibleStatus(OrderRequestType.prepareOrder)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.prepareOrder)) {
-                    arrayAdapter!!.removeVisibleStatus(OrderRequestType.prepareOrder)
-                }
-            OrderRequestType.receptionAudit.id.toInt() ->
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.receptionAudit)) {
-                    arrayAdapter!!.addVisibleStatus(OrderRequestType.receptionAudit)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.receptionAudit)) {
-                    arrayAdapter!!.removeVisibleStatus(OrderRequestType.receptionAudit)
-                }
-            OrderRequestType.stockAudit.id.toInt() ->
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.stockAudit)) {
-                    arrayAdapter!!.addVisibleStatus(OrderRequestType.stockAudit)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAudit)) {
-                    arrayAdapter!!.removeVisibleStatus(OrderRequestType.stockAudit)
-                }
-            OrderRequestType.stockAuditFromDevice.id.toInt() ->
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.stockAuditFromDevice)) {
-                    arrayAdapter!!.addVisibleStatus(OrderRequestType.stockAuditFromDevice)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAuditFromDevice)) {
-                    arrayAdapter!!.removeVisibleStatus(OrderRequestType.stockAuditFromDevice)
-                }
+            OrderRequestType.deliveryAudit.id.toInt() -> if (item.isChecked && !visibleStatus.contains(
+                    OrderRequestType.deliveryAudit)
+            ) {
+                arrayAdapter!!.addVisibleStatus(OrderRequestType.deliveryAudit)
+            } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.deliveryAudit)) {
+                arrayAdapter!!.removeVisibleStatus(OrderRequestType.deliveryAudit)
+            }
+            OrderRequestType.prepareOrder.id.toInt() -> if (item.isChecked && !visibleStatus.contains(
+                    OrderRequestType.prepareOrder)
+            ) {
+                arrayAdapter!!.addVisibleStatus(OrderRequestType.prepareOrder)
+            } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.prepareOrder)) {
+                arrayAdapter!!.removeVisibleStatus(OrderRequestType.prepareOrder)
+            }
+            OrderRequestType.receptionAudit.id.toInt() -> if (item.isChecked && !visibleStatus.contains(
+                    OrderRequestType.receptionAudit)
+            ) {
+                arrayAdapter!!.addVisibleStatus(OrderRequestType.receptionAudit)
+            } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.receptionAudit)) {
+                arrayAdapter!!.removeVisibleStatus(OrderRequestType.receptionAudit)
+            }
+            OrderRequestType.stockAudit.id.toInt() -> if (item.isChecked && !visibleStatus.contains(
+                    OrderRequestType.stockAudit)
+            ) {
+                arrayAdapter!!.addVisibleStatus(OrderRequestType.stockAudit)
+            } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAudit)) {
+                arrayAdapter!!.removeVisibleStatus(OrderRequestType.stockAudit)
+            }
+            OrderRequestType.stockAuditFromDevice.id.toInt() -> if (item.isChecked && !visibleStatus.contains(
+                    OrderRequestType.stockAuditFromDevice)
+            ) {
+                arrayAdapter!!.addVisibleStatus(OrderRequestType.stockAuditFromDevice)
+            } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAuditFromDevice)) {
+                arrayAdapter!!.removeVisibleStatus(OrderRequestType.stockAuditFromDevice)
+            }
             else -> return super.onOptionsItemSelected(item)
         }
 
@@ -454,7 +421,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         for (i in visibleStatus) {
             set.add(i.id.toString())
         }
-        Statics.prefsPutStringSet(Preference.orderRequestVisibleStatus.key, set)
+        settingViewModel().orderRequestVisibleStatus = set
 
         return true
     }
@@ -467,9 +434,10 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
     }
 
     override fun onRefresh() {
-        Handler(Looper.getMainLooper()).postDelayed(
-            { run { binding.swipeRefreshItem.isRefreshing = false } },
-            100
-        )
+        Handler(Looper.getMainLooper()).postDelayed({
+            run {
+                binding.swipeRefreshItem.isRefreshing = false
+            }
+        }, 100)
     }
 }

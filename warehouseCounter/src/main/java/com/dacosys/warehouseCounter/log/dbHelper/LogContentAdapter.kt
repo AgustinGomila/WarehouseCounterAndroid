@@ -12,6 +12,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
 import com.dacosys.warehouseCounter.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.Statics.Companion.getColorWithAlpha
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.log.`object`.LogContent
 import com.dacosys.warehouseCounter.misc.AutoResizeTextView
 import java.util.*
@@ -27,7 +28,7 @@ class LogContentAdapter : ArrayAdapter<LogContent>, Filterable {
         resource: Int,
         logContArray: ArrayList<LogContent>,
         listView: ListView?,
-    ) : super(Statics.WarehouseCounter.getContext(), resource, logContArray) {
+    ) : super(context(), resource, logContArray) {
         this.activity = activity
         this.listView = listView
         this.resource = resource
@@ -82,11 +83,8 @@ class LogContentAdapter : ArrayAdapter<LogContent>, Filterable {
     }
 
     private fun selectItem(pos: Int, scrollPos: Int, smoothScroll: Boolean) {
-        if (listView == null) {
-            return
-        }
-
-        (listView ?: return).clearChoices()
+        val listView = listView ?: return
+        listView.clearChoices()
 
         // Deseleccionar cuando:
         //   - Estaba previamente seleccionado
@@ -95,14 +93,14 @@ class LogContentAdapter : ArrayAdapter<LogContent>, Filterable {
 
         activity.runOnUiThread {
             if (pos < 0 && lastSelectedPos < 0 && count > 0) {
-                (listView ?: return@runOnUiThread).setItemChecked(0, true)
-                (listView ?: return@runOnUiThread).setSelection(0)
+                listView.setItemChecked(0, true)
+                listView.setSelection(0)
             } else if (pos == lastSelectedPos || pos < 0 || count <= 0) {
-                (listView ?: return@runOnUiThread).setItemChecked(-1, true)
-                (listView ?: return@runOnUiThread).setSelection(-1)
+                listView.setItemChecked(-1, true)
+                listView.setSelection(-1)
             } else {
-                (listView ?: return@runOnUiThread).setItemChecked(pos, true)
-                (listView ?: return@runOnUiThread).setSelection(pos)
+                listView.setItemChecked(pos, true)
+                listView.setSelection(pos)
             }
         }
 
@@ -111,30 +109,26 @@ class LogContentAdapter : ArrayAdapter<LogContent>, Filterable {
         activity.runOnUiThread {
             if (smoothScroll) {
                 notifyDataSetChanged()
-                (listView ?: return@runOnUiThread).smoothScrollToPosition(scrollPos)
+                listView.smoothScrollToPosition(scrollPos)
             } else {
                 refresh()
-                (listView ?: return@runOnUiThread).setSelection(scrollPos)
+                listView.setSelection(scrollPos)
             }
         }
     }
 
     fun currentLogCont(): LogContent? {
-        return (0 until count)
-            .firstOrNull { isSelected(it) }
-            ?.let { getItem(it) }
+        return (0 until count).firstOrNull { isSelected(it) }?.let { getItem(it) }
     }
 
     fun currentPos(): Int {
-        return (0 until count)
-            .firstOrNull { isSelected(it) } ?: -1
+        return (0 until count).firstOrNull { isSelected(it) } ?: -1
     }
 
     fun firstVisiblePos(): Int {
-        var pos = (listView ?: return -1).firstVisiblePosition
-        if ((listView ?: return -1).childCount > 1 && (listView
-                ?: return -1).getChildAt(0).top < 0
-        ) pos++
+        val listView = listView ?: return -1
+        var pos = listView.firstVisiblePosition
+        if (listView.childCount > 1 && listView.getChildAt(0).top < 0) pos++
         return pos
     }
 
@@ -195,40 +189,22 @@ class LogContentAdapter : ArrayAdapter<LogContent>, Filterable {
                 holder.descriptionAutoSizeTextView?.text = logContent.itemStr
                 holder.eanAutoSizeTextView?.text = logContent.itemCode
                 holder.variationQtyTextView?.text =
-                    Statics.roundToString(
-                        logContent.variationQty
-                            ?: 0.toDouble(), decimalPlaces
-                    )
+                    Statics.roundToString(logContent.variationQty ?: 0.toDouble(), decimalPlaces)
                 holder.finalQtyTextView?.text =
-                    Statics.roundToString(
-                        logContent.finalQty
-                            ?: 0.toDouble(), decimalPlaces
-                    )
+                    Statics.roundToString(logContent.finalQty ?: 0.toDouble(), decimalPlaces)
 
                 // Background layouts
-                val layoutRed =
-                    ResourcesCompat.getDrawable(
-                        Statics.WarehouseCounter.getContext().resources,
-                        R.drawable.layout_thin_border_red,
-                        null
-                    )
-                val layoutDefault = ResourcesCompat.getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
+                val layoutRed = ResourcesCompat.getDrawable(context().resources,
+                    R.drawable.layout_thin_border_red,
+                    null)
+                val layoutDefault = ResourcesCompat.getDrawable(context().resources,
                     R.drawable.layout_thin_border,
-                    null
-                )
+                    null)
 
                 // Font colors
-                val black = ResourcesCompat.getColor(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.color.black,
-                    null
-                )
-                val whitesmoke = ResourcesCompat.getColor(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.color.whitesmoke,
-                    null
-                )
+                val black = ResourcesCompat.getColor(context().resources, R.color.black, null)
+                val whitesmoke =
+                    ResourcesCompat.getColor(context().resources, R.color.whitesmoke, null)
 
                 var backColor = layoutDefault!!
                 var foreColor = black
@@ -249,8 +225,7 @@ class LogContentAdapter : ArrayAdapter<LogContent>, Filterable {
                         v.background.colorFilter =
                             BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
                                 getColorWithAlpha(colorId = R.color.lightslategray, alpha = 240),
-                                BlendModeCompat.MODULATE
-                            )
+                                BlendModeCompat.MODULATE)
                     } else {
                         v.background?.colorFilter = null
                     }
@@ -274,10 +249,8 @@ class LogContentAdapter : ArrayAdapter<LogContent>, Filterable {
                     for (i in 0 until logContArray.size) {
                         filterableLogContent = logContArray[i]
                         if (filterableLogContent.itemCode.lowercase(Locale.ROOT)
-                                .contains(filterString) ||
-                            filterableLogContent.itemStr.lowercase(Locale.ROOT).contains(
-                                filterString
-                            )
+                                .contains(filterString) || filterableLogContent.itemStr.lowercase(
+                                Locale.ROOT).contains(filterString)
                         ) {
                             r.add(filterableLogContent)
                         }

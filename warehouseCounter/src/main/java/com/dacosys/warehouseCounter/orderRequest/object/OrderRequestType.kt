@@ -3,16 +3,14 @@ package com.dacosys.warehouseCounter.orderRequest.`object`
 import android.os.Parcel
 import android.os.Parcelable
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.google.gson.*
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 import java.lang.reflect.Type
 import java.util.*
 
-class OrderRequestType :
-    Parcelable,
-    JsonDeserializer<OrderRequestType>,
+class OrderRequestType : Parcelable, JsonDeserializer<OrderRequestType>,
     JsonSerializer<OrderRequestType> {
     override fun deserialize(
         json: JsonElement?,
@@ -116,54 +114,40 @@ class OrderRequestType :
             return arrayOfNulls(size)
         }
 
-        var prepareOrder = OrderRequestType(
-            1,
-            Statics.WarehouseCounter.getContext().getString(R.string.order_preparation)
-        )
-        var stockAudit = OrderRequestType(
-            2,
-            Statics.WarehouseCounter.getContext().getString(R.string.warehouse_counter)
-        )
-        var receptionAudit = OrderRequestType(
-            3,
-            Statics.WarehouseCounter.getContext().getString(R.string.reception_control)
-        )
-        var deliveryAudit = OrderRequestType(
-            4,
-            Statics.WarehouseCounter.getContext().getString(R.string.delivery_control)
-        )
-        var stockAuditFromDevice = OrderRequestType(
-            5,
-            Statics.WarehouseCounter.getContext().getString(R.string.warehouse_counter_from_device)
-        )
+        var prepareOrder = OrderRequestType(1, context().getString(R.string.order_preparation))
+        var stockAudit = OrderRequestType(2, context().getString(R.string.warehouse_counter))
+        var receptionAudit = OrderRequestType(3, context().getString(R.string.reception_control))
+        var deliveryAudit = OrderRequestType(4, context().getString(R.string.delivery_control))
+        var stockAuditFromDevice =
+            OrderRequestType(5, context().getString(R.string.warehouse_counter_from_device))
 
         fun getAll(): ArrayList<OrderRequestType> {
             val allSections = ArrayList<OrderRequestType>()
-            Collections.addAll(
-                allSections,
+            Collections.addAll(allSections,
                 prepareOrder,
                 stockAudit,
                 receptionAudit,
                 deliveryAudit,
-                stockAuditFromDevice
-            )
+                stockAuditFromDevice)
 
             Collections.sort(allSections, CustomComparator())
             return allSections
         }
 
-        fun getAllIdAsString(): ArrayList<String> {
+        private fun getAllIdAsString(): ArrayList<String> {
             val allSections = ArrayList<String>()
-            Collections.addAll(
-                allSections,
+            Collections.addAll(allSections,
                 prepareOrder.id.toString(),
                 stockAudit.id.toString(),
                 receptionAudit.id.toString(),
                 deliveryAudit.id.toString(),
-                stockAuditFromDevice.id.toString()
-            )
+                stockAuditFromDevice.id.toString())
 
             return ArrayList(allSections.sortedWith(compareBy { it }))
+        }
+
+        fun getAllIdAsSet(): Set<String> {
+            return getAllIdAsString().toHashSet()
         }
 
         fun getById(orderRequestTypeId: Long): OrderRequestType? {

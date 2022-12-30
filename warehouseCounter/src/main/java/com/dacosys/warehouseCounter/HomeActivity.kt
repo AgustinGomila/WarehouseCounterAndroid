@@ -36,19 +36,18 @@ import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.dacosys.warehouseCounter.Statics.Companion.closeKeyboard
 import com.dacosys.warehouseCounter.Statics.Companion.generateTaskCode
-import com.dacosys.warehouseCounter.Statics.Companion.prefsGetBoolean
 import com.dacosys.warehouseCounter.Statics.Companion.writeToFile
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.client.`object`.Client
 import com.dacosys.warehouseCounter.codeCheck.CodeCheckActivity
 import com.dacosys.warehouseCounter.configuration.InitConfigActivity
 import com.dacosys.warehouseCounter.configuration.SettingsActivity
-import com.dacosys.warehouseCounter.dataBaseHelper.StaticDbHelper
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.item.activities.ItemSelectActivity
 import com.dacosys.warehouseCounter.linkCode.LinkCodeActivity
 import com.dacosys.warehouseCounter.mainButton.MainButton
-import com.dacosys.warehouseCounter.misc.Preference
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.ERROR
@@ -58,6 +57,8 @@ import com.dacosys.warehouseCounter.orderRequest.`object`.OrderRequest.CREATOR.g
 import com.dacosys.warehouseCounter.orderRequest.`object`.OrderRequestType
 import com.dacosys.warehouseCounter.orderRequest.activities.NewCountActivity
 import com.dacosys.warehouseCounter.orderRequest.activities.OrderRequestContentActivity
+import com.dacosys.warehouseCounter.retrofit.functions.GetNewOrder
+import com.dacosys.warehouseCounter.retrofit.functions.SendCompletedOrder
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.sync.*
@@ -68,19 +69,15 @@ import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
 import org.parceler.Parcels
 import java.io.File
-import java.io.IOException
 import java.io.UnsupportedEncodingException
 import java.lang.reflect.Field
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.concurrent.thread
 
-class HomeActivity :
-    AppCompatActivity(),
-    Scanner.ScannerListener,
-    GetNewOrderRequest.NewOrderRequestListener,
+class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.NewOrderListener,
     GetCompletedOrderRequest.CompletedOrderRequestListener,
-    SendCompletedOrderRequest.TaskSendOrderRequestEnded {
+    SendCompletedOrder.TaskSendOrderRequestEnded {
     override fun onTaskSendOrderRequestEnded(status: ProgressStatus, msg: String) {
     }
 
@@ -91,29 +88,23 @@ class HomeActivity :
         msg: String,
     ) {
         if (TASK_CODE == TASK_CODE_SYNC_ORDERS) {
-            if (status == ProgressStatus.finished || status == ProgressStatus.success ||
-                status == ProgressStatus.crashed || status == ProgressStatus.canceled
-            ) {
-                Log.d(
-                    this::class.java.simpleName,
-                    getString(R.string.completed_orders_) + itemArray.count()
-                )
+            if (status == ProgressStatus.finished || status == ProgressStatus.success || status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
+                Log.d(this::class.java.simpleName,
+                    getString(R.string.completed_orders_) + itemArray.count())
 
-                if (prefsGetBoolean(Preference.autoSend)) {
+                if (settingViewModel().autoSend) {
                     val orArray = getCompletedOrderRequests()
                     if (orArray.isNotEmpty()) {
                         try {
                             thread {
-                                val task = SendCompletedOrderRequest()
+                                val task = SendCompletedOrder()
                                 task.addParams(this, orArray)
                                 task.execute()
                             }
                         } catch (ex: Exception) {
-                            ErrorLog.writeLog(
-                                this,
+                            ErrorLog.writeLog(this,
                                 this::class.java.simpleName,
-                                ex.message.toString()
-                            )
+                                ex.message.toString())
                         }
                     }
                 }
@@ -121,13 +112,10 @@ class HomeActivity :
                 for (button in buttonCollection) {
                     if (button.tag == MainButton.CompletedCounts.id) {
                         runOnUiThread {
-                            button.text =
-                                String.format(
-                                    "%s%s(%s)",
-                                    MainButton.CompletedCounts.description,
-                                    System.getProperty("line.separator"),
-                                    itemArray.count()
-                                )
+                            button.text = String.format("%s%s(%s)",
+                                MainButton.CompletedCounts.description,
+                                System.getProperty("line.separator"),
+                                itemArray.count())
                         }
                     }
                 }
@@ -135,60 +123,48 @@ class HomeActivity :
         }
     }
 
-    override fun onNewOrderRequestResult(
+    override fun onNewOrderResult(
         status: ProgressStatus,
         itemArray: ArrayList<OrderRequest>,
         TASK_CODE: Int,
         msg: String,
     ) {
         if (TASK_CODE == TASK_CODE_SYNC_ORDERS) {
-            if (status == ProgressStatus.finished || status == ProgressStatus.success ||
-                status == ProgressStatus.crashed || status == ProgressStatus.canceled
-            ) {
-                Log.d(
-                    this::class.java.simpleName,
-                    getString(R.string.new_orders_received_) + itemArray.count()
-                )
+            if (status == ProgressStatus.finished || status == ProgressStatus.success || status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
+                Log.d(this::class.java.simpleName,
+                    getString(R.string.new_orders_received_) + itemArray.count())
 
                 if (!Statics.isExternalStorageWritable) {
-                    Log.e(
-                        this::class.java.simpleName,
-                        getString(R.string.error_external_storage_not_available_for_reading_or_writing)
-                    )
+                    Log.e(this::class.java.simpleName,
+                        getString(R.string.error_external_storage_not_available_for_reading_or_writing))
                     return
                 }
 
                 if (itemArray.isNotEmpty()) {
-                    if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
-                            this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-                        )
+                    if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(this,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE)
                     ) {
                         writeNewOrderRequest(itemArray)
                     } else {
                         newOrArray = itemArray
-                        requestPermissions(
-                            arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                            REQUEST_EXTERNAL_STORAGE
-                        )
+                        requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                            REQUEST_EXTERNAL_STORAGE)
                     }
                 }
 
                 for (button in buttonCollection) {
                     if (button.tag == MainButton.PendingCounts.id) {
                         runOnUiThread {
-                            button.text =
-                                String.format(
-                                    "%s%s(%s)",
-                                    MainButton.PendingCounts.description,
-                                    System.getProperty("line.separator"),
-                                    countPending()
-                                )
+                            button.text = String.format("%s%s(%s)",
+                                MainButton.PendingCounts.description,
+                                System.getProperty("line.separator"),
+                                countPending())
 
                             if (itemArray.isNotEmpty()) {
-                                if (prefsGetBoolean(Preference.shakeOnPendingOrders)) {
+                                if (settingViewModel().shakeOnPendingOrders) {
                                     shakeDevice()
                                 }
-                                if (prefsGetBoolean(Preference.soundOnPendingOrders)) {
+                                if (settingViewModel().soundOnPendingOrders) {
                                     playNotification()
                                 }
                                 shakeView(button, 20, 5)
@@ -207,8 +183,7 @@ class HomeActivity :
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (prefsGetBoolean(Preference.showScannedCode))
-            makeText(binding.root, scanCode, INFO)
+        if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
 
@@ -291,11 +266,11 @@ class HomeActivity :
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_main, menu)
 
-        if (!prefsGetBoolean(Preference.showConfButton)) {
+        if (!(settingViewModel().showConfButton)) {
             menu.removeItem(menu.findItem(R.id.action_settings).itemId)
         }
 
-        if (!Statics.isRfidRequired()) {
+        if (!settingViewModel().useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -336,10 +311,10 @@ class HomeActivity :
 
     private fun resize(image: Drawable): Drawable {
         val bitmap = (image as BitmapDrawable).bitmap
-        val bitmapResized = Bitmap.createScaledBitmap(
-            bitmap,
-            (bitmap.width * 0.5).toInt(), (bitmap.height * 0.5).toInt(), false
-        )
+        val bitmapResized = Bitmap.createScaledBitmap(bitmap,
+            (bitmap.width * 0.5).toInt(),
+            (bitmap.height * 0.5).toInt(),
+            false)
         return BitmapDrawable(resources, bitmapResized)
     }
 
@@ -353,7 +328,7 @@ class HomeActivity :
         val currentUser = Statics.getCurrentUser()
         if (currentUser != null) {
             binding.userTextView.text =
-                String.format("%s - %s", Statics.installationCode, currentUser.name)
+                String.format("%s - %s", settingViewModel().installationCode, currentUser.name)
         }
 
         /// VERSION
@@ -394,8 +369,7 @@ class HomeActivity :
                 if (!rejectNewInstances) {
                     rejectNewInstances = true
 
-                    val intent =
-                        Intent(Statics.WarehouseCounter.getContext(), NewCountActivity::class.java)
+                    val intent = Intent(context(), NewCountActivity::class.java)
                     intent.putExtra("title", getString(R.string.new_count))
                     resultForNewCount.launch(intent)
                 }
@@ -405,8 +379,7 @@ class HomeActivity :
                     rejectNewInstances = true
                     JotterListener.lockScanner(this, true)
 
-                    val intent =
-                        Intent(Statics.WarehouseCounter.getContext(), InboxActivity::class.java)
+                    val intent = Intent(context(), InboxActivity::class.java)
                     intent.putExtra("title", getString(R.string.pending_counts))
                     resultForPendingCount.launch(intent)
                 }
@@ -415,8 +388,7 @@ class HomeActivity :
                 if (!rejectNewInstances) {
                     rejectNewInstances = true
 
-                    val intent =
-                        Intent(Statics.WarehouseCounter.getContext(), OutboxActivity::class.java)
+                    val intent = Intent(context(), OutboxActivity::class.java)
                     intent.putExtra("title", getString(R.string.completed_counts))
                     startActivity(intent)
                 }
@@ -425,8 +397,7 @@ class HomeActivity :
                 if (!rejectNewInstances) {
                     rejectNewInstances = true
 
-                    val intent =
-                        Intent(Statics.WarehouseCounter.getContext(), CodeCheckActivity::class.java)
+                    val intent = Intent(context(), CodeCheckActivity::class.java)
                     intent.putExtra("title", getString(R.string.code_read))
                     intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                     startActivity(intent)
@@ -437,18 +408,11 @@ class HomeActivity :
                     rejectNewInstances = true
 
                     try {
-                        val intent = Intent(
-                            Statics.WarehouseCounter.getContext(),
-                            LinkCodeActivity::class.java
-                        )
+                        val intent = Intent(context(), LinkCodeActivity::class.java)
                         intent.putExtra("title", getString(R.string.link_code))
                         startActivity(intent)
                     } catch (ex: Exception) {
-                        makeText(
-                            binding.root,
-                            "Error:" + ex.message,
-                            ERROR
-                        )
+                        makeText(binding.root, "Error:" + ex.message, ERROR)
                     }
                 }
             }
@@ -458,19 +422,12 @@ class HomeActivity :
                     JotterListener.lockScanner(this, true)
 
                     try {
-                        val intent = Intent(
-                            Statics.WarehouseCounter.getContext(),
-                            ItemSelectActivity::class.java
-                        )
+                        val intent = Intent(context(), ItemSelectActivity::class.java)
                         intent.putExtra("title", getString(R.string.print_code))
                         intent.putExtra("multiSelect", true)
                         startActivity(intent)
                     } catch (ex: Exception) {
-                        makeText(
-                            binding.root,
-                            "Error:" + ex.message,
-                            ERROR
-                        )
+                        makeText(binding.root, "Error:" + ex.message, ERROR)
                     }
                 }
             }
@@ -485,36 +442,28 @@ class HomeActivity :
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val client =
-                        Parcels.unwrap<Client>(data.getParcelableExtra("client"))
+                    val client = Parcels.unwrap<Client>(data.getParcelableExtra("client"))
                     val description = data.getStringExtra("description")
                     val orderRequestType =
                         Parcels.unwrap<OrderRequestType>(data.getParcelableExtra<OrderRequestType>("orderRequestType"))
                     val log = com.dacosys.warehouseCounter.log.`object`.Log()
 
-                    makeText(
-                        binding.root,
-                        String.format(
-                            getString(R.string.client_description),
+                    makeText(binding.root,
+                        String.format(getString(R.string.client_description),
                             client?.name ?: getString(R.string.no_client),
                             System.getProperty("line.separator"),
-                            description
-                        ),
-                        INFO
-                    )
+                            description),
+                        INFO)
 
                     val r = Random()
                     val fakeOrderRequestId = r.nextInt(-888888 - -999999)
 
-                    val or = OrderRequest(
-                        orderRequestId = fakeOrderRequestId.toLong(),
+                    val or = OrderRequest(orderRequestId = fakeOrderRequestId.toLong(),
                         clientId = client?.clientId ?: 0,
                         userId = Statics.currentUserId,
                         externalId = "",
-                        creationDate = android.text.format.DateFormat.format(
-                            "yyyy-MM-dd hh:mm:ss",
-                            System.currentTimeMillis()
-                        ).toString(),
+                        creationDate = android.text.format.DateFormat.format("yyyy-MM-dd hh:mm:ss",
+                            System.currentTimeMillis()).toString(),
                         description = description ?: "",
                         zone = "",
                         orderRequestedType = orderRequestType,
@@ -523,20 +472,14 @@ class HomeActivity :
                         resultAllowDiff = true,
                         resultAllowMod = true,
                         completed = false,
-                        startDate = android.text.format.DateFormat.format(
-                            "yyyy-MM-dd hh:mm:ss",
-                            System.currentTimeMillis()
-                        ).toString(),
+                        startDate = android.text.format.DateFormat.format("yyyy-MM-dd hh:mm:ss",
+                            System.currentTimeMillis()).toString(),
                         finishDate = null,
                         content = ArrayList(),
                         documents = ArrayList(),
-                        log = log
-                    )
+                        log = log)
 
-                    val intent = Intent(
-                        Statics.WarehouseCounter.getContext(),
-                        OrderRequestContentActivity::class.java
-                    )
+                    val intent = Intent(context(), OrderRequestContentActivity::class.java)
                     intent.putExtra("orderRequest", Parcels.wrap(or))
                     intent.putExtra("isNew", true)
 
@@ -564,26 +507,16 @@ class HomeActivity :
 
                     try {
                         val or = orArray[0]
-                        makeText(
-                            binding.root,
-                            String.format(
-                                getString(R.string.requested_count_state_),
-                                if (equals(
-                                        or.description,
-                                        ""
-                                    )
+                        makeText(binding.root,
+                            String.format(getString(R.string.requested_count_state_),
+                                if (equals(or.description,
+                                        "")
                                 ) getString(R.string.no_description) else or.description,
                                 if (or.completed != null && or.completed!!) getString(R.string.completed) else getString(
-                                    R.string.pending
-                                )
-                            ),
-                            INFO
-                        )
+                                    R.string.pending)),
+                            INFO)
 
-                        val intent = Intent(
-                            Statics.WarehouseCounter.getContext(),
-                            OrderRequestContentActivity::class.java
-                        )
+                        val intent = Intent(context(), OrderRequestContentActivity::class.java)
                         intent.putExtra("orderRequest", Parcels.wrap(or))
                         intent.putExtra("isNew", false)
 
@@ -605,7 +538,7 @@ class HomeActivity :
         }
 
     private fun configApp() {
-        val realPass = Statics.prefsGetString(Preference.confPassword)
+        val realPass = settingViewModel().confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
@@ -651,15 +584,15 @@ class HomeActivity :
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = Statics.prefsGetString(Preference.confPassword)
+        val realPass = settingViewModel().confPassword
         if (password == realPass) {
-            Statics.setDebugConfigValues()
+            // TODO: Eliminar o ver para qué se usa?
+            // Statics.setDebugConfigValues()
 
             if (!rejectNewInstances) {
                 rejectNewInstances = true
 
-                val intent =
-                    Intent(Statics.WarehouseCounter.getContext(), SettingsActivity::class.java)
+                val intent = Intent(context(), SettingsActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                 startActivity(intent)
             }
@@ -703,7 +636,7 @@ class HomeActivity :
 
         if (freshSessionReq) {
             // Inicializar la actividad
-            if (Statics.urlPanel.isEmpty()) {
+            if (settingViewModel().urlPanel.isEmpty()) {
                 makeText(binding.root, getString(R.string.server_is_not_configured), ERROR)
                 setupInitConfig()
             } else {
@@ -725,7 +658,7 @@ class HomeActivity :
     private val resultForInitConfig =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             try {
-                if (Statics.urlPanel.isEmpty()) {
+                if (settingViewModel().urlPanel.isEmpty()) {
                     makeText(binding.root, getString(R.string.server_is_not_configured), ERROR)
                     setupInitConfig()
                 } else {
@@ -741,13 +674,14 @@ class HomeActivity :
         }
 
     private fun login() {
-        // Siempre antes tener la db
-        beginDataBaseHelper()
-
         ///////////// LOGIN /////////////
-        val intent = Intent(this, LoginActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        resultForLogin.launch(intent)
+        if (!rejectNewInstances) {
+            rejectNewInstances = true
+
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            resultForLogin.launch(intent)
+        }
     }
 
     private val resultForLogin =
@@ -769,11 +703,9 @@ class HomeActivity :
             try {
                 clickButton(button)
             } catch (ex: Exception) {
-                makeText(
-                    binding.root,
+                makeText(binding.root,
                     "${getString(R.string.exception_error)}: " + ex.message,
-                    ERROR
-                )
+                    ERROR)
             }
         }
         button.setOnTouchListener(View.OnTouchListener { view, motionEvent ->
@@ -795,37 +727,33 @@ class HomeActivity :
         for (i in buttonCollection.indices) {
             val b = buttonCollection[i]
             if (i < allButtonMain.count()) {
-                val backColor: Int =
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        ((b.background as StateListDrawable).current as GradientDrawable).color?.defaultColor
-                            ?: R.color.white
-                    } else {
-                        // Use reflection below API level 23
-                        try {
-                            val drawable =
-                                (b.background as StateListDrawable).current as GradientDrawable
-                            var field: Field =
-                                drawable.javaClass.getDeclaredField("mGradientState")
+                val backColor: Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    ((b.background as StateListDrawable).current as GradientDrawable).color?.defaultColor
+                        ?: R.color.white
+                } else {
+                    // Use reflection below API level 23
+                    try {
+                        val drawable =
+                            (b.background as StateListDrawable).current as GradientDrawable
+                        var field: Field = drawable.javaClass.getDeclaredField("mGradientState")
+                        field.isAccessible = true
+                        val myObj = field.get(drawable)
+                        if (myObj == null) R.color.white
+                        else {
+                            field = myObj.javaClass.getDeclaredField("mSolidColors")
                             field.isAccessible = true
-                            val myObj = field.get(drawable)
-                            if (myObj == null)
-                                R.color.white
-                            else {
-                                field = myObj.javaClass.getDeclaredField("mSolidColors")
-                                field.isAccessible = true
-                                (field.get(myObj) as ColorStateList).defaultColor
-                            }
-                        } catch (e: NoSuchFieldException) {
-                            e.printStackTrace()
-                            R.color.white
-                        } catch (e: IllegalAccessException) {
-                            e.printStackTrace()
-                            R.color.white
+                            (field.get(myObj) as ColorStateList).defaultColor
                         }
+                    } catch (e: NoSuchFieldException) {
+                        e.printStackTrace()
+                        R.color.white
+                    } catch (e: IllegalAccessException) {
+                        e.printStackTrace()
+                        R.color.white
                     }
+                }
 
-                val textColor =
-                    Statics.getBestContrastColor("#" + Integer.toHexString(backColor))
+                val textColor = Statics.getBestContrastColor("#" + Integer.toHexString(backColor))
 
                 b.setTextColor(textColor)
                 b.visibility = View.VISIBLE
@@ -834,28 +762,14 @@ class HomeActivity :
                 b.textAlignment = View.TEXT_ALIGNMENT_VIEW_START
 
                 if (allButtonMain[i].iconResource != null) {
-                    b.setCompoundDrawablesWithIntrinsicBounds(
-                        AppCompatResources.getDrawable(
-                            this,
-                            allButtonMain[i].iconResource!!
-                        ),
-                        null,
-                        null,
-                        null
-                    )
-                    b.compoundDrawables
-                        .filterNotNull()
-                        .forEach {
-                            it.colorFilter =
-                                BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                                    ResourcesCompat.getColor(
-                                        Statics.WarehouseCounter.getContext().resources,
-                                        R.color.white,
-                                        null
-                                    ),
-                                    BlendModeCompat.SRC_IN
-                                )
-                        }
+                    b.setCompoundDrawablesWithIntrinsicBounds(AppCompatResources.getDrawable(this,
+                        allButtonMain[i].iconResource!!), null, null, null)
+                    b.compoundDrawables.filterNotNull().forEach {
+                        it.colorFilter =
+                            BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
+                                ResourcesCompat.getColor(context().resources, R.color.white, null),
+                                BlendModeCompat.SRC_IN)
+                    }
                 }
                 b.compoundDrawablePadding = 15
             } else {
@@ -876,12 +790,7 @@ class HomeActivity :
      * @return          returns the same view with animation properties
      */
     private fun shakeView(view: View, duration: Int, offset: Int): View {
-        val anim = TranslateAnimation(
-            -offset.toFloat(),
-            offset.toFloat(),
-            0.toFloat(),
-            0.toFloat()
-        )
+        val anim = TranslateAnimation(-offset.toFloat(), offset.toFloat(), 0.toFloat(), 0.toFloat())
 
         anim.duration = duration.toLong()
         anim.repeatMode = Animation.REVERSE
@@ -894,21 +803,14 @@ class HomeActivity :
     // Vibrate for 150 milliseconds
     private fun shakeDevice() {
         if (Build.VERSION.SDK_INT >= 26) {
-            (getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(
-                VibrationEffect.createOneShot(
-                    150,
-                    10
-                )
-            )
+            (getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(VibrationEffect.createOneShot(
+                150,
+                10))
         } else {
             val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(
-                    VibrationEffect.createOneShot(
-                        150,
-                        VibrationEffect.DEFAULT_AMPLITUDE
-                    )
-                )
+                vibrator.vibrate(VibrationEffect.createOneShot(150,
+                    VibrationEffect.DEFAULT_AMPLITUDE))
             } else {
                 vibrator.vibrate(150)
             }
@@ -920,7 +822,7 @@ class HomeActivity :
             val notification: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
             val r: Ringtone = RingtoneManager.getRingtone(this, notification)
             r.play()
-        } catch (ex: Exception) {
+        } catch (ignore: Exception) {
         }
     }
 
@@ -928,20 +830,8 @@ class HomeActivity :
         TASK_CODE_SYNC_ORDERS = generateTaskCode()
 
         Thread {
-            Sync.startTimer(
-                this,
-                this,
-                TASK_CODE_SYNC_ORDERS
-            )
+            Sync.startTimer(this, this, TASK_CODE_SYNC_ORDERS)
         }.start()
-    }
-
-    private fun beginDataBaseHelper() {
-        try {
-            StaticDbHelper.createDb()
-        } catch (ioe: IOException) {
-            throw Error(getString(R.string.unable_to_create_database))
-        }
     }
 
     override fun onRequestPermissionsResult(
@@ -949,17 +839,19 @@ class HomeActivity :
         permissions: Array<String>, grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+            this,
+            requestCode,
+            permissions,
+            grantResults)
         else {
             when (requestCode) {
                 REQUEST_EXTERNAL_STORAGE -> {
                     // If request is cancelled, the result arrays are empty.
                     if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                        makeText(
-                            binding.root,
-                            getString(R.string.cannot_write_to_external_storage), ERROR
-                        )
+                        makeText(binding.root,
+                            getString(R.string.cannot_write_to_external_storage),
+                            ERROR)
                     } else {
                         writeNewOrderRequest(newOrArray)
                     }
@@ -994,8 +886,8 @@ class HomeActivity :
                             if (!fl.delete()) isOk = false
                         } else {
                             // Actualizar contenido local
-                            if (!updateOrder(origOrder = pendingOr, newOrder = newOrder))
-                                isOk = false
+                            if (!updateOrder(origOrder = pendingOr, newOrder = newOrder)) isOk =
+                                false
                         }
 
                         break
@@ -1006,11 +898,9 @@ class HomeActivity :
             if (!alreadyExists) {
                 val orFileName = String.format("%s.json", df.format(Calendar.getInstance().time))
 
-                if (!writeToFile(
-                        fileName = orFileName,
+                if (!writeToFile(fileName = orFileName,
                         data = orJson,
-                        directory = Statics.getPendingPath()
-                    )
+                        directory = Statics.getPendingPath())
                 ) {
                     isOk = false
                     break
@@ -1022,11 +912,7 @@ class HomeActivity :
 
         if (isOk) {
             val res = getString(R.string.new_counts_saved)
-            makeText(
-                binding.root,
-                res,
-                SnackBarType.SUCCESS
-            )
+            makeText(binding.root, res, SnackBarType.SUCCESS)
             Log.d(this::class.java.simpleName, res)
         } else {
             val res = getString(R.string.an_error_occurred_while_trying_to_save_the_count)
@@ -1043,22 +929,17 @@ class HomeActivity :
             Log.i(this::class.java.simpleName, orJson)
             val orFileName = origOrder.filename.substringAfterLast('/')
 
-            if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
+            if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)
             ) {
-                error = !Statics.writeJsonToFile(
-                    v = binding.root,
+                error = !Statics.writeJsonToFile(v = binding.root,
                     filename = orFileName,
                     value = orJson,
-                    completed = newOrder.completed ?: false
-                )
+                    completed = newOrder.completed ?: false)
                 finish()
             } else {
-                requestPermissions(
-                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                    REQUEST_EXTERNAL_STORAGE
-                )
+                requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    REQUEST_EXTERNAL_STORAGE)
             }
         } catch (e: UnsupportedEncodingException) {
             e.printStackTrace()

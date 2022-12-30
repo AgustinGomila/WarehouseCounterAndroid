@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.configuration
 import com.dacosys.imageControl.wsObject.UserAuthResultObject
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.Statics.WarehouseCounter.Companion.getContext
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
@@ -28,11 +28,11 @@ class ImageControlCheckUser(private var onSnackBarEvent: (SnackBarEventData) -> 
         scope.launch {
             onUiEvent(SnackBarEventData(
                 when {
-                    fError -> getContext()
+                    fError -> context()
                         .getString(R.string.connection_error)
-                    !fReturn -> getContext()
+                    !fReturn -> context()
                         .getString(R.string.incorrect_username_password_combination)
-                    else -> getContext().getString(R.string.ok)
+                    else -> context().getString(R.string.ok)
                 },
                 when {
                     fError -> SnackBarType.ERROR

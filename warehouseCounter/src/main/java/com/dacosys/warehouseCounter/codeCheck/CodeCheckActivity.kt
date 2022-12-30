@@ -12,7 +12,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.Statics.Companion.isRfidRequired
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.CodeCheckActivityBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.item.`object`.Item
@@ -28,9 +28,7 @@ import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import java.util.*
 
-class CodeCheckActivity : AppCompatActivity(),
-    Scanner.ScannerListener,
-    Rfid.RfidDeviceListener {
+class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
     private var rejectNewInstances = false
 
     private var currentFragment: androidx.fragment.app.Fragment? = null
@@ -72,9 +70,7 @@ class CodeCheckActivity : AppCompatActivity(),
 
         //If a layout container, iterate over children and seed recursion.
         if (view is ViewGroup) {
-            (0 until view.childCount)
-                .map { view.getChildAt(it) }
-                .forEach { setupUI(it) }
+            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
         }
     }
 
@@ -95,10 +91,8 @@ class CodeCheckActivity : AppCompatActivity(),
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         if (savedInstanceState != null) {
-            binding.codeEditText.setText(
-                savedInstanceState.getString("code"),
-                TextView.BufferType.EDITABLE
-            )
+            binding.codeEditText.setText(savedInstanceState.getString("code"),
+                TextView.BufferType.EDITABLE)
         }
 
         binding.codeEditText.setOnEditorActionListener { _, actionId, event ->
@@ -139,33 +133,26 @@ class CodeCheckActivity : AppCompatActivity(),
         if (oldFragment != null) {
             try {
                 if (!isFinishing) fragmentTransaction.remove(oldFragment).commitAllowingStateLoss()
-            } catch (ex: java.lang.Exception) {
+            } catch (ignore: java.lang.Exception) {
             }
         }
 
         // Close keyboard in transition
         if (currentFocus != null) {
             val inputManager = this.getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-            inputManager.hideSoftInputFromWindow(
-                (currentFocus ?: return).windowToken,
-                InputMethodManager.HIDE_NOT_ALWAYS
-            )
+            inputManager.hideSoftInputFromWindow((currentFocus ?: return).windowToken,
+                InputMethodManager.HIDE_NOT_ALWAYS)
         }
 
         if (newFragment != null) {
             runOnUiThread {
                 fragmentTransaction = supportFragmentManager.beginTransaction()
-                fragmentTransaction.setCustomAnimations(
-                    R.anim.animation_fade_in,
-                    R.anim.animation_fade_out
-                )
+                fragmentTransaction.setCustomAnimations(R.anim.animation_fade_in,
+                    R.anim.animation_fade_out)
                 try {
-                    if (!isFinishing) fragmentTransaction.replace(
-                        binding.fragmentLayout.id,
-                        newFragment
-                    )
-                        .commitAllowingStateLoss()
-                } catch (ex: java.lang.Exception) {
+                    if (!isFinishing) fragmentTransaction.replace(binding.fragmentLayout.id,
+                        newFragment).commitAllowingStateLoss()
+                } catch (ignore: java.lang.Exception) {
                 }
             }
         }
@@ -177,7 +164,7 @@ class CodeCheckActivity : AppCompatActivity(),
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!isRfidRequired()) {
+        if (!settingViewModel().useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -228,8 +215,7 @@ class CodeCheckActivity : AppCompatActivity(),
 
         val buf = StringBuilder(200)
         for (ch in scannedCode.toCharArray()) {
-            if (buf.isNotEmpty())
-                buf.append(' ')
+            if (buf.isNotEmpty()) buf.append(' ')
             buf.append(String.format("%04x", ch.code).uppercase(Locale.getDefault()))
         }
 
@@ -268,24 +254,18 @@ class CodeCheckActivity : AppCompatActivity(),
             when {
                 itemObj != null -> {
                     fillPanel(ItemDetailFragment.newInstance(itemObj))
-                    binding.infoTextView.setText(
-                        R.string.the_code_belongs_to_an_item,
-                        TextView.BufferType.EDITABLE
-                    )
+                    binding.infoTextView.setText(R.string.the_code_belongs_to_an_item,
+                        TextView.BufferType.EDITABLE)
                 }
                 itemCode != null -> {
                     fillPanel(ItemDetailFragment.newInstance(itemCode))
-                    binding.infoTextView.setText(
-                        R.string.the_code_belongs_to_an_item_code,
-                        TextView.BufferType.EDITABLE
-                    )
+                    binding.infoTextView.setText(R.string.the_code_belongs_to_an_item_code,
+                        TextView.BufferType.EDITABLE)
                 }
                 else -> {
                     fillPanel(null)
-                    binding.infoTextView.setText(
-                        R.string.the_code_does_not_belong_to_any_iem_in_the_database,
-                        TextView.BufferType.EDITABLE
-                    )
+                    binding.infoTextView.setText(R.string.the_code_does_not_belong_to_any_iem_in_the_database,
+                        TextView.BufferType.EDITABLE)
                 }
             }
             JotterListener.lockScanner(this, false)
@@ -298,25 +278,24 @@ class CodeCheckActivity : AppCompatActivity(),
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+            this,
+            requestCode,
+            permissions,
+            grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
         runOnUiThread {
             binding.codeEditText.setText(scanCode)
-            binding.codeEditText.dispatchKeyEvent(
-                KeyEvent(
-                    0,
-                    0,
-                    KeyEvent.ACTION_DOWN,
-                    KeyEvent.KEYCODE_ENTER,
-                    0
-                )
-            )
+            binding.codeEditText.dispatchKeyEvent(KeyEvent(0,
+                0,
+                KeyEvent.ACTION_DOWN,
+                KeyEvent.KEYCODE_ENTER,
+                0))
         }
     }
 

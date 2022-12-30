@@ -2,7 +2,7 @@ package com.dacosys.warehouseCounter.misc.snackBar
 
 import android.os.Parcelable
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics.WarehouseCounter.Companion.getContext
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import java.util.*
 
 class SnackBarType : Parcelable {
@@ -69,49 +69,49 @@ class SnackBarType : Parcelable {
 
         var ERROR = SnackBarType(
             snackBarTypeId = 0,
-            description = getContext().getString(R.string.error),
+            description = context().getString(R.string.error),
             duration = 3500,
             backColor = R.drawable.snackbar_error,
             foreColor = R.color.firebrick
         )
         var INFO = SnackBarType(
             snackBarTypeId = 1,
-            description = getContext().getString(R.string.information),
+            description = context().getString(R.string.information),
             duration = 1500,
             backColor = R.drawable.snackbar_info,
             foreColor = R.color.goldenrod
         )
         var RUNNING = SnackBarType(
             snackBarTypeId = 2,
-            description = getContext().getString(R.string.running),
+            description = context().getString(R.string.running),
             duration = 750,
             backColor = R.drawable.snackbar_running,
             foreColor = R.color.lightskyblue
         )
         var SUCCESS = SnackBarType(
             3,
-            getContext().getString(R.string.success),
+            context().getString(R.string.success),
             duration = 1500,
             backColor = R.drawable.snackbar_success,
             foreColor = R.color.seagreen
         )
         var ADD = SnackBarType(
             snackBarTypeId = 4,
-            description = getContext().getString(R.string.add),
+            description = context().getString(R.string.add),
             duration = 1000,
             backColor = R.drawable.snackbar_add,
             foreColor = R.color.cadetblue
         )
         var UPDATE = SnackBarType(
             snackBarTypeId = 5,
-            description = getContext().getString(R.string.update),
+            description = context().getString(R.string.update),
             duration = 1000,
             backColor = R.drawable.snackbar_update,
             foreColor = R.color.steelblue
         )
         var REMOVE = SnackBarType(
             snackBarTypeId = 6,
-            description = getContext().getString(R.string.remove),
+            description = context().getString(R.string.remove),
             duration = 1000,
             backColor = R.drawable.snackbar_remove,
             foreColor = R.color.orangered

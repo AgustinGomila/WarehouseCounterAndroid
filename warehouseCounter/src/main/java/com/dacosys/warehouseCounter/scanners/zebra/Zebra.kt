@@ -7,8 +7,8 @@ import android.provider.ContactsContract
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.misc.Preference
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTION_DATAWEDGE
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTION_RESULT
@@ -64,6 +64,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
 
     private fun initializeScanner() {
         // Use SET_CONFIG: http://techdocs.zebra.com/datawedge/latest/guide/api/setconfig/
+        val sv = settingViewModel()
 
         // Main bundle properties
         val profileConfig = Bundle()
@@ -82,58 +83,20 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
         barcodeProps.putString("scanner_input_enabled", "true")
 
         // Set Symbologies
-        barcodeProps.putString(
-            "decoder_pdf417",
-            Statics.prefsGetBoolean(Preference.symbologyPDF417).toString()
-        )
-        barcodeProps.putString(
-            "decoder_aztec",
-            Statics.prefsGetBoolean(Preference.symbologyAztec).toString()
-        )
-        barcodeProps.putString(
-            "decoder_qrcode",
-            Statics.prefsGetBoolean(Preference.symbologyQRCode).toString()
-        )
-        barcodeProps.putString(
-            "decoder_codabar",
-            Statics.prefsGetBoolean(Preference.symbologyCODABAR).toString()
-        )
-        barcodeProps.putString(
-            "decoder_code128",
-            Statics.prefsGetBoolean(Preference.symbologyCode128).toString()
-        )
-        barcodeProps.putString(
-            "decoder_code39",
-            Statics.prefsGetBoolean(Preference.symbologyCode39).toString()
-        )
-        barcodeProps.putString(
-            "decoder_code93",
-            Statics.prefsGetBoolean(Preference.symbologyCode93).toString()
-        )
-        barcodeProps.putString(
-            "decoder_datamatrix",
-            Statics.prefsGetBoolean(Preference.symbologyDataMatrix).toString()
-        )
-        barcodeProps.putString(
-            "decoder_ean13",
-            Statics.prefsGetBoolean(Preference.symbologyEAN13).toString()
-        )
-        barcodeProps.putString(
-            "decoder_ean8",
-            Statics.prefsGetBoolean(Preference.symbologyEAN8).toString()
-        )
-        barcodeProps.putString(
-            "decoder_maxicode",
-            Statics.prefsGetBoolean(Preference.symbologyMaxiCode).toString()
-        )
-        barcodeProps.putString(
-            "decoder_upca",
-            Statics.prefsGetBoolean(Preference.symbologyUPCA).toString()
-        )
-        barcodeProps.putString(
-            "decoder_upce0",
-            Statics.prefsGetBoolean(Preference.symbologyUPCE).toString()
-        )
+        barcodeProps.putString("decoder_pdf417", if (sv.symbologyPDF417) "true" else "false")
+        barcodeProps.putString("decoder_aztec", if (sv.symbologyAztec) "true" else "false")
+        barcodeProps.putString("decoder_qrcode", if (sv.symbologyQRCode) "true" else "false")
+        barcodeProps.putString("decoder_codabar", if (sv.symbologyCODABAR) "true" else "false")
+        barcodeProps.putString("decoder_code128", if (sv.symbologyCode128) "true" else "false")
+        barcodeProps.putString("decoder_code39", if (sv.symbologyCode39) "true" else "false")
+        barcodeProps.putString("decoder_code93", if (sv.symbologyCode93) "true" else "false")
+        barcodeProps.putString("decoder_datamatrix",
+            if (sv.symbologyDataMatrix) "true" else "false")
+        barcodeProps.putString("decoder_ean13", if (sv.symbologyEAN13) "true" else "false")
+        barcodeProps.putString("decoder_ean8", if (sv.symbologyEAN8) "true" else "false")
+        barcodeProps.putString("decoder_maxicode", if (sv.symbologyMaxiCode) "true" else "false")
+        barcodeProps.putString("decoder_upca", if (sv.symbologyUPCA) "true" else "false")
+        barcodeProps.putString("decoder_upce0", if (sv.symbologyUPCE) "true" else "false")
 
         // Bundle "barcodeProps" within bundle "barcodeConfig"
         barcodeConfig.putBundle("PARAM_LIST", barcodeProps)
@@ -142,7 +105,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
 
         // Create APP_LIST bundle to associate app with profile
         val appConfig = Bundle()
-        appConfig.putString("PACKAGE_NAME", Statics.WarehouseCounter.getContext().packageName)
+        appConfig.putString("PACKAGE_NAME", context().packageName)
         appConfig.putStringArray("ACTIVITY_LIST", arrayOf("*"))
         profileConfig.putParcelableArray("APP_LIST", arrayOf(appConfig))
         sendDataWedgeIntentWithExtra(EXTRA_SET_CONFIG, profileConfig)
@@ -150,20 +113,16 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
         // Register for status change notification
         // Use REGISTER_FOR_NOTIFICATION: http://techdocs.zebra.com/datawedge/latest/guide/api/registerfornotification/
         val b = Bundle()
-        b.putString(EXTRA_KEY_APPLICATION_NAME, Statics.WarehouseCounter.getContext().packageName)
-        b.putString(
-            EXTRA_KEY_NOTIFICATION_TYPE,
-            "SCANNER_STATUS"
-        ) // register for changes in scanner status
+        b.putString(EXTRA_KEY_APPLICATION_NAME, context().packageName)
+        b.putString(EXTRA_KEY_NOTIFICATION_TYPE,
+            "SCANNER_STATUS") // register for changes in scanner status
         sendDataWedgeIntentWithExtra(EXTRA_REGISTER_NOTIFICATION, b)
         registerReceivers()
 
         // Get DataWedge version
         // Use GET_VERSION_INFO: http://techdocs.zebra.com/datawedge/latest/guide/api/getversioninfo/
-        sendDataWedgeIntentWithExtra(
-            EXTRA_GET_VERSION_INFO,
-            EXTRA_EMPTY
-        ) // must be called after registering BroadcastReceiver
+        sendDataWedgeIntentWithExtra(EXTRA_GET_VERSION_INFO,
+            EXTRA_EMPTY) // must be called after registering BroadcastReceiver
     }
 
     // Create profile from UI onClick() event
@@ -178,10 +137,8 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
         val profileConfig = Bundle()
         profileConfig.putString("PROFILE_NAME", EXTRA_PROFILENAME)
         profileConfig.putString("PROFILE_ENABLED", "true")
-        profileConfig.putString(
-            "CONFIG_MODE",
-            "CREATE_IF_NOT_EXIST"
-        ) // Create profile if it does not exist
+        profileConfig.putString("CONFIG_MODE",
+            "CREATE_IF_NOT_EXIST") // Create profile if it does not exist
 
         // Configure barcode input plugin
         val barcodeConfig = Bundle()
@@ -193,7 +150,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
 
         // Associate profile with this app
         val appConfig = Bundle()
-        appConfig.putString("PACKAGE_NAME", Statics.WarehouseCounter.getContext().packageName)
+        appConfig.putString("PACKAGE_NAME", context().packageName)
         appConfig.putStringArray("ACTIVITY_LIST", arrayOf("*"))
         profileConfig.putParcelableArray("APP_LIST", arrayOf(appConfig))
         profileConfig.remove("PLUGIN_CONFIG")
@@ -246,7 +203,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
     private fun unRegisterScannerStatus() {
         Log.v(this::class.java.simpleName, "unRegisterScannerStatus() on $activityName")
         val b = Bundle()
-        b.putString(EXTRA_KEY_APPLICATION_NAME, Statics.WarehouseCounter.getContext().packageName)
+        b.putString(EXTRA_KEY_APPLICATION_NAME, context().packageName)
         b.putString(EXTRA_KEY_NOTIFICATION_TYPE, EXTRA_KEY_VALUE_SCANNER_STATUS)
         val i = Intent()
         i.action = ContactsContract.Intents.Insert.ACTION

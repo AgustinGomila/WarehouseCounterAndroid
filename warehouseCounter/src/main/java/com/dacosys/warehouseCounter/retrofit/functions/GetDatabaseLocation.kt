@@ -1,9 +1,10 @@
-package com.dacosys.warehouseCounter.sync
+package com.dacosys.warehouseCounter.retrofit.functions
 
-import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.orderRequest.`object`.OrderRequest
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.sync.ProgressStatus
 import kotlinx.coroutines.*
 import org.json.JSONException
 import org.json.JSONObject
@@ -11,51 +12,39 @@ import java.io.BufferedReader
 import java.io.DataOutputStream
 import java.io.InputStreamReader
 import java.net.*
+import javax.net.ssl.HttpsURLConnection
 
-
-class GetNewOrderRequest {
-    interface NewOrderRequestListener {
+class GetDatabaseLocation {
+    interface DatabaseLocationEnded {
         // Define data you like to return from AysncTask
-        fun onNewOrderRequestResult(
+        fun onDatabaseLocationEnded(
             status: ProgressStatus,
-            itemArray: ArrayList<OrderRequest>,
-            TASK_CODE: Int,
+            timeFileUrl: String,
+            dbFileUrl: String,
             msg: String,
         )
     }
 
-    // region VARIABLES de comunicación entre procesos
-    private var mCallback: NewOrderRequestListener? = null
-    private var taskCode: Int = -1
-    // endregion
+    var mCallback: DatabaseLocationEnded? = null
 
-    private val urlRequest = "${Statics.apiUrl}/order/get"
+    private val api = "api"
+    private val urlPanel = "${settingViewModel().urlPanel}/$api"
+    private val urlRequest = "${urlPanel}/database/location"
     private var progressStatus = ProgressStatus.unknown
     private var msg = ""
 
-    // region VARIABLES para resultados de la consulta
-    private var itemArray = ArrayList<OrderRequest>()
-    // endregion
+    private var timeFileUrl: String = ""
+    private var dbFileUrl: String = ""
 
-    fun addParams(
-        listener: NewOrderRequestListener,
-        TASK_CODE: Int,
-    ) {
-        this.mCallback = listener
-        this.taskCode = TASK_CODE
-    }
-
-    private fun preExecute() {
-        progressStatus = ProgressStatus.starting
+    fun addParams(callback: DatabaseLocationEnded) {
+        this.mCallback = callback
     }
 
     private fun postExecute() {
-        mCallback?.onNewOrderRequestResult(
-            progressStatus,
-            itemArray,
-            taskCode,
-            msg
-        )
+        mCallback?.onDatabaseLocationEnded(status = progressStatus,
+            timeFileUrl = timeFileUrl,
+            dbFileUrl = dbFileUrl,
+            msg = msg)
     }
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
@@ -65,7 +54,8 @@ class GetNewOrderRequest {
     }
 
     fun execute() {
-        preExecute()
+        progressStatus = ProgressStatus.starting
+
         scope.launch {
             doInBackground()
             postExecute()
@@ -85,11 +75,10 @@ class GetNewOrderRequest {
     private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
         if (!Statics.isOnline()) {
             progressStatus = ProgressStatus.canceled
-            msg = Statics.WarehouseCounter.getContext().getString(R.string.no_connection)
+            msg = context().getString(R.string.no_connection)
             return@withContext false
         }
 
-        Log.d(this::class.java.simpleName, "Solicitando nuevas órdenes...")
         progressStatus = ProgressStatus.running
         return@withContext goForrest()
     }
@@ -101,27 +90,19 @@ class GetNewOrderRequest {
         try {
             //Create connection
             url = URL(urlRequest)
-
-            connection = if (Statics.useProxy) {
+            val sv = settingViewModel()
+            connection = if (sv.useProxy) {
                 val authenticator = object : Authenticator() {
                     override fun getPasswordAuthentication(): PasswordAuthentication {
-                        return PasswordAuthentication(
-                            Statics.proxyUser,
-                            Statics.proxyPass.toCharArray()
-                        )
+                        return PasswordAuthentication(sv.proxyUser, sv.proxyPass.toCharArray())
                     }
                 }
                 Authenticator.setDefault(authenticator)
 
-                val proxy = Proxy(
-                    Proxy.Type.HTTP, InetSocketAddress(
-                        Statics.proxy,
-                        Statics.proxyPort
-                    )
-                )
-                url.openConnection(proxy) as HttpURLConnection
+                val proxy = Proxy(Proxy.Type.HTTP, InetSocketAddress(sv.proxy, sv.proxyPort))
+                url.openConnection(proxy) as HttpsURLConnection
             } else {
-                url.openConnection() as HttpURLConnection
+                url.openConnection() as HttpsURLConnection
             }
 
             connection.doOutput = true
@@ -139,9 +120,7 @@ class GetNewOrderRequest {
             getResponse(connection)
         } catch (ex: Exception) {
             progressStatus = ProgressStatus.crashed
-            msg = "${
-                Statics.WarehouseCounter.getContext().getString(R.string.exception_error)
-            }: ${ex.message}"
+            msg = ex.message.toString()
         } finally {
             connection?.disconnect()
         }
@@ -178,32 +157,23 @@ class GetNewOrderRequest {
                 return false
             }
 
-            if (jsonObj.has("orders")) {
-                val orderJsonArray = jsonObj.getJSONArray("orders")
-                for (i in 0 until orderJsonArray.length()) {
-                    val obj = orderJsonArray.getJSONObject(i)
-                    val or = OrderRequest.fromJson(obj.toString())
-                    if (or != null) {
-                        itemArray.add(or)
-                    }
-                }
+            if (jsonObj.has("database")) {
+                val jsonDb = jsonObj.getJSONObject("database")
+                dbFileUrl = jsonDb.getString("db_file")
+                timeFileUrl = jsonDb.getString("db_file_date")
             }
 
             progressStatus = ProgressStatus.finished
-            msg = if (itemArray.isNotEmpty()) {
-                Statics.WarehouseCounter.getContext().getString(R.string.ok)
+            msg = if (timeFileUrl.isEmpty() || dbFileUrl.isEmpty()) {
+                context().getString(R.string.success_response)
             } else {
-                Statics.WarehouseCounter.getContext().getString(R.string.no_new_counts)
+                context().getString(R.string.client_has_no_software_packages)
             }
         } catch (ex: JSONException) {
-            Log.e(this::class.java.simpleName, ex.toString())
-
             progressStatus = ProgressStatus.crashed
-            msg =
-                "${
-                    Statics.WarehouseCounter.getContext()
-                        .getString(R.string.an_error_occurred_while_requesting_new_counts)
-                }: ${ex.message}"
+            msg = "${
+                context().getString(R.string.exception_error)
+            }: ${ex.message}"
         }
         return progressStatus != ProgressStatus.crashed
     }

@@ -9,7 +9,7 @@ import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics.Companion.DATABASE_NAME
 import com.dacosys.warehouseCounter.Statics.Companion.DATABASE_VERSION
-import com.dacosys.warehouseCounter.Statics.WarehouseCounter.Companion.getContext
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.client.dbHelper.ClientDbHelper
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.item.dbHelper.ItemDbHelper
@@ -25,7 +25,7 @@ import java.io.IOException
 
 
 open class DataBaseHelper : SQLiteOpenHelper(
-    getContext(),
+    context(),
     DATABASE_NAME,
     null,
     DATABASE_VERSION
@@ -57,12 +57,32 @@ open class DataBaseHelper : SQLiteOpenHelper(
         /////////////// INSTANCIA ESTÁTICA (SINGLETON) ///////////////
         private var sInstance: DataBaseHelper? = null
 
-        fun cleanInstance() {
+        fun beginDataBase() {
+            try {
+                createDb()
+            } catch (ioe: IOException) {
+                throw Error(context().getString(R.string.unable_to_create_database))
+            }
+        }
+
+        fun getReadableDb(): SQLiteDatabase {
+            return getInstance()!!.readableDatabase
+        }
+
+        fun getWritableDb(): SQLiteDatabase {
+            return getInstance()!!.writableDatabase
+        }
+
+        private fun cleanInstance() {
             sInstance = null
         }
 
+        private fun createDb() {
+            createDataBase()
+        }
+
         @Synchronized
-        fun getInstance(): DataBaseHelper? {
+        private fun getInstance(): DataBaseHelper? {
             // Use the application context, which will ensure that you
             // don't accidentally leak an Activity's context.
             // See this article for more information: http://bit.ly/6LRzfx
@@ -73,9 +93,15 @@ open class DataBaseHelper : SQLiteOpenHelper(
         }
 
         fun createTables(db: SQLiteDatabase) {
-            for (sql in allCommands) {
-                println("$sql;")
-                db.execSQL(sql)
+            db.beginTransaction()
+            try {
+                for (sql in allCommands) {
+                    println("$sql;")
+                    db.execSQL(sql)
+                }
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
             }
         }
 
@@ -139,7 +165,7 @@ open class DataBaseHelper : SQLiteOpenHelper(
             } catch (e: SQLiteException) {
                 Log.e(
                     this::class.java.simpleName,
-                    getContext()
+                    context()
                         .getString(R.string.database_is_not_created_yet)
                 )
             }
@@ -149,7 +175,7 @@ open class DataBaseHelper : SQLiteOpenHelper(
         fun copyDbToDocuments(): Boolean {
             try {
                 val dbFile =
-                    File(getContext().getDatabasePath(DATABASE_NAME).toString())
+                    File(context().getDatabasePath(DATABASE_NAME).toString())
 
                 //Open your local db as the input stream
                 val myInput = FileInputStream(dbFile)
@@ -202,10 +228,10 @@ open class DataBaseHelper : SQLiteOpenHelper(
         @Throws(IOException::class)
         private fun copyDataBase() {
             //Open your local db as the input stream
-            val myInput = getContext().assets.open(DATABASE_NAME)
+            val myInput = context().assets.open(DATABASE_NAME)
 
             // Path to the just created empty db
-            val outFileName = getContext().getDatabasePath(DATABASE_NAME).toString()
+            val outFileName = context().getDatabasePath(DATABASE_NAME).toString()
 
             try {
                 //Open the empty db as the output stream
@@ -234,7 +260,7 @@ open class DataBaseHelper : SQLiteOpenHelper(
         @Throws(SQLException::class)
         fun openDataBase() {
             //Open the database
-            val myPath = getContext().getDatabasePath(DATABASE_NAME).toString()
+            val myPath = context().getDatabasePath(DATABASE_NAME).toString()
             myDataBase = SQLiteDatabase.openDatabase(
                 myPath,
                 null,
@@ -247,7 +273,7 @@ open class DataBaseHelper : SQLiteOpenHelper(
 
             Log.d(
                 this::class.java.simpleName,
-                getContext().getString(R.string.copying_database)
+                context().getString(R.string.copying_database)
             )
 
             //Open your local db as the input stream
@@ -255,7 +281,7 @@ open class DataBaseHelper : SQLiteOpenHelper(
 
             // Path to the just created empty db
             val outFileName =
-                getContext().getDatabasePath(DATABASE_NAME)
+                context().getDatabasePath(DATABASE_NAME)
                     .toString()
 
             DataBaseHelper().close()
@@ -273,13 +299,13 @@ open class DataBaseHelper : SQLiteOpenHelper(
             Log.d(
                 this::class.java.simpleName,
                 "${
-                    getContext().getString(R.string.origin)
+                    context().getString(R.string.origin)
                 }: ${destinationDbFile.absolutePath}"
             )
             Log.d(
                 this::class.java.simpleName,
                 "${
-                    getContext().getString(R.string.destination)
+                    context().getString(R.string.destination)
                 }: $outFileName"
             )
 
@@ -306,13 +332,13 @@ open class DataBaseHelper : SQLiteOpenHelper(
                     null,
                     this::class.java.simpleName,
                     "${
-                        getContext().getString(R.string.exception_error)
+                        context().getString(R.string.exception_error)
                     } (Copy database): ${e.message}"
                 )
                 return false
             }
 
-            Log.d(this::class.java.simpleName, getContext().getString(R.string.copy_ok))
+            Log.d(this::class.java.simpleName, context().getString(R.string.copy_ok))
             return true
         }
     }

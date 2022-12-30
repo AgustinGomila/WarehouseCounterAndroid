@@ -43,7 +43,7 @@ class ItemRegexDbHelper {
         regex: String,
         jsonConfig: String,
         codeLength: Long,
-        active: Boolean
+        active: Boolean,
     ): Long {
         val sqLiteDatabase = StaticDbHelper.getWritableDb()
 

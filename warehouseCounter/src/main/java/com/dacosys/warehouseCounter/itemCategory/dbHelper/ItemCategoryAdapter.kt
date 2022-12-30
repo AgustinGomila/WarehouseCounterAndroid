@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.itemCategory.`object`.ItemCategory
 import java.util.*
 
@@ -21,9 +22,7 @@ import java.util.*
  */
 
 @Suppress("SpellCheckingInspection")
-class ItemCategoryAdapter :
-    ArrayAdapter<ItemCategory>,
-    Filterable {
+class ItemCategoryAdapter : ArrayAdapter<ItemCategory>, Filterable {
     private var activity: AppCompatActivity
     private var resource: Int = 0
 
@@ -41,7 +40,7 @@ class ItemCategoryAdapter :
         resource: Int,
         itemCategorys: ArrayList<ItemCategory>,
         suggestedList: ArrayList<ItemCategory>,
-    ) : super(Statics.WarehouseCounter.getContext(), resource, suggestedList) {
+    ) : super(context(), resource, suggestedList) {
         this.activity = activity
         this.resource = resource
         this.itemCategoryArray = itemCategorys
@@ -158,13 +157,9 @@ class ItemCategoryAdapter :
         super.sort(customComparator)
     }
 
-    private val customComparator =
-        Comparator { o1: ItemCategory?, o2: ItemCategory? ->
-            ItemCategoryComparator().compareNullable(
-                o1,
-                o2
-            )
-        }
+    private val customComparator = Comparator { o1: ItemCategory?, o2: ItemCategory? ->
+        ItemCategoryComparator().compareNullable(o1, o2)
+    }
 
     fun refresh() {
         activity.runOnUiThread { notifyDataSetChanged() }
@@ -199,8 +194,7 @@ class ItemCategoryAdapter :
             // El view ya existe, comprobar que no necesite cambiar de layout.
             if (
             // Row null cambiando...
-                v.tag is String && currentLayout == R.layout.item_category_row
-            ) {
+                v.tag is String && currentLayout == R.layout.item_category_row) {
                 // Ya fue creado, si es un row normal que está siendo seleccionada
                 // o un row expandido que está siendo deseleccionado
                 // debe cambiar de layout, por lo tanto volver a crearse.
@@ -294,31 +288,12 @@ class ItemCategoryAdapter :
 
                 // Background colors
                 val lightgray =
-                    ResourcesCompat.getColor(
-                        Statics.WarehouseCounter.getContext().resources,
-                        R.color.lightgray,
-                        null
-                    )
-                val white =
-                    ResourcesCompat.getColor(
-                        Statics.WarehouseCounter.getContext().resources,
-                        R.color.text_light,
-                        null
-                    )
+                    ResourcesCompat.getColor(context().resources, R.color.lightgray, null)
+                val white = ResourcesCompat.getColor(context().resources, R.color.text_light, null)
 
                 // Font colors
-                val black =
-                    ResourcesCompat.getColor(
-                        Statics.WarehouseCounter.getContext().resources,
-                        R.color.text_dark,
-                        null
-                    )
-                val dimgray =
-                    ResourcesCompat.getColor(
-                        Statics.WarehouseCounter.getContext().resources,
-                        R.color.dimgray,
-                        null
-                    )
+                val black = ResourcesCompat.getColor(context().resources, R.color.text_dark, null)
+                val dimgray = ResourcesCompat.getColor(context().resources, R.color.dimgray, null)
 
                 val colorText = when {
                     !itemCategory.active -> dimgray
@@ -355,13 +330,9 @@ class ItemCategoryAdapter :
 
                     for (i in 0 until itemCategoryArray.size) {
                         filterableItem = itemCategoryArray[i]
-                        if (
-                            filterableItem.description.lowercase(Locale.getDefault())
-                                .contains(filterString) ||
-                            (filterableItem.parent != null
-                                    && (filterableItem.parent?.description
-                                ?: "").lowercase(Locale.getDefault())
-                                .contains(filterString))
+                        if (filterableItem.description.lowercase(Locale.getDefault())
+                                .contains(filterString) || (filterableItem.parent != null && (filterableItem.parent?.description
+                                ?: "").lowercase(Locale.getDefault()).contains(filterString))
                         ) {
                             r.add(filterableItem)
                         }

@@ -1,9 +1,12 @@
-package com.dacosys.warehouseCounter.sync
+package com.dacosys.warehouseCounter.retrofit.functions
 
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.itemCode.`object`.ItemCode
 import com.dacosys.warehouseCounter.itemCode.dbHelper.ItemCodeDbHelper
+import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.user.`object`.User
 import kotlinx.coroutines.*
 import org.json.JSONObject
@@ -11,8 +14,9 @@ import java.io.BufferedReader
 import java.io.DataOutputStream
 import java.io.InputStreamReader
 import java.net.*
+import javax.net.ssl.HttpsURLConnection
 
-class SendNewItemCode {
+class SendItemCode {
     interface TaskSendItemCodeEnded {
         // Define data you like to return from AysncTask
         fun onTaskSendItemCodeEnded(
@@ -23,7 +27,9 @@ class SendNewItemCode {
 
     var mCallback: TaskSendItemCodeEnded? = null
 
-    private val urlRequest = "${Statics.apiUrl}/item-code/send"
+    private val api = "api"
+    private val urlPanel = "${settingViewModel().urlPanel}/$api"
+    private val urlRequest = "${urlPanel}/item-code/send"
     private var itemCodeArray: ArrayList<ItemCode> = ArrayList()
     private var itemCodeSuccess: ArrayList<ItemCode> = ArrayList()
 
@@ -37,11 +43,6 @@ class SendNewItemCode {
     ) {
         this.mCallback = listener
         this.itemCodeArray = itemCodeArray
-    }
-
-    private fun preExecute() {
-        progressStatus = ProgressStatus.starting
-        currentUser = Statics.getCurrentUser()
     }
 
     private fun postExecute(result: Boolean) {
@@ -58,13 +59,10 @@ class SendNewItemCode {
         }
 
         if (!isOk) {
-            mCallback?.onTaskSendItemCodeEnded(
-                ProgressStatus.crashed,
-                Statics.WarehouseCounter.getContext()
-                    .getString(R.string.an_error_occurred_while_updating_item_codes)
-            )
+            mCallback?.onTaskSendItemCodeEnded(status = ProgressStatus.crashed,
+                msg = context().getString(R.string.an_error_occurred_while_updating_item_codes))
         } else {
-            mCallback?.onTaskSendItemCodeEnded(progressStatus, msg)
+            mCallback?.onTaskSendItemCodeEnded(status = progressStatus, msg = msg)
         }
     }
 
@@ -75,7 +73,9 @@ class SendNewItemCode {
     }
 
     fun execute() {
-        preExecute()
+        progressStatus = ProgressStatus.starting
+        currentUser = Statics.getCurrentUser()
+
         scope.launch {
             val it = doInBackground()
             postExecute(it)
@@ -105,27 +105,19 @@ class SendNewItemCode {
         try {
             //Create connection
             url = URL(urlRequest)
-
-            connection = if (Statics.useProxy) {
+            val sv = settingViewModel()
+            connection = if (sv.useProxy) {
                 val authenticator = object : Authenticator() {
                     override fun getPasswordAuthentication(): PasswordAuthentication {
-                        return PasswordAuthentication(
-                            Statics.proxyUser,
-                            Statics.proxyPass.toCharArray()
-                        )
+                        return PasswordAuthentication(sv.proxyUser, sv.proxyPass.toCharArray())
                     }
                 }
                 Authenticator.setDefault(authenticator)
 
-                val proxy = Proxy(
-                    Proxy.Type.HTTP, InetSocketAddress(
-                        Statics.proxy,
-                        Statics.proxyPort
-                    )
-                )
-                url.openConnection(proxy) as HttpURLConnection
+                val proxy = Proxy(Proxy.Type.HTTP, InetSocketAddress(sv.proxy, sv.proxyPort))
+                url.openConnection(proxy) as HttpsURLConnection
             } else {
-                url.openConnection() as HttpURLConnection
+                url.openConnection() as HttpsURLConnection
             }
 
             connection.doOutput = true
@@ -137,9 +129,7 @@ class SendNewItemCode {
 
             // USER DATA //////////////////
             val userAuthData = JSONObject()
-            userAuthData
-                .put("username", currentUser!!.name)
-                .put("password", currentUser!!.password)
+            userAuthData.put("username", currentUser!!.name).put("password", currentUser!!.password)
 
             val jsonParam = JSONObject()
             jsonParam.put("userauthdata", userAuthData)
@@ -175,7 +165,7 @@ class SendNewItemCode {
         } catch (ex: Exception) {
             progressStatus = ProgressStatus.crashed
             msg = "${
-                Statics.WarehouseCounter.getContext().getString(R.string.exception_error)
+                context().getString(R.string.exception_error)
             }: ${ex.message}"
             isOk = false
         } finally {
@@ -215,11 +205,11 @@ class SendNewItemCode {
             }
 
             progressStatus = ProgressStatus.finished
-            msg = Statics.WarehouseCounter.getContext().getString(R.string.ok)
+            msg = context().getString(R.string.ok)
         } catch (ex: Exception) {
             progressStatus = ProgressStatus.crashed
             msg = "${
-                Statics.WarehouseCounter.getContext().getString(R.string.exception_error)
+                context().getString(R.string.exception_error)
             }: ${ex.message}"
         }
 

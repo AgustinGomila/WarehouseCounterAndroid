@@ -9,166 +9,213 @@
     android:layout_marginBottom="8dp"
     android:theme="@style/Theme.AppCompat.Light">
 
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline500"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.5" />
-
-    <com.dacosys.warehouseCounter.misc.AutoResizeTextView
-        android:id="@+id/eanAutoResizeTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="2dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginEnd="2dp"
-        android:maxLines="1"
-        android:minLines="1"
-        android:text="@string/ean"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:autoSizeMaxTextSize="18sp"
-        app:autoSizeMinTextSize="12dp"
-        app:autoSizeStepGranularity="1sp"
-        app:autoSizeTextType="uniform"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/topLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
 
-    <com.dacosys.warehouseCounter.misc.AutoResizeTextView
-        android:id="@+id/descriptionAutoResizeTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="2dp"
-        android:layout_marginEnd="2dp"
-        android:maxLines="2"
-        android:minLines="1"
-        android:text="@string/description"
-        android:textSize="14sp"
-        app:autoSizeMaxTextSize="18sp"
-        app:autoSizeMinTextSize="12dp"
-        app:autoSizeStepGranularity="1sp"
-        app:autoSizeTextType="uniform"
+        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+            android:id="@+id/eanAutoResizeTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="2dp"
+            android:maxLines="1"
+            android:minLines="1"
+            android:text="@string/ean"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:autoSizeMaxTextSize="18sp"
+            app:autoSizeMinTextSize="12dp"
+            app:autoSizeStepGranularity="1sp"
+            app:autoSizeTextType="uniform"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+            android:id="@+id/descriptionAutoResizeTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:maxLines="2"
+            android:minLines="1"
+            android:text="@string/description"
+            android:textSize="14sp"
+            app:autoSizeMaxTextSize="18sp"
+            app:autoSizeMinTextSize="12dp"
+            app:autoSizeStepGranularity="1sp"
+            app:autoSizeTextType="uniform"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/eanAutoResizeTextView" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/idLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/eanAutoResizeTextView" />
+        app:layout_constraintTop_toBottomOf="@+id/topLayout">
 
-    <TextView
-        android:id="@+id/idTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="2dp"
-        android:layout_marginTop="2dp"
-        android:text="@string/id"
-        android:textColor="@color/darkslategray"
-        android:textSize="8sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/descriptionAutoResizeTextView" />
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.5" />
 
-    <com.dacosys.warehouseCounter.misc.AutoResizeTextView
-        android:id="@+id/idAutoResizeTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="2dp"
-        android:layout_marginEnd="2dp"
-        android:text="@string/id"
-        app:layout_constraintEnd_toStartOf="@+id/guideline500"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/idTextView" />
+        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+            android:id="@+id/idAutoResizeTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:text="@string/id"
+            app:layout_constraintEnd_toStartOf="@+id/guideline2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/idTextView" />
 
-    <TextView
-        android:id="@+id/extIdTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="2dp"
-        android:layout_marginTop="2dp"
-        android:text="@string/external_id"
-        android:textColor="@color/darkslategray"
-        android:textSize="8sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="@+id/guideline500"
-        app:layout_constraintTop_toBottomOf="@+id/descriptionAutoResizeTextView" />
+        <TextView
+            android:id="@+id/idTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="2dp"
+            android:text="@string/id"
+            android:textColor="@color/darkslategray"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <com.dacosys.warehouseCounter.misc.AutoResizeTextView
-        android:id="@+id/extIdAutoResizeTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="2dp"
-        android:layout_marginEnd="2dp"
-        android:text="@string/external_id"
+        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+            android:id="@+id/extIdAutoResizeTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:text="@string/external_id"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/idAutoResizeTextView"
+            app:layout_constraintTop_toBottomOf="@+id/extIdTextView" />
+
+        <TextView
+            android:id="@+id/extIdTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="2dp"
+            android:text="@string/external_id"
+            android:textColor="@color/darkslategray"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="@+id/guideline2"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/categoryPriceLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/guideline500"
-        app:layout_constraintTop_toBottomOf="@+id/extIdTextView" />
-
-    <View
-        android:id="@+id/dividerInternal1"
-        android:layout_width="0dp"
-        android:layout_height="2dp"
-        android:layout_marginStart="2dp"
-        android:layout_marginEnd="2dp"
-        android:background="?android:attr/listDivider"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/idAutoResizeTextView" />
+        app:layout_constraintTop_toBottomOf="@+id/idLayout">
 
-    <TextView
-        android:id="@+id/categoryTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="2dp"
-        android:layout_marginTop="2dp"
-        android:text="@string/category"
-        android:textColor="@color/darkslategray"
-        android:textSize="8sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/dividerInternal1" />
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.5" />
 
-    <com.dacosys.warehouseCounter.misc.AutoResizeTextView
-        android:id="@+id/categoryAutoResizeTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="2dp"
-        android:layout_marginEnd="2dp"
-        android:text="@string/category"
-        app:layout_constraintEnd_toStartOf="@+id/guideline500"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/categoryTextView" />
+        <View
+            android:id="@+id/dividerInternal6"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <com.dacosys.warehouseCounter.misc.AutoResizeTextView
-        android:id="@+id/priceAutoResizeTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="2dp"
-        android:layout_marginEnd="2dp"
-        android:text="@string/price"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/categoryAutoResizeTextView"
-        app:layout_constraintTop_toBottomOf="@+id/priceTextView" />
+        <TextView
+            android:id="@+id/categoryTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="2dp"
+            android:text="@string/category"
+            android:textColor="@color/darkslategray"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/dividerInternal6" />
 
-    <TextView
-        android:id="@+id/priceTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="2dp"
-        android:layout_marginTop="2dp"
-        android:text="@string/price"
-        android:textColor="@color/darkslategray"
-        android:textSize="8sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="@+id/guideline500"
-        app:layout_constraintTop_toBottomOf="@+id/dividerInternal1" />
+        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+            android:id="@+id/priceAutoResizeTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:text="@string/price"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/guideline4"
+            app:layout_constraintTop_toBottomOf="@+id/priceTextView" />
+
+        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+            android:id="@+id/categoryAutoResizeTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:text="@string/category"
+            app:layout_constraintEnd_toStartOf="@+id/guideline4"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/categoryTextView" />
+
+        <TextView
+            android:id="@+id/priceTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="2dp"
+            android:text="@string/price"
+            android:textColor="@color/darkslategray"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="@+id/guideline4"
+            app:layout_constraintTop_toTopOf="@id/dividerInternal6" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/itemCodeConstraintLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@+id/categoryAutoResizeTextView">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/categoryPriceLayout">
+
+        <View
+            android:id="@+id/dividerInternal3"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guidelineItemCode500"
@@ -226,16 +273,338 @@
             app:layout_constraintStart_toStartOf="@+id/guidelineItemCode500"
             app:layout_constraintTop_toBottomOf="@+id/qtyTextView" />
 
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/priceLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/itemCodeConstraintLayout">
+
         <View
+            android:id="@+id/dividerInternal2"
             android:layout_width="0dp"
             android:layout_height="2dp"
             android:layout_marginStart="2dp"
             android:layout_marginEnd="2dp"
             android:background="?android:attr/listDivider"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guidelinePriceList500"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.65" />
+
+        <TextView
+            android:id="@+id/priceListTitleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="2dp"
+            android:text="@string/price_list"
+            android:textColor="@color/darkslategray"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            android:visibility="visible"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/dividerInternal2" />
+
+        <TextView
+            android:id="@+id/priceListTextView1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/price"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintTop_toTopOf="@+id/priceDescTextView1" />
+
+        <TextView
+            android:id="@+id/priceDescTextView1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/list_price"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/priceListTitleTextView" />
+
+        <TextView
+            android:id="@+id/priceListTextView2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/price"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintTop_toTopOf="@+id/priceDescTextView2" />
+
+        <TextView
+            android:id="@+id/priceDescTextView2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/list_price"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/priceDescTextView1" />
+
+        <TextView
+            android:id="@+id/priceListTextView3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/price"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintTop_toTopOf="@+id/priceDescTextView3" />
+
+        <TextView
+            android:id="@+id/priceDescTextView3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/list_price"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/priceDescTextView2" />
+
+        <TextView
+            android:id="@+id/priceListTextView4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/price"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintTop_toTopOf="@+id/priceDescTextView4" />
+
+        <TextView
+            android:id="@+id/priceDescTextView4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/list_price"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/priceDescTextView3" />
+
+        <TextView
+            android:id="@+id/priceListTextView5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/price"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintTop_toTopOf="@+id/priceDescTextView5" />
+
+        <TextView
+            android:id="@+id/priceDescTextView5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/list_price"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/priceDescTextView4" />
+
+        <TextView
+            android:id="@+id/priceListTextView6"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/price"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintTop_toTopOf="@+id/priceDescTextView6" />
+
+        <TextView
+            android:id="@+id/priceDescTextView6"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/list_price"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/priceDescTextView5" />
+
+        <TextView
+            android:id="@+id/priceListTextView7"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/price"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintTop_toTopOf="@+id/priceDescTextView7" />
+
+        <TextView
+            android:id="@+id/priceDescTextView7"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/list_price"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/priceDescTextView6" />
+
+        <TextView
+            android:id="@+id/priceListTextView8"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/price"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintTop_toTopOf="@+id/priceDescTextView8" />
+
+        <TextView
+            android:id="@+id/priceDescTextView8"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/list_price"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/priceDescTextView7" />
+
+        <TextView
+            android:id="@+id/priceListTextView9"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/price"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintTop_toTopOf="@+id/priceDescTextView9" />
+
+        <TextView
+            android:id="@+id/priceDescTextView9"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/list_price"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/priceDescTextView8" />
+
+        <TextView
+            android:id="@+id/priceListTextView10"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/price"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintTop_toTopOf="@+id/priceDescTextView10" />
+
+        <TextView
+            android:id="@+id/priceDescTextView10"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:singleLine="true"
+            android:text="@string/list_price"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
+            app:layout_constraintHorizontal_bias="0.411"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/priceDescTextView9" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

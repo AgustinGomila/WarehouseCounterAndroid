@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.sync
 import android.os.Parcel
 import android.os.Parcelable
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import java.util.*
 
 class ProgressStatus : Parcelable {
@@ -52,20 +52,13 @@ class ProgressStatus : Parcelable {
             return arrayOfNulls(size)
         }
 
-        var unknown =
-            ProgressStatus(0, Statics.WarehouseCounter.getContext().getString(R.string.unknown))
-        var starting =
-            ProgressStatus(1, Statics.WarehouseCounter.getContext().getString(R.string.starting))
-        var running =
-            ProgressStatus(2, Statics.WarehouseCounter.getContext().getString(R.string.running))
-        var success =
-            ProgressStatus(3, Statics.WarehouseCounter.getContext().getString(R.string.success))
-        var canceled =
-            ProgressStatus(4, Statics.WarehouseCounter.getContext().getString(R.string.canceled))
-        var crashed =
-            ProgressStatus(5, Statics.WarehouseCounter.getContext().getString(R.string.crashed))
-        var finished =
-            ProgressStatus(6, Statics.WarehouseCounter.getContext().getString(R.string.finished))
+        var unknown = ProgressStatus(0, context().getString(R.string.unknown))
+        var starting = ProgressStatus(1, context().getString(R.string.starting))
+        var running = ProgressStatus(2, context().getString(R.string.running))
+        var success = ProgressStatus(3, context().getString(R.string.success))
+        var canceled = ProgressStatus(4, context().getString(R.string.canceled))
+        var crashed = ProgressStatus(5, context().getString(R.string.crashed))
+        var finished = ProgressStatus(6, context().getString(R.string.finished))
 
         fun getAll(): ArrayList<ProgressStatus> {
             val allSections = ArrayList<ProgressStatus>()

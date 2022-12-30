@@ -2,7 +2,7 @@ package com.dacosys.warehouseCounter.sync
 
 import android.util.Log
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.orderRequest.`object`.OrderRequest
 import com.dacosys.warehouseCounter.orderRequest.`object`.OrderRequest.CREATOR.getCompletedOrderRequests
@@ -61,21 +61,17 @@ class GetCompletedOrderRequest {
         try {
             Log.d(this::class.java.simpleName, "Obteniendo órdenes completadas...")
 
-            mCallback?.onCompletedOrderRequestResult(
-                ProgressStatus.finished,
+            mCallback?.onCompletedOrderRequestResult(ProgressStatus.finished,
                 getCompletedOrderRequests(),
                 taskCode,
-                Statics.WarehouseCounter.getContext().getString(R.string.ok)
-            )
+                context().getString(R.string.ok))
             return@withContext true
         } catch (ex: SQLException) {
             ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
-            mCallback?.onCompletedOrderRequestResult(
-                ProgressStatus.crashed,
+            mCallback?.onCompletedOrderRequestResult(ProgressStatus.crashed,
                 itemArray,
                 taskCode,
-                ex.toString()
-            )
+                ex.toString())
             return@withContext false
         }
     }

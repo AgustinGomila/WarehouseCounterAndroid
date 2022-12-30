@@ -9,7 +9,7 @@ import android.view.View
 import androidx.core.content.FileProvider
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
 import java.io.File
@@ -27,7 +27,7 @@ class DownloadController(private val view: View) {
     }
 
     fun enqueueDownload() {
-        val context = Statics.WarehouseCounter.getContext()
+        val context = context()
 
         var destination =
             context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).toString() + "/"
@@ -58,13 +58,13 @@ class DownloadController(private val view: View) {
 
     private fun showInstallOption(
         context: Context,
-        destination: String
+        destination: String,
     ) {
         // set BroadcastReceiver to install app when .apk is downloaded
         val onComplete = object : BroadcastReceiver() {
             override fun onReceive(
                 context: Context,
-                intent: Intent
+                intent: Intent,
             ) {
                 installAPK(context, destination)
                 context.unregisterReceiver(this)
@@ -89,11 +89,9 @@ class DownloadController(private val view: View) {
                 context.startActivity(intent)
             } catch (e: ActivityNotFoundException) {
                 e.printStackTrace()
-                makeText(
-                    view,
+                makeText(view,
                     context.getString(R.string.error_opening_the_file),
-                    SnackBarType.ERROR
-                )
+                    SnackBarType.ERROR)
             }
         } else {
             makeText(view, context.getString(R.string.file_not_found), SnackBarType.ERROR)
@@ -102,11 +100,9 @@ class DownloadController(private val view: View) {
 
     private fun uriFromFile(context: Context, destination: String): Uri? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            FileProvider.getUriForFile(
-                context,
+            FileProvider.getUriForFile(context,
                 BuildConfig.APPLICATION_ID + PROVIDER_PATH,
-                File(destination)
-            )
+                File(destination))
         } else {
             Uri.fromFile(File(destination))
         }

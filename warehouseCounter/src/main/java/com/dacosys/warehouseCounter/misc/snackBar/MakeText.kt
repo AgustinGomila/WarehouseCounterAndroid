@@ -10,7 +10,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.Statics.WarehouseCounter.Companion.getContext
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.google.android.material.snackbar.BaseTransientBottomBar.ANIMATION_MODE_FADE
 import com.google.android.material.snackbar.Snackbar
 import java.lang.ref.WeakReference
@@ -31,7 +31,7 @@ class MakeText : AppCompatActivity() {
 
         private fun makeText(v: WeakReference<View>, text: String, snackBarType: SnackBarType) {
             if (snackBarType == SnackBarType.ERROR) {
-                Log.e(getContext().toString(), text)
+                Log.e(context().toString(), text)
             }
 
             val snackBar = Snackbar.make(v.get() ?: return, text, snackBarType.duration)
@@ -46,7 +46,7 @@ class MakeText : AppCompatActivity() {
             snackBar.view.layoutParams = params
 
             sbView.background = ResourcesCompat.getDrawable(
-                getContext().resources,
+                context().resources,
                 snackBarType.backColor,
                 null
             )
@@ -55,7 +55,7 @@ class MakeText : AppCompatActivity() {
             snackBar.animationMode = ANIMATION_MODE_FADE
 
             val fc = ResourcesCompat.getColor(
-                getContext().resources,
+                context().resources,
                 snackBarType.foreColor,
                 null
             )

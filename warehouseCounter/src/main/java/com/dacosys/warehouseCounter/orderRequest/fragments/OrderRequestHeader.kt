@@ -20,7 +20,7 @@ import com.dacosys.warehouseCounter.orderRequest.`object`.OrderRequestType
  * Use the [OrderRequestHeader.newInstance] factory method to
  * create an instance of this fragment.
  */
-class OrderRequestHeader : androidx.fragment.app.Fragment() {
+class OrderRequestHeader : Fragment() {
     private var orderRequest: OrderRequest? = null
     private var orcArray: ArrayList<OrderRequestContent> = ArrayList()
 

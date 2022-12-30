@@ -11,6 +11,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ScanMultiplierSelectBinding
 import org.parceler.Parcels
 
@@ -41,9 +42,7 @@ class MultiplierSelectActivity : AppCompatActivity() {
 
         //If a layout container, iterate over children and seed recursion.
         if (view is ViewGroup) {
-            (0 until view.childCount)
-                .map { view.getChildAt(it) }
-                .forEach { setupUI(it) }
+            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
         }
     }
 
@@ -130,7 +129,7 @@ class MultiplierSelectActivity : AppCompatActivity() {
             setResult(RESULT_CANCELED, null)
             finish()
         } else {
-            Statics.setMultiplier(tempMultiplier!!)
+            settingViewModel().scanMultiplier = tempMultiplier!!
 
             data.putExtra("multiplier", Parcels.wrap(tempMultiplier))
             setResult(RESULT_OK, data)

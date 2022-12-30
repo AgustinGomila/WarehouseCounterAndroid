@@ -572,8 +572,7 @@ class OrderRequest : Parcelable, JsonSerializer<OrderRequest>, JsonDeserializer<
             } else {
                 /*MakeText.makeText(
                     binding.root,
-                    Statics.WarehouseCounter.getContext()
-                        .getString(R.string.error_external_storage_not_available_for_reading),
+                    context().getString(R.string.error_external_storage_not_available_for_reading),
                     com.dacosys.warehouseCounter.misc.snackbar.SnackBarType.ERROR
                 )*/
             }

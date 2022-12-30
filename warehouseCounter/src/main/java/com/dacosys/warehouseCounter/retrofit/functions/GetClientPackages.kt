@@ -1,8 +1,11 @@
-package com.dacosys.warehouseCounter.sync
+package com.dacosys.warehouseCounter.retrofit.functions
 
 import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.sync.ProgressStatus
 import kotlinx.coroutines.*
 import org.json.JSONException
 import org.json.JSONObject
@@ -48,18 +51,12 @@ class GetClientPackages {
         this.installationCode = installationCode
     }
 
-    private fun preExecute() {
-        progressStatus = ProgressStatus.starting
-    }
-
     private fun postExecute() {
-        mCallback?.onTaskGetPackagesEnded(
-            progressStatus,
-            jsonObjArray,
-            email,
-            password,
-            msg
-        )
+        mCallback?.onTaskGetPackagesEnded(status = progressStatus,
+            result = jsonObjArray,
+            clientEmail = email,
+            clientPassword = password,
+            msg = msg)
     }
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
@@ -69,7 +66,8 @@ class GetClientPackages {
     }
 
     fun execute() {
-        preExecute()
+        progressStatus = ProgressStatus.starting
+
         scope.launch {
             doInBackground()
             postExecute()
@@ -89,7 +87,7 @@ class GetClientPackages {
     private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
         if (!Statics.isOnline()) {
             progressStatus = ProgressStatus.canceled
-            msg = Statics.WarehouseCounter.getContext().getString(R.string.no_connection)
+            msg = context().getString(R.string.no_connection)
             return@withContext false
         }
         return@withContext getPackages()
@@ -104,24 +102,16 @@ class GetClientPackages {
         try {
             //Create connection
             url = URL(urlRequest)
-
-            connection = if (Statics.useProxy) {
+            val sv = settingViewModel()
+            connection = if (sv.useProxy) {
                 val authenticator = object : Authenticator() {
                     override fun getPasswordAuthentication(): PasswordAuthentication {
-                        return PasswordAuthentication(
-                            Statics.proxyUser,
-                            Statics.proxyPass.toCharArray()
-                        )
+                        return PasswordAuthentication(sv.proxyUser, sv.proxyPass.toCharArray())
                     }
                 }
                 Authenticator.setDefault(authenticator)
 
-                val proxy = Proxy(
-                    Proxy.Type.HTTP, InetSocketAddress(
-                        Statics.proxy,
-                        Statics.proxyPort
-                    )
-                )
+                val proxy = Proxy(Proxy.Type.HTTP, InetSocketAddress(sv.proxy, sv.proxyPort))
                 url.openConnection(proxy) as HttpsURLConnection
             } else {
                 url.openConnection() as HttpsURLConnection
@@ -135,10 +125,7 @@ class GetClientPackages {
             //connection.useCaches = false
 
             val authDataCont = JSONObject()
-            authDataCont
-                .put("version", "1")
-                .put("email", email)
-                .put("password", password)
+            authDataCont.put("version", "1").put("email", email).put("password", password)
 
             val jsonParam = JSONObject()
             jsonParam.put("authdata", authDataCont)
@@ -158,7 +145,7 @@ class GetClientPackages {
         } catch (ex: Exception) {
             progressStatus = ProgressStatus.crashed
             msg = "${
-                Statics.WarehouseCounter.getContext().getString(R.string.exception_error)
+                context().getString(R.string.exception_error)
             }: ${ex.message}"
             return false
         } finally {
@@ -209,26 +196,23 @@ class GetClientPackages {
                     }
 
                     val productId = jsonPack.getInt("product_version_id")
-                    if (jsonPack.getInt("active") == 1 &&
-                        (productId == Statics.APP_VERSION_ID || productId == Statics.APP_VERSION_ID_IMAGECONTROL)
-                    ) {
+                    if (jsonPack.getInt("active") == 1 && (productId == Statics.APP_VERSION_ID || productId == Statics.APP_VERSION_ID_IMAGECONTROL)) {
                         result.add(jsonPack)
                     }
                 }
             }
             progressStatus = ProgressStatus.finished
             msg = if (result.size > 0) {
-                Statics.WarehouseCounter.getContext().getString(R.string.success_response)
+                context().getString(R.string.success_response)
             } else {
-                Statics.WarehouseCounter.getContext()
-                    .getString(R.string.client_has_no_software_packages)
+                context().getString(R.string.client_has_no_software_packages)
             }
         } catch (ex: JSONException) {
             Log.e(this::class.java.simpleName, ex.toString())
 
             progressStatus = ProgressStatus.crashed
             msg = "${
-                Statics.WarehouseCounter.getContext().getString(R.string.exception_error)
+                context().getString(R.string.exception_error)
             }: ${ex.message}"
         }
 

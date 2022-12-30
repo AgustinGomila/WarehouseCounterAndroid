@@ -1,18 +1,17 @@
 package com.dacosys.warehouseCounter.item.activities
 
 import android.util.Log
-import android.view.View
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.item.`object`.Item
 import com.dacosys.warehouseCounter.item.dbHelper.ItemAdapter
 import com.dacosys.warehouseCounter.item.dbHelper.ItemDbHelper
 import com.dacosys.warehouseCounter.itemCode.`object`.ItemCode
 import com.dacosys.warehouseCounter.itemCode.dbHelper.ItemCodeDbHelper
-import com.dacosys.warehouseCounter.misc.snackBar.MakeText
+import com.dacosys.warehouseCounter.misc.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
 import kotlinx.coroutines.*
-import java.lang.ref.WeakReference
 
 class CheckItemCode {
     interface CheckCodeEnded {
@@ -27,25 +26,19 @@ class CheckItemCode {
     private var scannedCode: String? = null
     private var itemCode: ItemCode? = null
     private var mCallback: CheckCodeEnded? = null
-
     private var tempAdapter: ItemAdapter? = null
-
-    private var weakRefView: WeakReference<View>? = null
-    private var parentView: View?
-        get() {
-            return weakRefView?.get()
-        }
-        set(value) {
-            weakRefView = if (value != null) WeakReference(value) else null
-        }
+    private var onEventData: (SnackBarEventData) -> Unit = {}
 
     fun addParams(
-        parentView: View, callback: CheckCodeEnded, scannedCode: String, adapter: ItemAdapter,
+        callback: CheckCodeEnded,
+        scannedCode: String,
+        adapter: ItemAdapter,
+        onEventData: (SnackBarEventData) -> Unit = {},
     ) {
-        this.parentView = parentView
         this.mCallback = callback
         this.scannedCode = scannedCode
         this.tempAdapter = adapter
+        this.onEventData = onEventData
     }
 
     private fun preExecute() {
@@ -85,13 +78,9 @@ class CheckItemCode {
         try {
             if (Statics.demoMode) {
                 if (tempAdapter!!.count >= 5) {
-                    val res = Statics.WarehouseCounter.getContext()
-                        .getString(R.string.maximum_amount_of_demonstration_mode_reached)
-                    MakeText.makeText(
-                        parentView ?: return@withContext null,
-                        res,
-                        SnackBarType.ERROR
-                    )
+                    val res =
+                        context().getString(R.string.maximum_amount_of_demonstration_mode_reached)
+                    onEventData(SnackBarEventData(res, SnackBarType.ERROR))
                     Log.e(this::class.java.simpleName, res)
                     return@withContext null
                 }
@@ -99,20 +88,15 @@ class CheckItemCode {
 
             // Nada que hacer, volver
             if (scannedCode!!.isEmpty()) {
-                val res = Statics.WarehouseCounter.getContext().getString(R.string.invalid_code)
-                MakeText.makeText(
-                    parentView ?: return@withContext null,
-                    res,
-                    SnackBarType.ERROR
-                )
+                val res = context().getString(R.string.invalid_code)
+                onEventData(SnackBarEventData(res, SnackBarType.ERROR))
                 Log.e(this::class.java.simpleName, res)
                 return@withContext null
             }
 
             if (tempAdapter != null && tempAdapter!!.count() > 0) {
                 // Buscar primero en el adaptador de la lista
-                (0 until tempAdapter!!.count)
-                    .map { tempAdapter!!.getItem(it) }
+                (0 until tempAdapter!!.count).map { tempAdapter!!.getItem(it) }
                     .filter { it != null && it.ean == scannedCode }
                     .forEach { return@withContext it }
             }
@@ -144,11 +128,7 @@ class CheckItemCode {
             // Item desconocido, agregar al base de datos
             return@withContext null
         } catch (ex: Exception) {
-            MakeText.makeText(
-                parentView ?: return@withContext null,
-                ex.message.toString(),
-                SnackBarType.ERROR
-            )
+            onEventData(SnackBarEventData(ex.message.toString(), SnackBarType.ERROR))
             Log.e(this::class.java.simpleName, ex.message ?: "")
             return@withContext null
         }

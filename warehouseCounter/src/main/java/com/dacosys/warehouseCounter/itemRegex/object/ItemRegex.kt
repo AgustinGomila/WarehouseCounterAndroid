@@ -27,7 +27,7 @@ class ItemRegex : Parcelable {
         regex: String,
         jsonConfig: String,
         codeLength: Long,
-        active: Boolean
+        active: Boolean,
     ) {
         this.itemRegexId = itemRegexId
         this.description = description

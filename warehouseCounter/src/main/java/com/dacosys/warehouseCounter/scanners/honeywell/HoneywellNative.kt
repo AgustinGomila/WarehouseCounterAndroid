@@ -5,9 +5,8 @@ import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.Statics.WarehouseCounter.Companion.getContext
-import com.dacosys.warehouseCounter.misc.Preference
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.honeywell.aidc.*
 import java.lang.ref.WeakReference
@@ -18,8 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Created by krrigan on 10/13/18.
  */
 class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : Scanner(),
-    BarcodeReader.BarcodeListener,
-    BarcodeReader.TriggerListener {
+    BarcodeReader.BarcodeListener, BarcodeReader.TriggerListener {
     private var initialized = AtomicBoolean(false)
     private var initializing = AtomicBoolean(false)
     private var pendingResume = AtomicBoolean(false)
@@ -94,28 +92,21 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
 
         // register trigger state change listener
         // When using Automatic Trigger control do not need to implement the onTriggerEvent
-        if (!autoMode)
-            scanner?.addTriggerListener(this)
+        if (!autoMode) scanner?.addTriggerListener(this)
 
         // set the trigger mode to auto control
         try {
             if (autoMode) {
-                scanner?.setProperty(
-                    BarcodeReader.PROPERTY_TRIGGER_CONTROL_MODE,
-                    BarcodeReader.TRIGGER_CONTROL_MODE_AUTO_CONTROL
-                )
+                scanner?.setProperty(BarcodeReader.PROPERTY_TRIGGER_CONTROL_MODE,
+                    BarcodeReader.TRIGGER_CONTROL_MODE_AUTO_CONTROL)
             } else {
                 // set the trigger mode to client control
-                scanner?.setProperty(
-                    BarcodeReader.PROPERTY_TRIGGER_CONTROL_MODE,
-                    BarcodeReader.TRIGGER_CONTROL_MODE_CLIENT_CONTROL
-                )
+                scanner?.setProperty(BarcodeReader.PROPERTY_TRIGGER_CONTROL_MODE,
+                    BarcodeReader.TRIGGER_CONTROL_MODE_CLIENT_CONTROL)
             }
             scanner?.setProperty(BarcodeReader.PROPERTY_DATA_PROCESSOR_LAUNCH_BROWSER, false)
-            scanner?.setProperty(
-                BarcodeReader.PROPERTY_TRIGGER_SCAN_MODE,
-                BarcodeReader.TRIGGER_SCAN_MODE_ONESHOT
-            )
+            scanner?.setProperty(BarcodeReader.PROPERTY_TRIGGER_SCAN_MODE,
+                BarcodeReader.TRIGGER_SCAN_MODE_ONESHOT)
         } catch (e: UnsupportedPropertyException) {
             e.printStackTrace()
         }
@@ -134,7 +125,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
 
     override fun onFailureEvent(barcodeFailureEvent: BarcodeFailureEvent) {
         if (lockScannerEvent) return
-        Log.v(this::class.java.simpleName, getContext().getString(R.string.barcode_failure))
+        Log.v(this::class.java.simpleName, context().getString(R.string.barcode_failure))
     }
 
     // When using Automatic Trigger control do not need to implement the
@@ -189,49 +180,32 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
     }
 
     private fun loadProperties() {
+        val sv = settingViewModel()
         properties = HashMap()
+        properties[BarcodeReader.PROPERTY_PDF_417_ENABLED] = sv.symbologyPDF417
+        properties[BarcodeReader.PROPERTY_AZTEC_ENABLED] = sv.symbologyAztec
+        properties[BarcodeReader.PROPERTY_QR_CODE_ENABLED] = sv.symbologyQRCode
+        properties[BarcodeReader.PROPERTY_CODABAR_ENABLED] = sv.symbologyCODABAR
+        properties[BarcodeReader.PROPERTY_CODE_128_ENABLED] = sv.symbologyCode128
+        properties[BarcodeReader.PROPERTY_CODE_39_ENABLED] = sv.symbologyCode39
+        properties[BarcodeReader.PROPERTY_CODE_93_ENABLED] = sv.symbologyCode93
+        properties[BarcodeReader.PROPERTY_DATAMATRIX_ENABLED] = sv.symbologyDataMatrix
+        properties[BarcodeReader.PROPERTY_EAN_13_ENABLED] = sv.symbologyEAN13
+        properties[BarcodeReader.PROPERTY_EAN_8_ENABLED] = sv.symbologyEAN8
+        properties[BarcodeReader.PROPERTY_MAXICODE_ENABLED] = sv.symbologyMaxiCode
+        properties[BarcodeReader.PROPERTY_RSS_ENABLED] = sv.symbologyRSS14
+        properties[BarcodeReader.PROPERTY_RSS_EXPANDED_ENABLED] = sv.symbologyRSSExpanded
+        properties[BarcodeReader.PROPERTY_UPC_A_ENABLE] = sv.symbologyUPCA
+        properties[BarcodeReader.PROPERTY_UPC_E_ENABLED] = sv.symbologyUPCE
 
-        properties[BarcodeReader.PROPERTY_PDF_417_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyPDF417)
-        properties[BarcodeReader.PROPERTY_AZTEC_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyAztec)
-        properties[BarcodeReader.PROPERTY_QR_CODE_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyQRCode)
-        properties[BarcodeReader.PROPERTY_CODABAR_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyCODABAR)
-        properties[BarcodeReader.PROPERTY_CODE_128_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyCode128)
-        properties[BarcodeReader.PROPERTY_CODE_39_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyCode39)
-        properties[BarcodeReader.PROPERTY_CODE_93_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyCode93)
-        properties[BarcodeReader.PROPERTY_DATAMATRIX_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyDataMatrix)
-        properties[BarcodeReader.PROPERTY_EAN_13_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyEAN13)
-        properties[BarcodeReader.PROPERTY_EAN_8_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyEAN8)
-        properties[BarcodeReader.PROPERTY_MAXICODE_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyMaxiCode)
-        properties[BarcodeReader.PROPERTY_RSS_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyRSS14)
-        properties[BarcodeReader.PROPERTY_RSS_EXPANDED_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyRSSExpanded)
-        properties[BarcodeReader.PROPERTY_UPC_A_ENABLE] =
-            Statics.prefsGetBoolean(Preference.symbologyUPCA)
-        properties[BarcodeReader.PROPERTY_UPC_E_ENABLED] =
-            Statics.prefsGetBoolean(Preference.symbologyUPCE)
-
-        val sendDigit = Statics.prefsGetBoolean(Preference.sendBarcodeCheckDigit)
+        val sendDigit = sv.sendBarcodeCheckDigit
         properties[BarcodeReader.PROPERTY_EAN_13_CHECK_DIGIT_TRANSMIT_ENABLED] = sendDigit
         properties[BarcodeReader.PROPERTY_EAN_8_CHECK_DIGIT_TRANSMIT_ENABLED] = sendDigit
         properties[BarcodeReader.PROPERTY_UPC_A_CHECK_DIGIT_TRANSMIT_ENABLED] = sendDigit
 
         properties[BarcodeReader.PROPERTY_CODE_39_CHECK_DIGIT_MODE] =
-            if (sendDigit)
-                BarcodeReader.CODE_39_CHECK_DIGIT_MODE_CHECK
-            else
-                BarcodeReader.CODE_39_CHECK_DIGIT_MODE_NO_CHECK
+            if (sendDigit) BarcodeReader.CODE_39_CHECK_DIGIT_MODE_CHECK
+            else BarcodeReader.CODE_39_CHECK_DIGIT_MODE_NO_CHECK
 
         // Set Max Code 39 barcode length
         properties[BarcodeReader.PROPERTY_CODE_39_MAXIMUM_LENGTH] = 10
@@ -247,8 +221,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
         loadProperties()
         properties.putAll(mapProperties)
 
-        if (scanner != null)
-            scanner?.setProperties(properties)
+        if (scanner != null) scanner?.setProperties(properties)
     }
 
     fun resume(): Boolean {

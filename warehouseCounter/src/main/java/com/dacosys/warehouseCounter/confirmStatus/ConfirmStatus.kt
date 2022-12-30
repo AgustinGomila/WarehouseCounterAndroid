@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.confirmStatus
 import android.os.Parcel
 import android.os.Parcelable
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import java.util.*
 
 class ConfirmStatus : Parcelable {
@@ -52,21 +52,13 @@ class ConfirmStatus : Parcelable {
             return arrayOfNulls(size)
         }
 
-        var cancel =
-            ConfirmStatus(0, Statics.WarehouseCounter.getContext().getString(R.string.cancel))
-        var modify =
-            ConfirmStatus(1, Statics.WarehouseCounter.getContext().getString(R.string.modify))
-        var confirm =
-            ConfirmStatus(2, Statics.WarehouseCounter.getContext().getString(R.string.confirm))
+        var cancel = ConfirmStatus(0, context().getString(R.string.cancel))
+        var modify = ConfirmStatus(1, context().getString(R.string.modify))
+        var confirm = ConfirmStatus(2, context().getString(R.string.confirm))
 
         fun getAll(): ArrayList<ConfirmStatus> {
             val allSections = ArrayList<ConfirmStatus>()
-            Collections.addAll(
-                allSections,
-                cancel,
-                modify,
-                confirm
-            )
+            Collections.addAll(allSections, cancel, modify, confirm)
 
             return ArrayList(allSections.sortedWith(compareBy { it.id }))
         }

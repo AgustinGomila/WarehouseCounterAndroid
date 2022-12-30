@@ -11,6 +11,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.databinding.ObservationsActivityBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.item.`object`.Item
@@ -52,9 +53,7 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         //If a layout container, iterate over children and seed recursion.
         if (view is ViewGroup) {
-            (0 until view.childCount)
-                .map { view.getChildAt(it) }
-                .forEach { setupUI(it) }
+            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
         }
     }
 
@@ -98,7 +97,7 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
         fillControls()
 
         // Conectar el lectura NFC
-        if (Statics.prefsGetBoolean(Preference.useNfc)) {
+        if (WarehouseCounterApp.settingViewModel().useNfc) {
             Nfc.setupNFCReader(this)
         }
 
@@ -174,11 +173,14 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+            this,
+            requestCode,
+            permissions,
+            grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {

@@ -21,6 +21,7 @@ import androidx.core.graphics.BlendModeCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
 import com.dacosys.warehouseCounter.Statics.Companion.getColorWithAlpha
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.item.`object`.Item
 import com.dacosys.warehouseCounter.misc.AutoResizeTextView
 import java.lang.ref.WeakReference
@@ -51,7 +52,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
         listView: ListView?,
         multiSelect: Boolean,
         checkedIdArray: ArrayList<Long>,
-    ) : super(Statics.WarehouseCounter.getContext(), resource, suggestedList) {
+    ) : super(context(), resource, suggestedList) {
         this.activity = activity
         this.resource = resource
         this.multiSelect = multiSelect
@@ -68,7 +69,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
         resource: Int,
         itemList: ArrayList<Item>,
         suggestedList: ArrayList<Item>,
-    ) : super(Statics.WarehouseCounter.getContext(), resource, suggestedList) {
+    ) : super(context(), resource, suggestedList) {
         this.activity = activity
         this.resource = resource
         this.suggestedList = suggestedList
@@ -160,13 +161,9 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
         super.sort(customComparator)
     }
 
-    private val customComparator =
-        Comparator { o1: Item?, o2: Item? ->
-            ItemComparator().compareNullable(
-                o1,
-                o2
-            )
-        }
+    private val customComparator = Comparator { o1: Item?, o2: Item? ->
+        ItemComparator().compareNullable(o1, o2)
+    }
 
     private fun getIndex(item: Item): Int {
         for (i in 0 until count) {
@@ -294,22 +291,21 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
     }
 
     fun forceSelectItem(a: Item) {
-        if (listView == null) return
-
+        val listView = listView ?: return
         val pos = getPosition(a)
 
-        (listView ?: return).clearChoices()
+        listView.clearChoices()
 
         activity.runOnUiThread {
-            (listView ?: return@runOnUiThread).setItemChecked(pos, true)
-            (listView ?: return@runOnUiThread).setSelection(pos)
+            listView.setItemChecked(pos, true)
+            listView.setSelection(pos)
         }
 
         lastSelectedPos = currentPos()
 
         activity.runOnUiThread {
             notifyDataSetChanged()
-            (listView ?: return@runOnUiThread).smoothScrollToPosition(pos)
+            listView.smoothScrollToPosition(pos)
         }
 
         performItemChanged()
@@ -334,11 +330,8 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
     }
 
     private fun selectItem(pos: Int, scrollPos: Int, smoothScroll: Boolean) {
-        if (listView == null) {
-            return
-        }
-
-        (listView ?: return).clearChoices()
+        val listView = listView ?: return
+        listView.clearChoices()
 
         // Deseleccionar cuando:
         //   - Estaba previamente seleccionado
@@ -347,14 +340,14 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
 
         activity.runOnUiThread {
             if (pos < 0 && lastSelectedPos < 0 && count > 0) {
-                (listView ?: return@runOnUiThread).setItemChecked(0, true)
-                (listView ?: return@runOnUiThread).setSelection(0)
+                listView.setItemChecked(0, true)
+                listView.setSelection(0)
             } else if (pos == lastSelectedPos || pos < 0 || count <= 0) {
-                (listView ?: return@runOnUiThread).setItemChecked(-1, true)
-                (listView ?: return@runOnUiThread).setSelection(-1)
+                listView.setItemChecked(-1, true)
+                listView.setSelection(-1)
             } else {
-                (listView ?: return@runOnUiThread).setItemChecked(pos, true)
-                (listView ?: return@runOnUiThread).setSelection(pos)
+                listView.setItemChecked(pos, true)
+                listView.setSelection(pos)
             }
         }
 
@@ -363,10 +356,10 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
         activity.runOnUiThread {
             if (smoothScroll) {
                 notifyDataSetChanged()
-                (listView ?: return@runOnUiThread).smoothScrollToPosition(scrollPos)
+                listView.smoothScrollToPosition(scrollPos)
             } else {
                 refresh()
-                (listView ?: return@runOnUiThread).setSelection(scrollPos)
+                listView.setSelection(scrollPos)
             }
         }
 
@@ -374,35 +367,27 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
     }
 
     private fun performItemChanged() {
-        selectedItemChangedListener?.onSelectedItemChanged(
-            if (lastSelectedPos >= 0) getItem(lastSelectedPos) else null,
-            lastSelectedPos
-        )
+        selectedItemChangedListener?.onSelectedItemChanged(if (lastSelectedPos >= 0) getItem(
+            lastSelectedPos) else null, lastSelectedPos)
     }
 
     fun currentItem(): Item? {
-        return (0 until count)
-            .firstOrNull { isSelected(it) }
-            ?.let { getItem(it) }
+        return (0 until count).firstOrNull { isSelected(it) }?.let { getItem(it) }
     }
 
     private fun currentPos(): Int {
-        return (0 until count)
-            .firstOrNull { isSelected(it) } ?: -1
+        return (0 until count).firstOrNull { isSelected(it) } ?: -1
     }
 
     fun firstVisiblePos(): Int {
-        var pos = (listView ?: return -1).firstVisiblePosition
-        if ((listView ?: return -1).childCount > 1 && (listView
-                ?: return -1).getChildAt(0).top < 0
-        ) pos++
+        val listView = listView ?: return -1
+        var pos = listView.firstVisiblePosition
+        if (listView.childCount > 1 && listView.getChildAt(0).top < 0) pos++
         return pos
     }
 
     private fun isSelected(position: Int): Boolean {
-        return position >= 0 &&
-                (listView != null &&
-                        listView!!.isItemChecked(position))
+        return position >= 0 && (listView != null && listView!!.isItemChecked(position))
     }
 
     private var weakRefListView: WeakReference<ListView?>? = null
@@ -459,9 +444,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
             alreadyExists = false
         } else {
             // El view ya existe, comprobar que no necesite cambiar de layout.
-            if (v.tag is ListViewHolder && currentLayout == R.layout.item_row_expanded ||
-                v.tag is ExpandedViewHolder && currentLayout == resource
-            ) {
+            if (v.tag is ListViewHolder && currentLayout == R.layout.item_row_expanded || v.tag is ExpandedViewHolder && currentLayout == resource) {
                 // Ya fue creado, si es un row normal que está siendo seleccionada
                 // o un row expandido que está siendo deseleccionado
                 // debe cambiar de layout, por lo tanto volver a crearse.
@@ -553,22 +536,12 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
                 }
 
                 // Background colors
-                val lightgray = getColor(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.color.lightgray,
-                    null
-                )
-                val whitesmoke = getColor(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.color.whitesmoke,
-                    null
-                )
+                val lightgray = getColor(context().resources, R.color.lightgray, null)
+                val whitesmoke = getColor(context().resources, R.color.whitesmoke, null)
 
                 // Font colors
-                val black =
-                    getColor(Statics.WarehouseCounter.getContext().resources, R.color.black, null)
-                val dimgray =
-                    getColor(Statics.WarehouseCounter.getContext().resources, R.color.dimgray, null)
+                val black = getColor(context().resources, R.color.black, null)
+                val dimgray = getColor(context().resources, R.color.dimgray, null)
 
                 when {
                     !item.active -> {
@@ -600,11 +573,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
     private var defaultForeColor: Int = 0
 
     private fun setupColors() {
-        selectedForeColor = getColor(
-            Statics.WarehouseCounter.getContext().resources,
-            R.color.text_light,
-            null
-        )
+        selectedForeColor = getColor(context().resources, R.color.text_light, null)
 
         inactiveForeColor = Statics.getBestContrastColor("#C7C7C7")
         defaultForeColor = Statics.getBestContrastColor("#DFDFDF")
@@ -687,16 +656,10 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
                     holder.checkBox!!.setOnCheckedChangeListener(checkChangeListener)
                 }
 
-                val colorDefault = getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.drawable.layout_thin_border,
-                    null
-                )!!
-                val inactiveBackColor = getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.drawable.layout_thin_border_gray,
-                    null
-                )!!
+                val colorDefault =
+                    getDrawable(context().resources, R.drawable.layout_thin_border, null)!!
+                val inactiveBackColor =
+                    getDrawable(context().resources, R.drawable.layout_thin_border_gray, null)!!
 
                 var backColor = colorDefault
                 var foreColor = if (isSelected) selectedForeColor else defaultForeColor
@@ -729,8 +692,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
                     v.background.colorFilter =
                         BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
                             getColorWithAlpha(colorId = R.color.lightslategray, alpha = 240),
-                            BlendModeCompat.MODULATE
-                        )
+                            BlendModeCompat.MODULATE)
                 } else {
                     v.background.colorFilter = null
                 }
@@ -798,16 +760,10 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
                     holder.checkBox!!.setOnCheckedChangeListener(checkChangeListener)
                 }
 
-                val colorDefault = getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.drawable.layout_thin_border,
-                    null
-                )!!
-                val inactiveBackColor = getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.drawable.layout_thin_border_gray,
-                    null
-                )!!
+                val colorDefault =
+                    getDrawable(context().resources, R.drawable.layout_thin_border, null)!!
+                val inactiveBackColor =
+                    getDrawable(context().resources, R.drawable.layout_thin_border_gray, null)!!
 
                 var backColor = colorDefault
                 var foreColor = if (isSelected) selectedForeColor else defaultForeColor
@@ -837,8 +793,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
                     v.background.colorFilter =
                         BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
                             getColorWithAlpha(colorId = R.color.lightslategray, alpha = 240),
-                            BlendModeCompat.MODULATE
-                        )
+                            BlendModeCompat.MODULATE)
                 } else {
                     v.background.colorFilter = null
                 }
@@ -967,8 +922,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
             override fun compare(o1: Item, o2: Item): Int {
                 return try {
                     val eanComp = o1.ean.compareTo(o2.ean, true)
-                    val descriptionComp =
-                        o1.description.compareTo(o2.description, true)
+                    val descriptionComp = o1.description.compareTo(o2.description, true)
 
                     // Orden natural: EAN, description,
                     when (eanComp) {
@@ -987,8 +941,8 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
         }
 
         fun isFilterable(filterableItem: Item, filterString: String): Boolean =
-            filterableItem.ean.contains(filterString, true) ||
-                    filterableItem.itemCategoryId.toString().contains(filterString) ||
-                    filterableItem.description.contains(filterString, true)
+            filterableItem.ean.contains(filterString,
+                true) || filterableItem.itemCategoryId.toString()
+                .contains(filterString) || filterableItem.description.contains(filterString, true)
     }
 }

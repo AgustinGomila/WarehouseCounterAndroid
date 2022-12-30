@@ -60,14 +60,15 @@ class CounterHandler private constructor(builder: Builder) {
 
     @SuppressLint("ClickableViewAccessibility")
     private fun initIncrementalView() {
-        (incrementalView ?: return).setOnClickListener { increment() }
+        val view = incrementalView ?: return
+        view.setOnClickListener { increment() }
 
-        incrementalView.setOnLongClickListener {
+        view.setOnLongClickListener {
             autoIncrement = true
             handler.postDelayed(counterRunnable, counterDelay.toLong())
             false
         }
-        incrementalView.setOnTouchListener { _, event ->
+        view.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_UP && autoIncrement) {
                 autoIncrement = false
             }
@@ -77,14 +78,15 @@ class CounterHandler private constructor(builder: Builder) {
 
     @SuppressLint("ClickableViewAccessibility")
     private fun initDecrementalView() {
-        (decrementalView ?: return).setOnClickListener { decrement() }
+        val view = decrementalView ?: return
+        view.setOnClickListener { decrement() }
 
-        decrementalView.setOnLongClickListener {
+        view.setOnLongClickListener {
             autoDecrement = true
             handler.postDelayed(counterRunnable, counterDelay.toLong())
             false
         }
-        decrementalView.setOnTouchListener { _, event ->
+        view.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_UP && autoDecrement) {
                 autoDecrement = false
             }

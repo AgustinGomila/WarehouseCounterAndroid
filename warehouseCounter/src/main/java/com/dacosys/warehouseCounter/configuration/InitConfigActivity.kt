@@ -23,37 +23,32 @@ import com.dacosys.warehouseCounter.Statics
 import com.dacosys.warehouseCounter.Statics.Companion.closeKeyboard
 import com.dacosys.warehouseCounter.Statics.Companion.getConfig
 import com.dacosys.warehouseCounter.Statics.Companion.setupProxy
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.cleanPrefs
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.configuration.QRConfigType.CREATOR.QRConfigClientAccount
 import com.dacosys.warehouseCounter.databinding.InitConfigActivityBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.misc.Preference
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.misc.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
-import com.dacosys.warehouseCounter.sync.GetClientPackages
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 
-class InitConfigActivity :
-    AppCompatActivity(),
-    Scanner.ScannerListener,
-    GetClientPackages.TaskGetPackagesEnded,
-    Statics.Companion.TaskSetupProxyEnded,
+class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
+    GetClientPackages.TaskGetPackagesEnded, Statics.Companion.TaskSetupProxyEnded,
     Statics.Companion.TaskConfigPanelEnded {
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
             isConfiguring = false
-            makeText(
-                binding.root,
-                getString(R.string.configuration_applied),
-                SnackBarType.SUCCESS
-            )
+            makeText(binding.root, getString(R.string.configuration_applied), SnackBarType.SUCCESS)
             Statics.removeDataBases()
             finish()
         }
@@ -69,14 +64,12 @@ class InitConfigActivity :
         if (status == ProgressStatus.finished) {
             if (result.size > 0) {
                 runOnUiThread {
-                    Statics.selectClientPackage(
-                        parentView = binding.root,
-                        callback = this,
+                    Statics.selectClientPackage(callback = this,
                         weakAct = WeakReference(this),
                         allPackage = result,
                         email = clientEmail,
-                        password = clientPassword
-                    )
+                        password = clientPassword,
+                        onEventData = { showSnackBar(it) })
                 }
             } else {
                 isConfiguring = false
@@ -86,12 +79,14 @@ class InitConfigActivity :
             isConfiguring = false
             makeText(binding.root, msg, SnackBarType.SUCCESS)
             finish()
-        } else if (status == ProgressStatus.crashed ||
-            status == ProgressStatus.canceled
-        ) {
+        } else if (status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
             isConfiguring = false
             makeText(binding.root, msg, ERROR)
         }
+    }
+
+    private fun showSnackBar(it: SnackBarEventData) {
+        makeText(binding.root, it.text, it.snackBarType)
     }
 
     override fun onTaskSetupProxyEnded(
@@ -101,12 +96,10 @@ class InitConfigActivity :
         installationCode: String,
     ) {
         if (status == ProgressStatus.finished) {
-            getConfig(
-                callback = this,
+            getConfig(callback = this,
                 email = email,
                 password = password,
-                installationCode = installationCode
-            )
+                installationCode = installationCode)
         }
     }
 
@@ -130,12 +123,8 @@ class InitConfigActivity :
             // Vamos a reconstruir el scanner por si cambió la configuración
             JotterListener.autodetectDeviceModel(this)
 
-            if (Statics.urlPanel.isEmpty()) {
-                makeText(
-                    binding.root,
-                    getString(R.string.server_is_not_configured),
-                    ERROR
-                )
+            if (settingViewModel().urlPanel.isEmpty()) {
+                makeText(binding.root, getString(R.string.server_is_not_configured), ERROR)
                 return
             }
 
@@ -202,10 +191,7 @@ class InitConfigActivity :
 
         binding.passwordEditText.setText(password, TextView.BufferType.EDITABLE)
         binding.passwordEditText.setOnKeyListener { _, keyCode, _ ->
-            if (keyCode == KeyEvent.ACTION_DOWN ||
-                keyCode == KeyEvent.KEYCODE_ENTER ||
-                keyCode == KeyEvent.KEYCODE_DPAD_CENTER
-            ) {
+            if (keyCode == KeyEvent.ACTION_DOWN || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
                 closeKeyboard(this)
                 attemptToConfigure()
                 true
@@ -236,10 +222,7 @@ class InitConfigActivity :
             }
         }
         binding.emailEditText.setOnKeyListener { _, keyCode, _ ->
-            if (keyCode == KeyEvent.ACTION_DOWN ||
-                keyCode == KeyEvent.KEYCODE_ENTER ||
-                keyCode == KeyEvent.KEYCODE_DPAD_CENTER
-            ) {
+            if (keyCode == KeyEvent.ACTION_DOWN || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
                 binding.passwordEditText.requestFocus()
                 true
             } else {
@@ -260,11 +243,11 @@ class InitConfigActivity :
     }
 
     private fun clearOldPrefs() {
-        Statics.cleanPrefs()
+        cleanPrefs()
     }
 
     private fun configApp() {
-        val realPass = Statics.prefsGetString(Preference.confPassword)
+        val realPass = settingViewModel().confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
@@ -310,9 +293,10 @@ class InitConfigActivity :
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = Statics.prefsGetString(Preference.confPassword)
+        val realPass = settingViewModel().confPassword
         if (password == realPass) {
-            Statics.setDebugConfigValues()
+            // TODO: Ver para qué?
+            // Statics.setDebugConfigValues()
 
             if (!rejectNewInstances) {
                 rejectNewInstances = true
@@ -323,11 +307,7 @@ class InitConfigActivity :
             }
             isReturnedFromSettings = true
         } else {
-            makeText(
-                binding.root,
-                getString(R.string.invalid_password),
-                ERROR
-            )
+            makeText(binding.root, getString(R.string.invalid_password), ERROR)
         }
     }
 
@@ -343,19 +323,15 @@ class InitConfigActivity :
 
         if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
             if (!binding.proxyCheckBox.isChecked) {
-                getConfig(
-                    callback = this,
+                getConfig(callback = this,
                     email = email,
                     password = password,
-                    installationCode = ""
-                )
+                    installationCode = "")
             } else {
-                setupProxy(
-                    callback = this,
+                setupProxy(callback = this,
                     weakAct = WeakReference(this),
                     email = email,
-                    password = password
-                )
+                    password = password)
             }
         } else {
             isConfiguring = false
@@ -364,31 +340,32 @@ class InitConfigActivity :
 
     private fun resize(image: Drawable): Drawable {
         val bitmap = (image as BitmapDrawable).bitmap
-        val bitmapResized = Bitmap.createScaledBitmap(
-            bitmap,
-            (bitmap.width * 0.5).toInt(), (bitmap.height * 0.5).toInt(), false
-        )
+        val bitmapResized = Bitmap.createScaledBitmap(bitmap,
+            (bitmap.width * 0.5).toInt(),
+            (bitmap.height * 0.5).toInt(),
+            false)
         return BitmapDrawable(resources, bitmapResized)
     }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+            this,
+            requestCode,
+            permissions,
+            grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
         JotterListener.lockScanner(this, true)
         try {
-            Statics.getConfigFromScannedCode(
-                callback = this,
+            Statics.getConfigFromScannedCode(callback = this,
                 scanCode = scanCode,
-                mode = QRConfigClientAccount
-            )
+                mode = QRConfigClientAccount)
         } catch (ex: Exception) {
             ex.printStackTrace()
             makeText(binding.root, ex.message.toString(), ERROR)
@@ -403,11 +380,11 @@ class InitConfigActivity :
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_login, menu)
 
-        if (!Statics.prefsGetBoolean(Preference.showConfButton)) {
+        if (!settingViewModel().showConfButton) {
             menu.removeItem(menu.findItem(R.id.action_settings).itemId)
         }
 
-        if (!Statics.isRfidRequired()) {
+        if (!settingViewModel().useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 

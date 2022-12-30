@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
 import com.dacosys.warehouseCounter.Statics.Companion.showKeyboard
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.EnterCodeActivityBinding
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
@@ -153,7 +154,7 @@ class EnterCodeActivity : AppCompatActivity(),
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
@@ -161,7 +162,7 @@ class EnterCodeActivity : AppCompatActivity(),
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (Statics.prefsGetBoolean(Preference.showScannedCode))
+        if (settingViewModel().showScannedCode)
             makeText(binding.root, scanCode, SnackBarType.INFO)
 
         binding.codeEditText.setText(scanCode)

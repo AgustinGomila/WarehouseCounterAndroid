@@ -1,26 +1,26 @@
 package com.dacosys.warehouseCounter.sync
 
 import android.util.Log
-import android.view.View
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.dataBaseHelper.DataBaseHelper.Companion.copyDataBase
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.itemCode.dbHelper.ItemCodeDbHelper
-import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.misc.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.ERROR
+import com.dacosys.warehouseCounter.retrofit.functions.SendItemCode
 import com.dacosys.warehouseCounter.sync.DownloadDb.DownloadStatus.*
 import kotlinx.coroutines.*
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
-import java.lang.ref.WeakReference
 import kotlin.concurrent.thread
 
 
-class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
-    DownloadFileTask.OnDownloadFileTask {
+class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownloadFileTask {
 
     interface DownloadDbTask {
         // Define data you like to return from AysncTask
@@ -37,17 +37,13 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
     override fun onTaskSendItemCodeEnded(status: ProgressStatus, msg: String) {
         this.progressStatus = status
         val progressStatusDesc = (progressStatus as ProgressStatus).description
-        val registryDesc = Statics.WarehouseCounter.getContext().getString(R.string.item_codes)
+        val registryDesc = context().getString(R.string.item_codes)
 
-        if (progressStatus == ProgressStatus.crashed ||
-            downloadStatus == CRASHED
-        ) {
-            ErrorLog.writeLog(
-                null,
+        if (progressStatus == ProgressStatus.crashed || downloadStatus == CRASHED) {
+            ErrorLog.writeLog(null,
                 this::class.java.simpleName,
-                "$progressStatusDesc: $registryDesc, $msg"
-            )
-            makeText(parentView ?: return, msg, ERROR)
+                "$progressStatusDesc: $registryDesc, $msg")
+            onEventData(SnackBarEventData(msg, ERROR))
         } else {
             Log.d(this::class.java.simpleName, "$progressStatusDesc: $registryDesc, $msg")
         }
@@ -65,22 +61,17 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
         this.downloadStatus = downloadStatus
 
         if (downloadStatus == CRASHED) {
-            ErrorLog.writeLog(
-                null,
+            ErrorLog.writeLog(null,
                 this::class.java.simpleName,
-                "${downloadStatus.name}: ${fileType.name}, $msg"
-            )
+                "${downloadStatus.name}: ${fileType.name}, $msg")
 
             // Si falla en el Timefile puede ser por no tener conexión.
             // No mostrar error
             if (fileType == FileType.TIMEFILE) {
-                makeText(
-                    parentView ?: return,
-                    Statics.WarehouseCounter.getContext().getString(R.string.offline_mode),
-                    SnackBarType.INFO
-                )
+                onEventData(SnackBarEventData(context().getString(R.string.offline_mode),
+                    SnackBarType.INFO))
             } else {
-                makeText(parentView ?: return, msg, ERROR)
+                onEventData(SnackBarEventData(msg, ERROR))
             }
         }
 
@@ -93,20 +84,14 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
      * De esto depende la lógica para la secuencia de descargas.
      */
     enum class FileType(val id: Int) {
-        TIMEFILE(1),
-        DBFILE(2)
+        TIMEFILE(1), DBFILE(2)
     }
 
     /**
      * Tiene los diferentes estados durante una descarga
      */
     enum class DownloadStatus(val id: Int) {
-        STARTING(1),
-        DOWNLOADING(2),
-        CANCELED(3),
-        FINISHED(4),
-        CRASHED(5),
-        INFO(6)
+        STARTING(1), DOWNLOADING(2), CANCELED(3), FINISHED(4), CRASHED(5), INFO(6)
     }
 
     /////////////////////
@@ -117,11 +102,8 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
 
     private var timeFilename = ""
     private var dbFilename = ""
-
     private var oldDateTimeStr: String = ""
     private var currentDateTimeStr: String = ""
-
-
     private var fileType: FileType? = null
 
     private var mCallback: DownloadDbTask? = null
@@ -130,58 +112,42 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
 
     ///////////////////////
     // region Constantes //
-    private var destinationTimeFile: File? =
-        null // File(weakRef!!.get()!!.cacheDir.absolutePath + "/" + timeFilename)
-    private var destinationDbFile: File? =
-        null // File(weakRef!!.get()!!.cacheDir.absolutePath + "/" + dbFilename)
+    private var destinationTimeFile: File? = null
+    private var destinationDbFile: File? = null
 
-    private var timeFileUrl = "" // "${Statics.urlPanel}/$dbDirectory/$timeFilename"
-    private val completeTimeFileUrl = "${Statics.urlPanel}/$timeFileUrl"
-
-    private var dbFileUrl = "" // "${Statics.urlPanel}/$dbDirectory/$dbFilename"
-    private val completeDbFileUrl = "${Statics.urlPanel}/$dbFileUrl"
+    private var onEventData: (SnackBarEventData) -> Unit = {}
+    private var completeDbFileUrl = ""
+    private var completeTimeFileUrl = ""
 
     // endregion Constantes //
     //////////////////////////
 
-    private var weakRefView: WeakReference<View>? = null
-    private var parentView: View?
-        get() {
-            return weakRefView?.get()
-        }
-        set(value) {
-            weakRefView = if (value != null) WeakReference(value) else null
-        }
-
     fun addParams(
-        parentView: View,
         callBack: DownloadDbTask,
         timeFileUrl: String, //"android.wc.time.txt",
-        dbFileUrl: String, //"android.wc.sqlite.txt"
+        dbFileUrl: String, //"android.wc.sqlite.txt",
+        onEventData: (SnackBarEventData) -> Unit = {},
     ) {
-        this.parentView = parentView
-        this.mCallback = callBack
+        val sv = settingViewModel()
 
-        this.timeFileUrl = timeFileUrl
-        this.dbFileUrl = dbFileUrl
+        this.mCallback = callBack
+        this.onEventData = onEventData
 
         this.timeFilename = timeFileUrl.substringAfterLast('/')
         this.dbFilename = dbFileUrl.substringAfterLast('/')
 
-        this.destinationTimeFile =
-            File(Statics.WarehouseCounter.getContext().cacheDir.absolutePath + "/" + timeFilename)
-        this.destinationDbFile =
-            File(Statics.WarehouseCounter.getContext().cacheDir.absolutePath + "/" + dbFilename)
+        this.destinationTimeFile = File("${context().cacheDir.absolutePath}/$timeFilename")
+        this.destinationDbFile = File("${context().cacheDir.absolutePath}/$dbFilename")
+
+        this.completeDbFileUrl = "${sv.urlPanel}/$dbFileUrl"
+        this.completeTimeFileUrl = "${sv.urlPanel}/$timeFileUrl"
     }
 
     private fun postExecute(result: Boolean) {
         if (result) {
-            Log.d(
-                this::class.java.simpleName,
-                Statics.WarehouseCounter.getContext().getString(R.string.ok)
-            )
+            Log.d(this::class.java.simpleName, context().getString(R.string.ok))
         } else {
-            makeText(parentView ?: return, errorMsg, ERROR)
+            onEventData(SnackBarEventData(errorMsg, ERROR))
             ErrorLog.writeLog(null, this::class.java.simpleName, errorMsg)
         }
     }
@@ -223,13 +189,8 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
 
     private fun goForrest(): Boolean {
         try {
-            if (dbFilename.isEmpty() ||
-                timeFilename.isEmpty() ||
-                destinationTimeFile == null ||
-                destinationDbFile == null
-            ) {
-                errorMsg = Statics.WarehouseCounter.getContext()
-                    .getString(R.string.database_name_is_invalid)
+            if (dbFilename.isEmpty() || timeFilename.isEmpty() || destinationTimeFile == null || destinationDbFile == null) {
+                errorMsg = context().getString(R.string.database_name_is_invalid)
                 mCallback?.onDownloadDbTask(CRASHED)
                 return false
             }
@@ -243,7 +204,7 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
                 progressStatus = null
                 try {
                     thread {
-                        val task = SendNewItemCode()
+                        val task = SendItemCode()
                         task.addParams(this, itemCodeArray)
                         task.execute()
                     }
@@ -257,9 +218,7 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
                         ProgressStatus.finished -> break@loop
                         ProgressStatus.crashed, ProgressStatus.canceled,
                         -> {
-                            errorMsg =
-                                Statics.WarehouseCounter.getContext()
-                                    .getString(R.string.error_trying_to_send_item_codes)
+                            errorMsg = context().getString(R.string.error_trying_to_send_item_codes)
                             mCallback?.onDownloadDbTask(CRASHED)
                             return false
                         }
@@ -279,14 +238,8 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
 
             var downloadTask = DownloadFileTask()
             downloadStatus = null
-            downloadTask.addParams(
-                UrlDestParam(
-                    url = completeTimeFileUrl,
-                    destination = destinationTimeFile!!
-                ),
-                this,
-                FileType.TIMEFILE
-            )
+            downloadTask.addParams(UrlDestParam(url = completeTimeFileUrl,
+                destination = destinationTimeFile!!), this, FileType.TIMEFILE)
             downloadTask.execute()
 
             var crashNr = 0
@@ -297,28 +250,25 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
                         mCallback?.onDownloadDbTask(CANCELED)
                         return false
                     } else if (downloadStatus == FINISHED) {
-// Si estamos descargando el archivo de la fecha
+
+                        // Si estamos descargando el archivo de la fecha
                         // y termina de descargarse salir del loop para poder hacer
                         // las comparaciones
+
                         if (fileType == FileType.TIMEFILE) {
                             break
                         } else {
                             downloadStatus = null
                             downloadTask = DownloadFileTask()
-                            downloadTask.addParams(
-                                UrlDestParam(
-                                    url = completeTimeFileUrl,
-                                    destination = destinationTimeFile!!
-                                ),
-                                this,
-                                FileType.TIMEFILE
-                            )
+                            downloadTask.addParams(UrlDestParam(url = completeTimeFileUrl,
+                                destination = destinationTimeFile!!), this, FileType.TIMEFILE)
                             downloadTask.execute()
                         }
                     } else if (downloadStatus == CRASHED) {
+
                         // Si no existe el archivo con la fecha en el servidor
                         // es porque aún no se creó la base de datos.
-                        // Generate DB
+
                         if (fileType == FileType.TIMEFILE) {
                             // Si falla al bajar la fecha
                             crashNr++
@@ -327,8 +277,7 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
                         if (crashNr > 1) {
                             // Si ya falló dos veces en bajar la fecha, a la mierda.
                             errorMsg =
-                                Statics.WarehouseCounter.getContext()
-                                    .getString(R.string.failed_to_get_the_db_creation_date_from_the_server)
+                                context().getString(R.string.failed_to_get_the_db_creation_date_from_the_server)
                             mCallback?.onDownloadDbTask(CRASHED)
                             return false
                         }
@@ -340,11 +289,8 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
             //Read text from file
             currentDateTimeStr = getDateTimeStr()
             if (oldDateTimeStr == currentDateTimeStr) {
-                Log.d(
-                    this::class.java.simpleName,
-                    Statics.WarehouseCounter.getContext()
-                        .getString(R.string.is_not_necessary_to_download_the_database)
-                )
+                Log.d(this::class.java.simpleName,
+                    context().getString(R.string.is_not_necessary_to_download_the_database))
 
                 mCallback?.onDownloadDbTask(FINISHED)
                 return true
@@ -358,25 +304,16 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
             try {
                 downloadStatus = null
                 downloadTask = DownloadFileTask()
-                downloadTask.addParams(
-                    UrlDestParam(
-                        url = completeDbFileUrl,
-                        destination = destinationDbFile!!
-                    ),
-                    this,
-                    FileType.DBFILE
-                )
+                downloadTask.addParams(UrlDestParam(url = completeDbFileUrl,
+                    destination = destinationDbFile!!), this, FileType.DBFILE)
                 downloadTask.execute()
 
                 while (true) {
                     if (downloadStatus != null && fileType != null) {
                         // Si se cancela, sale
-                        if (downloadStatus == CANCELED ||
-                            downloadStatus == CRASHED
-                        ) {
+                        if (downloadStatus == CANCELED || downloadStatus == CRASHED) {
                             errorMsg =
-                                Statics.WarehouseCounter.getContext()
-                                    .getString(R.string.error_downloading_the_database_from_the_server)
+                                context().getString(R.string.error_downloading_the_database_from_the_server)
                             mCallback?.onDownloadDbTask(CRASHED)
                             return false
                         } else if (downloadStatus == FINISHED) {
@@ -385,10 +322,9 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
                     }
                 }
             } catch (ex: Exception) {
-                errorMsg =
-                    "${
-                        Statics.WarehouseCounter.getContext().getString(R.string.exception_error)
-                    } (Download database): ${ex.message}"
+                errorMsg = "${
+                    context().getString(R.string.exception_error)
+                } (Download database): ${ex.message}"
                 mCallback?.onDownloadDbTask(CRASHED)
                 return false
             }
@@ -396,8 +332,7 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
             Statics.downloadDbRequired = false
             copyDataBase(destinationDbFile)
         } catch (ex: Exception) {
-            errorMsg = Statics.WarehouseCounter.getContext()
-                .getString(R.string.error_downloading_the_database)
+            errorMsg = context().getString(R.string.error_downloading_the_database)
             mCallback?.onDownloadDbTask(CRASHED)
             return false
         }
@@ -416,18 +351,15 @@ class DownloadDb : SendNewItemCode.TaskSendItemCodeEnded,
             }
             br.close()
         } catch (ex: Exception) {
-            errorMsg =
-                "${
-                    Statics.WarehouseCounter.getContext()
-                        .getString(R.string.failed_to_get_the_date_from_the_file)
-                }: ${ex.message}"
+            errorMsg = "${
+                context().getString(R.string.failed_to_get_the_date_from_the_file)
+            }: ${ex.message}"
         }
         return dateTime
     }
 
     private fun deleteTimeFile() {
-        destinationTimeFile =
-            File(Statics.WarehouseCounter.getContext().cacheDir.absolutePath + "/" + timeFilename)
+        destinationTimeFile = File(context().cacheDir.absolutePath + "/" + timeFilename)
         if (destinationTimeFile?.exists() == true) {
             destinationTimeFile?.delete()
         }

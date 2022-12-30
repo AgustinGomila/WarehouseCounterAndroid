@@ -16,14 +16,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.Statics.Companion.isRfidRequired
-import com.dacosys.warehouseCounter.Statics.WarehouseCounter.Companion.getContext
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.client.`object`.Client
 import com.dacosys.warehouseCounter.client.activities.ClientSelectActivity
 import com.dacosys.warehouseCounter.client.dbHelper.ClientDbHelper
 import com.dacosys.warehouseCounter.databinding.NewCountActivityBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.misc.Preference
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.orderRequest.`object`.OrderRequestType
@@ -34,25 +33,24 @@ import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import org.parceler.Parcels
 
-class NewCountActivity :
-    AppCompatActivity(),
-    Scanner.ScannerListener,
-    Rfid.RfidDeviceListener {
+class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+            this,
+            requestCode,
+            permissions,
+            grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
         if (isFinishing) return
 
-        if (Statics.prefsGetBoolean(Preference.showScannedCode))
-            makeText(binding.root, scanCode, SnackBarType.INFO)
+        if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, SnackBarType.INFO)
 
         runOnUiThread {
             binding.countCodeEditText.setText(scanCode)
@@ -74,7 +72,7 @@ class NewCountActivity :
     private fun loadBundleValues(b: Bundle) {
         val t1 = b.getString("title")
         tempTitle = if (t1 != null && t1.isNotEmpty()) t1
-        else getContext().getString(R.string.setup_new_count)
+        else context().getString(R.string.setup_new_count)
 
         tempDescription = b.getString("description") ?: ""
         client = b.getParcelable("client")
@@ -83,7 +81,7 @@ class NewCountActivity :
     private fun loadExtraBundleValues(b: Bundle) {
         val t1 = b.getString("title")
         tempTitle = if (t1 != null && t1.isNotEmpty()) t1
-        else getContext().getString(R.string.setup_new_count)
+        else context().getString(R.string.setup_new_count)
     }
 
     private lateinit var binding: NewCountActivityBinding
@@ -114,7 +112,7 @@ class NewCountActivity :
             val intent = Intent(this, ClientSelectActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
             intent.putExtra("client", client)
-            intent.putExtra("title", getContext().getString(R.string.select_client))
+            intent.putExtra("title", context().getString(R.string.select_client))
             resultForClientSelect.launch(intent)
         }
 
@@ -133,10 +131,7 @@ class NewCountActivity :
             }
         }
         binding.countCodeEditText.setOnKeyListener { _, keyCode, keyEvent ->
-            if (keyEvent.action == KeyEvent.ACTION_UP &&
-                (keyCode == KeyEvent.KEYCODE_ENTER ||
-                        keyCode == KeyEvent.KEYCODE_DPAD_CENTER)
-            ) {
+            if (keyEvent.action == KeyEvent.ACTION_UP && (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 attemptSetupNewCount()
                 true
             } else {
@@ -181,7 +176,7 @@ class NewCountActivity :
         runOnUiThread {
             if (client == null) {
                 binding.clientTextView.typeface = Typeface.DEFAULT
-                binding.clientTextView.text = getContext().getString(R.string.search_client)
+                binding.clientTextView.text = context().getString(R.string.search_client)
             } else {
                 binding.clientTextView.typeface = Typeface.DEFAULT_BOLD
                 binding.clientTextView.text = client!!.name
@@ -212,7 +207,7 @@ class NewCountActivity :
 
         // Check for a valid data.
         if (!TextUtils.isEmpty(description) && !isDescriptionValid(description)) {
-            binding.countCodeEditText.error = getContext().getString(R.string.invalid_description)
+            binding.countCodeEditText.error = context().getString(R.string.invalid_description)
             focusView = binding.countCodeEditText
             cancel = true
         }
@@ -221,7 +216,7 @@ class NewCountActivity :
         if (client == null || !isClientValid(client!!)) {
             //clientSpinnerFragment.setError(getString(R.string.error_field_required));
             focusView = clientAutoCompleteTextView!!
-            Toast.makeText(binding.root,this.Statics.WarehouseCounter.getContext(), R.string.you_must_select_a_client, Toast.LENGTH_SHORT).show()
+            Toast.makeText(binding.root,context(), R.string.you_must_select_a_client, Toast.LENGTH_SHORT).show()
             cancel = true
         }
         */
@@ -290,7 +285,7 @@ class NewCountActivity :
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!isRfidRequired()) {
+        if (!settingViewModel().useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 

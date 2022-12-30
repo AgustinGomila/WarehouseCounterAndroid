@@ -163,7 +163,7 @@
     <string name="invalid_amount">Cantidad inválida</string>
     <string name="invalid_code">Código inválido</string>
     <string name="invalid_description">Descripción inválida</string>
-    <string name="invalid_password">Constraseña inválida</string>
+    <string name="invalid_password">Contraseña inválida</string>
     <string name="is_not_necessary_to_download_the_database">No es necesario descargar la base de datos</string>
     <string name="item">Ítem</string>
     <string name="item_category">Categoría</string>
@@ -579,4 +579,17 @@
     <string name="upc_e">UPC E</string>
     <string name="upc_ean_extension">UPC/EAN extension</string>
     <string name="lot_id">Lote Id</string>
+    <string name="price_list">Lista de precios</string>
+    <string name="price_description">Descripción del precio</string>
+    <string name="list_price">Precio de lista</string>
+    <string name="successful_connection">Conexión OK</string>
+    <string name="url_malformed">URL malformado</string>
+    <string name="invalid_prices">Lista de precios inválida</string>
+    <string name="no_results">No hay resultados</string>
+    <string name="invalid_or_expired_token">Token inválido o expirado</string>
+    <string name="col_offset">Offset columna</string>
+    <string name="row_offset">Offset filas</string>
+    <string name="default_template">Plantilla por defecto</string>
+    <string name="timeout">Timeout</string>
+    <string name="column_offset">Offset columna</string>
 </resources>

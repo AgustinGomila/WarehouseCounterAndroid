@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.scanners
 import android.os.Build
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.collectorType.`object`.CollectorType
 import com.dacosys.warehouseCounter.scanners.honeywell.Honeywell
 import com.dacosys.warehouseCounter.scanners.honeywell.HoneywellNative
@@ -30,13 +30,12 @@ open class Scanner {
         val manufacturer = Build.MANUFACTURER
         val model = Build.MODEL
 
-        Log.i(
-            this::class.java.simpleName,
-            "SCANNER CONNECTED Manufacturer: $manufacturer, Model: $model"
-        )
+        Log.i(this::class.java.simpleName,
+            "SCANNER CONNECTED Manufacturer: $manufacturer, Model: $model")
 
         try {
-            scannerDevice = when (Statics.collectorType) {
+            val collectorType = CollectorType.getById(settingViewModel().collectorType)
+            scannerDevice = when (collectorType) {
                 CollectorType.honeywell -> Honeywell(activity)
                 CollectorType.honeywellNative -> HoneywellNative(WeakReference(activity))
                 CollectorType.zebra -> Zebra(activity)

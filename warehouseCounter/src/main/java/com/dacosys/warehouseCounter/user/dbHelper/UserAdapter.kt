@@ -8,7 +8,7 @@ import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.R.id.descriptionTextView
-import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.user.`object`.User
 
 
@@ -17,7 +17,7 @@ import com.dacosys.warehouseCounter.user.`object`.User
  */
 
 class UserAdapter(private var resource: Int, user: List<User>) :
-    ArrayAdapter<User>(Statics.WarehouseCounter.getContext(), resource, user) {
+    ArrayAdapter<User>(context(), resource, user) {
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val holder: ViewHolder
         var v = convertView
@@ -42,17 +42,8 @@ class UserAdapter(private var resource: Int, user: List<User>) :
 
             if (user != null) {
                 // Font colors
-                val dimgray =
-                    ResourcesCompat.getColor(
-                        Statics.WarehouseCounter.getContext().resources,
-                        R.color.dimgray,
-                        null
-                    )
-                val black = ResourcesCompat.getColor(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.color.black,
-                    null
-                )
+                val dimgray = ResourcesCompat.getColor(context().resources, R.color.dimgray, null)
+                val black = ResourcesCompat.getColor(context().resources, R.color.black, null)
 
                 if (resource == R.layout.custom_spinner_dropdown_item && v != null) {
                     holder.textViewName!!.text = user.name

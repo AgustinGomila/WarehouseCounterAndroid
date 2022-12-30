@@ -18,7 +18,8 @@ import com.dacosys.warehouseCounter.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.Statics.Companion.decimalSeparator
 import com.dacosys.warehouseCounter.Statics.Companion.round
 import com.dacosys.warehouseCounter.Statics.Companion.showKeyboard
-import com.dacosys.warehouseCounter.Statics.WarehouseCounter.Companion.getContext
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.QtySelectorBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
@@ -240,7 +241,7 @@ class QtySelectorActivity :
             rejectNewInstances = true
             JotterListener.lockScanner(this, true)
 
-            val intent = Intent(getContext(), EnterCodeActivity::class.java)
+            val intent = Intent(context(), EnterCodeActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
             intent.putExtra("title", getString(R.string.enter_description))
             intent.putExtra("orc", orc)
@@ -343,7 +344,7 @@ class QtySelectorActivity :
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
@@ -351,7 +352,7 @@ class QtySelectorActivity :
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (Statics.prefsGetBoolean(Preference.showScannedCode))
+        if (settingViewModel().showScannedCode)
             makeText(binding.root, scanCode, INFO)
 
         JotterListener.lockScanner(this, true)

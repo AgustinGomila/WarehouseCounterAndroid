@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.client.`object`.Client
 import java.util.*
 
@@ -21,9 +22,7 @@ import java.util.*
  */
 
 @Suppress("SpellCheckingInspection")
-class ClientAdapter :
-    ArrayAdapter<Client>,
-    Filterable {
+class ClientAdapter : ArrayAdapter<Client>, Filterable {
     private var resource: Int = 0
     private var activity: AppCompatActivity
 
@@ -41,7 +40,7 @@ class ClientAdapter :
         resource: Int,
         clients: ArrayList<Client>,
         suggestedList: ArrayList<Client>,
-    ) : super(Statics.WarehouseCounter.getContext(), resource, suggestedList) {
+    ) : super(context(), resource, suggestedList) {
         this.activity = activity
         this.resource = resource
         this.clientArray = clients
@@ -154,13 +153,9 @@ class ClientAdapter :
         super.sort(customComparator)
     }
 
-    private val customComparator =
-        Comparator { o1: Client?, o2: Client? ->
-            ClientComparator().compareNullable(
-                o1,
-                o2
-            )
-        }
+    private val customComparator = Comparator { o1: Client?, o2: Client? ->
+        ClientComparator().compareNullable(o1, o2)
+    }
 
     fun refresh() {
         activity.runOnUiThread { notifyDataSetChanged() }
@@ -195,8 +190,7 @@ class ClientAdapter :
             // El view ya existe, comprobar que no necesite cambiar de layout.
             if (
             // Row null cambiando...
-                v.tag is String && currentLayout == R.layout.client_row
-            ) {
+                v.tag is String && currentLayout == R.layout.client_row) {
                 // Ya fue creado, si es un row normal que está siendo seleccionada
                 // o un row expandido que está siendo deseleccionado
                 // debe cambiar de layout, por lo tanto volver a crearse.
@@ -289,31 +283,12 @@ class ClientAdapter :
 
                 // Background colors
                 val lightgray =
-                    ResourcesCompat.getColor(
-                        Statics.WarehouseCounter.getContext().resources,
-                        R.color.lightgray,
-                        null
-                    )
-                val white =
-                    ResourcesCompat.getColor(
-                        Statics.WarehouseCounter.getContext().resources,
-                        R.color.text_light,
-                        null
-                    )
+                    ResourcesCompat.getColor(context().resources, R.color.lightgray, null)
+                val white = ResourcesCompat.getColor(context().resources, R.color.text_light, null)
 
                 // Font colors
-                val black =
-                    ResourcesCompat.getColor(
-                        Statics.WarehouseCounter.getContext().resources,
-                        R.color.text_dark,
-                        null
-                    )
-                val dimgray =
-                    ResourcesCompat.getColor(
-                        Statics.WarehouseCounter.getContext().resources,
-                        R.color.dimgray,
-                        null
-                    )
+                val black = ResourcesCompat.getColor(context().resources, R.color.text_dark, null)
+                val dimgray = ResourcesCompat.getColor(context().resources, R.color.dimgray, null)
 
                 val colorText = when {
                     !client.active -> dimgray
@@ -350,14 +325,11 @@ class ClientAdapter :
 
                     for (i in 0 until clientArray.size) {
                         filterableItem = clientArray[i]
-                        if (
-                            filterableItem.name.lowercase(Locale.getDefault())
-                                .contains(filterString) ||
-                            (filterableItem.taxNumber != null
-                                    && filterableItem.taxNumber!!.lowercase(Locale.getDefault())
-                                .contains(filterString)) ||
-                            (filterableItem.contactName != null
-                                    && filterableItem.contactName.toString().contains(filterString))
+                        if (filterableItem.name.lowercase(Locale.getDefault())
+                                .contains(filterString) || (filterableItem.taxNumber != null && filterableItem.taxNumber!!.lowercase(
+                                Locale.getDefault())
+                                .contains(filterString)) || (filterableItem.contactName != null && filterableItem.contactName.toString()
+                                .contains(filterString))
                         ) {
                             r.add(filterableItem)
                         }

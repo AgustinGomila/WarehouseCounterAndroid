@@ -16,10 +16,10 @@ import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.Statics.WarehouseCounter.Companion.getContext
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.collectorType.`object`.CollectorType
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.misc.Preference
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.scanners.Scanner.ScannerListener
@@ -122,7 +122,7 @@ object JotterListener : Jotter.Listener {
     override fun onReceiveActivityEvent(
         activity: Activity,
         event: String,
-        bundle: Bundle?
+        bundle: Bundle?,
     ) {
         /**
          * const val CREATE = "CREATE"
@@ -137,17 +137,10 @@ object JotterListener : Jotter.Listener {
         if (activity !is ScannerListener) return
         val tActivity = activity as AppCompatActivity
 
-        Log.v(
-            "LifeCycleCallback",
-            "ACTIVITY IS ${tActivity::class.java.simpleName} >>> $event"
-        )
+        Log.v("LifeCycleCallback", "ACTIVITY IS ${tActivity::class.java.simpleName} >>> $event")
 
         when (event) {
             "CREATE" -> {
-                // Ok, esto sólo se ejecutaría luego de onCreate de HomeActivity
-                if (!Statics.prefsIsInitialized())
-                    Statics.startPrefs()
-
                 onCreate(tActivity)
             }
             "RESUME" -> {
@@ -170,7 +163,7 @@ object JotterListener : Jotter.Listener {
         activity: AppCompatActivity,
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         if (!permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) return
 
@@ -178,11 +171,9 @@ object JotterListener : Jotter.Listener {
             REQUEST_BLUETOOTH_CONNECT -> {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    makeText(
-                        activity.window.decorView,
+                    makeText(activity.window.decorView,
                         activity.getString(R.string.app_dont_have_necessary_permissions),
-                        SnackBarType.ERROR
-                    )
+                        SnackBarType.ERROR)
                 } else {
                     rfidSetListener(activity)
                 }
@@ -191,7 +182,7 @@ object JotterListener : Jotter.Listener {
     }
 
     fun autodetectDeviceModel(activity: AppCompatActivity) {
-        var collectorType: CollectorType? = Statics.collectorType
+        var collectorType: CollectorType? = CollectorType.getById(settingViewModel().collectorType)
 
         // Sólo si no fue configurado o cambió la configuración
         if (collectorType == null || collectorType == CollectorType.none) {
@@ -199,14 +190,13 @@ object JotterListener : Jotter.Listener {
             val model = Build.MODEL
 
             when {
-                manufacturer.contains("Honeywell", true) ||
-                        manufacturer.startsWith("Universal Global Scientific Industrial") ||
-                        manufacturer.startsWith("Foxconn International Holdings Limited") ->
-                    collectorType = CollectorType.honeywellNative
-                manufacturer.contains("Motorola", true) ||
-                        manufacturer.contains("Zebra", true) ||
-                        manufacturer.contains("Symbol", true) ->
-                    collectorType = CollectorType.zebra
+                manufacturer.contains("Honeywell",
+                    true) || manufacturer.startsWith("Universal Global Scientific Industrial") || manufacturer.startsWith(
+                    "Foxconn International Holdings Limited") -> collectorType =
+                    CollectorType.honeywellNative
+                manufacturer.contains("Motorola", true) || manufacturer.contains("Zebra",
+                    true) || manufacturer.contains("Symbol", true) -> collectorType =
+                    CollectorType.zebra
                 /*
                 manufacturer.contains("Janam", true)-> when (model) {
                     "XG3" -> collectorType = CollectorType.janamXG3
@@ -219,12 +209,10 @@ object JotterListener : Jotter.Listener {
             Log.v(this::class.java.simpleName, "Manufacturer: $manufacturer, Model: $model")
 
             if (collectorType != null) {
-                Statics.prefsPutString(Preference.collectorType.key, collectorType.id.toString())
-                makeText(
-                    activity.window.decorView,
-                    "${getContext().getString(R.string.device)}: $manufacturer $model",
-                    SnackBarType.INFO
-                )
+                settingViewModel().collectorType = collectorType.id
+                makeText(activity.window.decorView,
+                    "${context().getString(R.string.device)}: $manufacturer $model",
+                    SnackBarType.INFO)
                 Statics.collectorTypeChanged = true
             }
         }
@@ -270,10 +258,9 @@ object JotterListener : Jotter.Listener {
             // Creamos y agregamos el escáner de la actividad
             createBarcodeReader(activity)
 
-            if (Statics.isNfcRequired())
-                Nfc.setupNFCReader(activity)
+            if (settingViewModel().useNfc) Nfc.setupNFCReader(activity)
 
-            if (activity is Rfid.RfidDeviceListener && Statics.isRfidRequired()) {
+            if (activity is Rfid.RfidDeviceListener && settingViewModel().useBtRfid) {
                 rfidStart(activity)
                 rfidSetup(activity)
             }
@@ -286,29 +273,23 @@ object JotterListener : Jotter.Listener {
     }
 
     private fun rfidSetup(activity: AppCompatActivity) {
-        val bluetoothManager = getContext()
-            .getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothManager =
+            context().getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
         val mBluetoothAdapter = bluetoothManager.adapter
         if (mBluetoothAdapter == null) {
-            makeText(
-                activity.window.decorView,
+            makeText(activity.window.decorView,
                 activity.getString(R.string.there_are_no_bluetooth_devices),
-                SnackBarType.INFO
-            )
+                SnackBarType.INFO)
         } else {
             if (!mBluetoothAdapter.isEnabled) {
                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                 enableBtIntent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                if (ActivityCompat.checkSelfPermission(
-                        activity,
-                        Manifest.permission.BLUETOOTH_CONNECT
-                    ) != PackageManager.PERMISSION_GRANTED
+                if (ActivityCompat.checkSelfPermission(activity,
+                        Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
                 ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        activity.requestPermissions(
-                            arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
-                            REQUEST_BLUETOOTH_CONNECT
-                        )
+                        activity.requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+                            REQUEST_BLUETOOTH_CONNECT)
                     }
                     return
                 }
@@ -331,11 +312,9 @@ object JotterListener : Jotter.Listener {
             scannerList.add(Scanner(activity))
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(
-                activity.window.decorView,
+            makeText(activity.window.decorView,
                 activity.getString(R.string.barcode_reader_not_initialized),
-                SnackBarType.ERROR
-            )
+                SnackBarType.ERROR)
             ErrorLog.writeLog(activity, this::class.java.simpleName, ex)
         }
     }
@@ -345,11 +324,9 @@ object JotterListener : Jotter.Listener {
             Rfid.setListener(activity as Rfid.RfidDeviceListener, RfidType.vh75)
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(
-                activity.window.decorView,
+            makeText(activity.window.decorView,
                 activity.getString(R.string.rfid_reader_not_initialized),
-                SnackBarType.ERROR
-            )
+                SnackBarType.ERROR)
             ErrorLog.writeLog(activity, this::class.java.simpleName, ex)
         }
     }
@@ -362,21 +339,18 @@ object JotterListener : Jotter.Listener {
     }
 
     fun resumeReaderDevices(activity: AppCompatActivity) {
-        if (Statics.isNfcRequired())
-            enableNfcForegroundDispatch(activity)
+        if (settingViewModel().useNfc) enableNfcForegroundDispatch(activity)
 
-        if (activity is Rfid.RfidDeviceListener && Statics.isRfidRequired())
-            Rfid.resume(activity)
+        if (activity is Rfid.RfidDeviceListener && settingViewModel().useBtRfid) Rfid.resume(
+            activity)
 
-        scannerList.firstOrNull { it.activityName() == activity::class.java.simpleName }
-            ?.onResume()
+        scannerList.firstOrNull { it.activityName() == activity::class.java.simpleName }?.onResume()
         floatingWindowList.firstOrNull { it.activityName == activity::class.java.simpleName }
             ?.onResume()
     }
 
     fun trigger(activity: AppCompatActivity) {
-        scannerList.firstOrNull { it.activityName() == activity::class.java.simpleName }
-            ?.trigger()
+        scannerList.firstOrNull { it.activityName() == activity::class.java.simpleName }?.trigger()
     }
 
     fun lockScanner(activity: AppCompatActivity, lock: Boolean) {
@@ -402,14 +376,11 @@ object JotterListener : Jotter.Listener {
     }
 
     fun pauseReaderDevices(activity: AppCompatActivity) {
-        if (activity is Rfid.RfidDeviceListener && Statics.isRfidRequired())
-            Rfid.pause()
+        if (activity is Rfid.RfidDeviceListener && settingViewModel().useBtRfid) Rfid.pause()
 
-        if (Statics.isNfcRequired())
-            Nfc.disableNfcForegroundDispatch(activity)
+        if (settingViewModel().useNfc) Nfc.disableNfcForegroundDispatch(activity)
 
-        scannerList.firstOrNull { it.activityName() == activity::class.java.simpleName }
-            ?.onPause()
+        scannerList.firstOrNull { it.activityName() == activity::class.java.simpleName }?.onPause()
         floatingWindowList.firstOrNull { it.activityName == activity::class.java.simpleName }
             ?.onPause()
     }
@@ -455,7 +426,7 @@ object JotterListener : Jotter.Listener {
         fragment: Fragment,
         context: Context?,
         event: String,
-        bundle: Bundle?
+        bundle: Bundle?,
     ) {
         if (fragment !is ScannerListener) return
         Log.v("LifeCycleCallback", "FRAGMENT IS $fragment >>> $event")

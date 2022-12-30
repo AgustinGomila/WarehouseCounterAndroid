@@ -1,20 +1,20 @@
 package com.dacosys.warehouseCounter.orderRequest.activities
 
 import android.util.Log
-import android.view.View
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.item.dbHelper.ItemDbHelper
 import com.dacosys.warehouseCounter.itemCode.`object`.ItemCode
 import com.dacosys.warehouseCounter.itemCode.dbHelper.ItemCodeDbHelper
-import com.dacosys.warehouseCounter.misc.snackBar.MakeText
+import com.dacosys.warehouseCounter.misc.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.orderRequest.`object`.Item
 import com.dacosys.warehouseCounter.orderRequest.`object`.OrderRequestContent
 import com.dacosys.warehouseCounter.orderRequest.`object`.Qty
 import com.dacosys.warehouseCounter.orderRequest.dbHelper.OrcAdapter
 import kotlinx.coroutines.*
-import java.lang.ref.WeakReference
 
 class CheckCode {
     interface CheckCodeEnded {
@@ -25,28 +25,19 @@ class CheckCode {
     private var scannedCode: String? = null
     private var itemCode: ItemCode? = null
     private var mCallback: CheckCodeEnded? = null
-
     private var orcAdapter: OrcAdapter? = null
-
-    private var weakRefView: WeakReference<View>? = null
-    private var parentView: View?
-        get() {
-            return weakRefView?.get()
-        }
-        set(value) {
-            weakRefView = if (value != null) WeakReference(value) else null
-        }
+    private var onEventData: (SnackBarEventData) -> Unit = {}
 
     fun addParams(
-        parentView: View,
         callback: CheckCodeEnded,
         scannedCode: String,
         adapter: OrcAdapter,
+        onEventData: (SnackBarEventData) -> Unit = {},
     ) {
-        this.parentView = parentView
         this.mCallback = callback
         this.scannedCode = scannedCode
         this.orcAdapter = adapter
+        this.onEventData = onEventData
     }
 
     private fun preExecute() {
@@ -86,13 +77,9 @@ class CheckCode {
         try {
             if (Statics.demoMode) {
                 if (orcAdapter!!.count >= 5) {
-                    val res = Statics.WarehouseCounter.getContext()
-                        .getString(R.string.maximum_amount_of_demonstration_mode_reached)
-                    MakeText.makeText(
-                        parentView ?: return@withContext null,
-                        res,
-                        SnackBarType.ERROR
-                    )
+                    val res =
+                        context().getString(R.string.maximum_amount_of_demonstration_mode_reached)
+                    onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
                     Log.e(this::class.java.simpleName, res)
                     return@withContext null
                 }
@@ -100,16 +87,15 @@ class CheckCode {
 
             // Nada que hacer, volver
             if (scannedCode!!.isEmpty()) {
-                val res = Statics.WarehouseCounter.getContext().getString(R.string.invalid_code)
-                MakeText.makeText(parentView ?: return@withContext null, res, SnackBarType.ERROR)
+                val res = context().getString(R.string.invalid_code)
+                onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
                 Log.e(this::class.java.simpleName, res)
                 return@withContext null
             }
 
             if ((orcAdapter?.count() ?: 0) > 0) {
                 // Buscar primero en el adaptador de la lista
-                (0 until orcAdapter!!.count)
-                    .map { orcAdapter!!.getItem(it) }
+                (0 until orcAdapter!!.count).map { orcAdapter!!.getItem(it) }
                     .filter { it != null && it.item!!.ean == scannedCode }
                     .forEach { return@withContext it }
             }
@@ -131,11 +117,9 @@ class CheckCode {
             // found it through item.ean
             if (searchItem != null) {
                 // Agregar al adaptador con cantidades 0, después se definen y se agregan al Log
-                return@withContext OrderRequestContent(
-                    searchItem,
+                return@withContext OrderRequestContent(searchItem,
                     null,
-                    Qty(0.toDouble(), 0.toDouble())
-                )
+                    Qty(0.toDouble(), 0.toDouble()))
             }
 
             // ¿No está? Buscar en la tabla item_code de la base de datos
@@ -161,52 +145,32 @@ class CheckCode {
                 }
 
                 // Agregar al adaptador con cantidades 0, después se definen y se agregan al Log
-                return@withContext OrderRequestContent(
-                    searchItem,
+                return@withContext OrderRequestContent(searchItem,
                     null,
-                    Qty(0.toDouble(), 0.toDouble())
-                )
+                    Qty(0.toDouble(), 0.toDouble()))
             }
 
-            if (Statics.allowUnknownCodes()) {
+            if (settingViewModel().allowUnknownCodes) {
                 // Item desconocido, agregar al base de datos
                 val item = addItemToDb(scannedCode!!)
 
                 return@withContext if (item != null) {
                     // Agregar al adaptador con cantidades 0, después se definen y se agregan al Log
-                    val finalOrc = OrderRequestContent(
-                        item,
-                        null,
-                        Qty(0.toDouble(), 0.toDouble())
-                    )
+                    val finalOrc = OrderRequestContent(item, null, Qty(0.toDouble(), 0.toDouble()))
                     finalOrc
                 } else {
-                    val res = Statics.WarehouseCounter.getContext()
-                        .getString(R.string.error_attempting_to_add_item_to_database)
-                    MakeText.makeText(
-                        parentView ?: return@withContext null,
-                        res,
-                        SnackBarType.ERROR
-                    )
+                    val res = context().getString(R.string.error_attempting_to_add_item_to_database)
+                    onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
                     Log.e(this::class.java.simpleName, res)
                     null
                 }
             } else {
-                MakeText.makeText(
-                    parentView ?: return@withContext null,
-                    "${
-                        Statics.WarehouseCounter.getContext()
-                            .getString(R.string.unknown_item)
-                    }: ${scannedCode ?: ""}", SnackBarType.INFO
-                )
+                onEventData.invoke(SnackBarEventData("${context().getString(R.string.unknown_item)}: ${scannedCode ?: ""}",
+                    SnackBarType.INFO))
                 return@withContext null
             }
         } catch (ex: Exception) {
-            MakeText.makeText(
-                parentView ?: return@withContext null,
-                ex.message.toString(),
-                SnackBarType.ERROR
-            )
+            onEventData.invoke(SnackBarEventData(ex.message.toString(), SnackBarType.ERROR))
             Log.e(this::class.java.simpleName, ex.message ?: "")
             return@withContext null
         }
@@ -214,21 +178,16 @@ class CheckCode {
 
     private fun addItemToDb(scannedCode: String): Item? {
         val itemDbHelper = ItemDbHelper()
-        val itemId = itemDbHelper.insert(
-            description = Statics.WarehouseCounter.getContext().getString(R.string.unknown_item),
+        val itemId = itemDbHelper.insert(description = context().getString(R.string.unknown_item),
             ean = scannedCode,
             price = 0.toDouble(),
             active = true,
             itemCategoryId = 1L,
             externalId = "",
-            lotEnabled = false
-        )
+            lotEnabled = false)
 
         return if (itemId!! < 0) {
-            Item(
-                itemDbHelper.selectByEan(scannedCode)[0],
-                scannedCode
-            )
+            Item(itemDbHelper.selectByEan(scannedCode)[0], scannedCode)
         } else {
             null
         }

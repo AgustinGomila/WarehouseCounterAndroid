@@ -18,13 +18,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.item.`object`.Item
 import com.dacosys.warehouseCounter.item.dbHelper.ItemAdapter
 import com.dacosys.warehouseCounter.item.dbHelper.ItemDbHelper
 import com.dacosys.warehouseCounter.misc.ContractsAutoCompleteTextView
-import com.dacosys.warehouseCounter.misc.Preference
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -34,10 +34,8 @@ import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventList
 import kotlin.concurrent.thread
 
 
-class CodeSelectActivity : AppCompatActivity(),
-    Scanner.ScannerListener,
-    ContractsAutoCompleteTextView.OnContractsAvailability,
-    KeyboardVisibilityEventListener {
+class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
+    ContractsAutoCompleteTextView.OnContractsAvailability, KeyboardVisibilityEventListener {
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -105,8 +103,7 @@ class CodeSelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.onItemClickListener =
             AdapterView.OnItemClickListener { _, _, position, _ ->
                 if (binding.autoCompleteTextView.adapter != null && binding.autoCompleteTextView.adapter is ItemAdapter) {
-                    val it =
-                        (binding.autoCompleteTextView.adapter as ItemAdapter).getItem(position)
+                    val it = (binding.autoCompleteTextView.adapter as ItemAdapter).getItem(position)
                     if (it != null) {
                         code = it.ean
                     }
@@ -116,12 +113,7 @@ class CodeSelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.setOnContractsAvailability(this)
         binding.autoCompleteTextView.onFocusChangeListener =
             View.OnFocusChangeListener { _, hasFocus ->
-                if (hasFocus &&
-                    binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold &&
-                    binding.autoCompleteTextView.adapter != null &&
-                    (binding.autoCompleteTextView.adapter as ItemAdapter).count > 0 &&
-                    !binding.autoCompleteTextView.isPopupShowing
-                ) {
+                if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold && binding.autoCompleteTextView.adapter != null && (binding.autoCompleteTextView.adapter as ItemAdapter).count > 0 && !binding.autoCompleteTextView.isPopupShowing) {
                     // Display the suggestion dropdown on focus
                     Handler(Looper.getMainLooper()).post {
                         run {
@@ -164,20 +156,16 @@ class CodeSelectActivity : AppCompatActivity(),
 
     private fun refreshCodeText(cleanText: Boolean, focus: Boolean) {
         runOnUiThread {
-            binding.autoCompleteTextView.setText(
-                code.ifEmpty {
-                    if (cleanText) {
-                        ""
-                    } else {
-                        binding.autoCompleteTextView.text.toString()
-                    }
+            binding.autoCompleteTextView.setText(code.ifEmpty {
+                if (cleanText) {
+                    ""
+                } else {
+                    binding.autoCompleteTextView.text.toString()
                 }
-            )
+            })
 
             binding.autoCompleteTextView.post {
-                binding.autoCompleteTextView.setSelection(
-                    binding.autoCompleteTextView.length()
-                )
+                binding.autoCompleteTextView.setSelection(binding.autoCompleteTextView.length())
             }
 
             if (focus) {
@@ -209,12 +197,10 @@ class CodeSelectActivity : AppCompatActivity(),
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         }
 
-        val adapter = ItemAdapter(
-            activity = this,
+        val adapter = ItemAdapter(activity = this,
             resource = R.layout.item_row_simple,
             itemList = itemArray,
-            suggestedList = ArrayList()
-        )
+            suggestedList = ArrayList())
 
         runOnUiThread {
             binding.autoCompleteTextView.setAdapter(adapter)
@@ -300,13 +286,11 @@ class CodeSelectActivity : AppCompatActivity(),
         val set = ConstraintSet()
 
         set.clone(binding.codeSelect)
-        set.connect(
-            binding.gralLayout.id,
+        set.connect(binding.gralLayout.id,
             ConstraintSet.BOTTOM,
             binding.codeSelect.id,
             ConstraintSet.BOTTOM,
-            0
-        )
+            0)
         set.applyTo(binding.codeSelect)
 
         isCentring = false
@@ -338,16 +322,20 @@ class CodeSelectActivity : AppCompatActivity(),
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+            this,
+            requestCode,
+            permissions,
+            grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (Statics.prefsGetBoolean(Preference.showScannedCode))
-            makeText(binding.root, scanCode, SnackBarType.INFO)
+        if (settingViewModel().showScannedCode) makeText(binding.root,
+            scanCode,
+            SnackBarType.INFO)
 
         JotterListener.lockScanner(this, true)
 

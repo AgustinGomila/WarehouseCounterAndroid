@@ -27,8 +27,9 @@ import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.Statics.Companion.isRfidRequired
-import com.dacosys.warehouseCounter.Statics.WarehouseCounter.Companion.getContext
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.item.`object`.Item
@@ -37,8 +38,8 @@ import com.dacosys.warehouseCounter.item.dbHelper.ItemDbHelper
 import com.dacosys.warehouseCounter.item.fragments.ItemSelectFilterFragment
 import com.dacosys.warehouseCounter.itemCategory.`object`.ItemCategory
 import com.dacosys.warehouseCounter.itemCode.`object`.ItemCode
-import com.dacosys.warehouseCounter.misc.Preference
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.misc.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.print.PrintLabelFragment
@@ -46,19 +47,15 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.settings.SettingsRepository
 import org.parceler.Parcels
 import java.util.*
 import kotlin.concurrent.thread
 
-class ItemSelectActivity :
-    AppCompatActivity(),
-    SwipeRefreshLayout.OnRefreshListener,
-    Scanner.ScannerListener,
-    Rfid.RfidDeviceListener,
-    ItemSelectFilterFragment.OnFilterChangedListener,
-    ItemAdapter.CheckedChangedListener,
-    CheckItemCode.CheckCodeEnded,
-    PrintLabelFragment.FragmentListener,
+class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
+    Scanner.ScannerListener, Rfid.RfidDeviceListener,
+    ItemSelectFilterFragment.OnFilterChangedListener, ItemAdapter.CheckedChangedListener,
+    CheckItemCode.CheckCodeEnded, PrintLabelFragment.FragmentListener,
     ItemAdapter.DataSetChangedListener {
     override fun onDestroy() {
         destroyLocals()
@@ -142,15 +139,13 @@ class ItemSelectActivity :
 
         //If a layout container, iterate over children and seed recursion.
         if (view is ViewGroup) {
-            (0 until view.childCount)
-                .map { view.getChildAt(it) }
-                .forEach { setupUI(it) }
+            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
         }
     }
 
     private fun loadBundleValues(b: Bundle) {
         tempTitle = b.getString("title") ?: ""
-        if (tempTitle.isEmpty()) tempTitle = getContext().getString(R.string.select_item)
+        if (tempTitle.isEmpty()) tempTitle = context().getString(R.string.select_item)
 
         multiSelect = b.getBoolean("multiSelect", multiSelect)
         hideFilterPanel = b.getBoolean("hideFilterPanel", hideFilterPanel)
@@ -169,7 +164,7 @@ class ItemSelectActivity :
 
     private fun loadExtrasBundleValues(b: Bundle) {
         tempTitle = b.getString("title") ?: ""
-        if (tempTitle.isEmpty()) tempTitle = getContext().getString(R.string.select_item)
+        if (tempTitle.isEmpty()) tempTitle = context().getString(R.string.select_item)
 
         itemSelectFilterFragment?.itemCode = b.getString("itemCode") ?: ""
         itemSelectFilterFragment?.itemCategory =
@@ -209,12 +204,10 @@ class ItemSelectActivity :
         printLabelFragment!!.setListener(this)
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
-        binding.swipeRefreshItem.setColorSchemeResources(
-            android.R.color.holo_blue_bright,
+        binding.swipeRefreshItem.setColorSchemeResources(android.R.color.holo_blue_bright,
             android.R.color.holo_green_light,
             android.R.color.holo_orange_light,
-            android.R.color.holo_red_light
-        )
+            android.R.color.holo_red_light)
 
         // Para expandir y colapsar los paneles
         setBottomPanelAnimation()
@@ -240,10 +233,7 @@ class ItemSelectActivity :
                 arrayAdapter?.refreshFilter(searchText, true)
             }
         })
-        binding.searchEditText.setText(
-            searchText,
-            TextView.BufferType.EDITABLE
-        )
+        binding.searchEditText.setText(searchText, TextView.BufferType.EDITABLE)
         binding.searchEditText.setOnKeyListener { _, keyCode, event ->
             if (event.action == KeyEvent.ACTION_DOWN) {
                 when (keyCode) {
@@ -310,22 +300,13 @@ class ItemSelectActivity :
             if (panelTopIsExpanded) {
                 currentLayout.load(this, R.layout.item_print_label_activity)
             } else {
-                currentLayout.load(
-                    this,
-                    R.layout.item_print_label_activity_top_panel_collapsed
-                )
+                currentLayout.load(this, R.layout.item_print_label_activity_top_panel_collapsed)
             }
         } else {
             if (panelTopIsExpanded) {
-                currentLayout.load(
-                    this,
-                    R.layout.item_print_label_activity_bottom_panel_collapsed
-                )
+                currentLayout.load(this, R.layout.item_print_label_activity_bottom_panel_collapsed)
             } else {
-                currentLayout.load(
-                    this,
-                    R.layout.item_print_label_activity_both_panels_collapsed
-                )
+                currentLayout.load(this, R.layout.item_print_label_activity_both_panels_collapsed)
             }
         }
 
@@ -342,30 +323,25 @@ class ItemSelectActivity :
             override fun onTransitionCancel(transition: Transition?) {}
         })
 
-        TransitionManager.beginDelayedTransition(
-            binding.itemPrintLabel,
-            transition
-        )
+        TransitionManager.beginDelayedTransition(binding.itemPrintLabel, transition)
 
         currentLayout.applyTo(binding.itemPrintLabel)
 
         when {
             panelBottomIsExpanded -> {
-                binding.expandBottomPanelButton?.text =
-                    getContext().getString(R.string.collapse_panel)
+                binding.expandBottomPanelButton?.text = context().getString(R.string.collapse_panel)
             }
             else -> {
-                binding.expandBottomPanelButton?.text =
-                    getContext().getString(R.string.search_options)
+                binding.expandBottomPanelButton?.text = context().getString(R.string.search_options)
             }
         }
 
         when {
             panelTopIsExpanded -> {
-                binding.expandTopPanelButton.text = getContext().getString(R.string.collapse_panel)
+                binding.expandTopPanelButton.text = context().getString(R.string.collapse_panel)
             }
             else -> {
-                binding.expandTopPanelButton.text = getContext().getString(R.string.print_labels)
+                binding.expandTopPanelButton.text = context().getString(R.string.print_labels)
             }
         }
     }
@@ -405,19 +381,16 @@ class ItemSelectActivity :
                 override fun onTransitionCancel(transition: Transition?) {}
             })
 
-            TransitionManager.beginDelayedTransition(
-                binding.itemPrintLabel,
-                transition
-            )
+            TransitionManager.beginDelayedTransition(binding.itemPrintLabel, transition)
 
             when {
                 panelBottomIsExpanded -> {
                     binding.expandBottomPanelButton?.text =
-                        getContext().getString(R.string.collapse_panel)
+                        context().getString(R.string.collapse_panel)
                 }
                 else -> {
                     binding.expandBottomPanelButton?.text =
-                        getContext().getString(R.string.search_options)
+                        context().getString(R.string.search_options)
                 }
             }
 
@@ -457,19 +430,14 @@ class ItemSelectActivity :
                 override fun onTransitionCancel(transition: Transition?) {}
             })
 
-            TransitionManager.beginDelayedTransition(
-                binding.itemPrintLabel,
-                transition
-            )
+            TransitionManager.beginDelayedTransition(binding.itemPrintLabel, transition)
 
             when {
                 panelTopIsExpanded -> {
-                    binding.expandTopPanelButton.text =
-                        getContext().getString(R.string.collapse_panel)
+                    binding.expandTopPanelButton.text = context().getString(R.string.collapse_panel)
                 }
                 else -> {
-                    binding.expandTopPanelButton.text =
-                        getContext().getString(R.string.print_labels)
+                    binding.expandTopPanelButton.text = context().getString(R.string.print_labels)
                 }
             }
 
@@ -523,26 +491,19 @@ class ItemSelectActivity :
             Log.d(this::class.java.simpleName, "Selecting items...")
             val itemDbHelper = ItemDbHelper()
 
-            itemArray = (
-                    when {
-                        itemCode.trim().isEmpty() -> when (itemCategory) {
-                            null -> itemDbHelper.select()
-                            else -> itemDbHelper.selectByItemCategory(itemCategory)
-                        }
-                        else -> when (itemCategory) {
-                            null -> itemDbHelper.selectByDescriptionEan(itemCode.trim())
-                            else -> itemDbHelper.selectByDescriptionEanItemCategory(
-                                itemCode.trim(),
-                                itemCategory
-                            )
-                        }
-                    })
+            itemArray = (when {
+                itemCode.trim().isEmpty() -> when (itemCategory) {
+                    null -> itemDbHelper.select()
+                    else -> itemDbHelper.selectByItemCategory(itemCategory)
+                }
+                else -> when (itemCategory) {
+                    null -> itemDbHelper.selectByDescriptionEan(itemCode.trim())
+                    else -> itemDbHelper.selectByDescriptionEanItemCategory(itemCode.trim(),
+                        itemCategory)
+                }
+            })
         } catch (ex: java.lang.Exception) {
-            ErrorLog.writeLog(
-                this,
-                this::class.java.simpleName,
-                ex.message.toString()
-            )
+            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
         }
 
         return itemArray
@@ -565,21 +526,17 @@ class ItemSelectActivity :
                     firstVisiblePos = arrayAdapter?.firstVisiblePos()
                 }
 
-                arrayAdapter = ItemAdapter(
-                    activity = this,
+                arrayAdapter = ItemAdapter(activity = this,
                     resource = R.layout.item_row,
                     itemList = completeList,
                     suggestedList = ArrayList(),
                     listView = binding.itemListView,
                     multiSelect = multiSelect,
-                    checkedIdArray = checkedIdArray
-                )
+                    checkedIdArray = checkedIdArray)
 
-                arrayAdapter?.refreshListeners(
-                    checkedChangedListener = this,
+                arrayAdapter?.refreshListeners(checkedChangedListener = this,
                     dataSetChangedListener = this,
-                    selectedItemChangedListener = null
-                )
+                    selectedItemChangedListener = null)
 
                 arrayAdapter?.refreshFilter(searchText, true)
 
@@ -605,9 +562,9 @@ class ItemSelectActivity :
         Log.d(this::class.java.simpleName, "fillSummaryRow")
         runOnUiThread {
             if (multiSelect) {
-                binding.totalLabelTextView.text = getContext().getString(R.string.total)
-                binding.qtyReqLabelTextView.text = getContext().getString(R.string.cant)
-                binding.selectedLabelTextView.text = getContext().getString(R.string.checked)
+                binding.totalLabelTextView.text = context().getString(R.string.total)
+                binding.qtyReqLabelTextView.text = context().getString(R.string.cant)
+                binding.selectedLabelTextView.text = context().getString(R.string.checked)
 
                 if (arrayAdapter != null) {
                     binding.totalTextView.text = arrayAdapter?.count.toString()
@@ -615,9 +572,9 @@ class ItemSelectActivity :
                     binding.selectedTextView.text = arrayAdapter?.countChecked().toString()
                 }
             } else {
-                binding.totalLabelTextView.text = getContext().getString(R.string.total)
-                binding.qtyReqLabelTextView.text = getContext().getString(R.string.cont_)
-                binding.selectedLabelTextView.text = getContext().getString(R.string.items)
+                binding.totalLabelTextView.text = context().getString(R.string.total)
+                binding.qtyReqLabelTextView.text = context().getString(R.string.cont_)
+                binding.selectedLabelTextView.text = context().getString(R.string.items)
 
                 if (arrayAdapter != null) {
                     val cont = 0
@@ -650,20 +607,22 @@ class ItemSelectActivity :
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+            this,
+            requestCode,
+            permissions,
+            grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (Statics.prefsGetBoolean(Preference.showScannedCode))
-            makeText(binding.root, scanCode, INFO)
+        if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, INFO)
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
-            val res = getContext().getString(R.string.invalid_code)
+            val res = context().getString(R.string.invalid_code)
             makeText(binding.root, res, ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
@@ -673,12 +632,10 @@ class ItemSelectActivity :
 
         try {
             val checkCodeTask = CheckItemCode()
-            checkCodeTask.addParams(
-                binding.root,
-                callback = this,
+            checkCodeTask.addParams(callback = this,
                 scannedCode = scanCode,
-                adapter = arrayAdapter!!
-            )
+                adapter = arrayAdapter!!,
+                onEventData = { showSnackBar(it) })
             checkCodeTask.execute()
         } catch (ex: Exception) {
             ex.printStackTrace()
@@ -687,6 +644,10 @@ class ItemSelectActivity :
         } finally {
             JotterListener.lockScanner(this, false)
         }
+    }
+
+    private fun showSnackBar(it: SnackBarEventData) {
+        makeText(binding.root, it.text, it.snackBarType)
     }
 
     override fun onBackPressed() {
@@ -709,29 +670,20 @@ class ItemSelectActivity :
             menu.setOptionalIconsVisible(true)
         }
 
-        if (!isRfidRequired()) {
+        if (!settingViewModel().useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
-        val drawable =
-            ContextCompat.getDrawable(
-                getContext(),
-                R.drawable.ic_visibility
-            )
+        val drawable = ContextCompat.getDrawable(context(), R.drawable.ic_visibility)
         val toolbar = findViewById<Toolbar>(R.id.action_bar)
         toolbar.overflowIcon = drawable
 
         // Opciones de visibilidad del menú
-        val allControls = Preference.getAllSelectItemVisibleControls()
+        val allControls = SettingsRepository.getAllSelectItemVisibleControls()
         allControls.forEach { p ->
-            menu.add(
-                0,
-                p.id,
-                menu.size(),
-                p.description
-            )
-                .setChecked(itemSelectFilterFragment!!.getVisibleFilters().contains(p))
-                .isCheckable = true
+            menu.add(0, p.key.hashCode(), menu.size(), p.description)
+                .setChecked(itemSelectFilterFragment!!.getVisibleFilters()
+                    .contains(p)).isCheckable = true
         }
 
         return true
@@ -778,10 +730,10 @@ class ItemSelectActivity :
 
         item.isChecked = !item.isChecked
         when (id) {
-            Preference.selectItemSearchByItemEan.id -> {
+            settingRepository().selectItemSearchByItemEan.key.hashCode() -> {
                 itemSelectFilterFragment!!.setEanDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
-            Preference.selectItemSearchByItemCategory.id -> {
+            settingRepository().selectItemSearchByItemCategory.key.hashCode() -> {
                 itemSelectFilterFragment!!.setCategoryVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
             else -> return super.onOptionsItemSelected(item)

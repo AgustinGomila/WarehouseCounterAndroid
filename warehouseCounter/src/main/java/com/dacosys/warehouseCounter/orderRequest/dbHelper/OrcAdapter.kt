@@ -20,6 +20,8 @@ import androidx.core.graphics.BlendModeCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.Statics
 import com.dacosys.warehouseCounter.Statics.Companion.getColorWithAlpha
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.AutoResizeTextView
 import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
@@ -63,7 +65,7 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         allowEditQty: Boolean,
         orType: OrderRequestType,
         setQtyOnCheckedChanged: Boolean,
-    ) : super(Statics.WarehouseCounter.getContext(), resource, orcs) {
+    ) : super(context(), resource, orcs) {
         this.resource = resource
         this.activity = activity
 
@@ -250,52 +252,37 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
 
     private fun reportOrcQtyRequestedExceeded(orc: OrderRequestContent) {
         if (suspendReport) return
-
         if (orc.item == null) return
+        val listView = listView ?: return
 
         val res = "${orc.item!!.ean}: ${
-            Statics.WarehouseCounter.getContext().getString(R.string.qty_requested_exceeded)
+            context().getString(R.string.qty_requested_exceeded)
         }"
-        makeText(
-            listView ?: return,
-            res,
-            SnackBarType.UPDATE
-        )
+        makeText(listView, res, SnackBarType.UPDATE)
         Log.d(this::class.java.simpleName, res)
     }
 
     private fun reportOrcQtyRequestedReached(orc: OrderRequestContent) {
         if (suspendReport) return
-
         if (orc.item == null) return
+        val listView = listView ?: return
 
         val res = "${orc.item!!.ean}: ${
-            Statics.WarehouseCounter.getContext().getString(R.string.qty_requested_reached)
+            context().getString(R.string.qty_requested_reached)
         }"
-        makeText(
-            listView ?: return,
-            res,
-            SnackBarType.UPDATE
-        )
+        makeText(listView, res, SnackBarType.UPDATE)
         Log.d(this::class.java.simpleName, res)
     }
 
     private fun reportOrcQtyCollectedChange(orc: OrderRequestContent) {
         if (suspendReport) return
-
         if (orc.item == null || orc.qty == null) return
+        val listView = listView ?: return
 
         val res = "${orc.item!!.ean}: ${
-            Statics.roundToString(
-                orc.qty!!.qtyCollected
-                    ?: 0.toDouble(), Statics.decimalPlaces
-            )
+            Statics.roundToString(orc.qty!!.qtyCollected ?: 0.toDouble(), Statics.decimalPlaces)
         }"
-        makeText(
-            listView ?: return,
-            res,
-            SnackBarType.ADD
-        )
+        makeText(listView, res, SnackBarType.ADD)
         Log.d(this::class.java.simpleName, res)
     }
 
@@ -304,8 +291,8 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
      */
     private fun reportOrcAdded(orcArray: ArrayList<OrderRequestContent>) {
         if (suspendReport) return
-
         if (orcArray.isEmpty()) return
+        val listView = listView ?: return
 
         var res = ""
         for (orc in orcArray) {
@@ -318,18 +305,11 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
             res = res.substring(0, res.length - 2)
         }
 
-        res += ": " +
-                if (orcArray.count() > 1)
-                    " ${
-                        Statics.WarehouseCounter.getContext().getString(R.string.added_plural)
-                    }" else
-                    " ${Statics.WarehouseCounter.getContext().getString(R.string.added)}"
+        res += ": " + if (orcArray.count() > 1) " ${
+            context().getString(R.string.added_plural)
+        }" else " ${context().getString(R.string.added)}"
 
-        makeText(
-            listView ?: return,
-            res,
-            SnackBarType.ADD
-        )
+        makeText(listView, res, SnackBarType.ADD)
         Log.d(this::class.java.simpleName, res)
     }
 
@@ -338,8 +318,8 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
      */
     private fun reportOrcRemoved(orcArray: ArrayList<OrderRequestContent>) {
         if (suspendReport) return
-
         if (orcArray.isEmpty()) return
+        val listView = listView ?: return
 
         var res = ""
         for (orc in orcArray) {
@@ -352,18 +332,11 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
             res = res.substring(0, res.length - 2)
         }
 
-        res += ": " +
-                if (orcArray.count() > 1)
-                    " ${
-                        Statics.WarehouseCounter.getContext().getString(R.string.removed_plural)
-                    }" else
-                    " ${Statics.WarehouseCounter.getContext().getString(R.string.removed)}"
+        res += ": " + if (orcArray.count() > 1) " ${
+            context().getString(R.string.removed_plural)
+        }" else " ${context().getString(R.string.removed)}"
 
-        makeText(
-            listView ?: return,
-            res,
-            SnackBarType.REMOVE
-        )
+        makeText(listView, res, SnackBarType.REMOVE)
         Log.d(this::class.java.simpleName, res)
     }
 
@@ -508,21 +481,22 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
 
     private fun forceSelectItem(a: OrderRequestContent) {
         if (listView == null) return
+        val listView = listView ?: return
 
         val pos = getPosition(a)
 
-        (listView ?: return).clearChoices()
+        listView.clearChoices()
 
         activity.runOnUiThread {
-            (listView ?: return@runOnUiThread).setItemChecked(pos, true)
-            (listView ?: return@runOnUiThread).setSelection(pos)
+            listView.setItemChecked(pos, true)
+            listView.setSelection(pos)
         }
 
         lastSelectedPos = currentPos()
 
         activity.runOnUiThread {
             notifyDataSetChanged()
-            (listView ?: return@runOnUiThread).smoothScrollToPosition(pos)
+            listView.smoothScrollToPosition(pos)
         }
     }
 
@@ -537,11 +511,8 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
     }
 
     private fun selectItem(pos: Int, scrollPos: Int, smoothScroll: Boolean) {
-        if (listView == null) {
-            return
-        }
-
-        (listView ?: return).clearChoices()
+        val listView = listView ?: return
+        listView.clearChoices()
 
         // Deseleccionar cuando:
         //   - Estaba previamente seleccionado
@@ -550,14 +521,14 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
 
         activity.runOnUiThread {
             if (pos < 0 && lastSelectedPos < 0 && count > 0) {
-                (listView ?: return@runOnUiThread).setItemChecked(0, true)
-                (listView ?: return@runOnUiThread).setSelection(0)
+                listView.setItemChecked(0, true)
+                listView.setSelection(0)
             } else if (pos == lastSelectedPos || pos < 0 || count <= 0) {
-                (listView ?: return@runOnUiThread).setItemChecked(-1, true)
-                (listView ?: return@runOnUiThread).setSelection(-1)
+                listView.setItemChecked(-1, true)
+                listView.setSelection(-1)
             } else {
-                (listView ?: return@runOnUiThread).setItemChecked(pos, true)
-                (listView ?: return@runOnUiThread).setSelection(pos)
+                listView.setItemChecked(pos, true)
+                listView.setSelection(pos)
             }
         }
 
@@ -566,30 +537,26 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         activity.runOnUiThread {
             if (smoothScroll) {
                 notifyDataSetChanged()
-                (listView ?: return@runOnUiThread).smoothScrollToPosition(scrollPos)
+                listView.smoothScrollToPosition(scrollPos)
             } else {
                 refresh()
-                (listView ?: return@runOnUiThread).setSelection(scrollPos)
+                listView.setSelection(scrollPos)
             }
         }
     }
 
     fun currentOrc(): OrderRequestContent? {
-        return (0 until count)
-            .firstOrNull { isSelected(it) }
-            ?.let { getItem(it) }
+        return (0 until count).firstOrNull { isSelected(it) }?.let { getItem(it) }
     }
 
     private fun currentPos(): Int {
-        return (0 until count)
-            .firstOrNull { isSelected(it) } ?: -1
+        return (0 until count).firstOrNull { isSelected(it) } ?: -1
     }
 
     fun firstVisiblePos(): Int {
-        var pos = (listView ?: return -1).firstVisiblePosition
-        if ((listView ?: return -1).childCount > 1 && (listView
-                ?: return -1).getChildAt(0).top < 0
-        ) pos++
+        val listView = listView ?: return -1
+        var pos = listView.firstVisiblePosition
+        if (listView.childCount > 1 && listView.getChildAt(0).top < 0) pos++
         return pos
     }
 
@@ -639,9 +606,7 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
             alreadyExists = false
         } else {
             // El view ya existe, comprobar que no necesite cambiar de layout.
-            if (v.tag is ViewHolder && currentLayout == R.layout.orc_row_expanded ||
-                v.tag is ExpandedViewHolder && currentLayout == resource
-            ) {
+            if (v.tag is ViewHolder && currentLayout == R.layout.orc_row_expanded || v.tag is ExpandedViewHolder && currentLayout == resource) {
                 // Ya fue creado, si es un row normal que está siendo seleccionada
                 // o un row expandido que está siendo deseleccionado
                 // debe cambiar de layout, por lo tanto volver a crearse.
@@ -748,19 +713,17 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                 holder.eanTextView?.text = item.ean
                 if (orc.qty != null) {
                     val qty = orc.qty!!
-                    holder.qtyCollectedTextView?.text = Statics.roundToString(
-                        qty.qtyCollected ?: 0.toDouble(),
-                        Statics.decimalPlaces
-                    )
-                    holder.qtyRequestedTextView?.text = Statics.roundToString(
-                        qty.qtyRequested ?: 0.toDouble(),
-                        Statics.decimalPlaces
-                    )
+                    holder.qtyCollectedTextView?.text =
+                        Statics.roundToString(qty.qtyCollected ?: 0.toDouble(),
+                            Statics.decimalPlaces)
+                    holder.qtyRequestedTextView?.text =
+                        Statics.roundToString(qty.qtyRequested ?: 0.toDouble(),
+                            Statics.decimalPlaces)
                 }
 
                 holder.itemIdTextView?.text = item.itemId?.toString() ?: 0.toString()
                 holder.extIdTextView?.text = item.externalId ?: 0.toString()
-                holder.lotIdTextView?.text = orc.lot?.lotId.toString() ?: ""
+                holder.lotIdTextView?.text = orc.lot?.lotId.toString()
 
                 // region Category
                 val category = item.itemCategoryStr
@@ -782,11 +745,9 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                     val checkChangeListener =
                         CompoundButton.OnCheckedChangeListener { _, isChecked ->
                             if (orc.qty != null) {
-                                this.setChecked(
-                                    orc,
+                                this.setChecked(orc,
                                     (orc.qty!!.qtyRequested ?: 0.toDouble()) > 0,
-                                    isChecked
-                                )
+                                    isChecked)
                             }
                         }
 
@@ -828,14 +789,12 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                     holder.editQty!!.setOnTouchListener { _, _ ->
                         if (editQtyListener != null) {
                             if (orc.qty != null) {
-                                editQtyListener!!.onEditQtyRequired(
-                                    position,
+                                editQtyListener!!.onEditQtyRequired(position,
                                     orc,
                                     orc.qty!!.qtyCollected ?: 0.toDouble(),
                                     0.toDouble(),
                                     999999.toDouble(),
-                                    Statics.getMultiplier()
-                                )
+                                    settingViewModel().scanMultiplier)
                             }
                         }
                         true
@@ -848,36 +807,21 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                 holder.editDescription?.setOnTouchListener { _, _ ->
                     if (editDescriptionListener != null) {
                         if (orc.item != null) {
-                            editDescriptionListener!!.onEditDescriptionRequired(
-                                position,
-                                orc
-                            )
+                            editDescriptionListener!!.onEditDescriptionRequired(position, orc)
                         }
                     }
                     true
                 }
 
                 // Background layouts
-                val colorDefault = getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.drawable.layout_thin_border,
-                    null
-                )!!
-                val collQtyEqualBackColor = getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.drawable.layout_thin_border_green,
-                    null
-                )!!
-                val collQtyMoreBackColor = getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.drawable.layout_thin_border_blue,
-                    null
-                )!!
-                val collQtyLessBackColor = getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.drawable.layout_thin_border_red,
-                    null
-                )!!
+                val colorDefault =
+                    getDrawable(context().resources, R.drawable.layout_thin_border, null)!!
+                val collQtyEqualBackColor =
+                    getDrawable(context().resources, R.drawable.layout_thin_border_green, null)!!
+                val collQtyMoreBackColor =
+                    getDrawable(context().resources, R.drawable.layout_thin_border_blue, null)!!
+                val collQtyLessBackColor =
+                    getDrawable(context().resources, R.drawable.layout_thin_border_red, null)!!
 
                 var backColor = colorDefault
                 var foreColor = if (isSelected) selectedForeColor else defaultForeColor
@@ -938,8 +882,7 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                     v.background.colorFilter =
                         BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
                             getColorWithAlpha(colorId = R.color.lightslategray, alpha = 240),
-                            BlendModeCompat.MODULATE
-                        )
+                            BlendModeCompat.MODULATE)
                 } else {
                     v.background.colorFilter = null
                 }
@@ -1007,14 +950,12 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                 holder.eanTextView?.text = item.ean
                 if (orc.qty != null) {
                     val qty = orc.qty!!
-                    holder.qtyCollectedTextView?.text = Statics.roundToString(
-                        qty.qtyCollected ?: 0.toDouble(),
-                        Statics.decimalPlaces
-                    )
-                    holder.qtyRequestedTextView?.text = Statics.roundToString(
-                        qty.qtyRequested ?: 0.toDouble(),
-                        Statics.decimalPlaces
-                    )
+                    holder.qtyCollectedTextView?.text =
+                        Statics.roundToString(qty.qtyCollected ?: 0.toDouble(),
+                            Statics.decimalPlaces)
+                    holder.qtyRequestedTextView?.text =
+                        Statics.roundToString(qty.qtyRequested ?: 0.toDouble(),
+                            Statics.decimalPlaces)
                 }
 
 
@@ -1024,11 +965,9 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                     val checkChangeListener =
                         CompoundButton.OnCheckedChangeListener { _, isChecked ->
                             if (orc.qty != null) {
-                                this.setChecked(
-                                    orc,
+                                this.setChecked(orc,
                                     (orc.qty!!.qtyRequested ?: 0.toDouble()) > 0,
-                                    isChecked
-                                )
+                                    isChecked)
                             }
                         }
 
@@ -1067,26 +1006,14 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                 }
 
                 // region Background layouts
-                val colorDefault = getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.drawable.layout_thin_border,
-                    null
-                )!!
-                val collQtyEqualBackColor = getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.drawable.layout_thin_border_green,
-                    null
-                )!!
-                val collQtyMoreBackColor = getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.drawable.layout_thin_border_blue,
-                    null
-                )!!
-                val collQtyLessBackColor = getDrawable(
-                    Statics.WarehouseCounter.getContext().resources,
-                    R.drawable.layout_thin_border_red,
-                    null
-                )!!
+                val colorDefault =
+                    getDrawable(context().resources, R.drawable.layout_thin_border, null)!!
+                val collQtyEqualBackColor =
+                    getDrawable(context().resources, R.drawable.layout_thin_border_green, null)!!
+                val collQtyMoreBackColor =
+                    getDrawable(context().resources, R.drawable.layout_thin_border_blue, null)!!
+                val collQtyLessBackColor =
+                    getDrawable(context().resources, R.drawable.layout_thin_border_red, null)!!
 
                 var backColor = colorDefault
                 var foreColor = if (isSelected) selectedForeColor else defaultForeColor
@@ -1137,8 +1064,7 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                     v.background.colorFilter =
                         BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
                             getColorWithAlpha(colorId = R.color.lightslategray, alpha = 240),
-                            BlendModeCompat.MODULATE
-                        )
+                            BlendModeCompat.MODULATE)
                 } else {
                     v.background.colorFilter = null
                 }
@@ -1156,11 +1082,7 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
     private var defaultForeColor: Int = 0
 
     private fun setupColors() {
-        selectedForeColor = getColor(
-            Statics.WarehouseCounter.getContext().resources,
-            R.color.text_light,
-            null
-        )
+        selectedForeColor = getColor(context().resources, R.color.text_light, null)
 
         collQtyEqualForeColor = Statics.getBestContrastColor("#FF009688")
         collQtyLessForeColor = Statics.getBestContrastColor("#FFE91E63")
@@ -1181,13 +1103,8 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                     for (i in 0 until orcArray.size) {
                         filterableItem = orcArray[i]
                         filterableItem.item!!.itemDescription.lowercase(Locale.ROOT)
-                            .contains(filterString) ||
-                                filterableItem.item != null && filterableItem.item!!.ean.lowercase(
-                            Locale.ROOT
-                        )
-                            .contains(
-                                filterString
-                            )
+                            .contains(filterString) || filterableItem.item != null && filterableItem.item!!.ean.lowercase(
+                            Locale.ROOT).contains(filterString)
                     }
                 }
 
@@ -1294,23 +1211,19 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                     val itemIdComp = (item1.itemId ?: 0).compareTo(item2.itemId ?: 0)
 
                     // Orden natural: code, serialNumber, uniqueLotId
-                    val result =
-                        when (eanComp) {
-                            0 -> when (descComp) {
-                                0 -> itemIdComp
-                                else -> descComp
-                            }
-                            else -> eanComp
+                    val result = when (eanComp) {
+                        0 -> when (descComp) {
+                            0 -> itemIdComp
+                            else -> descComp
                         }
+                        else -> eanComp
+                    }
 
-                    Log.d(
-                        this::class.java.simpleName,
-                        when {
-                            result < 0 -> " < "
-                            result > 0 -> " > "
-                            else -> " = "
-                        }
-                    )
+                    Log.d(this::class.java.simpleName, when {
+                        result < 0 -> " < "
+                        result > 0 -> " > "
+                        else -> " = "
+                    })
 
                     return result
                 } catch (ex: Exception) {

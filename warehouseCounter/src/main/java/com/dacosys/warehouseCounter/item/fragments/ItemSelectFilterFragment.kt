@@ -10,13 +10,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ItemSelectFilterFragmentBinding
 import com.dacosys.warehouseCounter.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.item.activities.CodeSelectActivity
 import com.dacosys.warehouseCounter.itemCategory.`object`.ItemCategory
 import com.dacosys.warehouseCounter.itemCategory.activities.ItemCategorySelectActivity
-import com.dacosys.warehouseCounter.misc.Preference
+import com.dacosys.warehouseCounter.settings.Preference
 import org.parceler.Parcels
 
 /**
@@ -76,7 +77,7 @@ class ItemSelectFilterFragment : Fragment() {
                 Parcels.unwrap<ItemCategory>(requireArguments().getParcelable("itemCategory"))
             itemCode = requireArguments().getString("itemCode") ?: ""
 
-            onlyActive = Statics.prefsGetBoolean(Preference.selectItemOnlyActive)
+            onlyActive = settingViewModel().selectItemOnlyActive
         }
     }
 
@@ -110,15 +111,13 @@ class ItemSelectFilterFragment : Fragment() {
 
         binding.onlyActiveCheckBox.setOnCheckedChangeListener(null)
         binding.onlyActiveCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            Statics.prefsPutBoolean(Preference.selectItemOnlyActive.key, isChecked)
+            settingViewModel().selectItemOnlyActive = isChecked
 
             onlyActive = binding.onlyActiveCheckBox.isChecked
 
-            mCallback?.onFilterChanged(
-                code = itemCode,
+            mCallback?.onFilterChanged(code = itemCode,
                 itemCategory = itemCategory,
-                onlyActive = onlyActive
-            )
+                onlyActive = onlyActive)
         }
 
         binding.codeTextView.setOnClickListener {
@@ -152,22 +151,18 @@ class ItemSelectFilterFragment : Fragment() {
             itemCode = ""
             setCodeText()
 
-            mCallback?.onFilterChanged(
-                code = itemCode,
+            mCallback?.onFilterChanged(code = itemCode,
                 itemCategory = itemCategory,
-                onlyActive = onlyActive
-            )
+                onlyActive = onlyActive)
         }
         binding.categorySearchImageView.setOnClickListener { binding.itemCategoryTextView.performClick() }
         binding.categoryClearImageView.setOnClickListener {
             itemCategory = null
             setCategoryText()
 
-            mCallback?.onFilterChanged(
-                code = itemCode,
+            mCallback?.onFilterChanged(code = itemCode,
                 itemCategory = itemCategory,
-                onlyActive = onlyActive
-            )
+                onlyActive = onlyActive)
         }
 
         setVisibleFilters()
@@ -183,11 +178,9 @@ class ItemSelectFilterFragment : Fragment() {
 
                     setCodeText()
 
-                    mCallback?.onFilterChanged(
-                        code = itemCode,
+                    mCallback?.onFilterChanged(code = itemCode,
                         itemCategory = itemCategory,
-                        onlyActive = onlyActive
-                    )
+                        onlyActive = onlyActive)
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -207,11 +200,9 @@ class ItemSelectFilterFragment : Fragment() {
 
                     setCategoryText()
 
-                    mCallback?.onFilterChanged(
-                        code = itemCode,
+                    mCallback?.onFilterChanged(code = itemCode,
                         itemCategory = itemCategory,
-                        onlyActive = onlyActive
-                    )
+                        onlyActive = onlyActive)
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -270,12 +261,15 @@ class ItemSelectFilterFragment : Fragment() {
 
     // region Visibility functions
     fun getVisibleFilters(): ArrayList<Preference> {
+        val sv = settingViewModel()
+        val sp = settingRepository()
+
         val r: ArrayList<Preference> = ArrayList()
-        if (Statics.prefsGetBoolean(Preference.selectItemSearchByItemEan)) {
-            r.add(Preference.selectItemSearchByItemEan)
+        if (sv.selectItemSearchByItemEan) {
+            r.add(sp.selectItemSearchByItemEan)
         }
-        if (Statics.prefsGetBoolean(Preference.selectItemSearchByItemCategory)) {
-            r.add(Preference.selectItemSearchByItemCategory)
+        if (sv.selectItemSearchByItemCategory) {
+            r.add(sp.selectItemSearchByItemCategory)
         }
 
         return r
@@ -283,13 +277,13 @@ class ItemSelectFilterFragment : Fragment() {
 
     private fun setVisibleFilters() {
         //Retrieve the values
-        if (Statics.prefsGetBoolean(Preference.selectItemSearchByItemEan)) {
+        if (settingViewModel().selectItemSearchByItemEan) {
             setEanDescriptionVisibility(View.VISIBLE)
         } else {
             setEanDescriptionVisibility(View.GONE)
         }
 
-        if (Statics.prefsGetBoolean(Preference.selectItemSearchByItemCategory)) {
+        if (settingViewModel().selectItemSearchByItemCategory) {
             setCategoryVisibility(View.VISIBLE)
         } else {
             setCategoryVisibility(View.GONE)
@@ -298,18 +292,12 @@ class ItemSelectFilterFragment : Fragment() {
 
     fun setEanDescriptionVisibility(visibility: Int) {
         binding.codePanel.visibility = visibility
-        Statics.prefsPutBoolean(
-            Preference.selectItemSearchByItemEan.key,
-            visibility == View.VISIBLE
-        )
+        settingViewModel().selectItemSearchByItemEan = visibility == View.VISIBLE
     }
 
     fun setCategoryVisibility(visibility: Int) {
         binding.categoryPanel.visibility = visibility
-        Statics.prefsPutBoolean(
-            Preference.selectItemSearchByItemCategory.key,
-            visibility == View.VISIBLE
-        )
+        settingViewModel().selectItemSearchByItemCategory = visibility == View.VISIBLE
     }
     // endregion Visibility functions
 
