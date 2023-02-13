@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    tools:context="com.dacosys.warehouseCounter.configuration.InitConfigActivity"
+    tools:context="com.dacosys.warehouseCounter.ui.activities.main.InitConfigActivity"
     tools:layout_editor_absoluteX="0dp"
     tools:layout_editor_absoluteY="81dp">
 

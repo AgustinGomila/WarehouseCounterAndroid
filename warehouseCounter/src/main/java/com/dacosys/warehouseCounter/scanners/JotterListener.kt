@@ -15,19 +15,19 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.collectorType.`object`.CollectorType
-import com.dacosys.warehouseCounter.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.model.collectorType.CollectorType
+import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.Scanner.ScannerListener
 import com.dacosys.warehouseCounter.scanners.floatingCamera.FloatingCameraBarcode
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc.enableNfcForegroundDispatch
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.rfid.RfidType
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.google.android.gms.common.api.CommonStatusCodes
 import id.pahlevikun.jotter.Jotter
 
@@ -171,9 +171,11 @@ object JotterListener : Jotter.Listener {
             REQUEST_BLUETOOTH_CONNECT -> {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    makeText(activity.window.decorView,
+                    makeText(
+                        activity.window.decorView,
                         activity.getString(R.string.app_dont_have_necessary_permissions),
-                        SnackBarType.ERROR)
+                        SnackBarType.ERROR
+                    )
                 } else {
                     rfidSetListener(activity)
                 }
@@ -190,12 +192,17 @@ object JotterListener : Jotter.Listener {
             val model = Build.MODEL
 
             when {
-                manufacturer.contains("Honeywell",
-                    true) || manufacturer.startsWith("Universal Global Scientific Industrial") || manufacturer.startsWith(
-                    "Foxconn International Holdings Limited") -> collectorType =
+                manufacturer.contains(
+                    "Honeywell",
+                    true
+                ) || manufacturer.startsWith("Universal Global Scientific Industrial") || manufacturer.startsWith(
+                    "Foxconn International Holdings Limited"
+                ) -> collectorType =
                     CollectorType.honeywellNative
-                manufacturer.contains("Motorola", true) || manufacturer.contains("Zebra",
-                    true) || manufacturer.contains("Symbol", true) -> collectorType =
+                manufacturer.contains("Motorola", true) || manufacturer.contains(
+                    "Zebra",
+                    true
+                ) || manufacturer.contains("Symbol", true) -> collectorType =
                     CollectorType.zebra
                 /*
                 manufacturer.contains("Janam", true)-> when (model) {
@@ -210,9 +217,11 @@ object JotterListener : Jotter.Listener {
 
             if (collectorType != null) {
                 settingViewModel().collectorType = collectorType.id
-                makeText(activity.window.decorView,
+                makeText(
+                    activity.window.decorView,
                     "${context().getString(R.string.device)}: $manufacturer $model",
-                    SnackBarType.INFO)
+                    SnackBarType.INFO
+                )
                 Statics.collectorTypeChanged = true
             }
         }
@@ -277,19 +286,25 @@ object JotterListener : Jotter.Listener {
             context().getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
         val mBluetoothAdapter = bluetoothManager.adapter
         if (mBluetoothAdapter == null) {
-            makeText(activity.window.decorView,
+            makeText(
+                activity.window.decorView,
                 activity.getString(R.string.there_are_no_bluetooth_devices),
-                SnackBarType.INFO)
+                SnackBarType.INFO
+            )
         } else {
             if (!mBluetoothAdapter.isEnabled) {
                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                 enableBtIntent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                if (ActivityCompat.checkSelfPermission(activity,
-                        Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
+                if (ActivityCompat.checkSelfPermission(
+                        activity,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    ) != PackageManager.PERMISSION_GRANTED
                 ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        activity.requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
-                            REQUEST_BLUETOOTH_CONNECT)
+                        activity.requestPermissions(
+                            arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+                            REQUEST_BLUETOOTH_CONNECT
+                        )
                     }
                     return
                 }
@@ -312,9 +327,11 @@ object JotterListener : Jotter.Listener {
             scannerList.add(Scanner(activity))
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(activity.window.decorView,
+            makeText(
+                activity.window.decorView,
                 activity.getString(R.string.barcode_reader_not_initialized),
-                SnackBarType.ERROR)
+                SnackBarType.ERROR
+            )
             ErrorLog.writeLog(activity, this::class.java.simpleName, ex)
         }
     }
@@ -324,9 +341,11 @@ object JotterListener : Jotter.Listener {
             Rfid.setListener(activity as Rfid.RfidDeviceListener, RfidType.vh75)
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(activity.window.decorView,
+            makeText(
+                activity.window.decorView,
                 activity.getString(R.string.rfid_reader_not_initialized),
-                SnackBarType.ERROR)
+                SnackBarType.ERROR
+            )
             ErrorLog.writeLog(activity, this::class.java.simpleName, ex)
         }
     }
@@ -342,7 +361,8 @@ object JotterListener : Jotter.Listener {
         if (settingViewModel().useNfc) enableNfcForegroundDispatch(activity)
 
         if (activity is Rfid.RfidDeviceListener && settingViewModel().useBtRfid) Rfid.resume(
-            activity)
+            activity
+        )
 
         scannerList.firstOrNull { it.activityName() == activity::class.java.simpleName }?.onResume()
         floatingWindowList.firstOrNull { it.activityName == activity::class.java.simpleName }

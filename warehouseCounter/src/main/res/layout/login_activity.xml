@@ -11,7 +11,7 @@
     android:gravity="center_horizontal"
     android:orientation="vertical"
     app:passwordToggleEnabled="true"
-    tools:context="com.dacosys.warehouseCounter.LoginActivity"
+    tools:context="com.dacosys.warehouseCounter.ui.activities.main.LoginActivity"
     tools:layout_editor_absoluteX="0dp"
     tools:layout_editor_absoluteY="81dp">
 
@@ -80,7 +80,7 @@
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/userSpinnerFragment"
-            android:name="com.dacosys.warehouseCounter.user.fragment.UserSpinnerFragment"
+            android:name="com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"

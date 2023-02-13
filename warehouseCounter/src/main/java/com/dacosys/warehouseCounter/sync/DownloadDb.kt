@@ -2,17 +2,17 @@ package com.dacosys.warehouseCounter.sync
 
 import android.util.Log
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dataBaseHelper.DataBaseHelper.Companion.copyDataBase
-import com.dacosys.warehouseCounter.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.itemCode.dbHelper.ItemCodeDbHelper
-import com.dacosys.warehouseCounter.misc.snackBar.SnackBarEventData
-import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
-import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType.CREATOR.ERROR
-import com.dacosys.warehouseCounter.retrofit.functions.SendItemCode
+import com.dacosys.warehouseCounter.dataBase.dbHelper.DataBaseHelper.Companion.copyDataBase
+import com.dacosys.warehouseCounter.dataBase.itemCode.ItemCodeDbHelper
+import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.retrofit.functionOld.SendItemCode
 import com.dacosys.warehouseCounter.sync.DownloadDb.DownloadStatus.*
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import kotlinx.coroutines.*
 import java.io.BufferedReader
 import java.io.File
@@ -40,9 +40,11 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
         val registryDesc = context().getString(R.string.item_codes)
 
         if (progressStatus == ProgressStatus.crashed || downloadStatus == CRASHED) {
-            ErrorLog.writeLog(null,
+            ErrorLog.writeLog(
+                null,
                 this::class.java.simpleName,
-                "$progressStatusDesc: $registryDesc, $msg")
+                "$progressStatusDesc: $registryDesc, $msg"
+            )
             onEventData(SnackBarEventData(msg, ERROR))
         } else {
             Log.d(this::class.java.simpleName, "$progressStatusDesc: $registryDesc, $msg")
@@ -61,15 +63,21 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
         this.downloadStatus = downloadStatus
 
         if (downloadStatus == CRASHED) {
-            ErrorLog.writeLog(null,
+            ErrorLog.writeLog(
+                null,
                 this::class.java.simpleName,
-                "${downloadStatus.name}: ${fileType.name}, $msg")
+                "${downloadStatus.name}: ${fileType.name}, $msg"
+            )
 
             // Si falla en el Timefile puede ser por no tener conexión.
             // No mostrar error
             if (fileType == FileType.TIMEFILE) {
-                onEventData(SnackBarEventData(context().getString(R.string.offline_mode),
-                    SnackBarType.INFO))
+                onEventData(
+                    SnackBarEventData(
+                        context().getString(R.string.offline_mode),
+                        SnackBarType.INFO
+                    )
+                )
             } else {
                 onEventData(SnackBarEventData(msg, ERROR))
             }
@@ -238,8 +246,12 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
 
             var downloadTask = DownloadFileTask()
             downloadStatus = null
-            downloadTask.addParams(UrlDestParam(url = completeTimeFileUrl,
-                destination = destinationTimeFile!!), this, FileType.TIMEFILE)
+            downloadTask.addParams(
+                UrlDestParam(
+                    url = completeTimeFileUrl,
+                    destination = destinationTimeFile!!
+                ), this, FileType.TIMEFILE
+            )
             downloadTask.execute()
 
             var crashNr = 0
@@ -260,8 +272,12 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                         } else {
                             downloadStatus = null
                             downloadTask = DownloadFileTask()
-                            downloadTask.addParams(UrlDestParam(url = completeTimeFileUrl,
-                                destination = destinationTimeFile!!), this, FileType.TIMEFILE)
+                            downloadTask.addParams(
+                                UrlDestParam(
+                                    url = completeTimeFileUrl,
+                                    destination = destinationTimeFile!!
+                                ), this, FileType.TIMEFILE
+                            )
                             downloadTask.execute()
                         }
                     } else if (downloadStatus == CRASHED) {
@@ -289,8 +305,10 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
             //Read text from file
             currentDateTimeStr = getDateTimeStr()
             if (oldDateTimeStr == currentDateTimeStr) {
-                Log.d(this::class.java.simpleName,
-                    context().getString(R.string.is_not_necessary_to_download_the_database))
+                Log.d(
+                    this::class.java.simpleName,
+                    context().getString(R.string.is_not_necessary_to_download_the_database)
+                )
 
                 mCallback?.onDownloadDbTask(FINISHED)
                 return true
@@ -304,8 +322,12 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
             try {
                 downloadStatus = null
                 downloadTask = DownloadFileTask()
-                downloadTask.addParams(UrlDestParam(url = completeDbFileUrl,
-                    destination = destinationDbFile!!), this, FileType.DBFILE)
+                downloadTask.addParams(
+                    UrlDestParam(
+                        url = completeDbFileUrl,
+                        destination = destinationDbFile!!
+                    ), this, FileType.DBFILE
+                )
                 downloadTask.execute()
 
                 while (true) {

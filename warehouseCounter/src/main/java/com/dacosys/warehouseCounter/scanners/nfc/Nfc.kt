@@ -14,11 +14,11 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.codeCheck.CodeCheckActivity
-import com.dacosys.warehouseCounter.linkCode.LinkCodeActivity
-import com.dacosys.warehouseCounter.misc.ObservationsActivity
-import com.dacosys.warehouseCounter.misc.QtySelectorActivity
-import com.dacosys.warehouseCounter.orderRequest.activities.OrderRequestContentActivity
+import com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity
+import com.dacosys.warehouseCounter.ui.activities.common.ObservationsActivity
+import com.dacosys.warehouseCounter.ui.activities.common.QtySelectorActivity
+import com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
+import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity
 import kotlin.experimental.or
 
 /**

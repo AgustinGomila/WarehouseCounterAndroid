@@ -3,12 +3,12 @@ package com.dacosys.warehouseCounter.sync
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.dacosys.warehouseCounter.Statics
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.orderRequest.`object`.OrderRequest
-import com.dacosys.warehouseCounter.retrofit.functions.GetNewOrder
-import com.dacosys.warehouseCounter.retrofit.functions.GetNewOrder.NewOrderListener
+import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.retrofit.functionOld.GetNewOrder
+import com.dacosys.warehouseCounter.retrofit.functionOld.GetNewOrder.NewOrderListener
 import com.dacosys.warehouseCounter.sync.GetCompletedOrderRequest.CompletedOrderRequestListener
 import java.util.*
 import kotlin.concurrent.thread
@@ -74,10 +74,12 @@ class Sync {
                 }
 
                 try {
-                    mCompletedOrderCallback!!.onCompletedOrderRequestResult(status,
+                    mCompletedOrderCallback!!.onCompletedOrderRequestResult(
+                        status,
                         itemArray,
                         TASK_CODE_PARENT,
-                        msg)
+                        msg
+                    )
                 } catch (ex: java.lang.Exception) {
                     ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
                 }
@@ -163,9 +165,11 @@ class Sync {
                         task.execute()
                     }
                 } catch (ex: Exception) {
-                    ErrorLog.writeLog(null,
+                    ErrorLog.writeLog(
+                        null,
                         this::class.java.simpleName,
-                        "$TASK_CODE_PARENT: ${ex.message.toString()}")
+                        "$TASK_CODE_PARENT: ${ex.message.toString()}"
+                    )
                     syncNewOrderRequestStatus = NOT_RUNNING
                 }
             }
@@ -183,9 +187,11 @@ class Sync {
                         task.execute()
                     }
                 } catch (ex: Exception) {
-                    ErrorLog.writeLog(null,
+                    ErrorLog.writeLog(
+                        null,
                         this::class.java.simpleName,
-                        "$TASK_CODE_PARENT: ${ex.message.toString()}")
+                        "$TASK_CODE_PARENT: ${ex.message.toString()}"
+                    )
                     syncCompletedOrderRequestStatus = NOT_RUNNING
                 }
             }

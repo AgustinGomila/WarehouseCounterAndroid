@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:weightSum="1"
-    tools:context="com.dacosys.warehouseCounter.orderRequest.activities.OrderRequestConfirmActivity">
+    tools:context="com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestConfirmActivity">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guidelineMain"

@@ -6,14 +6,14 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.error.ErrorObject
-import com.dacosys.warehouseCounter.misc.snackBar.SnackBarEventData
-import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
-import com.dacosys.warehouseCounter.price.`object`.Price
-import com.dacosys.warehouseCounter.price.`object`.PriceList
+import com.dacosys.warehouseCounter.model.error.ErrorObject
+import com.dacosys.warehouseCounter.model.price.Price
+import com.dacosys.warehouseCounter.model.price.PriceList
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
 import com.dacosys.warehouseCounter.retrofit.search.SearchPrice
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.squareup.moshi.JsonDataException
 import kotlinx.coroutines.*
 import retrofit2.Call
@@ -38,8 +38,12 @@ class GetPrice(
                 scope.launch { doInBackground() }
             } else {
                 // Token inválido.
-                onEvent?.invoke(SnackBarEventData(context().getString(R.string.invalid_or_expired_token),
-                    SnackBarType.ERROR))
+                onEvent?.invoke(
+                    SnackBarEventData(
+                        context().getString(R.string.invalid_or_expired_token),
+                        SnackBarType.ERROR
+                    )
+                )
             }
         }
 
@@ -67,19 +71,26 @@ class GetPrice(
             baseUrl = "${url.protocol}://${url.host}/"
             if (url.path.isNotEmpty()) apiUrl = "${url.path}/"
         } catch (e: MalformedURLException) {
-            onEvent?.invoke(SnackBarEventData(context().getString(R.string.url_malformed),
-                SnackBarType.ERROR))
+            onEvent?.invoke(
+                SnackBarEventData(
+                    context().getString(R.string.url_malformed),
+                    SnackBarType.ERROR
+                )
+            )
             Log.e(this::class.java.simpleName, e.toString())
             return@withContext false
         }
 
         Log.d(this::class.java.simpleName,
-            "Base URL: $baseUrl (Api URL: ${apiUrl.ifEmpty { "Vacío" }})")
+            "Base URL: $baseUrl (Api URL: ${apiUrl.ifEmpty { "Vacío" }})"
+        )
 
         val tempInst = apiService().getPrices(apiUrl = apiUrl, body = searchPrice)
 
-        Log.i(this::class.java.simpleName,
-            moshi().adapter(SearchPrice::class.java).toJson(searchPrice))
+        Log.i(
+            this::class.java.simpleName,
+            moshi().adapter(SearchPrice::class.java).toJson(searchPrice)
+        )
 
         tempInst.enqueue(object : Callback<Any?> {
             override fun onResponse(call: Call<Any?>, response: Response<Any?>) {
@@ -95,8 +106,12 @@ class GetPrice(
                  */
                 if (ErrorObject.isError(resp)) {
                     val errorObject = moshi().adapter(ErrorObject::class.java).fromJsonValue(resp)
-                    onEvent?.invoke(SnackBarEventData(errorObject?.error.toString(),
-                        SnackBarType.ERROR))
+                    onEvent?.invoke(
+                        SnackBarEventData(
+                            errorObject?.error.toString(),
+                            SnackBarType.ERROR
+                        )
+                    )
                     return
                 }
 
@@ -116,13 +131,21 @@ class GetPrice(
 
                         onFinish.invoke(priceArray)
                     } else {
-                        onEvent?.invoke(SnackBarEventData(context().getString(R.string.no_results),
-                            SnackBarType.INFO))
+                        onEvent?.invoke(
+                            SnackBarEventData(
+                                context().getString(R.string.no_results),
+                                SnackBarType.INFO
+                            )
+                        )
                     }
                 } catch (ex: JsonDataException) {
                     Log.e(this.javaClass.simpleName, ex.toString())
-                    onEvent?.invoke(SnackBarEventData(context().getString(R.string.invalid_prices),
-                        SnackBarType.ERROR))
+                    onEvent?.invoke(
+                        SnackBarEventData(
+                            context().getString(R.string.invalid_prices),
+                            SnackBarType.ERROR
+                        )
+                    )
                     return
                 }
             }

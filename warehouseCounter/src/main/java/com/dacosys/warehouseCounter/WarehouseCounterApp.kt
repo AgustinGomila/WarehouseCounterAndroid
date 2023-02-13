@@ -3,7 +3,9 @@ package com.dacosys.warehouseCounter
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
-import com.dacosys.warehouseCounter.data.token.TokenObject
+import com.dacosys.imageControl.ImageControl
+import com.dacosys.warehouseCounter.misc.Statics.Companion.WC_ROOT_PATH
+import com.dacosys.warehouseCounter.model.token.TokenObject
 import com.dacosys.warehouseCounter.retrofit.APIService
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -30,15 +32,12 @@ import java.util.concurrent.TimeUnit
 class WarehouseCounterApp : Application(), KoinComponent {
     override fun onCreate() {
         super.onCreate()
-        sApplication = this
-
         startKoin {
             androidContext(this@WarehouseCounterApp)
             modules(koinAppModule())
         }
 
-        // Setup ImageControl context
-        com.dacosys.imageControl.Statics.ImageControl().setAppContext(this)
+        ImageControl().create(applicationContext, WC_ROOT_PATH)
     }
 
     private fun koinAppModule() = module {
@@ -49,6 +48,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
 
         single { Moshi.Builder().add(KotlinJsonAdapterFactory()).build() }
         single { MoshiConverterFactory.create(get()) }
+
         factory {
             // Connection Timeouts
             OkHttpClient.Builder()
@@ -62,11 +62,14 @@ class WarehouseCounterApp : Application(), KoinComponent {
             // Eventos del ciclo de vida de las actividades
             // que nos interesa interceptar para conectar y
             // desconectar los medios de lectura de códigos.
-            Jotter.Builder(this@WarehouseCounterApp).setLogEnable(true)
-                .setActivityEventFilter(listOf(ActivityEvent.CREATE,
+            Jotter.Builder(this@WarehouseCounterApp).setLogEnable(true).setActivityEventFilter(
+                listOf(
+                    ActivityEvent.CREATE,
                     ActivityEvent.RESUME,
                     ActivityEvent.PAUSE,
-                    ActivityEvent.DESTROY))
+                    ActivityEvent.DESTROY
+                )
+            )
                 //.setFragmentEventFilter(listOf(FragmentEvent.VIEW_CREATE, FragmentEvent.PAUSE))
                 .setJotterListener(JotterListener).build().startListening()
         }
@@ -131,7 +134,5 @@ class WarehouseCounterApp : Application(), KoinComponent {
         fun cleanToken() {
             Token = TokenObject("", "")
         }
-
-        private var sApplication: Application? = null
     }
 }

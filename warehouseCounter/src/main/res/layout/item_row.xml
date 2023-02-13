@@ -40,7 +40,7 @@
         app:layout_constraintStart_toEndOf="@+id/constraintLayout"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/eanTextView"
             android:layout_width="0dp"
             android:layout_height="24dp"
@@ -62,7 +62,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/descriptionTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

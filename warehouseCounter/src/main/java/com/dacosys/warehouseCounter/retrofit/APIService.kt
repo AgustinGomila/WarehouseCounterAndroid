@@ -1,7 +1,7 @@
 package com.dacosys.warehouseCounter.retrofit
 
+import com.dacosys.warehouseCounter.model.user.UserAuthData
 import com.dacosys.warehouseCounter.retrofit.search.SearchPrice
-import com.dacosys.warehouseCounter.user.`object`.UserAuthData
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST

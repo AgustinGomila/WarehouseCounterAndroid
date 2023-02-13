@@ -17,7 +17,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/eanAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -37,7 +37,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/descriptionAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -72,7 +72,7 @@
             android:orientation="vertical"
             app:layout_constraintGuide_percent="0.5" />
 
-        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/idAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -96,7 +96,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/extIdAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -161,7 +161,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@id/dividerInternal6" />
 
-        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/priceAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -172,7 +172,7 @@
             app:layout_constraintStart_toStartOf="@+id/guideline4"
             app:layout_constraintTop_toBottomOf="@+id/priceTextView" />
 
-        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/categoryAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -237,7 +237,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/codeAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -262,7 +262,7 @@
             app:layout_constraintStart_toStartOf="@+id/guidelineItemCode500"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.dacosys.warehouseCounter.misc.AutoResizeTextView
+        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/qtyAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

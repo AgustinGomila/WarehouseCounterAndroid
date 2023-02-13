@@ -100,7 +100,7 @@
         app:srcCompat="@drawable/ic_flash_off"
         app:tint="@color/deepskyblue" />
 
-    <com.dacosys.warehouseCounter.misc.scaleImageView.ScaleImage
+    <com.dacosys.warehouseCounter.ui.views.scaleImageView.ScaleImage
         android:id="@+id/ivScale"
         android:layout_width="36dp"
         android:layout_height="36dp"

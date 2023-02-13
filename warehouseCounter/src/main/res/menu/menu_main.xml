@@ -1,7 +1,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.dacosys.warehouseCounter.HomeActivity">
+    tools:context="com.dacosys.warehouseCounter.ui.activities.main.HomeActivity">
     <item
         android:id="@+id/action_trigger_scan"
         android:icon="@drawable/ic_new_scan"

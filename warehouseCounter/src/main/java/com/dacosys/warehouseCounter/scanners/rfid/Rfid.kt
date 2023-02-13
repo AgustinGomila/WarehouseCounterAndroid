@@ -2,7 +2,7 @@ package com.dacosys.warehouseCounter.scanners.rfid
 
 import android.content.Context
 import android.util.Log
-import com.dacosys.warehouseCounter.Statics
+import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.scanners.vh75.Utility
 import com.dacosys.warehouseCounter.scanners.vh75.Vh75Bt
 

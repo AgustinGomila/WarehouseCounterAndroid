@@ -18,15 +18,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics
-import com.dacosys.warehouseCounter.Statics.Companion.getSystemBarsHeight
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.FloatingCameraActivityBinding
-import com.dacosys.warehouseCounter.misc.scaleImageView.ScaleImage
-import com.dacosys.warehouseCounter.misc.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.misc.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.Statics.Companion.getSystemBarsHeight
 import com.dacosys.warehouseCounter.scanners.Scanner
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.views.scaleImageView.ScaleImage
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.client.android.BeepManager
 import com.journeyapps.barcodescanner.BarcodeCallback
@@ -106,8 +106,10 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
         if (v == null) v = getView()
 
         EasyFloat.with(activity).setTag(easyFloatTag).setShowPattern(ShowPattern.FOREGROUND)
-            .setLocation(if (getOrientation == Configuration.ORIENTATION_PORTRAIT) flCameraPortraitLoc[0] else flCameraLandscapeLoc[0],
-                if (getOrientation == Configuration.ORIENTATION_PORTRAIT) flCameraPortraitLoc[1] else flCameraLandscapeLoc[1])
+            .setLocation(
+                if (getOrientation == Configuration.ORIENTATION_PORTRAIT) flCameraPortraitLoc[0] else flCameraLandscapeLoc[0],
+                if (getOrientation == Configuration.ORIENTATION_PORTRAIT) flCameraPortraitLoc[1] else flCameraLandscapeLoc[1]
+            )
             .setAnimator(DefaultAnimator()).setLayout(v!!) { }.registerCallback {
                 createResult { _, _, _ ->
                     createResult()
@@ -160,9 +162,11 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
 
     private fun getView(): View {
         _binding =
-            FloatingCameraActivityBinding.inflate((context().getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater),
+            FloatingCameraActivityBinding.inflate(
+                (context().getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater),
                 null,
-                false)
+                false
+            )
         setLayout()
         return binding.root
     }
@@ -175,7 +179,8 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
             if (getOrientation == Configuration.ORIENTATION_PORTRAIT) flCameraPortraitWidth
             else flCameraLandscapeWidth,
             if (getOrientation == Configuration.ORIENTATION_PORTRAIT) flCameraPortraitHeight
-            else flCameraLandscapeHeight)
+            else flCameraLandscapeHeight
+        )
         content.layoutParams = params
 
         val ivFilterRepeat: ImageView = binding.ivFilterRepeat
@@ -377,8 +382,10 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
 
     private fun checkCameraFloatingPermission() {
         // Check if the storage permission has been granted
-        if (ActivityCompat.checkSelfPermission(activity,
-                Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
+        if (ActivityCompat.checkSelfPermission(
+                activity,
+                Manifest.permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
             // Permission is missing and must be requested.
             resultForCameraPermission.launch(Manifest.permission.CAMERA)
@@ -405,9 +412,11 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
             // returns boolean representing whether the
             // permission is granted or not
             if (!isGranted) {
-                makeText(activity.window.decorView,
+                makeText(
+                    activity.window.decorView,
                     context().getString(R.string.app_dont_have_necessary_permissions),
-                    SnackBarType.ERROR)
+                    SnackBarType.ERROR
+                )
             } else {
                 checkFloatingPermission()
             }

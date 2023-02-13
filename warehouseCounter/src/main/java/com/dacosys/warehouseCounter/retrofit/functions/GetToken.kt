@@ -2,17 +2,17 @@ package com.dacosys.warehouseCounter.retrofit.functions
 
 import android.util.Log
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.Statics.Companion.Token
-import com.dacosys.warehouseCounter.Statics.Companion.cleanToken
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.data.token.TokenObject
-import com.dacosys.warehouseCounter.error.ErrorObject
+import com.dacosys.warehouseCounter.misc.Statics.Companion.Token
+import com.dacosys.warehouseCounter.misc.Statics.Companion.cleanToken
+import com.dacosys.warehouseCounter.model.error.ErrorObject
+import com.dacosys.warehouseCounter.model.token.TokenObject
+import com.dacosys.warehouseCounter.model.user.UserAuthData
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
-import com.dacosys.warehouseCounter.user.`object`.UserAuthData
 import kotlinx.coroutines.*
 import retrofit2.Call
 import retrofit2.Callback
@@ -68,15 +68,20 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
             baseUrl = "${url.protocol}://${url.host}/"
             if (url.path.isNotEmpty()) apiUrl = "${url.path}/"
         } catch (e: MalformedURLException) {
-            onEvent.invoke(RequestResult(ResultStatus.ERROR,
-                context().getString(R.string.url_malformed)))
+            onEvent.invoke(
+                RequestResult(
+                    ResultStatus.ERROR,
+                    context().getString(R.string.url_malformed)
+                )
+            )
 
             Log.e(this::class.java.simpleName, e.toString())
             return@withContext false
         }
 
         Log.d(this::class.java.simpleName,
-            "Base URL: $baseUrl (Api URL: ${apiUrl.ifEmpty { "Vacío" }})")
+            "Base URL: $baseUrl (Api URL: ${apiUrl.ifEmpty { "Vacío" }})"
+        )
 
         /** Limpiamos el token actual antes de solicitar uno nuevo. **/
         cleanToken()
@@ -113,8 +118,12 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
                 if (TokenObject.isToken(resp)) {
                     val tokenObject = moshi().adapter(TokenObject::class.java).fromJsonValue(resp)
 
-                    onEvent.invoke(RequestResult(ResultStatus.SUCCESS,
-                        context().getString(R.string.successful_connection)))
+                    onEvent.invoke(
+                        RequestResult(
+                            ResultStatus.SUCCESS,
+                            context().getString(R.string.successful_connection)
+                        )
+                    )
 
                     if (tokenObject != null) Token = tokenObject
                     return

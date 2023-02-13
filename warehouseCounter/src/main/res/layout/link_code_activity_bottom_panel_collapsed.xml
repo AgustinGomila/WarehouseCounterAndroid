@@ -510,7 +510,7 @@
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/filterFragment"
-            android:name="com.dacosys.warehouseCounter.item.fragments.ItemSelectFilterFragment"
+            android:name="com.dacosys.warehouseCounter.ui.fragments.item.ItemSelectFilterFragment"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="parent"

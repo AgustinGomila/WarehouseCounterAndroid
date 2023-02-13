@@ -84,7 +84,7 @@
         android:key="conf_check_barcode_digit"
         android:summary="@string/send_check_digit"
         android:title="@string/check_digit" />
-    <com.dacosys.warehouseCounter.collectorType.object.CollectorTypePreference
+    <com.dacosys.warehouseCounter.model.collectorType.CollectorTypePreference
         android:defaultValue="0"
         android:icon="@drawable/ic_devices"
         android:key="collector_type"
@@ -99,7 +99,7 @@
             android:defaultValue="false"
             android:key="conf_printer_use_bt_default"
             android:title="@string/printer_use_bt_default" />
-        <com.dacosys.warehouseCounter.configuration.DevicePreference
+        <com.dacosys.warehouseCounter.settings.custom.DevicePreference
             android:defaultValue="0"
             android:dependency="conf_printer_use_bt_default"
             android:key="printer_bt_address"
@@ -162,7 +162,7 @@
             android:defaultValue="false"
             android:key="conf_rfid_use_bt_default"
             android:title="@string/use_rfid_device" />
-        <com.dacosys.warehouseCounter.configuration.DevicePreference
+        <com.dacosys.warehouseCounter.settings.custom.DevicePreference
             android:defaultValue="0"
             android:dependency="conf_rfid_use_bt_default"
             android:key="rfid_bt_address"
