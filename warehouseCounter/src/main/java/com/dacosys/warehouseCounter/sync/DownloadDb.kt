@@ -8,7 +8,7 @@ import com.dacosys.warehouseCounter.dataBase.dbHelper.DataBaseHelper.Companion.c
 import com.dacosys.warehouseCounter.dataBase.itemCode.ItemCodeDbHelper
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.retrofit.functionOld.SendItemCode
+import com.dacosys.warehouseCounter.network.SendItemCode
 import com.dacosys.warehouseCounter.sync.DownloadDb.DownloadStatus.*
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -35,15 +35,13 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
     }
 
     override fun onTaskSendItemCodeEnded(status: ProgressStatus, msg: String) {
-        this.progressStatus = status
-        val progressStatusDesc = (progressStatus as ProgressStatus).description
+        uploadStatus = status
+        val progressStatusDesc = (uploadStatus as ProgressStatus).description
         val registryDesc = context().getString(R.string.item_codes)
 
-        if (progressStatus == ProgressStatus.crashed || downloadStatus == CRASHED) {
+        if (uploadStatus == ProgressStatus.crashed || downloadStatus == CRASHED) {
             ErrorLog.writeLog(
-                null,
-                this::class.java.simpleName,
-                "$progressStatusDesc: $registryDesc, $msg"
+                null, this::class.java.simpleName, "$progressStatusDesc: $registryDesc, $msg"
             )
             onEventData(SnackBarEventData(msg, ERROR))
         } else {
@@ -64,9 +62,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
 
         if (downloadStatus == CRASHED) {
             ErrorLog.writeLog(
-                null,
-                this::class.java.simpleName,
-                "${downloadStatus.name}: ${fileType.name}, $msg"
+                null, this::class.java.simpleName, "${downloadStatus.name}: ${fileType.name}, $msg"
             )
 
             // Si falla en el Timefile puede ser por no tener conexión.
@@ -74,8 +70,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
             if (fileType == FileType.TIMEFILE) {
                 onEventData(
                     SnackBarEventData(
-                        context().getString(R.string.offline_mode),
-                        SnackBarType.INFO
+                        context().getString(R.string.offline_mode), SnackBarType.INFO
                     )
                 )
             } else {
@@ -105,8 +100,12 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
     /////////////////////
     // region Privadas //
     private var errorMsg = ""
+
+    @Volatile
     private var downloadStatus: DownloadStatus? = null
-    private var progressStatus: ProgressStatus? = null
+
+    @Volatile
+    private var uploadStatus: ProgressStatus? = null
 
     private var timeFilename = ""
     private var dbFilename = ""
@@ -138,17 +137,17 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
     ) {
         val sv = settingViewModel()
 
-        this.mCallback = callBack
+        mCallback = callBack
         this.onEventData = onEventData
 
-        this.timeFilename = timeFileUrl.substringAfterLast('/')
-        this.dbFilename = dbFileUrl.substringAfterLast('/')
+        timeFilename = timeFileUrl.substringAfterLast('/')
+        dbFilename = dbFileUrl.substringAfterLast('/')
 
-        this.destinationTimeFile = File("${context().cacheDir.absolutePath}/$timeFilename")
-        this.destinationDbFile = File("${context().cacheDir.absolutePath}/$dbFilename")
+        destinationTimeFile = File("${context().cacheDir.absolutePath}/$timeFilename")
+        destinationDbFile = File("${context().cacheDir.absolutePath}/$dbFilename")
 
-        this.completeDbFileUrl = "${sv.urlPanel}/$dbFileUrl"
-        this.completeTimeFileUrl = "${sv.urlPanel}/$timeFileUrl"
+        completeDbFileUrl = "${sv.urlPanel}/$dbFileUrl"
+        completeTimeFileUrl = "${sv.urlPanel}/$timeFileUrl"
     }
 
     private fun postExecute(result: Boolean) {
@@ -197,7 +196,10 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
 
     private fun goForrest(): Boolean {
         try {
-            if (dbFilename.isEmpty() || timeFilename.isEmpty() || destinationTimeFile == null || destinationDbFile == null) {
+            val destTimeFile = destinationTimeFile
+            val destDbFile = destinationDbFile
+
+            if (dbFilename.isEmpty() || timeFilename.isEmpty() || destTimeFile == null || destDbFile == null) {
                 errorMsg = context().getString(R.string.database_name_is_invalid)
                 mCallback?.onDownloadDbTask(CRASHED)
                 return false
@@ -209,7 +211,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
             // Si aún no está loggeado y hay datos por enviar, no descargar la base de datos
             val itemCodeArray = ItemCodeDbHelper().selectToUpload()
             if (Statics.currentUserId > 0 && itemCodeArray.isNotEmpty()) {
-                progressStatus = null
+                uploadStatus = null
                 try {
                     thread {
                         val task = SendItemCode()
@@ -221,8 +223,9 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                 }
 
                 // Espera hasta que salga del SyncUpload
+                // Tiene que terminar de enviar los datos pendientes para continuar con la descarga
                 loop@ while (true) {
-                    when (progressStatus) {
+                    when (uploadStatus) {
                         ProgressStatus.finished -> break@loop
                         ProgressStatus.crashed, ProgressStatus.canceled,
                         -> {
@@ -239,34 +242,37 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
             // Leer el archivo antiguo de fecha de creación de la base de datos
             // en el servidor, si la esta fecha es igual a la del archivo del servidor,
             // no hace falta descargar la base de datos.
-            if (destinationTimeFile!!.exists()) {
+            if (destTimeFile.exists()) {
                 oldDateTimeStr = getDateTimeStr()
-                destinationTimeFile!!.delete()
+                destTimeFile.delete()
             }
 
-            var downloadTask = DownloadFileTask()
             downloadStatus = null
+
+            var downloadTask = DownloadFileTask()
             downloadTask.addParams(
                 UrlDestParam(
-                    url = completeTimeFileUrl,
-                    destination = destinationTimeFile!!
+                    url = completeTimeFileUrl, destination = destTimeFile
                 ), this, FileType.TIMEFILE
             )
             downloadTask.execute()
 
             var crashNr = 0
             while (true) {
-                if (downloadStatus != null && fileType != null) {
-                    // Si se cancela, sale
-                    if (downloadStatus == CANCELED) {
+                if (downloadStatus == null || fileType == null) continue
+
+                when (downloadStatus) {
+                    CANCELED -> {
+
+                        // Si se cancela, sale
+
                         mCallback?.onDownloadDbTask(CANCELED)
                         return false
-                    } else if (downloadStatus == FINISHED) {
-
+                    }
+                    FINISHED -> {
                         // Si estamos descargando el archivo de la fecha
                         // y termina de descargarse salir del loop para poder hacer
                         // las comparaciones
-
                         if (fileType == FileType.TIMEFILE) {
                             break
                         } else {
@@ -274,13 +280,13 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                             downloadTask = DownloadFileTask()
                             downloadTask.addParams(
                                 UrlDestParam(
-                                    url = completeTimeFileUrl,
-                                    destination = destinationTimeFile!!
+                                    url = completeTimeFileUrl, destination = destTimeFile
                                 ), this, FileType.TIMEFILE
                             )
                             downloadTask.execute()
                         }
-                    } else if (downloadStatus == CRASHED) {
+                    }
+                    CRASHED -> {
 
                         // Si no existe el archivo con la fecha en el servidor
                         // es porque aún no se creó la base de datos.
@@ -298,8 +304,9 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                             return false
                         }
                     }
+                    else -> {}
                 }
-                // Poner un timer o algo que salga de acá
+                // TODO: Poner un Timer que salga de acá
             }
 
             //Read text from file
@@ -315,8 +322,8 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
             }
 
             // Eliminar la base de datos antigua
-            if (destinationDbFile!!.exists()) {
-                destinationDbFile!!.delete()
+            if (destDbFile.exists()) {
+                destDbFile.delete()
             }
 
             try {
@@ -324,23 +331,26 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                 downloadTask = DownloadFileTask()
                 downloadTask.addParams(
                     UrlDestParam(
-                        url = completeDbFileUrl,
-                        destination = destinationDbFile!!
+                        url = completeDbFileUrl, destination = destDbFile
                     ), this, FileType.DBFILE
                 )
                 downloadTask.execute()
 
                 while (true) {
-                    if (downloadStatus != null && fileType != null) {
-                        // Si se cancela, sale
-                        if (downloadStatus == CANCELED || downloadStatus == CRASHED) {
+                    if (downloadStatus == null || fileType == null) continue
+
+                    when (downloadStatus) {
+                        CANCELED, CRASHED -> {
+                            // Si se cancela o choca, sale
                             errorMsg =
                                 context().getString(R.string.error_downloading_the_database_from_the_server)
                             mCallback?.onDownloadDbTask(CRASHED)
                             return false
-                        } else if (downloadStatus == FINISHED) {
+                        }
+                        FINISHED -> {
                             break
                         }
+                        else -> {}
                     }
                 }
             } catch (ex: Exception) {

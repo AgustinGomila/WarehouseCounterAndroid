@@ -268,7 +268,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
 
         var temp = t
         if (!temp.any()) {
-            temp = OrderRequest.getPendingOrderRequests()
+            temp = OrderRequest.getPendingOrders()
             if (temp.isEmpty()) {
                 MakeText.makeText(
                     binding.root,

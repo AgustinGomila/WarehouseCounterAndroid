@@ -40,15 +40,19 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.retrofit
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.dataBase.itemCode.ItemCodeDbHelper
 import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.model.itemCode.ItemCode
-import com.dacosys.warehouseCounter.model.token.TokenObject
 import com.dacosys.warehouseCounter.model.user.User
-import com.dacosys.warehouseCounter.retrofit.functionOld.GetClientPackages
+import com.dacosys.warehouseCounter.moshi.clientPackage.Package
+import com.dacosys.warehouseCounter.moshi.clientPackage.Package.Companion.icPasswordTag
+import com.dacosys.warehouseCounter.moshi.clientPackage.Package.Companion.icUserTag
+import com.dacosys.warehouseCounter.moshi.token.TokenObject
+import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
+import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages
+import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.vh75.Vh75Bt
 import com.dacosys.warehouseCounter.settings.Preference
@@ -75,6 +79,7 @@ import java.io.*
 import java.lang.ref.WeakReference
 import java.math.BigDecimal
 import java.net.NetworkInterface
+import java.net.URL
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.charset.Charset
@@ -410,7 +415,7 @@ class Statics {
 
         // region SOME CONFIG VALUES AND PREFERENCES FUNCTIONS
         fun getConfigFromScannedCode(
-            callback: GetClientPackages.TaskGetPackagesEnded,
+            onEvent: (PackagesResult) -> Unit,
             scanCode: String,
             mode: QRConfigType,
         ) {
@@ -422,12 +427,11 @@ class Statics {
             }
 
             if (mainTag.isEmpty()) {
-                callback.onTaskGetPackagesEnded(
-                    status = ProgressStatus.crashed,
-                    result = ArrayList(),
-                    clientEmail = "",
-                    clientPassword = "",
-                    msg = context().getString(R.string.invalid_code)
+                onEvent.invoke(
+                    PackagesResult(
+                        status = ProgressStatus.crashed,
+                        msg = context().getString(R.string.invalid_code)
+                    )
                 )
                 return
             }
@@ -447,42 +451,40 @@ class Statics {
 
                     if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
                         getConfig(
-                            callback = callback,
+                            onEvent = onEvent,
                             email = email,
                             password = password,
                             installationCode = installationCode
                         )
                     } else {
-                        callback.onTaskGetPackagesEnded(
-                            status = ProgressStatus.crashed,
-                            result = ArrayList(),
-                            clientEmail = email,
-                            clientPassword = password,
-                            msg = context().getString(R.string.invalid_code)
+                        onEvent.invoke(
+                            PackagesResult(
+                                status = ProgressStatus.crashed,
+                                clientEmail = email,
+                                clientPassword = password,
+                                msg = context().getString(R.string.invalid_code)
+                            )
                         )
                     }
                 }
                 QRConfigWebservice, QRConfigApp, QRConfigImageControl -> {
                     tryToLoadConfig(confJson)
-                    callback.onTaskGetPackagesEnded(
-                        status = ProgressStatus.success,
-                        result = ArrayList(),
-                        clientEmail = "",
-                        clientPassword = "",
-                        msg = when (mode) {
-                            QRConfigImageControl -> context().getString(R.string.imagecontrol_configured)
-                            QRConfigWebservice -> context().getString(R.string.server_configured)
-                            else -> context().getString(R.string.configuration_applied)
-                        }
+                    onEvent.invoke(
+                        PackagesResult(
+                            status = ProgressStatus.success, msg = when (mode) {
+                                QRConfigImageControl -> context().getString(R.string.imagecontrol_configured)
+                                QRConfigWebservice -> context().getString(R.string.server_configured)
+                                else -> context().getString(R.string.configuration_applied)
+                            }
+                        )
                     )
                 }
                 else -> {
-                    callback.onTaskGetPackagesEnded(
-                        status = ProgressStatus.crashed,
-                        result = ArrayList(),
-                        clientEmail = "",
-                        clientPassword = "",
-                        msg = context().getString(R.string.invalid_code)
+                    onEvent.invoke(
+                        PackagesResult(
+                            status = ProgressStatus.crashed,
+                            msg = context().getString(R.string.invalid_code)
+                        )
                     )
                 }
             }
@@ -724,17 +726,17 @@ class Statics {
         // endregion PROXY THINGS
 
         // region Selección automática de paquetes del cliente
-        private var allProductsArray: ArrayList<JSONObject> = ArrayList()
-        private var validProductsArray: ArrayList<JSONObject> = ArrayList()
+        private var allProductsArray: ArrayList<Package> = ArrayList()
+        private var validProductsArray: ArrayList<Package> = ArrayList()
         private var selected: BooleanArray? = null
 
         override fun onClick(dialog: DialogInterface?, which: Int, isChecked: Boolean) {
             if (isChecked) {
-                val tempProdVersionId = validProductsArray[which].getString("product_version_id")
+                val tempProdVersionId = validProductsArray[which].productVersionId
 
                 for (i in 0 until validProductsArray.size) {
                     if ((selected ?: return)[i]) {
-                        val prodVerId = validProductsArray[i].getString("product_version_id")
+                        val prodVerId = validProductsArray[i].productVersionId
                         if (prodVerId == tempProdVersionId) {
                             (selected ?: return)[i] = false
                             (dialog as AlertDialog).listView.setItemChecked(i, false)
@@ -757,7 +759,7 @@ class Statics {
         fun selectClientPackage(
             callback: TaskConfigPanelEnded,
             weakAct: WeakReference<FragmentActivity>,
-            allPackage: ArrayList<JSONObject>,
+            allPackage: ArrayList<Package>,
             email: String,
             password: String,
             onEventData: (SnackBarEventData) -> Unit = {},
@@ -767,8 +769,8 @@ class Statics {
 
             allProductsArray.clear()
             for (pack in allPackage) {
-                val pvId = pack.getString("product_version_id")
-                if (ValidProducts.contains(pvId) && !allProductsArray.contains(pack)) {
+                val pvId = pack.productVersionId
+                if (ValidProducts.contains(pvId.toString()) && !allProductsArray.contains(pack)) {
                     allProductsArray.add(pack)
                 }
             }
@@ -784,8 +786,8 @@ class Statics {
             }
 
             if (allProductsArray.size == 1) {
-                val productVersionId = allProductsArray[0].getString("product_version_id")
-                if (productVersionId == APP_VERSION_ID.toString() || productVersionId == APP_VERSION_ID_IMAGECONTROL.toString()) {
+                val productVersionId = allProductsArray[0].productVersionId
+                if (productVersionId == APP_VERSION_ID || productVersionId == APP_VERSION_ID_IMAGECONTROL) {
                     setConfigPanel(
                         callback = callback,
                         packArray = arrayListOf(allProductsArray[0]),
@@ -807,16 +809,16 @@ class Statics {
 
             var validProducts = false
             validProductsArray.clear()
-            val client = allProductsArray[0].getString("client")
+            val client = allProductsArray[0].client
             val listItems: ArrayList<String> = ArrayList()
 
             for (pack in allProductsArray) {
-                val productVersionId = pack.getString("product_version_id")
+                val productVersionId = pack.productVersionId
 
                 // WarehouseCounter M12 o ImageControl M11
-                if (productVersionId == APP_VERSION_ID.toString() || productVersionId == APP_VERSION_ID_IMAGECONTROL.toString()) {
+                if (productVersionId == APP_VERSION_ID || productVersionId == APP_VERSION_ID_IMAGECONTROL) {
                     validProducts = true
-                    val clientPackage = pack.getString("client_package_content_description")
+                    val clientPackage = pack.clientPackageContDesc
 
                     listItems.add(clientPackage)
                     validProductsArray.add(pack)
@@ -848,7 +850,7 @@ class Statics {
             builder.setMultiChoiceItems(listItems.toTypedArray(), selected, this)
 
             builder.setPositiveButton(R.string.accept) { dialog, _ ->
-                val selectedPacks: ArrayList<JSONObject> = ArrayList()
+                val selectedPacks: ArrayList<Package> = ArrayList()
                 for ((i, prod) in validProductsArray.withIndex()) {
                     if ((selected ?: return@setPositiveButton)[i]) {
                         selectedPacks.add(prod)
@@ -886,13 +888,13 @@ class Statics {
 
         private fun setConfigPanel(
             callback: TaskConfigPanelEnded,
-            packArray: ArrayList<JSONObject>,
+            packArray: ArrayList<Package>,
             email: String,
             password: String,
             onEventData: (SnackBarEventData) -> Unit = {},
         ) {
             for (pack in packArray) {
-                val active = pack.getInt("active")
+                val active = pack.active
                 if (active == 0) {
                     onEventData(
                         SnackBarEventData(
@@ -903,12 +905,9 @@ class Statics {
                 }
 
                 // PANEL DE CONFIGURACIÓN
-                val productId = pack.getString("product_version_id")
-                val panelJsonObj = pack.getJSONObject("panel")
-                val appUrl = when {
-                    panelJsonObj.has("url") -> panelJsonObj.getString("url") ?: ""
-                    else -> ""
-                }
+                val productId = pack.productVersionId
+                val panelJsonObj = pack.panel
+                val appUrl = panelJsonObj.url
 
                 if (appUrl.isEmpty()) {
                     onEventData(
@@ -919,46 +918,34 @@ class Statics {
                     return
                 }
 
-                val clientPackage = when {
-                    pack.has("client_package_content_description") -> pack.getString("client_package_content_description")
-                        ?: ""
-                    else -> ""
+                val clientPackage = pack.clientPackageContDesc
+                val installationCode = pack.installationCode
+                val wsJsonObj = pack.ws
+                val url = wsJsonObj.url
+                val namespace = wsJsonObj.namespace
+                val user = wsJsonObj.user
+                val pass = wsJsonObj.password
+
+                var icUser = ""
+                var icPass = ""
+
+                val customOptJsonObj = pack.customOptions
+                if (customOptJsonObj.isNotEmpty()) {
+                    icUser = customOptJsonObj[icUserTag] ?: ""
+                    icPass = customOptJsonObj[icPasswordTag] ?: ""
                 }
-
-                val installationCode = when {
-                    pack.has("installation_code") -> pack.getString("installation_code") ?: ""
-                    else -> ""
-                }
-
-                var url: String
-                var namespace: String
-                var user: String
-                var pass: String
-                var icUser: String
-                var icPass: String
-
-                val wsJsonObj = pack.getJSONObject("ws")
-                url = if (wsJsonObj.has("url")) wsJsonObj.getString("url") else ""
-                namespace = if (wsJsonObj.has("namespace")) wsJsonObj.getString("namespace") else ""
-                user = if (wsJsonObj.has("ws_user")) wsJsonObj.getString("ws_user") else ""
-                pass = if (wsJsonObj.has("ws_password")) wsJsonObj.getString("ws_password") else ""
-
-                val customOptJsonObj = pack.getJSONObject("custom_options")
-                icUser =
-                    if (customOptJsonObj.has("ic_user")) customOptJsonObj.getString("ic_user") else ""
-                icPass =
-                    if (customOptJsonObj.has("ic_password")) customOptJsonObj.getString("ic_password") else ""
 
                 val sv = settingViewModel()
-                if (productId == APP_VERSION_ID.toString()) {
+                if (productId == APP_VERSION_ID) {
                     sv.urlPanel = appUrl
                     sv.installationCode = installationCode
                     sv.clientPackage = clientPackage
                     sv.clientEmail = email
                     sv.clientPassword = password
 
-                    retrofit().refreshRetrofit()
-                } else if (productId == APP_VERSION_ID_IMAGECONTROL.toString()) {
+                    // Configuración y refresco de la conexión
+                    DynamicRetrofit.start(URL(settingViewModel().urlPanel))
+                } else if (productId == APP_VERSION_ID_IMAGECONTROL) {
                     sv.useImageControl = true
                     sv.icWsServer = url
                     sv.icWsNamespace = namespace
@@ -975,19 +962,16 @@ class Statics {
         // endregion
 
         fun getConfig(
-            callback: GetClientPackages.TaskGetPackagesEnded,
+            onEvent: (PackagesResult) -> Unit,
             email: String,
             password: String,
-            installationCode: String,
+            installationCode: String = "",
         ) {
             if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
                 thread {
-                    val get = GetClientPackages()
+                    val get = GetClientPackages(onEvent)
                     get.addParams(
-                        callback = callback,
-                        email = email,
-                        password = password,
-                        installationCode = installationCode
+                        email = email, password = password, installationCode = installationCode
                     )
                     get.execute()
                 }

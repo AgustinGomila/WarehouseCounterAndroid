@@ -27,7 +27,8 @@ import com.dacosys.warehouseCounter.misc.Statics.Companion.closeKeyboard
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getConfig
 import com.dacosys.warehouseCounter.misc.Statics.Companion.setupProxy
 import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.retrofit.functionOld.GetClientPackages
+import com.dacosys.warehouseCounter.moshi.clientPackage.Package
+import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigClientAccount
@@ -39,12 +40,10 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import org.json.JSONObject
 import java.lang.ref.WeakReference
 
 class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
-    GetClientPackages.TaskGetPackagesEnded, Statics.Companion.TaskSetupProxyEnded,
-    Statics.Companion.TaskConfigPanelEnded {
+    Statics.Companion.TaskSetupProxyEnded, Statics.Companion.TaskConfigPanelEnded {
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
             isConfiguring = false
@@ -54,13 +53,13 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         }
     }
 
-    override fun onTaskGetPackagesEnded(
-        status: ProgressStatus,
-        result: ArrayList<JSONObject>,
-        clientEmail: String,
-        clientPassword: String,
-        msg: String,
-    ) {
+    private fun onGetPackagesEnded(packagesResult: PackagesResult) {
+        val status: ProgressStatus = packagesResult.status
+        val result: ArrayList<Package> = packagesResult.result
+        val clientEmail: String = packagesResult.clientEmail
+        val clientPassword: String = packagesResult.clientPassword
+        val msg: String = packagesResult.msg
+
         if (status == ProgressStatus.finished) {
             if (result.size > 0) {
                 runOnUiThread {
@@ -97,7 +96,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     ) {
         if (status == ProgressStatus.finished) {
             getConfig(
-                callback = this,
+                onEvent = { onGetPackagesEnded(it) },
                 email = email,
                 password = password,
                 installationCode = installationCode
@@ -326,10 +325,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
             if (!binding.proxyCheckBox.isChecked) {
                 getConfig(
-                    callback = this,
-                    email = email,
-                    password = password,
-                    installationCode = ""
+                    onEvent = { onGetPackagesEnded(it) }, email = email, password = password
                 )
             } else {
                 setupProxy(
@@ -347,10 +343,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     private fun resize(image: Drawable): Drawable {
         val bitmap = (image as BitmapDrawable).bitmap
         val bitmapResized = Bitmap.createScaledBitmap(
-            bitmap,
-            (bitmap.width * 0.5).toInt(),
-            (bitmap.height * 0.5).toInt(),
-            false
+            bitmap, (bitmap.width * 0.5).toInt(), (bitmap.height * 0.5).toInt(), false
         )
         return BitmapDrawable(resources, bitmapResized)
     }
@@ -362,10 +355,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this,
-            requestCode,
-            permissions,
-            grantResults
+            this, requestCode, permissions, grantResults
         )
     }
 
@@ -373,7 +363,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         JotterListener.lockScanner(this, true)
         try {
             Statics.getConfigFromScannedCode(
-                callback = this,
+                onEvent = { onGetPackagesEnded(it) },
                 scanCode = scanCode,
                 mode = QRConfigClientAccount
             )

@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.model.user
+package com.dacosys.warehouseCounter.moshi.user
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass

@@ -70,7 +70,6 @@ class Lot() : Parcelable, JsonDeserializer<Lot>, JsonSerializer<Lot> {
     override fun equals(other: Any?): Boolean {
         return when (other) {
             !is Lot -> false
-            null -> false
             else -> equals(this.lotId, other.lotId!!)
         }
     }

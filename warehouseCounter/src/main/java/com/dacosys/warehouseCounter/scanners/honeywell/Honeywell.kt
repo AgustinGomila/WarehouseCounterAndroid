@@ -203,9 +203,11 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
         properties?.putBoolean(Constants.PROPERTY_EAN_8_CHECK_DIGIT_TRANSMIT_ENABLED, sendDigit)
         properties?.putBoolean(Constants.PROPERTY_UPC_A_CHECK_DIGIT_TRANSMIT_ENABLED, sendDigit)
 
-        properties?.putString(Constants.PROPERTY_CODE_39_CHECK_DIGIT_MODE,
+        properties?.putString(
+            Constants.PROPERTY_CODE_39_CHECK_DIGIT_MODE,
             if (sendDigit) Constants.CODE_39_CHECK_DIGIT_MODE_CHECK
-            else Constants.CODE_39_CHECK_DIGIT_MODE_NO_CHECK)
+            else Constants.CODE_39_CHECK_DIGIT_MODE_NO_CHECK
+        )
 
         // Set Max Code 39 barcode length
         properties?.putInt(Constants.PROPERTY_CODE_39_MAXIMUM_LENGTH, 10)
@@ -222,8 +224,10 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
         loadProperties()
         for ((key, value1) in mapProperties) {
             if (value1 is String) properties!!.putString(key, value1.toString())
-            if (value1 is Boolean) properties!!.putBoolean(key,
-                java.lang.Boolean.valueOf(value1.toString()))
+            if (value1 is Boolean) properties!!.putBoolean(
+                key,
+                java.lang.Boolean.valueOf(value1.toString())
+            )
             if (value1 is Int) properties!!.putInt(key, Integer.valueOf(value1.toString()))
             if (value1 is Long) properties!!.putLong(key, java.lang.Long.valueOf(value1.toString()))
         }
@@ -275,11 +279,15 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
             //That intent will have the action "ACTION_BARCODE_DATA"
             // We will capture the intents with that action (every scan event while in the application)
             // in our BroadcastReceiver barcodeDataReceiver.
-            properties?.putString(Constants.PROPERTY_DATA_PROCESSOR_DATA_INTENT_ACTION,
-                Constants.ACTION_BARCODE_DATA)
+            properties?.putString(
+                Constants.PROPERTY_DATA_PROCESSOR_DATA_INTENT_ACTION,
+                Constants.ACTION_BARCODE_DATA
+            )
 
-            val intent = Intent(Constants.ACTION_CLAIM_SCANNER).putExtra(Constants.EXTRA_SCANNER,
-                Constants.EXTRA_SCANNER_VALUE_IMAGER)
+            val intent = Intent(Constants.ACTION_CLAIM_SCANNER).putExtra(
+                Constants.EXTRA_SCANNER,
+                Constants.EXTRA_SCANNER_VALUE_IMAGER
+            )
                 .putExtra(Constants.EXTRA_PROPERTIES, properties)
                 /*
                 We are using "WarehouseCounter", so a profile with this name has to be created in Scanner settings:
@@ -326,8 +334,10 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
         if (matches.size > 0) {
             for (resolveInfo in matches) {
                 val explicit = Intent(i)
-                val cn = ComponentName(resolveInfo.activityInfo.applicationInfo.packageName,
-                    resolveInfo.activityInfo.name)
+                val cn = ComponentName(
+                    resolveInfo.activityInfo.applicationInfo.packageName,
+                    resolveInfo.activityInfo.name
+                )
                 explicit.component = cn
                 Log.v(this::class.java.simpleName, "Send $explicit (${activityName})")
                 appContext.sendBroadcast(explicit)

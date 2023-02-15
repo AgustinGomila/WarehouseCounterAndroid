@@ -6,12 +6,13 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.model.error.ErrorObject
 import com.dacosys.warehouseCounter.model.price.Price
 import com.dacosys.warehouseCounter.model.price.PriceList
+import com.dacosys.warehouseCounter.moshi.error.ErrorObject
+import com.dacosys.warehouseCounter.moshi.search.SearchPrice
+import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
-import com.dacosys.warehouseCounter.retrofit.search.SearchPrice
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.squareup.moshi.JsonDataException
@@ -40,8 +41,7 @@ class GetPrice(
                 // Token inválido.
                 onEvent?.invoke(
                     SnackBarEventData(
-                        context().getString(R.string.invalid_or_expired_token),
-                        SnackBarType.ERROR
+                        context().getString(R.string.invalid_or_expired_token), SnackBarType.ERROR
                     )
                 )
             }
@@ -62,28 +62,8 @@ class GetPrice(
     }
 
     private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
-        val sv = settingViewModel()
-        val baseUrl: String
-        var apiUrl = ""
-
-        try {
-            val url = URL(sv.urlPanel)
-            baseUrl = "${url.protocol}://${url.host}/"
-            if (url.path.isNotEmpty()) apiUrl = "${url.path}/"
-        } catch (e: MalformedURLException) {
-            onEvent?.invoke(
-                SnackBarEventData(
-                    context().getString(R.string.url_malformed),
-                    SnackBarType.ERROR
-                )
-            )
-            Log.e(this::class.java.simpleName, e.toString())
-            return@withContext false
-        }
-
-        Log.d(this::class.java.simpleName,
-            "Base URL: $baseUrl (Api URL: ${apiUrl.ifEmpty { "Vacío" }})"
-        )
+        // Configuración de Retrofit
+        val apiUrl = setupRetrofit()
 
         val tempInst = apiService().getPrices(apiUrl = apiUrl, body = searchPrice)
 
@@ -108,8 +88,7 @@ class GetPrice(
                     val errorObject = moshi().adapter(ErrorObject::class.java).fromJsonValue(resp)
                     onEvent?.invoke(
                         SnackBarEventData(
-                            errorObject?.error.toString(),
-                            SnackBarType.ERROR
+                            errorObject?.error.toString(), SnackBarType.ERROR
                         )
                     )
                     return
@@ -133,8 +112,7 @@ class GetPrice(
                     } else {
                         onEvent?.invoke(
                             SnackBarEventData(
-                                context().getString(R.string.no_results),
-                                SnackBarType.INFO
+                                context().getString(R.string.no_results), SnackBarType.INFO
                             )
                         )
                     }
@@ -142,8 +120,7 @@ class GetPrice(
                     Log.e(this.javaClass.simpleName, ex.toString())
                     onEvent?.invoke(
                         SnackBarEventData(
-                            context().getString(R.string.invalid_prices),
-                            SnackBarType.ERROR
+                            context().getString(R.string.invalid_prices), SnackBarType.ERROR
                         )
                     )
                     return
@@ -157,5 +134,39 @@ class GetPrice(
         })
 
         return@withContext true
+    }
+
+    private fun setupRetrofit(): String {
+        val sv = settingViewModel()
+
+        // URL específica del Cliente
+        var protocol = ""
+        var host = ""
+        var apiUrl = ""
+
+        try {
+            val url = URL(sv.urlPanel)
+            protocol = url.protocol
+            host = url.host
+            apiUrl = if (url.path.isNotEmpty()) "${url.path}/" else ""
+
+            Log.d(
+                this::class.java.simpleName,
+                "Base URL: ${protocol}://${host}/ (Api URL: ${apiUrl.ifEmpty { "Vacío" }})"
+            )
+        } catch (e: MalformedURLException) {
+            onEvent?.invoke(
+                SnackBarEventData(
+                    context().getString(R.string.url_malformed), SnackBarType.ERROR
+                )
+            )
+            Log.e(this::class.java.simpleName, e.toString())
+            return ""
+        }
+
+        // Configuración y refresco de la conexión
+        DynamicRetrofit.start(protocol = protocol, host = host)
+
+        return apiUrl
     }
 }

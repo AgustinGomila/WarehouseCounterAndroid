@@ -90,8 +90,10 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
         barcodeProps.putString("decoder_code128", if (sv.symbologyCode128) "true" else "false")
         barcodeProps.putString("decoder_code39", if (sv.symbologyCode39) "true" else "false")
         barcodeProps.putString("decoder_code93", if (sv.symbologyCode93) "true" else "false")
-        barcodeProps.putString("decoder_datamatrix",
-            if (sv.symbologyDataMatrix) "true" else "false")
+        barcodeProps.putString(
+            "decoder_datamatrix",
+            if (sv.symbologyDataMatrix) "true" else "false"
+        )
         barcodeProps.putString("decoder_ean13", if (sv.symbologyEAN13) "true" else "false")
         barcodeProps.putString("decoder_ean8", if (sv.symbologyEAN8) "true" else "false")
         barcodeProps.putString("decoder_maxicode", if (sv.symbologyMaxiCode) "true" else "false")
@@ -114,15 +116,19 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
         // Use REGISTER_FOR_NOTIFICATION: http://techdocs.zebra.com/datawedge/latest/guide/api/registerfornotification/
         val b = Bundle()
         b.putString(EXTRA_KEY_APPLICATION_NAME, context().packageName)
-        b.putString(EXTRA_KEY_NOTIFICATION_TYPE,
-            "SCANNER_STATUS") // register for changes in scanner status
+        b.putString(
+            EXTRA_KEY_NOTIFICATION_TYPE,
+            "SCANNER_STATUS"
+        ) // register for changes in scanner status
         sendDataWedgeIntentWithExtra(EXTRA_REGISTER_NOTIFICATION, b)
         registerReceivers()
 
         // Get DataWedge version
         // Use GET_VERSION_INFO: http://techdocs.zebra.com/datawedge/latest/guide/api/getversioninfo/
-        sendDataWedgeIntentWithExtra(EXTRA_GET_VERSION_INFO,
-            EXTRA_EMPTY) // must be called after registering BroadcastReceiver
+        sendDataWedgeIntentWithExtra(
+            EXTRA_GET_VERSION_INFO,
+            EXTRA_EMPTY
+        ) // must be called after registering BroadcastReceiver
     }
 
     // Create profile from UI onClick() event
@@ -137,8 +143,10 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
         val profileConfig = Bundle()
         profileConfig.putString("PROFILE_NAME", EXTRA_PROFILENAME)
         profileConfig.putString("PROFILE_ENABLED", "true")
-        profileConfig.putString("CONFIG_MODE",
-            "CREATE_IF_NOT_EXIST") // Create profile if it does not exist
+        profileConfig.putString(
+            "CONFIG_MODE",
+            "CREATE_IF_NOT_EXIST"
+        ) // Create profile if it does not exist
 
         // Configure barcode input plugin
         val barcodeConfig = Bundle()

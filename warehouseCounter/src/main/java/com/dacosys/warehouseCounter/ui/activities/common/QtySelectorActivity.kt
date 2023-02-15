@@ -41,11 +41,8 @@ import org.parceler.Parcels
  * para ingresar cantidades y
  * con la capacidad de capturar los eventos del escáner
  */
-class QtySelectorActivity :
-    AppCompatActivity(),
-    CounterHandler.CounterListener,
-    Scanner.ScannerListener,
-    Rfid.RfidDeviceListener {
+class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
+    Scanner.ScannerListener, Rfid.RfidDeviceListener {
 
     private var ch: CounterHandler? = null
 
@@ -132,15 +129,12 @@ class QtySelectorActivity :
         binding.multiplierTextView.text = String.format("%sX", multiplier)
 
         // Esta clase controla el comportamiento de los botones (+) y (-)
-        ch = CounterHandler.Builder()
-            .incrementalView(binding.moreButton)
-            .decrementalView(binding.lessButton)
-            .minRange(minValue) // cant go any less than -50
+        ch = CounterHandler.Builder().incrementalView(binding.moreButton)
+            .decrementalView(binding.lessButton).minRange(minValue) // cant go any less than -50
             .maxRange(maxValue) // cant go any further than 50
             .isCycle(true) // 49,50,-50,-49 and so on
             .counterDelay(50) // speed of counter
-            .startNumber(currentValue)
-            .counterStep(1)  // steps e.g. 0,2,4,6...
+            .startNumber(currentValue).counterStep(1)  // steps e.g. 0,2,4,6...
             .listener(this) // to listen counter results and show them in app
             .build()
 
@@ -159,10 +153,9 @@ class QtySelectorActivity :
 
                 // Si es NULL no hay que hacer cambios en el texto
                 // porque está dentro de las reglas del filtro
-                if (validStr != null &&
-                    validStr != s.toString() &&
-                    ch != null &&
-                    ch!!.setValue(validStr.toString().toDouble())
+                if (validStr != null && validStr != s.toString() && ch != null && ch!!.setValue(
+                        validStr.toString().toDouble()
+                    )
                 ) {
                     s.clear()
                     s.insert(0, validStr)
@@ -184,8 +177,7 @@ class QtySelectorActivity :
         binding.qtyEditText.clearFocus()
         binding.qtyEditText.setRawInputType(InputType.TYPE_CLASS_NUMBER)
         binding.qtyEditText.setText(
-            currentValue.toString(),
-            TextView.BufferType.EDITABLE
+            currentValue.toString(), TextView.BufferType.EDITABLE
         )
         binding.qtyEditText.setOnKeyListener { _, keyCode, event ->
             if (event.action == KeyEvent.ACTION_DOWN) {
@@ -204,6 +196,11 @@ class QtySelectorActivity :
                 showKeyboard(this)
             }
         }
+
+        binding.qtyEditText.isCursorVisible = true
+        binding.qtyEditText.isFocusable = true
+        binding.qtyEditText.isFocusableInTouchMode = true
+        binding.qtyEditText.requestFocus()
     }
 
     private fun selectQty() {
@@ -226,16 +223,6 @@ class QtySelectorActivity :
 
         setResult(RESULT_OK, resultData)
         finish()
-    }
-
-    private fun setEditTextFocus(isFocused: Boolean = true) {
-        binding.qtyEditText.isCursorVisible = isFocused
-        binding.qtyEditText.isFocusable = isFocused
-        binding.qtyEditText.isFocusableInTouchMode = isFocused
-
-        if (isFocused) {
-            binding.qtyEditText.requestFocus()
-        }
     }
 
     private fun itemDescriptionDialog(orc: OrderRequestContent) {
@@ -309,15 +296,11 @@ class QtySelectorActivity :
             decimalPlaces = 0
 
             binding.itemDescriptionTextView.text = String.format(
-                "%s: %s",
-                getString(R.string.item),
-                item.itemDescription
+                "%s: %s", getString(R.string.item), item.itemDescription
             )
             binding.typeTextView.text = getString(R.string.unit)
             binding.codeTextView.text = String.format(
-                "%s: %s",
-                getString(R.string.item_code),
-                item.ean
+                "%s: %s", getString(R.string.item_code), item.ean
             )
 
             binding.totalTextView.text = String.format(
@@ -330,9 +313,7 @@ class QtySelectorActivity :
 
     public override fun onStart() {
         super.onStart()
-
         rejectNewInstances = false
-        setEditTextFocus()
     }
 
     override fun onIncrement(view: View?, number: Double) {
@@ -349,13 +330,13 @@ class QtySelectorActivity :
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+            this, requestCode, permissions, grantResults
+        )
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel().showScannedCode)
-            makeText(binding.root, scanCode, INFO)
+        if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
         if (equals(scanCode, orc!!.item!!.ean)) {
@@ -365,9 +346,7 @@ class QtySelectorActivity :
                     currentQty = java.lang.Double.parseDouble(binding.qtyEditText.text.toString())
                 } catch (e: NumberFormatException) {
                     makeText(
-                        binding.root,
-                        e.message.toString(),
-                        ERROR
+                        binding.root, e.message.toString(), ERROR
                     )
                     return
                 }
@@ -450,13 +429,10 @@ class QtySelectorActivity :
             // la cantidad permitida de decimales.
             val result = if (maxDecimalPlaces == 0) {
                 integerPart
-            } else
-                integerPart +
-                        decimalSeparator +
-                        decimalPart.substring(
-                            0,
-                            if (decimalPart.length > maxDecimalPlaces) maxDecimalPlaces else decimalPart.length
-                        )
+            } else integerPart + decimalSeparator + decimalPart.substring(
+                0,
+                if (decimalPart.length > maxDecimalPlaces) maxDecimalPlaces else decimalPart.length
+            )
 
             // Devolver sólo si son valores positivos diferentes a los de originales.
             // NULL si no hay que hacer cambios sobre el texto original.

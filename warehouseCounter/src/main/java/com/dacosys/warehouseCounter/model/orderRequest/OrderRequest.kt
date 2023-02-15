@@ -487,15 +487,15 @@ class OrderRequest : Parcelable, JsonSerializer<OrderRequest>, JsonDeserializer<
             return x
         }
 
-        fun getPendingOrderRequests(): ArrayList<OrderRequest> {
-            return getOrderRequest(Statics.getPendingPath())
+        fun getPendingOrders(): ArrayList<OrderRequest> {
+            return getOrders(Statics.getPendingPath())
         }
 
-        fun getCompletedOrderRequests(): ArrayList<OrderRequest> {
-            return getOrderRequest(Statics.getCompletedPath())
+        fun getCompletedOrders(): ArrayList<OrderRequest> {
+            return getOrders(Statics.getCompletedPath())
         }
 
-        private fun getOrderRequest(path: File): ArrayList<OrderRequest> {
+        private fun getOrders(path: File): ArrayList<OrderRequest> {
             val orArray: ArrayList<OrderRequest> = ArrayList()
             if (Statics.isExternalStorageReadable) {
                 // Get the directory for the user's public pictures directory.

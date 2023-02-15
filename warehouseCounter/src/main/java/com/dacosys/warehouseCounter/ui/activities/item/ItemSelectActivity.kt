@@ -501,8 +501,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 else -> when (itemCategory) {
                     null -> itemDbHelper.selectByDescriptionEan(itemCode.trim())
                     else -> itemDbHelper.selectByDescriptionEanItemCategory(
-                        itemCode.trim(),
-                        itemCategory
+                        itemCode.trim(), itemCategory
                     )
                 }
             })
@@ -603,13 +602,16 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     public override fun onStart() {
         super.onStart()
-
         rejectNewInstances = false
+
         Statics.closeKeyboard(this)
-        refreshTextViews()
         JotterListener.resumeReaderDevices(this)
 
-        fillAdapter(completeList)
+        thread {
+            refreshTextViews()
+
+            fillAdapter(completeList)
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -619,10 +621,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this,
-            requestCode,
-            permissions,
-            grantResults
+            this, requestCode, permissions, grantResults
         )
     }
 
@@ -690,11 +689,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         // Opciones de visibilidad del menú
         val allControls = SettingsRepository.getAllSelectItemVisibleControls()
         allControls.forEach { p ->
-            menu.add(0, p.key.hashCode(), menu.size(), p.description)
-                .setChecked(
-                    itemSelectFilterFragment!!.getVisibleFilters()
-                        .contains(p)
-                ).isCheckable = true
+            menu.add(0, p.key.hashCode(), menu.size(), p.description).setChecked(
+                itemSelectFilterFragment!!.getVisibleFilters().contains(p)
+            ).isCheckable = true
         }
 
         return true

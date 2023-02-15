@@ -145,7 +145,6 @@ class Item() : Parcelable, JsonDeserializer<Item>, JsonSerializer<Item> {
     override fun equals(other: Any?): Boolean {
         return when (other) {
             !is Item -> false
-            null -> false
             else -> equals(this.itemId, other.itemId!!)
         }
     }

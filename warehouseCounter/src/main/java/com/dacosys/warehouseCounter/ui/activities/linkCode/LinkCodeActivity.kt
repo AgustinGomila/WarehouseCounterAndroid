@@ -43,7 +43,7 @@ import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.model.item.Item
 import com.dacosys.warehouseCounter.model.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.model.itemCode.ItemCode
-import com.dacosys.warehouseCounter.retrofit.functionOld.SendItemCode
+import com.dacosys.warehouseCounter.network.SendItemCode
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -90,11 +90,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
                 for (i in arrayList) {
                     allItemCodes = String.format(
-                        "%s%s (%s)%s",
-                        allItemCodes,
-                        i.code,
-                        i.qty.toString(),
-                        breakLine
+                        "%s%s (%s)%s", allItemCodes, i.code, i.qty.toString(), breakLine
                     )
                 }
             } else {
@@ -129,10 +125,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this,
-            requestCode,
-            permissions,
-            grantResults
+            this, requestCode, permissions, grantResults
         )
     }
 
@@ -436,6 +429,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         setSendButtonText()
         setPanels()
 
+        // Ocultar panel de códigos vinculados al ítem seleccionado
+        binding.moreCodesConstraintLayout.visibility = GONE
+
         setupUI(binding.linkCode)
     }
 
@@ -479,9 +475,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             alert.show()
         } else {
             makeText(
-                binding.root,
-                context().getString(R.string.there_are_no_item_codes_to_send),
-                INFO
+                binding.root, context().getString(R.string.there_are_no_item_codes_to_send), INFO
             )
         }
     }
@@ -548,13 +542,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 }
 
                 makeText(
-                    binding.root,
-                    String.format(
-                        context().getString(R.string.item_linked_to_code),
-                        item.itemId,
-                        tempCode
-                    ),
-                    SnackBarType.SUCCESS
+                    binding.root, String.format(
+                        context().getString(R.string.item_linked_to_code), item.itemId, tempCode
+                    ), SnackBarType.SUCCESS
                 )
 
                 runOnUiThread { arrayAdapter?.forceSelectItem(item) }
@@ -646,8 +636,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         binding.expandButton!!.setOnClickListener {
             val nextLayout = ConstraintSet()
             if (panelIsExpanded) nextLayout.load(
-                this,
-                R.layout.link_code_activity_bottom_panel_collapsed
+                this, R.layout.link_code_activity_bottom_panel_collapsed
             )
             else nextLayout.load(this, R.layout.link_code_activity)
 
@@ -664,8 +653,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                             itemSelectFilterFragment!!.refreshTextViews()
                             binding.moreCodesEditText.setText(binding.moreCodesEditText.text.toString())
                             binding.qtyEditText.setText(
-                                binding.qtyEditText.text.toString(),
-                                TextView.BufferType.EDITABLE
+                                binding.qtyEditText.text.toString(), TextView.BufferType.EDITABLE
                             )
                         }
                     }
@@ -776,11 +764,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         // Opciones de visibilidad del menú
         val allControls = SettingsRepository.getAllSelectItemVisibleControls()
         allControls.forEach { p ->
-            menu.add(0, p.key.hashCode(), menu.size(), p.description)
-                .setChecked(
-                    itemSelectFilterFragment!!.getVisibleFilters()
-                        .contains(p)
-                ).isCheckable = true
+            menu.add(0, p.key.hashCode(), menu.size(), p.description).setChecked(
+                itemSelectFilterFragment!!.getVisibleFilters().contains(p)
+            ).isCheckable = true
         }
 
         for (y in allControls) {
@@ -904,8 +890,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 else -> when (itemCategory) {
                     null -> itemDbHelper.selectByDescriptionEan(itemCode.trim())
                     else -> itemDbHelper.selectByDescriptionEanItemCategory(
-                        itemCode.trim(),
-                        itemCategory
+                        itemCode.trim(), itemCategory
                     )
                 }
             })
@@ -920,15 +905,17 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     override fun onResume() {
         super.onResume()
         rejectNewInstances = false
+    }
+
+    override fun onStart() {
+        super.onStart()
+        rejectNewInstances = false
 
         JotterListener.resumeReaderDevices(this)
 
-        // Ocultar panel de códigos vinculados al ítem seleccionado
-        runOnUiThread {
-            binding.moreCodesConstraintLayout.visibility = GONE
+        thread {
+            fillAdapter(completeList)
         }
-
-        fillAdapter(completeList)
     }
 
     /**
@@ -1032,11 +1019,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 binding.codeEditText.setText(scannedCode, TextView.BufferType.EDITABLE)
                 binding.codeEditText.dispatchKeyEvent(
                     KeyEvent(
-                        0,
-                        0,
-                        KeyEvent.ACTION_DOWN,
-                        KeyEvent.KEYCODE_ENTER,
-                        0
+                        0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER, 0
                     )
                 )
             }

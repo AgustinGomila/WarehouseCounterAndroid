@@ -31,10 +31,10 @@ import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.model.log.Log
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest.CREATOR.getCompletedOrderRequests
+import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
-import com.dacosys.warehouseCounter.retrofit.functionOld.SendCompletedOrder
+import com.dacosys.warehouseCounter.network.SendCompletedOrder
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -384,7 +384,7 @@ class OutboxActivity : AppCompatActivity(), SendCompletedOrder.TaskSendOrderRequ
 
         var temp = t
         if (!temp.any()) {
-            temp = getCompletedOrderRequests()
+            temp = getCompletedOrders()
             if (temp.isEmpty()) {
                 makeText(
                     binding.root,

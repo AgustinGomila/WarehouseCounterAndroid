@@ -101,7 +101,6 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
     override fun onResume() {
         super.onResume()
-
         rejectNewInstances = false
     }
 

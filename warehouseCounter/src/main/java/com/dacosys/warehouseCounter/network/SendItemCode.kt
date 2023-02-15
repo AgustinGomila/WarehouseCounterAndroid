@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.retrofit.functionOld
+package com.dacosys.warehouseCounter.network
 
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context

@@ -1,7 +1,7 @@
 package com.dacosys.warehouseCounter.retrofit
 
-import com.dacosys.warehouseCounter.model.user.UserAuthData
-import com.dacosys.warehouseCounter.retrofit.search.SearchPrice
+import com.dacosys.warehouseCounter.moshi.search.SearchPrice
+import com.dacosys.warehouseCounter.moshi.user.UserAuthData
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -19,4 +19,10 @@ interface APIService {
         @Path(value = "api_url", encoded = true) apiUrl: String,
         @Body body: SearchPrice,
     ): Call<Any?>
+
+    @POST("{api_url}api/database/location")
+    fun getDbLocation(
+        @Path(value = "api_url", encoded = true) apiUrl: String,
+    ): Call<Any?>
 }
+

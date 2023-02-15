@@ -35,8 +35,10 @@ import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
 import com.dacosys.warehouseCounter.misc.Statics.Companion.closeKeyboard
 import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.model.user.User
-import com.dacosys.warehouseCounter.retrofit.functionOld.GetClientPackages
-import com.dacosys.warehouseCounter.retrofit.functionOld.GetDatabaseLocation
+import com.dacosys.warehouseCounter.moshi.clientPackage.Package
+import com.dacosys.warehouseCounter.retrofit.functions.GetDatabaseLocation
+import com.dacosys.warehouseCounter.retrofit.result.DbLocationResult
+import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigApp
@@ -59,8 +61,7 @@ import kotlin.concurrent.thread
 
 class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedListener,
     UserSpinnerFragment.OnSpinnerFillListener, Scanner.ScannerListener,
-    Statics.Companion.TaskSetupProxyEnded, GetClientPackages.TaskGetPackagesEnded,
-    Statics.Companion.TaskConfigPanelEnded, GetDatabaseLocation.DatabaseLocationEnded,
+    Statics.Companion.TaskSetupProxyEnded, Statics.Companion.TaskConfigPanelEnded,
     DownloadDb.DownloadDbTask {
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
@@ -80,13 +81,13 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         userSpinnerFragment?.onDestroy()
     }
 
-    override fun onTaskGetPackagesEnded(
-        status: ProgressStatus,
-        result: ArrayList<JSONObject>,
-        clientEmail: String,
-        clientPassword: String,
-        msg: String,
-    ) {
+    private fun onGetPackagesEnded(packagesResult: PackagesResult) {
+        val status: ProgressStatus = packagesResult.status
+        val result: ArrayList<Package> = packagesResult.result
+        val clientEmail: String = packagesResult.clientEmail
+        val clientPassword: String = packagesResult.clientPassword
+        val msg: String = packagesResult.msg
+
         if (status == ProgressStatus.finished) {
             if (result.isNotEmpty()) {
                 runOnUiThread {
@@ -107,12 +108,12 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         }
     }
 
-    override fun onDatabaseLocationEnded(
-        status: ProgressStatus,
-        timeFileUrl: String,
-        dbFileUrl: String,
-        msg: String,
-    ) {
+    private fun onDatabaseLocationEnded(data: DbLocationResult) {
+        val status: ProgressStatus = data.status
+        val timeFileUrl: String = data.result.dbDate
+        val dbFileUrl: String = data.result.dbFile
+        val msg: String = data.msg
+
         when (status) {
             ProgressStatus.crashed -> {
                 makeText(binding.root, msg, ERROR)
@@ -204,7 +205,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     ) {
         if (status == ProgressStatus.finished) {
             Statics.getConfig(
-                callback = this,
+                onEvent = { onGetPackagesEnded(it) },
                 email = email,
                 password = password,
                 installationCode = installationCode
@@ -213,21 +214,17 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     private var userSpinnerFragment: UserSpinnerFragment? = null
-
-    private var firstTime = true
     private var rejectNewInstances = false
-
     private var isReturnedFromSettings = false
 
     private var user: User? = null
     private var password: String = ""
 
-    private fun setEditTextFocus(isFocused: Boolean) {
-        binding.passwordEditText.isCursorVisible = isFocused
-        binding.passwordEditText.isFocusable = isFocused
-        binding.passwordEditText.isFocusableInTouchMode = isFocused
-
-        if (isFocused) {
+    private fun setEditTextFocus() {
+        runOnUiThread {
+            binding.passwordEditText.isCursorVisible = true
+            binding.passwordEditText.isFocusable = true
+            binding.passwordEditText.isFocusableInTouchMode = true
             binding.passwordEditText.requestFocus()
         }
     }
@@ -264,9 +261,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         runOnUiThread {
             binding.loginImageView.setImageResource(R.drawable.ic_hourglass)
             binding.loginImageView.background = ResourcesCompat.getDrawable(
-                resources,
-                R.drawable.rounded_corner_button_steelblue,
-                null
+                resources, R.drawable.rounded_corner_button_steelblue, null
             )
             binding.loginImageView.contentDescription = getString(R.string.connecting)
             binding.loginImageView.foregroundTintList =
@@ -278,9 +273,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         runOnUiThread {
             binding.loginImageView.setImageResource(R.drawable.ic_check)
             binding.loginImageView.background = ResourcesCompat.getDrawable(
-                resources,
-                R.drawable.rounded_corner_button_seagreen,
-                null
+                resources, R.drawable.rounded_corner_button_seagreen, null
             )
             binding.loginImageView.contentDescription = getString(R.string.sign_in)
             binding.loginImageView.foregroundTintList =
@@ -321,16 +314,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     override fun onItemSelected(user: User?) {
-        // The user selected the headline of an article from the HeadlinesFragment
-        // Do something here to display that article
-
-        // El ADAPTER dispara siempre este evento la primera vez
-        if (firstTime) {
-            firstTime = false
-            return
-        }
-
-        setEditTextFocus(true)
+        setEditTextFocus()
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -468,9 +452,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     private fun initSync() {
         try {
             thread {
-                val dbLocation = GetDatabaseLocation()
-                dbLocation.addParams(this)
-                dbLocation.execute()
+                GetDatabaseLocation { onDatabaseLocationEnded(it) }.execute()
             }
         } catch (ex: Exception) {
             ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
@@ -604,10 +586,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     private fun resize(image: Drawable): Drawable {
         val bitmap = (image as BitmapDrawable).bitmap
         val bitmapResized = Bitmap.createScaledBitmap(
-            bitmap,
-            (bitmap.width * 0.5).toInt(),
-            (bitmap.height * 0.5).toInt(),
-            false
+            bitmap, (bitmap.width * 0.5).toInt(), (bitmap.height * 0.5).toInt(), false
         )
         return BitmapDrawable(resources, bitmapResized)
     }
@@ -677,18 +656,13 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this,
-            requestCode,
-            permissions,
-            grantResults
+            this, requestCode, permissions, grantResults
         )
     }
 
     override fun scannerCompleted(scanCode: String) {
         if (settingViewModel().showScannedCode && BuildConfig.DEBUG) makeText(
-            binding.root,
-            scanCode,
-            SnackBarType.INFO
+            binding.root, scanCode, SnackBarType.INFO
         )
 
         JotterListener.lockScanner(this, true)
@@ -730,7 +704,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                         adb.setPositiveButton(R.string.accept) { _, _ ->
                             Statics.downloadDbRequired = true
                             Statics.getConfigFromScannedCode(
-                                callback = this,
+                                onEvent = { onGetPackagesEnded(it) },
                                 scanCode = scanCode,
                                 mode = QRConfigClientAccount
                             )
@@ -744,7 +718,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 mainJson.has(appName) -> {
                     // APP CONFIGURATION
                     Statics.getConfigFromScannedCode(
-                        callback = this,
+                        onEvent = { onGetPackagesEnded(it) },
                         scanCode = scanCode,
                         mode = QRConfigApp
                     )

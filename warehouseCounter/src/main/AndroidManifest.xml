@@ -118,7 +118,8 @@
             android:name="com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity"
             android:configChanges="keyboardHidden"
             android:exported="false"
-            android:label="@string/code_read">
+            android:label="@string/code_read"
+            android:windowSoftInputMode="stateHidden|adjustResize">
             <!-- NFC Tech Filter -->
             <intent-filter>
                 <action android:name="android.nfc.action.TECH_DISCOVERED" />
@@ -132,12 +133,14 @@
             android:name="com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity"
             android:configChanges="keyboardHidden"
             android:exported="false"
-            android:label="@string/code_link" />
+            android:label="@string/code_link"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity
             android:name="com.dacosys.warehouseCounter.ui.activities.orderRequest.NewCountActivity"
             android:configChanges="keyboardHidden"
             android:exported="false"
-            android:label="@string/setup_new_count" />
+            android:label="@string/setup_new_count"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity
             android:name="com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity"
             android:exported="false"
@@ -157,12 +160,14 @@
             android:name="com.dacosys.warehouseCounter.ui.activities.sync.InboxActivity"
             android:configChanges="keyboardHidden"
             android:exported="false"
-            android:label="@string/count_select" />
+            android:label="@string/count_select"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity
             android:name="com.dacosys.warehouseCounter.ui.activities.sync.OutboxActivity"
             android:configChanges="keyboardHidden"
             android:exported="false"
-            android:label="@string/completed_counts" />
+            android:label="@string/completed_counts"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity android:name="com.dacosys.warehouseCounter.ui.snackBar.MakeText" />
         <activity
             android:name="com.dacosys.warehouseCounter.ui.activities.common.QtySelectorActivity"

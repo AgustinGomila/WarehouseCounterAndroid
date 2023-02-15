@@ -32,6 +32,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import org.parceler.Parcels
+import kotlin.concurrent.thread
 
 class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
     override fun onRequestPermissionsResult(
@@ -41,10 +42,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this,
-            requestCode,
-            permissions,
-            grantResults
+            this, requestCode, permissions, grantResults
         )
     }
 
@@ -149,7 +147,10 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             }
         }
 
-        setEditTextFocus(true)
+        binding.countCodeEditText.isCursorVisible = true
+        binding.countCodeEditText.isFocusable = true
+        binding.countCodeEditText.isFocusableInTouchMode = true
+        binding.countCodeEditText.requestFocus()
     }
 
     private val resultForClientSelect =
@@ -182,16 +183,6 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 binding.clientTextView.typeface = Typeface.DEFAULT_BOLD
                 binding.clientTextView.text = client!!.name
             }
-        }
-    }
-
-    private fun setEditTextFocus(isFocused: Boolean) {
-        binding.countCodeEditText.isCursorVisible = isFocused
-        binding.countCodeEditText.isFocusable = isFocused
-        binding.countCodeEditText.isFocusableInTouchMode = isFocused
-
-        if (isFocused) {
-            binding.countCodeEditText.requestFocus()
         }
     }
 
@@ -249,9 +240,10 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     public override fun onStart() {
         super.onStart()
 
-        selectDefaultClient()
-        if (tempDescription.isNotEmpty()) {
-            runOnUiThread {
+        thread {
+            selectDefaultClient()
+
+            if (tempDescription.isNotEmpty()) {
                 binding.countCodeEditText.setText(tempDescription)
             }
         }

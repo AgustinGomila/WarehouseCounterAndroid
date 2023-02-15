@@ -47,10 +47,10 @@ import com.dacosys.warehouseCounter.model.client.Client
 import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.model.mainButton.MainButton
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest.CREATOR.getCompletedOrderRequests
+import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
-import com.dacosys.warehouseCounter.retrofit.functionOld.GetNewOrder
-import com.dacosys.warehouseCounter.retrofit.functionOld.SendCompletedOrder
+import com.dacosys.warehouseCounter.network.GetNewOrder
+import com.dacosys.warehouseCounter.network.SendCompletedOrder
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.sync.*
@@ -77,8 +77,7 @@ import java.util.*
 import kotlin.concurrent.thread
 
 class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.NewOrderListener,
-    GetCompletedOrderRequest.CompletedOrderRequestListener,
-    SendCompletedOrder.TaskSendOrderRequestEnded {
+    CompletedOrderListener, SendCompletedOrder.TaskSendOrderRequestEnded {
     override fun onTaskSendOrderRequestEnded(status: ProgressStatus, msg: String) {
     }
 
@@ -96,7 +95,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                 )
 
                 if (settingViewModel().autoSend) {
-                    val orArray = getCompletedOrderRequests()
+                    val orArray = getCompletedOrders()
                     if (orArray.isNotEmpty()) {
                         try {
                             thread {
@@ -106,9 +105,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                             }
                         } catch (ex: Exception) {
                             ErrorLog.writeLog(
-                                this,
-                                this::class.java.simpleName,
-                                ex.message.toString()
+                                this, this::class.java.simpleName, ex.message.toString()
                             )
                         }
                     }
@@ -153,8 +150,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
 
                 if (itemArray.isNotEmpty()) {
                     if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
-                            this,
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE
+                            this, Manifest.permission.WRITE_EXTERNAL_STORAGE
                         )
                     ) {
                         writeNewOrderRequest(itemArray)
@@ -329,10 +325,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
     private fun resize(image: Drawable): Drawable {
         val bitmap = (image as BitmapDrawable).bitmap
         val bitmapResized = Bitmap.createScaledBitmap(
-            bitmap,
-            (bitmap.width * 0.5).toInt(),
-            (bitmap.height * 0.5).toInt(),
-            false
+            bitmap, (bitmap.width * 0.5).toInt(), (bitmap.height * 0.5).toInt(), false
         )
         return BitmapDrawable(resources, bitmapResized)
     }
@@ -462,14 +455,12 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                     val log = com.dacosys.warehouseCounter.model.log.Log()
 
                     makeText(
-                        binding.root,
-                        String.format(
+                        binding.root, String.format(
                             getString(R.string.client_description),
                             client?.name ?: getString(R.string.no_client),
                             System.getProperty("line.separator"),
                             description
-                        ),
-                        INFO
+                        ), INFO
                     )
 
                     val r = Random()
@@ -481,8 +472,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                         userId = Statics.currentUserId,
                         externalId = "",
                         creationDate = DateFormat.format(
-                            "yyyy-MM-dd hh:mm:ss",
-                            System.currentTimeMillis()
+                            "yyyy-MM-dd hh:mm:ss", System.currentTimeMillis()
                         ).toString(),
                         description = description ?: "",
                         zone = "",
@@ -493,8 +483,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                         resultAllowMod = true,
                         completed = false,
                         startDate = DateFormat.format(
-                            "yyyy-MM-dd hh:mm:ss",
-                            System.currentTimeMillis()
+                            "yyyy-MM-dd hh:mm:ss", System.currentTimeMillis()
                         ).toString(),
                         finishDate = null,
                         content = ArrayList(),
@@ -531,19 +520,16 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                     try {
                         val or = orArray[0]
                         makeText(
-                            binding.root,
-                            String.format(
+                            binding.root, String.format(
                                 getString(R.string.requested_count_state_),
                                 if (equals(
-                                        or.description,
-                                        ""
+                                        or.description, ""
                                     )
                                 ) getString(R.string.no_description) else or.description,
                                 if (or.completed != null && or.completed!!) getString(R.string.completed) else getString(
                                     R.string.pending
                                 )
-                            ),
-                            INFO
+                            ), INFO
                         )
 
                         val intent = Intent(context(), OrderRequestContentActivity::class.java)
@@ -732,9 +718,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                 clickButton(button)
             } catch (ex: Exception) {
                 makeText(
-                    binding.root,
-                    "${getString(R.string.exception_error)}: " + ex.message,
-                    ERROR
+                    binding.root, "${getString(R.string.exception_error)}: " + ex.message, ERROR
                 )
             }
         }
@@ -794,8 +778,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                 if (allButtonMain[i].iconResource != null) {
                     b.setCompoundDrawablesWithIntrinsicBounds(
                         AppCompatResources.getDrawable(
-                            this,
-                            allButtonMain[i].iconResource!!
+                            this, allButtonMain[i].iconResource!!
                         ), null, null, null
                     )
                     b.compoundDrawables.filterNotNull().forEach {
@@ -840,8 +823,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
         if (Build.VERSION.SDK_INT >= 26) {
             (getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(
                 VibrationEffect.createOneShot(
-                    150,
-                    10
+                    150, 10
                 )
             )
         } else {
@@ -849,8 +831,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator.vibrate(
                     VibrationEffect.createOneShot(
-                        150,
-                        VibrationEffect.DEFAULT_AMPLITUDE
+                        150, VibrationEffect.DEFAULT_AMPLITUDE
                     )
                 )
             } else {
@@ -882,10 +863,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this,
-            requestCode,
-            permissions,
-            grantResults
+            this, requestCode, permissions, grantResults
         )
         else {
             when (requestCode) {
@@ -907,7 +885,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
 
     @SuppressLint("SimpleDateFormat")
     private fun writeNewOrderRequest(newOrArray: ArrayList<OrderRequest>) {
-        val pendingOrderArray = OrderRequest.getPendingOrderRequests()
+        val pendingOrderArray = OrderRequest.getPendingOrders()
         val df = SimpleDateFormat("yyMMddHHmmssZ")
 
         var isOk = true
@@ -944,9 +922,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                 val orFileName = String.format("%s.json", df.format(Calendar.getInstance().time))
 
                 if (!writeToFile(
-                        fileName = orFileName,
-                        data = orJson,
-                        directory = Statics.getPendingPath()
+                        fileName = orFileName, data = orJson, directory = Statics.getPendingPath()
                     )
                 ) {
                     isOk = false
@@ -977,8 +953,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
             val orFileName = origOrder.filename.substringAfterLast('/')
 
             if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    this, Manifest.permission.WRITE_EXTERNAL_STORAGE
                 )
             ) {
                 error = !Statics.writeJsonToFile(
@@ -990,8 +965,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                 finish()
             } else {
                 requestPermissions(
-                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                    REQUEST_EXTERNAL_STORAGE
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE
                 )
             }
         } catch (e: UnsupportedEncodingException) {

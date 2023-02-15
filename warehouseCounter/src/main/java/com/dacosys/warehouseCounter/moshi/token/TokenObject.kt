@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.model.token
+package com.dacosys.warehouseCounter.moshi.token
 
 import android.util.Log
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
@@ -28,23 +28,6 @@ class TokenObject() {
     ) : this() {
         this.token = token
         this.expiration = expiration
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as TokenObject
-
-        if (token != other.token) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = token.hashCode()
-        result = 31 * result + expiration.hashCode()
-        return result
     }
 
     companion object {

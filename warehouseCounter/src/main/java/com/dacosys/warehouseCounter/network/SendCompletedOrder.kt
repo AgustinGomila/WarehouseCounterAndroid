@@ -1,52 +1,74 @@
-package com.dacosys.warehouseCounter.retrofit.functionOld
+package com.dacosys.warehouseCounter.network
 
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.Statics.Companion.getDeviceData
+import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.model.user.User
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import kotlinx.coroutines.*
-import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.DataOutputStream
+import java.io.File
 import java.io.InputStreamReader
 import java.net.*
 import javax.net.ssl.HttpsURLConnection
 
-class GetDatabaseLocation {
-    interface DatabaseLocationEnded {
+
+class SendCompletedOrder {
+    interface TaskSendOrderRequestEnded {
         // Define data you like to return from AysncTask
-        fun onDatabaseLocationEnded(
+        fun onTaskSendOrderRequestEnded(
             status: ProgressStatus,
-            timeFileUrl: String,
-            dbFileUrl: String,
             msg: String,
         )
     }
 
-    var mCallback: DatabaseLocationEnded? = null
+    var mCallback: TaskSendOrderRequestEnded? = null
 
     private val api = "api"
     private val urlPanel = "${settingViewModel().urlPanel}/$api"
-    private val urlRequest = "${urlPanel}/database/location"
+    private val urlRequest = "${urlPanel}/order/send"
+    private var orderRequestArray: ArrayList<OrderRequest> = ArrayList()
+    private var filesSuccess: ArrayList<String> = ArrayList()
+
+    private var currentUser: User? = null
     private var progressStatus = ProgressStatus.unknown
     private var msg = ""
 
-    private var timeFileUrl: String = ""
-    private var dbFileUrl: String = ""
-
-    fun addParams(callback: DatabaseLocationEnded) {
+    fun addParams(
+        callback: TaskSendOrderRequestEnded,
+        orderRequestArray: ArrayList<OrderRequest>,
+    ) {
         this.mCallback = callback
+        this.orderRequestArray = orderRequestArray
     }
 
-    private fun postExecute() {
-        mCallback?.onDatabaseLocationEnded(
-            status = progressStatus,
-            timeFileUrl = timeFileUrl,
-            dbFileUrl = dbFileUrl,
-            msg = msg
-        )
+    private fun postExecute(result: Boolean) {
+        var isOk = true
+        if (result) {
+            val currentDir = Statics.getCompletedPath()
+            for (f in filesSuccess) {
+                val filePath = currentDir.absolutePath + File.separator + f
+                val fl = File(filePath)
+                if (!fl.delete()) {
+                    isOk = false
+                    break
+                }
+            }
+        }
+
+        if (!isOk) {
+            mCallback?.onTaskSendOrderRequestEnded(
+                status = ProgressStatus.crashed,
+                msg = context().getString(R.string.an_error_occurred_while_deleting_counts)
+            )
+        } else {
+            mCallback?.onTaskSendOrderRequestEnded(status = progressStatus, msg = msg)
+        }
     }
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
@@ -57,10 +79,11 @@ class GetDatabaseLocation {
 
     fun execute() {
         progressStatus = ProgressStatus.starting
+        currentUser = Statics.getCurrentUser()
 
         scope.launch {
-            doInBackground()
-            postExecute()
+            val it = doInBackground()
+            postExecute(it)
         }
     }
 
@@ -75,17 +98,12 @@ class GetDatabaseLocation {
     }
 
     private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
-        if (!Statics.isOnline()) {
-            progressStatus = ProgressStatus.canceled
-            msg = context().getString(R.string.no_connection)
-            return@withContext false
-        }
-
         progressStatus = ProgressStatus.running
         return@withContext goForrest()
     }
 
     private fun goForrest(): Boolean {
+        var isOk: Boolean
         val url: URL
         var connection: HttpURLConnection? = null
 
@@ -96,12 +114,16 @@ class GetDatabaseLocation {
             connection = if (sv.useProxy) {
                 val authenticator = object : Authenticator() {
                     override fun getPasswordAuthentication(): PasswordAuthentication {
-                        return PasswordAuthentication(sv.proxyUser, sv.proxyPass.toCharArray())
+                        return PasswordAuthentication(
+                            sv.proxyUser,
+                            sv.proxyPass.toCharArray()
+                        )
                     }
                 }
                 Authenticator.setDefault(authenticator)
 
-                val proxy = Proxy(Proxy.Type.HTTP, InetSocketAddress(sv.proxy, sv.proxyPort))
+                val proxy =
+                    Proxy(Proxy.Type.HTTP, InetSocketAddress(sv.proxy, sv.proxyPort))
                 url.openConnection(proxy) as HttpsURLConnection
             } else {
                 url.openConnection() as HttpsURLConnection
@@ -114,20 +136,50 @@ class GetDatabaseLocation {
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
             //connection.useCaches = false
 
+            val jsonParam = JSONObject()
+
+            // USER DATA //////////////////
+            val userAuthData = JSONObject()
+            userAuthData.put("username", currentUser!!.name).put("password", currentUser!!.password)
+            jsonParam.put("userauthdata", userAuthData)
+            // END USER DATA //////////////
+
+            // COLLECTOR DATA //////////////////
+            val collectorData = getDeviceData()
+            jsonParam.put("collectorData", collectorData)
+            // END COLLECTOR DATA //////////////
+
+            // Todas las órdenes
+            val orArrayJson = JSONObject()
+            for ((index, or) in orderRequestArray.withIndex()) {
+                val orJson = OrderRequest.toJson(or)
+                orArrayJson.put("order$index", JSONObject(orJson))
+                filesSuccess.add(or.filename)
+            }
+            jsonParam.put("orders", orArrayJson)
+            // Fin Todas las órdenes
+
+            val utf8JsonString = jsonParam.toString().toByteArray(charset("UTF8"))
+            println(jsonParam.toString())
+
             val wr = DataOutputStream(connection.outputStream)
+            wr.write(utf8JsonString, 0, utf8JsonString.size)
 
             wr.flush()
             wr.close()
 
-            getResponse(connection)
+            isOk = getResponse(connection)
         } catch (ex: Exception) {
             progressStatus = ProgressStatus.crashed
-            msg = ex.message.toString()
+            msg = "${
+                context().getString(R.string.exception_error)
+            }: ${ex.message}"
+            isOk = false
         } finally {
             connection?.disconnect()
         }
 
-        return true
+        return isOk
     }
 
     private fun getResponse(connection: HttpURLConnection): Boolean {
@@ -138,7 +190,7 @@ class GetDatabaseLocation {
         val response = StringBuilder()
         rd.forEachLine { l ->
             response.append(l)
-            response.append('\r')
+            response.append(System.getProperty("line.separator"))
         }
 
         rd.close()
@@ -159,24 +211,15 @@ class GetDatabaseLocation {
                 return false
             }
 
-            if (jsonObj.has("database")) {
-                val jsonDb = jsonObj.getJSONObject("database")
-                dbFileUrl = jsonDb.getString("db_file")
-                timeFileUrl = jsonDb.getString("db_file_date")
-            }
-
             progressStatus = ProgressStatus.finished
-            msg = if (timeFileUrl.isEmpty() || dbFileUrl.isEmpty()) {
-                context().getString(R.string.success_response)
-            } else {
-                context().getString(R.string.client_has_no_software_packages)
-            }
-        } catch (ex: JSONException) {
+            msg = context().getString(R.string.ok)
+        } catch (ex: Exception) {
             progressStatus = ProgressStatus.crashed
             msg = "${
                 context().getString(R.string.exception_error)
             }: ${ex.message}"
         }
+
         return progressStatus != ProgressStatus.crashed
     }
 }

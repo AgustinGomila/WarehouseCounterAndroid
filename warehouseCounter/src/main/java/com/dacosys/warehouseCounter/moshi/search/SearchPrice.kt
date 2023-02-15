@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.retrofit.search
+package com.dacosys.warehouseCounter.moshi.search
 
 import com.dacosys.warehouseCounter.misc.Statics.Companion.Token
 import com.squareup.moshi.Json
@@ -23,27 +23,7 @@ class SearchPrice() {
         searchItem = SearchItem(id, extId)
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as SearchPrice
-
-        if (userToken != other.userToken) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = userToken.hashCode()
-        result = 31 * result + searchItem.hashCode()
-        return result
-    }
-
     companion object {
-        /**
-         * Nombre de campos para el Json de este objeto.
-         */
         const val tokenTag = "userToken"
         const val searchItemTag = "searchItem"
     }

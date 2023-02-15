@@ -6,9 +6,7 @@ import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 import java.lang.reflect.Type
 
-class OrderRequestContent() :
-    Parcelable,
-    JsonDeserializer<OrderRequestContent>,
+class OrderRequestContent() : Parcelable, JsonDeserializer<OrderRequestContent>,
     JsonSerializer<OrderRequestContent> {
     @Throws(JsonParseException::class)
     override fun deserialize(
@@ -20,18 +18,9 @@ class OrderRequestContent() :
 
         val orc = OrderRequestContent()
 
-        orc.item = context.deserialize(
-            jsonObject.get("item"),
-            Item::class.java
-        )
-        orc.lot = context.deserialize(
-            jsonObject.get("lot"),
-            Lot::class.java
-        )
-        orc.qty = context.deserialize(
-            jsonObject.get("qty"),
-            Qty::class.java
-        )
+        orc.item = context.deserialize(jsonObject.get("item"), Item::class.java)
+        orc.lot = context.deserialize(jsonObject.get("lot"), Lot::class.java)
+        orc.qty = context.deserialize(jsonObject.get("qty"), Qty::class.java)
 
         return orc
     }
@@ -43,30 +32,9 @@ class OrderRequestContent() :
     ): JsonElement {
         val jsonObject = JsonObject()
         if (src != null) {
-            jsonObject.add(
-                "item",
-                Item().serialize(
-                    src.item,
-                    Item::class.java,
-                    context
-                )
-            )
-            jsonObject.add(
-                "lot",
-                Lot().serialize(
-                    src.lot,
-                    Lot::class.java,
-                    context
-                )
-            )
-            jsonObject.add(
-                "qty",
-                Qty().serialize(
-                    src.qty,
-                    Qty::class.java,
-                    context
-                )
-            )
+            jsonObject.add("item", Item().serialize(src.item, Item::class.java, context))
+            jsonObject.add("lot", Lot().serialize(src.lot, Lot::class.java, context))
+            jsonObject.add("qty", Qty().serialize(src.qty, Qty::class.java, context))
         }
 
         return jsonObject
@@ -101,7 +69,6 @@ class OrderRequestContent() :
     override fun equals(other: Any?): Boolean {
         return when (other) {
             !is OrderRequestContent -> false
-            null -> false
             else -> equals(this.item, other.item!!)
         }
     }
@@ -135,51 +102,29 @@ class OrderRequestContent() :
 
         fun fromJson(json: String): OrderRequestContent? {
             // Configure GSON
-            val gSon = GsonBuilder()
-                .registerTypeAdapter(
-                    OrderRequestContent::class.java,
-                    OrderRequestContent()
-                )
-                .registerTypeAdapter(
-                    Item::class.java,
-                    Item()
-                )
-                .registerTypeAdapter(
-                    Lot::class.java,
-                    Lot()
-                )
-                .registerTypeAdapter(
-                    Qty::class.java,
-                    Qty()
-                )
-                .excludeFieldsWithoutExposeAnnotation()
-                .setLenient()
-                .create()
+            val gSon = GsonBuilder().registerTypeAdapter(
+                OrderRequestContent::class.java, OrderRequestContent()
+            ).registerTypeAdapter(
+                Item::class.java, Item()
+            ).registerTypeAdapter(
+                Lot::class.java, Lot()
+            ).registerTypeAdapter(
+                Qty::class.java, Qty()
+            ).excludeFieldsWithoutExposeAnnotation().setLenient().create()
 
             return gSon.fromJson(json, OrderRequestContent::class.java)
         }
 
         fun toJson(or: OrderRequestContent): String {
-            val gSon = GsonBuilder()
-                .registerTypeAdapter(
-                    OrderRequestContent::class.java,
-                    OrderRequestContent()
-                )
-                .registerTypeAdapter(
-                    Item::class.java,
-                    Item()
-                )
-                .registerTypeAdapter(
-                    Lot::class.java,
-                    Lot()
-                )
-                .registerTypeAdapter(
-                    Qty::class.java,
-                    Qty()
-                )
-                .excludeFieldsWithoutExposeAnnotation()
-                .setLenient()
-                .create()
+            val gSon = GsonBuilder().registerTypeAdapter(
+                OrderRequestContent::class.java, OrderRequestContent()
+            ).registerTypeAdapter(
+                Item::class.java, Item()
+            ).registerTypeAdapter(
+                Lot::class.java, Lot()
+            ).registerTypeAdapter(
+                Qty::class.java, Qty()
+            ).excludeFieldsWithoutExposeAnnotation().setLenient().create()
 
             val x = gSon.toJson(or)
             println(x)

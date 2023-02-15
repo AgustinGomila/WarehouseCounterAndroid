@@ -1,7 +1,8 @@
-package com.dacosys.warehouseCounter.model.error
+package com.dacosys.warehouseCounter.moshi.error
 
 import android.util.Log
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
+import com.dacosys.warehouseCounter.model.error.ErrorData
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.JsonDataException
@@ -25,21 +26,6 @@ class ErrorObject {
 
     @Json(name = errorTag)
     var error: ErrorData = ErrorData()
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as ErrorObject
-
-        if (error != other.error) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return error.hashCode()
-    }
 
     companion object {
         /**

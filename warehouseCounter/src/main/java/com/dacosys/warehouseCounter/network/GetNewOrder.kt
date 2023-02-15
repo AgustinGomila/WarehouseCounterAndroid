@@ -1,74 +1,60 @@
-package com.dacosys.warehouseCounter.retrofit.functionOld
+package com.dacosys.warehouseCounter.network
 
+import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.getDeviceData
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.model.user.User
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import kotlinx.coroutines.*
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.DataOutputStream
-import java.io.File
 import java.io.InputStreamReader
 import java.net.*
 import javax.net.ssl.HttpsURLConnection
 
 
-class SendCompletedOrder {
-    interface TaskSendOrderRequestEnded {
+class GetNewOrder {
+    interface NewOrderListener {
         // Define data you like to return from AysncTask
-        fun onTaskSendOrderRequestEnded(
+        fun onNewOrderResult(
             status: ProgressStatus,
+            itemArray: ArrayList<OrderRequest>,
+            TASK_CODE: Int,
             msg: String,
         )
     }
 
-    var mCallback: TaskSendOrderRequestEnded? = null
+    // region VARIABLES de comunicación entre procesos
+    private var mCallback: NewOrderListener? = null
+    private var taskCode: Int = -1
+    // endregion
 
     private val api = "api"
     private val urlPanel = "${settingViewModel().urlPanel}/$api"
-    private val urlRequest = "${urlPanel}/order/send"
-    private var orderRequestArray: ArrayList<OrderRequest> = ArrayList()
-    private var filesSuccess: ArrayList<String> = ArrayList()
-
-    private var currentUser: User? = null
+    private val urlRequest = "${urlPanel}/order/get"
     private var progressStatus = ProgressStatus.unknown
     private var msg = ""
 
+    // region VARIABLES para resultados de la consulta
+    private var itemArray = ArrayList<OrderRequest>()
+    // endregion
+
     fun addParams(
-        callback: TaskSendOrderRequestEnded,
-        orderRequestArray: ArrayList<OrderRequest>,
+        listener: NewOrderListener,
+        TASK_CODE: Int,
     ) {
-        this.mCallback = callback
-        this.orderRequestArray = orderRequestArray
+        this.mCallback = listener
+        this.taskCode = TASK_CODE
     }
 
-    private fun postExecute(result: Boolean) {
-        var isOk = true
-        if (result) {
-            val currentDir = Statics.getCompletedPath()
-            for (f in filesSuccess) {
-                val filePath = currentDir.absolutePath + File.separator + f
-                val fl = File(filePath)
-                if (!fl.delete()) {
-                    isOk = false
-                    break
-                }
-            }
-        }
-
-        if (!isOk) {
-            mCallback?.onTaskSendOrderRequestEnded(
-                status = ProgressStatus.crashed,
-                msg = context().getString(R.string.an_error_occurred_while_deleting_counts)
-            )
-        } else {
-            mCallback?.onTaskSendOrderRequestEnded(status = progressStatus, msg = msg)
-        }
+    private fun postExecute() {
+        mCallback?.onNewOrderResult(
+            status = progressStatus, itemArray = itemArray, TASK_CODE = taskCode, msg = msg
+        )
     }
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
@@ -79,11 +65,10 @@ class SendCompletedOrder {
 
     fun execute() {
         progressStatus = ProgressStatus.starting
-        currentUser = Statics.getCurrentUser()
 
         scope.launch {
-            val it = doInBackground()
-            postExecute(it)
+            doInBackground()
+            postExecute()
         }
     }
 
@@ -98,12 +83,18 @@ class SendCompletedOrder {
     }
 
     private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
+        if (!Statics.isOnline()) {
+            progressStatus = ProgressStatus.canceled
+            msg = context().getString(R.string.no_connection)
+            return@withContext false
+        }
+
+        Log.d(this::class.java.simpleName, "Solicitando nuevas órdenes...")
         progressStatus = ProgressStatus.running
         return@withContext goForrest()
     }
 
     private fun goForrest(): Boolean {
-        var isOk: Boolean
         val url: URL
         var connection: HttpURLConnection? = null
 
@@ -115,15 +106,13 @@ class SendCompletedOrder {
                 val authenticator = object : Authenticator() {
                     override fun getPasswordAuthentication(): PasswordAuthentication {
                         return PasswordAuthentication(
-                            sv.proxyUser,
-                            sv.proxyPass.toCharArray()
+                            sv.proxyUser, sv.proxyPass.toCharArray()
                         )
                     }
                 }
                 Authenticator.setDefault(authenticator)
 
-                val proxy =
-                    Proxy(Proxy.Type.HTTP, InetSocketAddress(sv.proxy, sv.proxyPort))
+                val proxy = Proxy(Proxy.Type.HTTP, InetSocketAddress(sv.proxy, sv.proxyPort))
                 url.openConnection(proxy) as HttpsURLConnection
             } else {
                 url.openConnection() as HttpsURLConnection
@@ -136,50 +125,22 @@ class SendCompletedOrder {
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
             //connection.useCaches = false
 
-            val jsonParam = JSONObject()
-
-            // USER DATA //////////////////
-            val userAuthData = JSONObject()
-            userAuthData.put("username", currentUser!!.name).put("password", currentUser!!.password)
-            jsonParam.put("userauthdata", userAuthData)
-            // END USER DATA //////////////
-
-            // COLLECTOR DATA //////////////////
-            val collectorData = getDeviceData()
-            jsonParam.put("collectorData", collectorData)
-            // END COLLECTOR DATA //////////////
-
-            // Todas las órdenes
-            val orArrayJson = JSONObject()
-            for ((index, or) in orderRequestArray.withIndex()) {
-                val orJson = OrderRequest.toJson(or)
-                orArrayJson.put("order$index", JSONObject(orJson))
-                filesSuccess.add(or.filename)
-            }
-            jsonParam.put("orders", orArrayJson)
-            // Fin Todas las órdenes
-
-            val utf8JsonString = jsonParam.toString().toByteArray(charset("UTF8"))
-            println(jsonParam.toString())
-
             val wr = DataOutputStream(connection.outputStream)
-            wr.write(utf8JsonString, 0, utf8JsonString.size)
 
             wr.flush()
             wr.close()
 
-            isOk = getResponse(connection)
+            getResponse(connection)
         } catch (ex: Exception) {
             progressStatus = ProgressStatus.crashed
             msg = "${
                 context().getString(R.string.exception_error)
             }: ${ex.message}"
-            isOk = false
         } finally {
             connection?.disconnect()
         }
 
-        return isOk
+        return true
     }
 
     private fun getResponse(connection: HttpURLConnection): Boolean {
@@ -190,7 +151,7 @@ class SendCompletedOrder {
         val response = StringBuilder()
         rd.forEachLine { l ->
             response.append(l)
-            response.append(System.getProperty("line.separator"))
+            response.append('\r')
         }
 
         rd.close()
@@ -211,15 +172,31 @@ class SendCompletedOrder {
                 return false
             }
 
+            if (jsonObj.has("orders")) {
+                val orderJsonArray = jsonObj.getJSONArray("orders")
+                for (i in 0 until orderJsonArray.length()) {
+                    val obj = orderJsonArray.getJSONObject(i)
+                    val or = OrderRequest.fromJson(obj.toString())
+                    if (or != null) {
+                        itemArray.add(or)
+                    }
+                }
+            }
+
             progressStatus = ProgressStatus.finished
-            msg = context().getString(R.string.ok)
-        } catch (ex: Exception) {
+            msg = if (itemArray.isNotEmpty()) {
+                context().getString(R.string.ok)
+            } else {
+                context().getString(R.string.no_new_counts)
+            }
+        } catch (ex: JSONException) {
+            Log.e(this::class.java.simpleName, ex.toString())
+
             progressStatus = ProgressStatus.crashed
             msg = "${
-                context().getString(R.string.exception_error)
+                context().getString(R.string.an_error_occurred_while_requesting_new_counts)
             }: ${ex.message}"
         }
-
         return progressStatus != ProgressStatus.crashed
     }
 }

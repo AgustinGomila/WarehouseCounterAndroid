@@ -97,16 +97,22 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
         // set the trigger mode to auto control
         try {
             if (autoMode) {
-                scanner?.setProperty(BarcodeReader.PROPERTY_TRIGGER_CONTROL_MODE,
-                    BarcodeReader.TRIGGER_CONTROL_MODE_AUTO_CONTROL)
+                scanner?.setProperty(
+                    BarcodeReader.PROPERTY_TRIGGER_CONTROL_MODE,
+                    BarcodeReader.TRIGGER_CONTROL_MODE_AUTO_CONTROL
+                )
             } else {
                 // set the trigger mode to client control
-                scanner?.setProperty(BarcodeReader.PROPERTY_TRIGGER_CONTROL_MODE,
-                    BarcodeReader.TRIGGER_CONTROL_MODE_CLIENT_CONTROL)
+                scanner?.setProperty(
+                    BarcodeReader.PROPERTY_TRIGGER_CONTROL_MODE,
+                    BarcodeReader.TRIGGER_CONTROL_MODE_CLIENT_CONTROL
+                )
             }
             scanner?.setProperty(BarcodeReader.PROPERTY_DATA_PROCESSOR_LAUNCH_BROWSER, false)
-            scanner?.setProperty(BarcodeReader.PROPERTY_TRIGGER_SCAN_MODE,
-                BarcodeReader.TRIGGER_SCAN_MODE_ONESHOT)
+            scanner?.setProperty(
+                BarcodeReader.PROPERTY_TRIGGER_SCAN_MODE,
+                BarcodeReader.TRIGGER_SCAN_MODE_ONESHOT
+            )
         } catch (e: UnsupportedPropertyException) {
             e.printStackTrace()
         }

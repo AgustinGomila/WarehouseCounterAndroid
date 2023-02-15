@@ -5,8 +5,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.dacosys.imageControl.ImageControl
 import com.dacosys.warehouseCounter.misc.Statics.Companion.WC_ROOT_PATH
-import com.dacosys.warehouseCounter.model.token.TokenObject
+import com.dacosys.warehouseCounter.moshi.token.TokenObject
 import com.dacosys.warehouseCounter.retrofit.APIService
+import com.dacosys.warehouseCounter.retrofit.DacoService
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.settings.SettingsRepository
@@ -23,6 +24,11 @@ import org.koin.core.context.GlobalContext.get
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.module
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.net.Authenticator
+import java.net.InetSocketAddress
+import java.net.PasswordAuthentication
+import java.net.Proxy
+import java.net.Proxy.NO_PROXY
 import java.util.concurrent.TimeUnit
 
 /**
@@ -50,13 +56,28 @@ class WarehouseCounterApp : Application(), KoinComponent {
         single { MoshiConverterFactory.create(get()) }
 
         factory {
+            val sv = settingViewModel()
+
+            // Proxy
+            val proxy = if (sv.useProxy) {
+                val authenticator = object : Authenticator() {
+                    override fun getPasswordAuthentication(): PasswordAuthentication {
+                        return PasswordAuthentication(sv.proxyUser, sv.proxyPass.toCharArray())
+                    }
+                }
+                Authenticator.setDefault(authenticator)
+                Proxy(Proxy.Type.HTTP, InetSocketAddress(sv.proxy, sv.proxyPort))
+            } else {
+                NO_PROXY
+            }
+
             // Connection Timeouts
-            OkHttpClient.Builder()
-                .connectTimeout(settingViewModel().connectionTimeout.toLong(), TimeUnit.SECONDS)
-                .build()
+            OkHttpClient.Builder().connectTimeout(sv.connectionTimeout.toLong(), TimeUnit.SECONDS)
+                .proxy(proxy).build()
         }
         single { DynamicRetrofit() }
         single { retrofit().api.create(APIService::class.java) }
+        single { retrofit().api.create(DacoService::class.java) }
 
         single {
             // Eventos del ciclo de vida de las actividades
@@ -101,6 +122,10 @@ class WarehouseCounterApp : Application(), KoinComponent {
         }
 
         fun apiService(): APIService {
+            return get().get()
+        }
+
+        fun dacoService(): DacoService {
             return get().get()
         }
 

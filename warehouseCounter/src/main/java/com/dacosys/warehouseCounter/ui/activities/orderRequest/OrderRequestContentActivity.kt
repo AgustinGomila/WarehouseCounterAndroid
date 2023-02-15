@@ -65,6 +65,7 @@ import org.parceler.Parcels
 import java.io.UnsupportedEncodingException
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.concurrent.thread
 
 class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChangedListener,
     OrcAdapter.EditQtyListener, OrcAdapter.EditDescriptionListener, Scanner.ScannerListener,
@@ -1375,8 +1376,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     public override fun onStart() {
         super.onStart()
 
-        fillOrcAdapter(orcArray)
-        gentlyReturn()
+        thread {
+            fillOrcAdapter(orcArray)
+            gentlyReturn()
+        }
     }
 
     override fun onBackPressed() {

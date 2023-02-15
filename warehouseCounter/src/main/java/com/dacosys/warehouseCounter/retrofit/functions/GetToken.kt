@@ -6,11 +6,14 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.Token
 import com.dacosys.warehouseCounter.misc.Statics.Companion.cleanToken
-import com.dacosys.warehouseCounter.model.error.ErrorObject
-import com.dacosys.warehouseCounter.model.token.TokenObject
-import com.dacosys.warehouseCounter.model.user.UserAuthData
+import com.dacosys.warehouseCounter.moshi.error.ErrorObject
+import com.dacosys.warehouseCounter.moshi.token.TokenObject
+import com.dacosys.warehouseCounter.moshi.user.AuthData
+import com.dacosys.warehouseCounter.moshi.user.UserAuthData
+import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
 import kotlinx.coroutines.*
@@ -59,34 +62,13 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
     }
 
     private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
-        val sv = settingViewModel()
-        val baseUrl: String
-        var apiUrl = ""
-
-        try {
-            val url = URL(sv.urlPanel)
-            baseUrl = "${url.protocol}://${url.host}/"
-            if (url.path.isNotEmpty()) apiUrl = "${url.path}/"
-        } catch (e: MalformedURLException) {
-            onEvent.invoke(
-                RequestResult(
-                    ResultStatus.ERROR,
-                    context().getString(R.string.url_malformed)
-                )
-            )
-
-            Log.e(this::class.java.simpleName, e.toString())
-            return@withContext false
-        }
-
-        Log.d(this::class.java.simpleName,
-            "Base URL: $baseUrl (Api URL: ${apiUrl.ifEmpty { "Vacío" }})"
-        )
+        // Configuración de Retrofit
+        val apiUrl = setupRetrofit()
 
         /** Limpiamos el token actual antes de solicitar uno nuevo. **/
         cleanToken()
 
-        val body = UserAuthData.getUserAuthData()
+        val body = getBody()
 
         val tokenInst = apiService().getToken(apiUrl = apiUrl, body = body)
 
@@ -141,6 +123,57 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
         })
 
         return@withContext true
+    }
+
+    private fun setupRetrofit(): String {
+        val sv = settingViewModel()
+
+        // URL específica del Cliente
+        var protocol = ""
+        var host = ""
+        var apiUrl = ""
+
+        try {
+            val url = URL(sv.urlPanel)
+            protocol = url.protocol
+            host = url.host
+            apiUrl = if (url.path.isNotEmpty()) "${url.path}/" else ""
+
+            Log.d(
+                this::class.java.simpleName,
+                "Base URL: ${protocol}://${host}/ (Api URL: ${apiUrl.ifEmpty { "Vacío" }})"
+            )
+        } catch (e: MalformedURLException) {
+            onEvent.invoke(
+                RequestResult(
+                    ResultStatus.ERROR, context().getString(R.string.url_malformed)
+                )
+            )
+            Log.e(this::class.java.simpleName, e.toString())
+            return ""
+        }
+
+        // Configuración y refresco de la conexión
+        DynamicRetrofit.start(protocol = protocol, host = host)
+
+        return apiUrl
+    }
+
+    /**
+     * Devuelve las opciones guardadas en la configuración de la app en
+     * forma de Json para enviar a la API
+     */
+    private fun getBody(): UserAuthData {
+        val authData = AuthData()
+        val userAuth = UserAuthData()
+
+        val currentUser = Statics.getCurrentUser() ?: return UserAuthData()
+
+        authData.username = currentUser.name
+        authData.password = currentUser.password ?: ""
+
+        userAuth.authData = authData
+        return userAuth
     }
 
     private fun getTokenDate(): Date {

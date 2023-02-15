@@ -35,7 +35,8 @@ import com.dacosys.warehouseCounter.misc.Statics.Companion.getConfigFromScannedC
 import com.dacosys.warehouseCounter.model.collectorType.CollectorType
 import com.dacosys.warehouseCounter.model.collectorType.CollectorTypePreference
 import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.retrofit.functionOld.GetClientPackages
+import com.dacosys.warehouseCounter.moshi.clientPackage.Package
+import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
@@ -60,7 +61,6 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import com.google.android.gms.common.api.CommonStatusCodes
-import org.json.JSONObject
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.regex.Matcher
@@ -81,8 +81,7 @@ import kotlin.concurrent.thread
 
 class SettingsActivity : AppCompatActivity(),
     PreferenceFragmentCompat.OnPreferenceStartFragmentCallback,
-    GetClientPackages.TaskGetPackagesEnded, Statics.Companion.TaskConfigPanelEnded,
-    Scanner.ScannerListener {
+    Statics.Companion.TaskConfigPanelEnded, Scanner.ScannerListener {
 
     class HeaderFragment : PreferenceFragmentCompat() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -167,8 +166,8 @@ class SettingsActivity : AppCompatActivity(),
         })
     }
 
-    override fun onResume() {
-        super.onResume()
+    override fun onStart() {
+        super.onStart()
         Statics.closeKeyboard(this)
     }
 
@@ -195,13 +194,13 @@ class SettingsActivity : AppCompatActivity(),
         }
     }
 
-    override fun onTaskGetPackagesEnded(
-        status: ProgressStatus,
-        result: ArrayList<JSONObject>,
-        clientEmail: String,
-        clientPassword: String,
-        msg: String,
-    ) {
+    private fun onGetPackagesEnded(packagesResult: PackagesResult) {
+        val status: ProgressStatus = packagesResult.status
+        val result: ArrayList<Package> = packagesResult.result
+        val clientEmail: String = packagesResult.clientEmail
+        val clientPassword: String = packagesResult.clientPassword
+        val msg: String = packagesResult.msg
+
         if (status == ProgressStatus.finished) {
             if (result.size > 0) {
                 runOnUiThread {
@@ -227,7 +226,7 @@ class SettingsActivity : AppCompatActivity(),
     }
 
     class AccountPreferenceFragment : PreferenceFragmentCompat(),
-        GetClientPackages.TaskGetPackagesEnded, Statics.Companion.TaskConfigPanelEnded {
+        Statics.Companion.TaskConfigPanelEnded {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             var key = rootKey
             if (arguments != null) {
@@ -299,7 +298,7 @@ class SettingsActivity : AppCompatActivity(),
                     } else {
                         if (email.isNotEmpty() && password.isNotEmpty()) {
                             Statics.getConfig(
-                                callback = this,
+                                onEvent = { onGetPackagesEnded(it) },
                                 email = email,
                                 password = password,
                                 installationCode = ""
@@ -318,9 +317,7 @@ class SettingsActivity : AppCompatActivity(),
                 } catch (ex: Exception) {
                     ex.printStackTrace()
                     if (view != null) makeText(
-                        requireView(),
-                        "${getString(R.string.error)}: ${ex.message}",
-                        ERROR
+                        requireView(), "${getString(R.string.error)}: ${ex.message}", ERROR
                     )
                     ErrorLog.writeLog(null, this::class.java.simpleName, ex)
                     false
@@ -337,9 +334,7 @@ class SettingsActivity : AppCompatActivity(),
 
                 if (urlPanel.isEmpty() || installationCode.isEmpty() || clientPackage.isEmpty() || clientEmail.isEmpty() || clientPassword.isEmpty()) {
                     if (view != null) makeText(
-                        requireView(),
-                        context().getString(R.string.invalid_client_data),
-                        ERROR
+                        requireView(), context().getString(R.string.invalid_client_data), ERROR
                     )
                     return@OnPreferenceClickListener false
                 }
@@ -355,15 +350,13 @@ class SettingsActivity : AppCompatActivity(),
             val updateAppButton = findPreference<Preference>("update_app") as Preference
             updateAppButton.onPreferenceClickListener = OnPreferenceClickListener {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !requireContext().packageManager.canRequestPackageInstalls()) {
-                    val intent =
-                        Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).setData(
-                            Uri.parse(
-                                String.format(
-                                    "package:%s",
-                                    requireContext().packageName
-                                )
+                    val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).setData(
+                        Uri.parse(
+                            String.format(
+                                "package:%s", requireContext().packageName
                             )
                         )
+                    )
                     resultForRequestPackageInstall.launch(intent)
                 } else {
                     // check storage permission granted if yes then start downloading file
@@ -392,8 +385,7 @@ class SettingsActivity : AppCompatActivity(),
         private fun checkStoragePermission() {
             // Check if the storage permission has been granted
             if (ActivityCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 // Permission is missing and must be requested.
@@ -438,7 +430,7 @@ class SettingsActivity : AppCompatActivity(),
 
                     if (email.isNotEmpty() && password.isNotEmpty()) {
                         Statics.getConfig(
-                            callback = this,
+                            onEvent = { onGetPackagesEnded(it) },
                             email = email,
                             password = password,
                             installationCode = ""
@@ -578,13 +570,13 @@ class SettingsActivity : AppCompatActivity(),
             }
         }
 
-        override fun onTaskGetPackagesEnded(
-            status: ProgressStatus,
-            result: ArrayList<JSONObject>,
-            clientEmail: String,
-            clientPassword: String,
-            msg: String,
-        ) {
+        private fun onGetPackagesEnded(packagesResult: PackagesResult) {
+            val status: ProgressStatus = packagesResult.status
+            val result: ArrayList<Package> = packagesResult.result
+            val clientEmail: String = packagesResult.clientEmail
+            val clientPassword: String = packagesResult.clientPassword
+            val msg: String = packagesResult.msg
+
             if (status == ProgressStatus.finished) {
                 if (result.size > 0) {
                     requireActivity().runOnUiThread {
@@ -608,17 +600,13 @@ class SettingsActivity : AppCompatActivity(),
         override fun onTaskConfigPanelEnded(status: ProgressStatus) {
             if (status == ProgressStatus.finished) {
                 if (view != null) makeText(
-                    requireView(),
-                    getString(R.string.configuration_applied),
-                    INFO
+                    requireView(), getString(R.string.configuration_applied), INFO
                 )
                 Statics.removeDataBases()
                 requireActivity().onBackPressed()
             } else if (status == ProgressStatus.crashed) {
                 if (view != null) makeText(
-                    requireView(),
-                    getString(R.string.error_setting_user_panel),
-                    ERROR
+                    requireView(), getString(R.string.error_setting_user_panel), ERROR
                 )
             }
         }
@@ -682,9 +670,7 @@ class SettingsActivity : AppCompatActivity(),
                 } catch (ex: Exception) {
                     ex.printStackTrace()
                     if (view != null) makeText(
-                        requireView(),
-                        "${getString(R.string.error)}: ${ex.message}",
-                        ERROR
+                        requireView(), "${getString(R.string.error)}: ${ex.message}", ERROR
                     )
                     ErrorLog.writeLog(null, this::class.java.simpleName, ex)
                     false
@@ -1041,9 +1027,7 @@ class SettingsActivity : AppCompatActivity(),
                 // permission is granted or not
                 if (!isGranted) {
                     makeText(
-                        v,
-                        context().getString(R.string.app_dont_have_necessary_permissions),
-                        ERROR
+                        v, context().getString(R.string.app_dont_have_necessary_permissions), ERROR
                     )
                 } else {
                     setupRfidReader()
@@ -1107,8 +1091,7 @@ class SettingsActivity : AppCompatActivity(),
             deviceListPreference.onPreferenceChangeListener =
                 Preference.OnPreferenceChangeListener { preference, newValue ->
                     rfidName = getBluetoothNameFromAddress(
-                        newValue,
-                        getString(R.string.there_is_no_selected_rfid_scanner)
+                        newValue, getString(R.string.there_is_no_selected_rfid_scanner)
                     )
 
                     preference.summary = rfidName
@@ -1171,8 +1154,7 @@ class SettingsActivity : AppCompatActivity(),
                     val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                     enableBtIntent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                     if (ActivityCompat.checkSelfPermission(
-                            requireContext(),
-                            Manifest.permission.BLUETOOTH_CONNECT
+                            requireContext(), Manifest.permission.BLUETOOTH_CONNECT
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -1205,9 +1187,7 @@ class SettingsActivity : AppCompatActivity(),
                 // permission is granted or not
                 if (!isGranted) {
                     makeText(
-                        v,
-                        context().getString(R.string.app_dont_have_necessary_permissions),
-                        ERROR
+                        v, context().getString(R.string.app_dont_have_necessary_permissions), ERROR
                     )
                 }
             }
@@ -1221,8 +1201,7 @@ class SettingsActivity : AppCompatActivity(),
                 val mBluetoothAdapter = bluetoothManager.adapter
 
                 if (ActivityCompat.checkSelfPermission(
-                        context(),
-                        Manifest.permission.BLUETOOTH_CONNECT
+                        context(), Manifest.permission.BLUETOOTH_CONNECT
                     ) != PackageManager.PERMISSION_GRANTED
                 ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -1251,7 +1230,7 @@ class SettingsActivity : AppCompatActivity(),
      * activity is showing a two-pane settings UI.
      */
     class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
-        GetClientPackages.TaskGetPackagesEnded, Statics.Companion.TaskConfigPanelEnded {
+        Statics.Companion.TaskConfigPanelEnded {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             var key = rootKey
             if (arguments != null) {
@@ -1334,9 +1313,7 @@ class SettingsActivity : AppCompatActivity(),
 
                 if (icUrl.isEmpty() || icNamespace.isEmpty() || icUserWs.isEmpty() || icPasswordWs.isEmpty()) {
                     if (view != null) makeText(
-                        requireView(),
-                        context().getString(R.string.invalid_webservice_data),
-                        ERROR
+                        requireView(), context().getString(R.string.invalid_webservice_data), ERROR
                     )
                     return@OnPreferenceClickListener false
                 }
@@ -1356,9 +1333,7 @@ class SettingsActivity : AppCompatActivity(),
                 } catch (ex: Exception) {
                     ex.printStackTrace()
                     if (view != null) makeText(
-                        requireView(),
-                        "${getString(R.string.error)}: ${ex.message}",
-                        ERROR
+                        requireView(), "${getString(R.string.error)}: ${ex.message}", ERROR
                     )
                     ErrorLog.writeLog(null, this::class.java.simpleName, ex)
                     false
@@ -1373,11 +1348,10 @@ class SettingsActivity : AppCompatActivity(),
                 .setMessage(getString(R.string.do_you_want_to_delete_the_image_cache_question))
                 .setPositiveButton(getString(R.string.delete)) { dialog, _ ->
                     //your deleting code
-                    val albumFolder =
-                        File(
-                            context().getExternalFilesDir(Environment.DIRECTORY_PICTURES),
-                            "ImageControl"
-                        )
+                    val albumFolder = File(
+                        context().getExternalFilesDir(Environment.DIRECTORY_PICTURES),
+                        "ImageControl"
+                    )
 
                     if (albumFolder.isDirectory) {
                         val files = albumFolder.listFiles()
@@ -1400,56 +1374,23 @@ class SettingsActivity : AppCompatActivity(),
         ) {
             if (url.isEmpty() || namespace.isEmpty()) {
                 if (view != null) makeText(
-                    requireView(),
-                    context().getString(R.string.invalid_webservice_data),
-                    INFO
+                    requireView(), context().getString(R.string.invalid_webservice_data), INFO
                 )
                 return
             }
             ImageControlCheckUser { showSnackBar(it) }.execute()
         }
 
-        override fun onTaskGetPackagesEnded(
-            status: ProgressStatus,
-            result: ArrayList<JSONObject>,
-            clientEmail: String,
-            clientPassword: String,
-            msg: String,
-        ) {
-            if (status == ProgressStatus.finished) {
-                if (result.size > 0) {
-                    requireActivity().runOnUiThread {
-                        Statics.selectClientPackage(callback = this,
-                            weakAct = WeakReference(requireActivity()),
-                            allPackage = result,
-                            email = clientEmail,
-                            password = clientPassword,
-                            onEventData = { showSnackBar(it) })
-                    }
-                } else {
-                    if (view != null) makeText(requireView(), msg, INFO)
-                }
-            } else if (status == ProgressStatus.success) {
-                if (view != null) makeText(requireView(), msg, SUCCESS)
-            } else if (status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
-                if (view != null) makeText(requireView(), msg, ERROR)
-            }
-        }
-
         override fun onTaskConfigPanelEnded(status: ProgressStatus) {
             if (status == ProgressStatus.finished) {
                 if (view != null) makeText(
-                    requireView(),
-                    getString(R.string.configuration_applied),
-                    INFO
+                    requireView(), getString(R.string.configuration_applied), INFO
                 )
                 Statics.removeDataBases()
                 requireActivity().onBackPressed()
             } else if (status == ProgressStatus.crashed) {
                 if (view != null) makeText(
-                    requireView(),
-                    getString(R.string.error_setting_user_panel),
-                    ERROR
+                    requireView(), getString(R.string.error_setting_user_panel), ERROR
                 )
             }
         }
@@ -1596,10 +1537,7 @@ class SettingsActivity : AppCompatActivity(),
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this,
-            requestCode,
-            permissions,
-            grantResults
+            this, requestCode, permissions, grantResults
         )
     }
 
@@ -1613,7 +1551,7 @@ class SettingsActivity : AppCompatActivity(),
             }
 
             getConfigFromScannedCode(
-                callback = this,
+                onEvent = { onGetPackagesEnded(it) },
                 scanCode = scanCode,
                 mode = currentQRConfigType
             )

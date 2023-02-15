@@ -22,9 +22,7 @@ import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import org.parceler.Parcels
 
 
-class EnterCodeActivity : AppCompatActivity(),
-    Scanner.ScannerListener,
-    Rfid.RfidDeviceListener {
+class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
     private var orc: OrderRequestContent? = null
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
@@ -34,8 +32,7 @@ class EnterCodeActivity : AppCompatActivity(),
         savedInstanceState.putString("hint", binding.codeEditText.hint.toString())
         savedInstanceState.putParcelable("orc", orc)
         savedInstanceState.putString(
-            "defaultValue",
-            binding.codeEditText.editableText.toString().trim()
+            "defaultValue", binding.codeEditText.editableText.toString().trim()
         )
     }
 
@@ -111,28 +108,16 @@ class EnterCodeActivity : AppCompatActivity(),
         }
 
         binding.enterCode.setOnClickListener { onBackPressed() }
-    }
 
-    private fun setEditTextFocus(isFocused: Boolean) {
-        binding.codeEditText.isCursorVisible = isFocused
-        binding.codeEditText.isFocusable = isFocused
-        binding.codeEditText.isFocusableInTouchMode = isFocused
-
-        if (isFocused) {
-            binding.codeEditText.requestFocus()
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        setEditTextFocus(true)
+        binding.codeEditText.isCursorVisible = true
+        binding.codeEditText.isFocusable = true
+        binding.codeEditText.isFocusableInTouchMode = true
+        binding.codeEditText.requestFocus()
     }
 
     private fun codeSelect() {
         val data = Intent()
-        val result: Int = if (
-            binding.codeEditText.editableText.toString().isEmpty()
-        ) {
+        val result: Int = if (binding.codeEditText.editableText.toString().isEmpty()) {
             RESULT_CANCELED
         } else {
             RESULT_OK
@@ -157,13 +142,13 @@ class EnterCodeActivity : AppCompatActivity(),
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+            this, requestCode, permissions, grantResults
+        )
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel().showScannedCode)
-            makeText(binding.root, scanCode, SnackBarType.INFO)
+        if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, SnackBarType.INFO)
 
         binding.codeEditText.setText(scanCode)
     }

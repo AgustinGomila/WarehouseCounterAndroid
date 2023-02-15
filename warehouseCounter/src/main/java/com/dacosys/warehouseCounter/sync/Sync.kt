@@ -7,9 +7,8 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.retrofit.functionOld.GetNewOrder
-import com.dacosys.warehouseCounter.retrofit.functionOld.GetNewOrder.NewOrderListener
-import com.dacosys.warehouseCounter.sync.GetCompletedOrderRequest.CompletedOrderRequestListener
+import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest.CREATOR.getCompletedOrders
+import com.dacosys.warehouseCounter.network.GetNewOrder
 import java.util.*
 import kotlin.concurrent.thread
 
@@ -30,16 +29,16 @@ import kotlin.concurrent.thread
  * Se puede detener mediante stopTimer.
  */
 class Sync {
-    companion object : NewOrderListener, CompletedOrderRequestListener {
+    companion object : GetNewOrder.NewOrderListener {
         override fun onNewOrderResult(
             status: ProgressStatus,
             itemArray: ArrayList<OrderRequest>,
             TASK_CODE: Int,
             msg: String,
         ) {
-            if (TASK_CODE == TASK_CODE_INTERNAL_NEW) {
+            if (TASK_CODE == taskCodeInternalNew) {
                 if (status == ProgressStatus.finished || status == ProgressStatus.success || status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
-                    syncNewOrderRequestStatus = NOT_RUNNING
+                    syncNewOrderStatus = NOT_RUNNING
                 }
 
                 if (status == ProgressStatus.finished || status == ProgressStatus.success) {
@@ -49,37 +48,7 @@ class Sync {
                 }
 
                 try {
-                    mNewOrderCallback!!.onNewOrderResult(status, itemArray, TASK_CODE_PARENT, msg)
-                } catch (ex: java.lang.Exception) {
-                    ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
-                }
-            }
-        }
-
-        override fun onCompletedOrderRequestResult(
-            status: ProgressStatus,
-            itemArray: ArrayList<OrderRequest>,
-            TASK_CODE: Int,
-            msg: String,
-        ) {
-            if (TASK_CODE == TASK_CODE_INTERNAL_COMPLETED) {
-                if (status == ProgressStatus.finished || status == ProgressStatus.success || status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
-                    syncCompletedOrderRequestStatus = NOT_RUNNING
-                }
-
-                if (status == ProgressStatus.finished || status == ProgressStatus.success) {
-                    Log.d(this::class.java.simpleName, msg)
-                } else if (status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
-                    Log.e(this::class.java.simpleName, msg)
-                }
-
-                try {
-                    mCompletedOrderCallback!!.onCompletedOrderRequestResult(
-                        status,
-                        itemArray,
-                        TASK_CODE_PARENT,
-                        msg
-                    )
+                    mNewOrderCallback!!.onNewOrderResult(status, itemArray, taskCodeParent, msg)
                 } catch (ex: java.lang.Exception) {
                     ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
                 }
@@ -88,20 +57,19 @@ class Sync {
 
         override fun hashCode(): Int {
             var result = listener.hashCode()
-            result = 31 * result + TASK_CODE_PARENT
+            result = 31 * result + taskCodeParent
             return result
         }
 
         private lateinit var listener: Any
 
         // Id de tareas internas de la clase
-        private var TASK_CODE_PARENT: Int = 0
-        private var TASK_CODE_INTERNAL_NEW: Int = 0
-        private var TASK_CODE_INTERNAL_COMPLETED: Int = 0
+        private var taskCodeParent: Int = 0
+        private var taskCodeInternalNew: Int = 0
 
         // Thread status
-        private var syncNewOrderRequestStatus: Int = 0
-        private var syncCompletedOrderRequestStatus: Int = 0
+        private var syncNewOrderStatus: Int = 0
+        private var syncCompletedOrderStatus: Int = 0
 
         private const val NOT_RUNNING = 0
         private const val RUNNING = 1
@@ -111,8 +79,8 @@ class Sync {
         private val handler = Handler(Looper.getMainLooper())
 
         // Callbacks
-        private var mNewOrderCallback: NewOrderListener? = null
-        private var mCompletedOrderCallback: CompletedOrderRequestListener? = null
+        private var mNewOrderCallback: GetNewOrder.NewOrderListener? = null
+        private var mCompletedOrderCallback: CompletedOrderListener? = null
 
         //To stop timer
         fun stopTimer() {
@@ -123,14 +91,14 @@ class Sync {
 
                 mNewOrderCallback = null
                 mCompletedOrderCallback = null
-                TASK_CODE_PARENT = 0
+                taskCodeParent = 0
             }
         }
 
         //To start timer
         fun startTimer(
-            newListener: NewOrderListener,
-            completedListener: CompletedOrderRequestListener,
+            newListener: GetNewOrder.NewOrderListener,
+            completedListener: CompletedOrderListener,
             TASK_CODE: Int,
         ) {
             Log.d(this::class.java.simpleName, "Iniciando sincronizador de órdenes...")
@@ -138,7 +106,7 @@ class Sync {
 
             mNewOrderCallback = newListener
             mCompletedOrderCallback = completedListener
-            TASK_CODE_PARENT = TASK_CODE
+            taskCodeParent = TASK_CODE
 
             val t = settingViewModel().wcSyncInterval
             timerTask = object : TimerTask() {
@@ -154,46 +122,47 @@ class Sync {
         // endregion
 
         private fun getNewOrderRequest() {
-            if (syncNewOrderRequestStatus == NOT_RUNNING) {
-                syncNewOrderRequestStatus = RUNNING
+            if (syncNewOrderStatus != NOT_RUNNING) return
+            syncNewOrderStatus = RUNNING
 
-                TASK_CODE_INTERNAL_NEW = Statics.generateTaskCode()
-                try {
-                    thread {
-                        val task = GetNewOrder()
-                        task.addParams(this, TASK_CODE_INTERNAL_NEW)
-                        task.execute()
-                    }
-                } catch (ex: Exception) {
-                    ErrorLog.writeLog(
-                        null,
-                        this::class.java.simpleName,
-                        "$TASK_CODE_PARENT: ${ex.message.toString()}"
-                    )
-                    syncNewOrderRequestStatus = NOT_RUNNING
+            taskCodeInternalNew = Statics.generateTaskCode()
+            try {
+                thread {
+                    val task = GetNewOrder()
+                    task.addParams(this, taskCodeInternalNew)
+                    task.execute()
                 }
+            } catch (ex: Exception) {
+                ErrorLog.writeLog(
+                    null, this::class.java.simpleName, "$taskCodeParent: ${ex.message.toString()}"
+                )
+                syncNewOrderStatus = NOT_RUNNING
             }
         }
 
         private fun getCompletedOrderRequest() {
-            if (syncCompletedOrderRequestStatus == NOT_RUNNING) {
-                syncCompletedOrderRequestStatus = RUNNING
+            if (syncCompletedOrderStatus != NOT_RUNNING) return
+            syncCompletedOrderStatus = RUNNING
 
-                TASK_CODE_INTERNAL_COMPLETED = Statics.generateTaskCode()
-                try {
-                    thread {
-                        val task = GetCompletedOrderRequest()
-                        task.addParams(this, TASK_CODE_INTERNAL_COMPLETED)
-                        task.execute()
+            try {
+                thread {
+                    try {
+                        mCompletedOrderCallback!!.onCompletedOrderRequestResult(
+                            ProgressStatus.success, getCompletedOrders(), taskCodeParent, "Ok"
+                        )
+                    } catch (ex: java.lang.Exception) {
+                        ErrorLog.writeLog(
+                            null, this::class.java.simpleName, ex.message.toString()
+                        )
+                    } finally {
+                        syncCompletedOrderStatus = NOT_RUNNING
                     }
-                } catch (ex: Exception) {
-                    ErrorLog.writeLog(
-                        null,
-                        this::class.java.simpleName,
-                        "$TASK_CODE_PARENT: ${ex.message.toString()}"
-                    )
-                    syncCompletedOrderRequestStatus = NOT_RUNNING
                 }
+            } catch (ex: Exception) {
+                ErrorLog.writeLog(
+                    null, this::class.java.simpleName, "$taskCodeParent: ${ex.message.toString()}"
+                )
+                syncCompletedOrderStatus = NOT_RUNNING
             }
         }
     }

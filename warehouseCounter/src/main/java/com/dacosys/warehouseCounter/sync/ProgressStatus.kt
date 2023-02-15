@@ -63,14 +63,16 @@ class ProgressStatus : Parcelable {
         fun getAll(): ArrayList<ProgressStatus> {
             val allSections = ArrayList<ProgressStatus>()
             Collections.addAll(
-                allSections,
-                unknown,
-                starting,
-                running,
-                success,
-                canceled,
-                crashed,
-                finished
+                allSections, unknown, starting, running, success, canceled, crashed, finished
+            )
+
+            return ArrayList(allSections.sortedWith(compareBy { it.id }))
+        }
+
+        fun getEnd(): ArrayList<ProgressStatus> {
+            val allSections = ArrayList<ProgressStatus>()
+            Collections.addAll(
+                allSections, success, canceled, crashed, finished
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.id }))
