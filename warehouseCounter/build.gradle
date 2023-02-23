@@ -218,9 +218,6 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     // To use Kotlin annotation processing tool (kapt)
     kapt("androidx.room:room-compiler:$roomVersion")
-
-    // SQLite (para convertir datatypes a Room)
-    // implementation 'org.xerial:sqlite-jdbc:3.40.1.0'
 }
 repositories {
     mavenCentral()

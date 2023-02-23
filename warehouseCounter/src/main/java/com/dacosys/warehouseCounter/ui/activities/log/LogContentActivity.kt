@@ -12,8 +12,8 @@ import com.dacosys.warehouseCounter.adapter.log.LogContentAdapter
 import com.dacosys.warehouseCounter.databinding.LogContentActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.log.Log
-import com.dacosys.warehouseCounter.model.log.LogContent
+import com.dacosys.warehouseCounter.moshi.log.Log
+import com.dacosys.warehouseCounter.moshi.log.LogContent
 
 class LogContentActivity :
     AppCompatActivity(),

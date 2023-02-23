@@ -25,8 +25,8 @@ import com.dacosys.warehouseCounter.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.databinding.InboxActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -176,7 +176,10 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
             )
 
             // Valid content
-            intent.putParcelableArrayListExtra("orcArray", arrayAdapter!!.currentItem()!!.content)
+            intent.putParcelableArrayListExtra(
+                "orcArray",
+                ArrayList(arrayAdapter!!.currentItem()!!.content)
+            )
 
             startActivity(intent)
         }

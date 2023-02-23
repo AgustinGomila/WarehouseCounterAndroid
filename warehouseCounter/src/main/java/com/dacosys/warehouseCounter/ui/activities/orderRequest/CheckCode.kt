@@ -6,9 +6,10 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrcAdapter
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.orderRequest.Item
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.model.orderRequest.Qty
+import com.dacosys.warehouseCounter.moshi.orderRequest.Item
+import com.dacosys.warehouseCounter.moshi.orderRequest.Item.CREATOR.fromItemRoom
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.moshi.orderRequest.Qty
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
@@ -88,16 +89,19 @@ class CheckCode {
             }
 
             // Si no está en el adaptador del control, buscar en la base de datos
-            ItemCoroutines().getByQuery(code) { it ->
+            ItemCoroutines().getByQuery(code) {
                 val itemObj = it.firstOrNull()
 
                 if (itemObj != null) {
                     mCallback?.onCheckCodeEnded(
-                        OrderRequestContent(
-                            item = Item(itemObj, code),
-                            lot = null,
-                            qty = Qty(0.toDouble(), 0.toDouble())
-                        ), itemCode
+                        OrderRequestContent().apply {
+                            item = Item(itemObj, code)
+                            lot = null
+                            qty = Qty().apply {
+                                qtyCollected = 0.toDouble()
+                                qtyRequested = 0.toDouble()
+                            }
+                        }, itemCode
                     )
                     return@getByQuery
                 }
@@ -128,11 +132,14 @@ class CheckCode {
                         ItemCoroutines().add(item) { id ->
                             if (id != null) {
                                 mCallback?.onCheckCodeEnded(
-                                    OrderRequestContent(
-                                        item = Item(item, code),
-                                        lot = null,
-                                        qty = Qty(0.toDouble(), 0.toDouble())
-                                    ), itemCode
+                                    OrderRequestContent().apply {
+                                        this.item = fromItemRoom(item)
+                                        lot = null
+                                        qty = Qty().apply {
+                                            qtyCollected = 0.toDouble()
+                                            qtyRequested = 0.toDouble()
+                                        }
+                                    }, itemCode
                                 )
                             } else {
                                 mCallback?.onCheckCodeEnded(null, null)

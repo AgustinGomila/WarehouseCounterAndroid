@@ -13,7 +13,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getColorWithAlpha
-import com.dacosys.warehouseCounter.model.log.LogContent
+import com.dacosys.warehouseCounter.moshi.log.LogContent
 import com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
 import java.util.*
 

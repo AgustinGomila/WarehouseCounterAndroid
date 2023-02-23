@@ -261,28 +261,36 @@ class SettingsActivity : AppCompatActivity(),
 
             val emailEditText = findPreference<Preference>(settingRepository().clientEmail.key)
             emailEditText?.setOnPreferenceChangeListener { preference, newValue ->
-                if (!alreadyAnsweredYes) {
+                if (alreadyAnsweredYes) {
+                    preference.summary = newValue.toString()
+                    Statics.downloadDbRequired = true
+                    if (newValue is String) {
+                        SettingsRepository.getByKey(preference.key)?.value = newValue
+                    }
+                    true
+                } else {
                     val diaBox =
                         askForDownloadDbRequired(preference = preference, newValue = newValue)
                     diaBox.show()
                     false
-                } else {
-                    preference.summary = newValue.toString()
-                    true
                 }
             }
 
             val passwordEditText =
                 findPreference<Preference>(settingRepository().clientPassword.key)
             passwordEditText?.setOnPreferenceChangeListener { preference, newValue ->
-                if (!alreadyAnsweredYes) {
+                if (alreadyAnsweredYes) {
+                    preference.summary = newValue.toString()
+                    Statics.downloadDbRequired = true
+                    if (newValue is String) {
+                        SettingsRepository.getByKey(preference.key)?.value = newValue
+                    }
+                    true
+                } else {
                     val diaBox =
                         askForDownloadDbRequired(preference = preference, newValue = newValue)
                     diaBox.show()
                     false
-                } else {
-                    preference.summary = newValue.toString()
-                    true
                 }
             }
 
@@ -292,10 +300,8 @@ class SettingsActivity : AppCompatActivity(),
                     val email = settingViewModel().clientEmail
                     val password = settingViewModel().clientPassword
 
-                    if (!alreadyAnsweredYes) {
-                        val diaBox = askForDownloadDbRequired2(email = email, password = password)
-                        diaBox.show()
-                    } else {
+                    if (alreadyAnsweredYes) {
+                        Statics.downloadDbRequired = true
                         if (email.isNotEmpty() && password.isNotEmpty()) {
                             Statics.getConfig(
                                 onEvent = { onGetPackagesEnded(it) },
@@ -304,6 +310,9 @@ class SettingsActivity : AppCompatActivity(),
                                 installationCode = ""
                             )
                         }
+                    } else {
+                        val diaBox = askForDownloadDbRequired2(email = email, password = password)
+                        diaBox.show()
                     }
                 }
                 true
@@ -957,6 +966,11 @@ class SettingsActivity : AppCompatActivity(),
                 })
                 it.filters = filters
             }
+            printerPowerPref.setOnPreferenceChangeListener { preference, newValue ->
+                preference.summary = newValue.toString()
+                settingRepository().printerPower.value = newValue
+                true
+            }
 
             val maxSpeed = 10
             val printerSpeedPref =
@@ -972,6 +986,11 @@ class SettingsActivity : AppCompatActivity(),
                     ""
                 })
                 it.filters = filters
+            }
+            printerSpeedPref.setOnPreferenceChangeListener { preference, newValue ->
+                preference.summary = newValue.toString()
+                settingRepository().printerSpeed.value = newValue
+                true
             }
             //endregion //// POTENCIA Y VELOCIDAD
 

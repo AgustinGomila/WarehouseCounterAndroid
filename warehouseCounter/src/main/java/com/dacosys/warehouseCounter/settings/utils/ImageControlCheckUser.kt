@@ -1,7 +1,7 @@
 package com.dacosys.warehouseCounter.settings.utils
 
 import com.dacosys.imageControl.ImageControl.Companion.webservice
-import com.dacosys.imageControl.network.webService.moshi.UserAuthResult
+import com.dacosys.imageControl.moshi.UserAuthResult
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.misc.Statics
@@ -14,6 +14,32 @@ class ImageControlCheckUser(private var onSnackBarEvent: (SnackBarEventData) -> 
     private suspend fun onUiEvent(it: SnackBarEventData) {
         withContext(Dispatchers.Main) {
             onSnackBarEvent.invoke(it)
+        }
+    }
+
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+    fun cancel() {
+        scope.cancel()
+    }
+
+    fun execute() {
+        scope.launch {
+            coroutineScope {
+                withContext(Dispatchers.Default) { suspendFunction() }
+            }
+        }
+    }
+
+    private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
+        return@withContext try {
+            Statics.setupImageControl()
+            val r = webservice.imageControlUserCheck()
+
+            postExecute(r)
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(null, this::class.java.simpleName, ex)
         }
     }
 
@@ -42,36 +68,5 @@ class ImageControlCheckUser(private var onSnackBarEvent: (SnackBarEventData) -> 
             )
         }
         return result
-    }
-
-    private val scope = CoroutineScope(Job() + Dispatchers.IO)
-
-    fun cancel() {
-        scope.cancel()
-    }
-
-    fun execute() {
-        scope.launch { doInBackground() }
-    }
-
-    private var deferred: Deferred<UserAuthResult?>? = null
-    private suspend fun doInBackground(): UserAuthResult? {
-        var result: UserAuthResult? = null
-        coroutineScope {
-            deferred = async { suspendFunction() }
-            result = deferred?.await()
-        }
-        return postExecute(result)
-    }
-
-    private suspend fun suspendFunction(): UserAuthResult? = withContext(Dispatchers.IO) {
-        return@withContext try {
-            Statics.setupImageControl()
-            webservice.imageControlUserCheck()
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            ErrorLog.writeLog(null, this::class.java.simpleName, ex)
-            null
-        }
     }
 }

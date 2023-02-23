@@ -37,6 +37,7 @@ import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
 import com.dacosys.warehouseCounter.misc.Statics
@@ -45,11 +46,11 @@ import com.dacosys.warehouseCounter.misc.Statics.Companion.generateTaskCode
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest.CREATOR.getCompletedOrders
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
-import com.dacosys.warehouseCounter.network.GetNewOrder
-import com.dacosys.warehouseCounter.network.SendCompletedOrder
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest.CREATOR.getCompletedOrders
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.retrofit.functions.NewOrderListener
+import com.dacosys.warehouseCounter.retrofit.functions.SendOrder
 import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
@@ -76,18 +77,16 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.concurrent.thread
 
-class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.NewOrderListener,
-    CompletedOrderListener, SendCompletedOrder.TaskSendOrderRequestEnded {
-    override fun onTaskSendOrderRequestEnded(status: ProgressStatus, msg: String) {
-    }
+class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListener,
+    CompletedOrderListener {
 
-    override fun onCompletedOrderRequestResult(
+    override fun onCompletedOrderResult(
         status: ProgressStatus,
         itemArray: ArrayList<OrderRequest>,
-        TASK_CODE: Int,
+        taskCode: Int,
         msg: String,
     ) {
-        if (TASK_CODE == TASK_CODE_SYNC_ORDERS) {
+        if (taskCode == TASK_CODE_SYNC_ORDERS) {
             if (status == ProgressStatus.finished || status == ProgressStatus.success || status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
                 Log.d(
                     this::class.java.simpleName,
@@ -99,9 +98,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                     if (orArray.isNotEmpty()) {
                         try {
                             thread {
-                                val task = SendCompletedOrder()
-                                task.addParams(this, orArray)
-                                task.execute()
+                                SendOrder(orArray) { }.execute()
                             }
                         } catch (ex: Exception) {
                             ErrorLog.writeLog(
@@ -120,68 +117,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                                 System.getProperty("line.separator"),
                                 itemArray.count()
                             )
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    override fun onNewOrderResult(
-        status: ProgressStatus,
-        itemArray: ArrayList<OrderRequest>,
-        TASK_CODE: Int,
-        msg: String,
-    ) {
-        if (TASK_CODE == TASK_CODE_SYNC_ORDERS) {
-            if (status == ProgressStatus.finished || status == ProgressStatus.success || status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
-                Log.d(
-                    this::class.java.simpleName,
-                    getString(R.string.new_orders_received_) + itemArray.count()
-                )
-
-                if (!Statics.isExternalStorageWritable) {
-                    Log.e(
-                        this::class.java.simpleName,
-                        getString(R.string.error_external_storage_not_available_for_reading_or_writing)
-                    )
-                    return
-                }
-
-                if (itemArray.isNotEmpty()) {
-                    if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
-                            this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-                        )
-                    ) {
-                        writeNewOrderRequest(itemArray)
-                    } else {
-                        newOrArray = itemArray
-                        requestPermissions(
-                            arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                            REQUEST_EXTERNAL_STORAGE
-                        )
-                    }
-                }
-
-                for (button in buttonCollection) {
-                    if (button.tag == MainButton.PendingCounts.id) {
-                        runOnUiThread {
-                            button.text = String.format(
-                                "%s%s(%s)",
-                                MainButton.PendingCounts.description,
-                                System.getProperty("line.separator"),
-                                countPending()
-                            )
-
-                            if (itemArray.isNotEmpty()) {
-                                if (settingViewModel().shakeOnPendingOrders) {
-                                    shakeDevice()
-                                }
-                                if (settingViewModel().soundOnPendingOrders) {
-                                    playNotification()
-                                }
-                                shakeView(button, 20, 5)
-                            }
                         }
                     }
                 }
@@ -453,7 +388,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
                     val description = data.getStringExtra("description")
                     val orderRequestType =
                         Parcels.unwrap<OrderRequestType>(data.getParcelableExtra<OrderRequestType>("orderRequestType"))
-                    val log = com.dacosys.warehouseCounter.model.log.Log()
+                    val log = com.dacosys.warehouseCounter.moshi.log.Log()
 
                     makeText(
                         binding.root, String.format(
@@ -888,7 +823,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
 
         var isOk = true
         for (newOrder in newOrArray) {
-            val orJson = OrderRequest.toJson(newOrder)
+            val orJson = moshi().adapter(OrderRequest::class.java).toJson(newOrder)
 
             // Acá se comprueba si el ID ya existe y actualizamos la orden.
             // Si no se agrega una orden nueva.
@@ -946,7 +881,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
         var error = false
 
         try {
-            val orJson = OrderRequest.toJson(newOrder)
+            val orJson = moshi().adapter(OrderRequest::class.java).toJson(newOrder)
             Log.i(this::class.java.simpleName, orJson)
             val orFileName = origOrder.filename.substringAfterLast('/')
 
@@ -985,5 +920,57 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
         }
 
         private var newOrArray: ArrayList<OrderRequest> = ArrayList()
+    }
+
+    override fun onNewOrderEvent(itemArray: ArrayList<OrderRequest>) {
+        Log.d(
+            this::class.java.simpleName,
+            getString(R.string.new_orders_received_) + itemArray.count()
+        )
+
+        if (!Statics.isExternalStorageWritable) {
+            Log.e(
+                this::class.java.simpleName,
+                getString(R.string.error_external_storage_not_available_for_reading_or_writing)
+            )
+            return
+        }
+
+        if (itemArray.isNotEmpty()) {
+            if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.WRITE_EXTERNAL_STORAGE
+                )
+            ) {
+                writeNewOrderRequest(itemArray)
+            } else {
+                newOrArray = itemArray
+                requestPermissions(
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE
+                )
+            }
+        }
+
+        for (button in buttonCollection) {
+            if (button.tag == MainButton.PendingCounts.id) {
+                runOnUiThread {
+                    button.text = String.format(
+                        "%s%s(%s)",
+                        MainButton.PendingCounts.description,
+                        System.getProperty("line.separator"),
+                        countPending()
+                    )
+
+                    if (itemArray.isNotEmpty()) {
+                        if (settingViewModel().shakeOnPendingOrders) {
+                            shakeDevice()
+                        }
+                        if (settingViewModel().soundOnPendingOrders) {
+                            playNotification()
+                        }
+                        shakeView(button, 20, 5)
+                    }
+                }
+            }
+        }
     }
 }

@@ -32,9 +32,9 @@ import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
 import com.dacosys.warehouseCounter.misc.objects.table.Table
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderRequestHeader
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText

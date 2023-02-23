@@ -511,7 +511,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         var description: String
         var price: String
 
-        ItemCategoryCoroutines().getById(item.itemCategoryId ?: 1L) {
+        ItemCategoryCoroutines().getById(item.itemCategoryId) {
             itemCategoryStr = ""
             if (it != null) {
                 if (it.parentStr.isNotEmpty()) {

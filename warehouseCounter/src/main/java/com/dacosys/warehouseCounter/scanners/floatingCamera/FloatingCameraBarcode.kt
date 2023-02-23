@@ -230,7 +230,11 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
 
                 // Actualice el tamaño de la ventana flotante para evitar la limitación
                 // de ancho cuando otras aplicaciones se proyectan horizontalmente
-                EasyFloat.updateFloat(easyFloatTag, width = params.width, height = params.height)
+                EasyFloat.updateFloat(
+                    easyFloatTag,
+                    width = params.width,
+                    height = params.height
+                )
             }
         }
 

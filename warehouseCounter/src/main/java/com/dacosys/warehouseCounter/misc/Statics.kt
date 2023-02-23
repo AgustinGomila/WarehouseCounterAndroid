@@ -21,7 +21,6 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Environment
-import android.provider.Settings
 import android.text.InputType
 import android.text.method.PasswordTransformationMethod
 import android.util.DisplayMetrics
@@ -952,7 +951,7 @@ class Statics {
                     sv.clientPassword = password
 
                     // Configuración y refresco de la conexión
-                    DynamicRetrofit.start(URL(settingViewModel().urlPanel))
+                    DynamicRetrofit.start(URL(sv.urlPanel))
                 } else if (productId == APP_VERSION_ID_IMAGECONTROL) {
                     sv.useImageControl = true
                     sv.icWsServer = url
@@ -1038,7 +1037,6 @@ class Statics {
                 return Environment.MEDIA_MOUNTED == state
             }
 
-        @SuppressLint("HardwareIds")
         fun getDeviceData(): JSONObject {
             val ip = getIPAddress()
             val macAddress = getMACAddress()
@@ -1053,14 +1051,16 @@ class Statics {
                 } ${pInfo.versionName}"
             }
 
-            val processorId =
-                Settings.Secure.getString(context().contentResolver, Settings.Secure.ANDROID_ID)
+            // val processorId = Settings.Secure.getString(context().contentResolver, Settings.Secure.ANDROID_ID)
             val deviceName = "${Build.MANUFACTURER} ${Build.MODEL}"
 
             val collectorData = JSONObject()
-            collectorData.put("ip", ip).put("macAddress", macAddress)
-                .put("operatingSystem", operatingSystem).put("appName", appName)
-                .put("processorId", processorId).put("deviceName", deviceName)
+            collectorData
+                .put("ip", ip)
+                .put("macAddress", macAddress)
+                .put("operatingSystem", operatingSystem)
+                .put("appName", appName)
+                .put("deviceName", deviceName)
 
             return collectorData
         }

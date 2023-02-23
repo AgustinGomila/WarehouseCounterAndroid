@@ -7,15 +7,12 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.moshi.error.ErrorObject
-import com.dacosys.warehouseCounter.moshi.price.Price
-import com.dacosys.warehouseCounter.moshi.price.PriceList
-import com.dacosys.warehouseCounter.moshi.search.SearchPrice
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
-import com.squareup.moshi.JsonDataException
 import kotlinx.coroutines.*
 import retrofit2.Call
 import retrofit2.Callback
@@ -24,12 +21,14 @@ import java.net.MalformedURLException
 import java.net.URL
 import kotlin.concurrent.thread
 
-class GetPrice(
-    private val searchPrice: SearchPrice,
-    private val onEvent: (SnackBarEventData) -> Unit = { },
-    private val onFinish: (ArrayList<Price>) -> Unit,
-) {
+interface NewOrderListener {
+    fun onNewOrderEvent(itemArray: ArrayList<OrderRequest>)
+}
 
+class GetNewOrder(
+    private val onEvent: (SnackBarEventData) -> Unit = { },
+    private val onFinish: (ArrayList<OrderRequest>) -> Unit,
+) {
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
     fun execute() {
@@ -61,15 +60,11 @@ class GetPrice(
         // Configuración de Retrofit
         val apiUrl = setupRetrofit()
 
-        val tempInst = apiService().getPrices(apiUrl = apiUrl, body = searchPrice)
-
-        Log.i(
-            this::class.java.simpleName,
-            moshi().adapter(SearchPrice::class.java).toJson(searchPrice)
-        )
+        val tempInst = apiService().getNewOrder(apiUrl = apiUrl)
 
         tempInst.enqueue(object : Callback<Any?> {
             override fun onResponse(call: Call<Any?>, response: Response<Any?>) {
+                val r: ArrayList<OrderRequest> = ArrayList()
                 val resp = response.body()
                 if (resp == null) {
                     Log.e(this.javaClass.simpleName, response.message())
@@ -91,35 +86,34 @@ class GetPrice(
                 }
 
                 /**
-                 * Comprobamos si es una respuesta del tipo JsonArray
+                 * Comprobamos si es una respuesta del tipo colección de OrderRequests
                  */
                 try {
-                    val jsonArray = moshi().adapter(List::class.java).fromJsonValue(resp)
-                    if (jsonArray?.any() == true) {
-                        val r: ArrayList<PriceList> = ArrayList()
-                        jsonArray.mapNotNullTo(r) {
-                            moshi().adapter(PriceList::class.java).fromJsonValue(it)
+                    for (allOrderRequests in (resp as Map<*, *>).entries) {
+                        val orderRequestMap = allOrderRequests.value as Map<*, *>
+                        for (pack in orderRequestMap.values) {
+                            val p = moshi().adapter(OrderRequest::class.java).fromJsonValue(pack)
+                                ?: continue
+                            r.add(p)
                         }
-
-                        val priceArray: ArrayList<Price> = ArrayList()
-                        r.flatMapTo(priceArray) { it.prices }
-
-                        onFinish.invoke(priceArray)
-                    } else {
-                        onEvent.invoke(
-                            SnackBarEventData(
-                                context().getString(R.string.no_results), SnackBarType.INFO
-                            )
-                        )
                     }
-                } catch (ex: JsonDataException) {
-                    Log.e(this.javaClass.simpleName, ex.toString())
+                } catch (ex: Exception) {
                     onEvent.invoke(
                         SnackBarEventData(
-                            context().getString(R.string.invalid_prices), SnackBarType.ERROR
+                            context().getString(R.string.invalid_orders),
+                            SnackBarType.ERROR
                         )
                     )
                     return
+                }
+
+                if (r.any()) onFinish.invoke(r)
+                else {
+                    onEvent.invoke(
+                        SnackBarEventData(
+                            context().getString(R.string.no_results), SnackBarType.INFO
+                        )
+                    )
                 }
             }
 
@@ -151,12 +145,12 @@ class GetPrice(
                 "Base URL: ${protocol}://${host}/ (Api URL: ${apiUrl.ifEmpty { "Vacío" }})"
             )
         } catch (e: MalformedURLException) {
+            Log.e(this::class.java.simpleName, e.toString())
             onEvent.invoke(
                 SnackBarEventData(
                     context().getString(R.string.url_malformed), SnackBarType.ERROR
                 )
             )
-            Log.e(this::class.java.simpleName, e.toString())
             return ""
         }
 

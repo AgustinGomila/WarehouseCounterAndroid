@@ -23,8 +23,9 @@ import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.round
 import com.dacosys.warehouseCounter.misc.Statics.Companion.showKeyboard
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.orderRequest.Item
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.moshi.orderRequest.Item
+import com.dacosys.warehouseCounter.moshi.orderRequest.Item.CREATOR.fromItemRoom
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestContent
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
@@ -283,7 +284,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
 
         ItemCoroutines().updateDescription(itemId, description) {
             ItemCoroutines().getById(itemId) {
-                if (it != null) onFinish(Item(it))
+                if (it != null) onFinish(fromItemRoom(it))
                 else onFinish(null)
             }
         }

@@ -32,6 +32,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrcAdapter
 import com.dacosys.warehouseCounter.databinding.OrderRequestActivityBothPanelsCollapsedBinding
@@ -41,9 +42,10 @@ import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.confirm
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.modify
-import com.dacosys.warehouseCounter.model.log.Log
-import com.dacosys.warehouseCounter.model.log.LogContent
-import com.dacosys.warehouseCounter.model.orderRequest.*
+import com.dacosys.warehouseCounter.moshi.log.Log
+import com.dacosys.warehouseCounter.moshi.log.LogContent
+import com.dacosys.warehouseCounter.moshi.orderRequest.*
+import com.dacosys.warehouseCounter.moshi.orderRequest.Item.CREATOR.fromItemRoom
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.room.entity.itemRegex.ItemRegex
@@ -219,7 +221,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         // Check LOT ENABLED
         val item = orc.item ?: return
         if ((item.itemId ?: 0) > 0 && item.lotEnabled == true) {
-            if (lastRegexResult != null && lastRegexResult?.lot != null) {
+            if (orc.lot != null || !lastRegexResult?.lot.isNullOrEmpty()) {
                 setLotCode(orc, lastRegexResult?.lot ?: "")
                 lastRegexResult = null
             } else {
@@ -262,7 +264,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }, 100)
     }
 
-    // region Variables privadas de la actividad
+// region Variables privadas de la actividad
 
     private var tempTitle = context().getString(R.string.count)
 
@@ -288,7 +290,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var allowClicks = true
     private var rejectNewInstances = false
 
-    // endregion Variables privadas de la actividad
+// endregion Variables privadas de la actividad
 
     override fun onDestroy() {
         saveSharedPreferences()
@@ -386,7 +388,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun loadDefaultValues() {
         val or = orderRequest ?: return
-        orcArray = orderRequest?.content ?: ArrayList()
+        orcArray = ArrayList(orderRequest?.content ?: ArrayList())
 
         log = Log(
             or.clientId,
@@ -902,6 +904,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             adb.setNegativeButton(R.string.cancel, null)
             adb.setPositiveButton(R.string.accept) { _, _ ->
 
+                val logContent: ArrayList<LogContent> = ArrayList(log?.content ?: ArrayList())
+
                 for (i in orcsToRemove) {
                     if (i.item != null && i.qty != null) {
                         val itemObj = i.item!!
@@ -913,7 +917,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
                         val variationQty = qtyObj.qtyCollected!! * -1
                         if (variationQty != 0.toDouble()) {
-                            log!!.content.add(
+                            logContent.add(
                                 LogContent(
                                     itemId = itemObj.itemId,
                                     itemStr = itemObj.itemDescription,
@@ -929,6 +933,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                         }
                     }
                 }
+
+                log?.content = logContent
 
                 orcAdapter!!.remove(orcsToRemove)
             }
@@ -968,13 +974,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                         if (it2 == null) return@getById
 
                         try {
-                            addOrc(
-                                OrderRequestContent(
-                                    item = Item(it2),
-                                    lot = null,
-                                    qty = Qty(0.toDouble(), 0.toDouble())
-                                )
-                            )
+                            addOrc(OrderRequestContent().apply {
+                                item = fromItemRoom(it2)
+                                lot = null
+                                qty = Qty().apply {
+                                    qtyCollected = 0.toDouble()
+                                    qtyRequested = 0.toDouble()
+                                }
+                            })
                         } catch (ex: Exception) {
                             val res =
                                 context().getString(R.string.an_error_occurred_while_trying_to_add_the_item)
@@ -1007,8 +1014,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     when (Parcels.unwrap<ConfirmStatus>(data.getParcelableExtra("confirmStatus"))) {
-                        modify -> if (processCount(false)) finish()
-                        confirm -> if (processCount(true)) finish()
+                        modify -> {
+                            if (processCount(false)) finish()
+                        }
+                        confirm -> {
+                            if (processCount(true)) finish()
+                        }
                     }
                 }
             } catch (ex: Exception) {
@@ -1020,8 +1031,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
     // Flag que guarda el estado "completed" en caso de que
-    // se requiran permisos de escritura y se tenga que retomar la
-    // actividad después de que el usuario los otorgue.
+// se requiran permisos de escritura y se tenga que retomar la
+// actividad después de que el usuario los otorgue.
     private var tempCompleted = false
 
     private fun processCount(completed: Boolean): Boolean {
@@ -1032,7 +1043,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         // Preparar el conteo
         tOrderRequest.content = orcAdapter!!.getAll()
         tOrderRequest.completed = tempCompleted
-        tOrderRequest.finishDate = if (tempCompleted) android.text.format.DateFormat.format(
+        tOrderRequest.finishDate = if (tempCompleted) DateFormat.format(
             "yyyy-MM-dd hh:mm:ss", System.currentTimeMillis()
         ).toString()
         else ""
@@ -1047,7 +1058,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         setImagesJson()
 
         try {
-            orJson = OrderRequest.toJson(tOrderRequest)
+            orJson = moshi().adapter(OrderRequest::class.java).toJson(tOrderRequest)
             android.util.Log.i(this::class.java.simpleName, orJson)
             orFileName = tOrderRequest.filename.substringAfterLast('/')
 
@@ -1115,7 +1126,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         intent.putExtra("title", context().getString(R.string.count_log))
         intent.putExtra("log", log)
-        intent.putExtra("logContent", log?.content)
+        intent.putExtra("logContent", ArrayList(log?.content ?: ArrayList()))
         resultForLog.launch(intent)
     }
 
@@ -1353,7 +1364,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
         }
 
-    // region READERS Reception
+// region READERS Reception
 
     override fun onNewIntent(intent: Intent) {
         /*
@@ -1375,15 +1386,13 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         scannerCompleted(scanCode)
     }
 
-    //endregion READERS Reception
+//endregion READERS Reception
 
     public override fun onStart() {
         super.onStart()
 
-        thread {
-            fillOrcAdapter(orcArray)
-            gentlyReturn()
-        }
+        thread { fillOrcAdapter(orcArray) }
+        gentlyReturn()
     }
 
     override fun onBackPressed() {
@@ -1568,6 +1577,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
         val initialQty = orc.qty?.qtyCollected ?: 0.0
+        val logContent: ArrayList<LogContent> = ArrayList(log?.content ?: ArrayList())
 
         for (i in 0 until (orcAdapter?.count ?: 0)) {
             val tempOrc = orcAdapter?.getItem(i)
@@ -1603,7 +1613,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
                     val variationQty = (qtyObj.qtyCollected ?: 0.0) - initialQty
                     if (variationQty != 0.toDouble()) {
-                        log?.content?.add(
+                        logContent.add(
                             LogContent(
                                 itemId = itemObj.itemId,
                                 itemStr = itemObj.itemDescription,
@@ -1623,6 +1633,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             }
         }
+
+        log?.content = logContent
     }
 
     override fun onRequestPermissionsResult(
@@ -1666,7 +1678,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         var code: String
 
-        ItemRegex.tryToRegex(scanCode) {
+        ItemRegex.tryToRegex(scanCode) { it ->
             if (!it.any()) {
                 // No coincide con los Regex de la DB, lo
                 // usamos como un código corriente.

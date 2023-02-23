@@ -20,7 +20,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.databinding.NewCountActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
 import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.scanners.JotterListener

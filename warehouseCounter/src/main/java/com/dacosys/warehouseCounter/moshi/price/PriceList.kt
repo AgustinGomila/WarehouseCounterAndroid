@@ -31,21 +31,6 @@ class PriceList {
     @Json(name = pricesTag)
     var prices: List<Price> = ArrayList<Price>().toList()
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as PriceList
-
-        if (prices != other.prices) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return prices.hashCode()
-    }
-
     companion object {
         /**
          * Nombre de campos para el Json de este objeto.

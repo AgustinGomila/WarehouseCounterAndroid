@@ -10,9 +10,9 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.databinding.OrderRequestHeaderBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
 
 /**

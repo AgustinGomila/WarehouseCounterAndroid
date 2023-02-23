@@ -1,7 +1,7 @@
 BEGIN TRANSACTION;
 
 CREATE TABLE IF NOT EXISTS [user] (
-  [_id] bigint NOT NULL,
+  [_id] INTEGER NOT NULL,
   [name] TEXT NOT NULL,
   [active] INTEGER NOT NULL,
   [password] TEXT NULL,
@@ -54,6 +54,15 @@ CREATE TABLE IF NOT EXISTS [lot] (
   [active] INTEGER NOT NULL,
   CONSTRAINT [PK__id] PRIMARY KEY ([_id])
 );
+CREATE TABLE IF NOT EXISTS [item_regex] (
+  [_id] INTEGER NOT NULL,
+  [description] TEXT NOT NULL,
+  [regex] TEXT NOT NULL,
+  [json_config] TEXT NULL,
+  [code_length] INTEGER NULL,
+  [active] INTEGER NOT NULL DEFAULT 1,
+CONSTRAINT [PK__id] PRIMARY KEY ([_id])
+);
 DROP
   INDEX IF EXISTS [IDX_user_name];
 CREATE INDEX [IDX_user_name] ON [user] ([name]);
@@ -81,5 +90,8 @@ CREATE INDEX [IDX_client_contact_name] ON [client] ([contact_name]);
 DROP
   INDEX IF EXISTS [IDX_lot_code];
 CREATE INDEX [IDX_lot_code] ON [lot] ([code]);
+DROP
+  INDEX IF EXISTS [IDX_item_regex__id];
+CREATE INDEX [IDX_item_regex__id] ON [item_regex] ([_id]);
 
 COMMIT;

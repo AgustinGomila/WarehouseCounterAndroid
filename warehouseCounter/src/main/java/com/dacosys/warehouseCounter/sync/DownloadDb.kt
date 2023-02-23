@@ -3,10 +3,9 @@ package com.dacosys.warehouseCounter.sync
 import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.SendItemCode
+import com.dacosys.warehouseCounter.retrofit.functions.SendItemCode
 import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.room.database.FileHelper
 import com.dacosys.warehouseCounter.room.database.WcDatabase
@@ -15,17 +14,15 @@ import com.dacosys.warehouseCounter.sync.DownloadDb.DownloadStatus.*
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import kotlinx.coroutines.*
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.SQLException
 import kotlin.concurrent.thread
 
 
-class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownloadFileTask {
+class DownloadDb : DownloadFileTask.OnDownloadFileTask {
 
     interface DownloadDbTask {
         // Define data you like to return from AysncTask
@@ -39,16 +36,21 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
         )
     }
 
-    override fun onTaskSendItemCodeEnded(status: ProgressStatus, msg: String) {
-        uploadStatus = status
-        val progressStatusDesc = (uploadStatus as ProgressStatus).description
+    private fun onTaskSendItemCodeEnded(snackBarEventData: SnackBarEventData) {
+        when (snackBarEventData.snackBarType) {
+            SUCCESS -> uploadStatus = ProgressStatus.success
+            ERROR -> uploadStatus = ProgressStatus.crashed
+        }
+
+        val progressStatusDesc = uploadStatus?.description ?: ""
         val registryDesc = context().getString(R.string.item_codes)
+        val msg = snackBarEventData.text
 
         if (uploadStatus == ProgressStatus.crashed || downloadStatus == CRASHED) {
             ErrorLog.writeLog(
                 null, this::class.java.simpleName, "$progressStatusDesc: $registryDesc, $msg"
             )
-            onEventData(SnackBarEventData(msg, ERROR))
+            onEventData(snackBarEventData)
         } else {
             Log.d(this::class.java.simpleName, "$progressStatusDesc: $registryDesc, $msg")
         }
@@ -112,8 +114,6 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
     @Volatile
     private var uploadStatus: ProgressStatus? = null
 
-    private var timeFilename = ""
-    private var dbFilename = ""
     private var oldDateTimeStr: String = ""
     private var currentDateTimeStr: String = ""
     private var fileType: FileType? = null
@@ -124,12 +124,15 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
 
     ///////////////////////
     // region Constantes //
-    private var destinationTimeFile: File? = null
-    private var destinationDbFile: File? = null
+    private var destTimeFile: File? = null
+    private var destDbFile: File? = null
+
+    private val timeFileName: String = "android.wc.time.txt"
 
     private var onEventData: (SnackBarEventData) -> Unit = {}
-    private var completeDbFileUrl = ""
-    private var completeTimeFileUrl = ""
+
+    private var dbFileUrl = ""
+    private var timeFileUrl = ""
 
     // endregion Constantes //
     //////////////////////////
@@ -140,28 +143,14 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
         dbFileUrl: String, //"android.wc.sqlite.txt",
         onEventData: (SnackBarEventData) -> Unit = {},
     ) {
-        val sv = settingViewModel()
-
         mCallback = callBack
         this.onEventData = onEventData
 
-        timeFilename = timeFileUrl.substringAfterLast('/')
-        dbFilename = dbFileUrl.substringAfterLast('/')
+        this.dbFileUrl = dbFileUrl
+        this.timeFileUrl = timeFileUrl
 
-        destinationTimeFile = File("${context().cacheDir.absolutePath}/$timeFilename")
-        destinationDbFile = File("${context().cacheDir.absolutePath}/$dbFilename")
-
-        completeDbFileUrl = "${sv.urlPanel}/$dbFileUrl"
-        completeTimeFileUrl = "${sv.urlPanel}/$timeFileUrl"
-    }
-
-    private fun postExecute(result: Boolean) {
-        if (result) {
-            Log.d(this::class.java.simpleName, context().getString(R.string.ok))
-        } else {
-            onEventData(SnackBarEventData(errorMsg, ERROR))
-            ErrorLog.writeLog(null, this::class.java.simpleName, errorMsg)
-        }
+        destTimeFile = File("${context().cacheDir.absolutePath}/${timeFileName}")
+        destDbFile = File("${context().cacheDir.absolutePath}/${DATABASE_NAME}")
     }
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
@@ -175,7 +164,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
 
         scope.launch {
             coroutineScope {
-                withContext(Dispatchers.Default) { suspendFunction() }
+                withContext(Dispatchers.IO) { suspendFunction() }
             }
         }
     }
@@ -183,7 +172,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         if (!Statics.isOnline()) {
             mCallback?.onDownloadDbTask(CANCELED)
-            return@withContext false
+            return@withContext
         }
 
         mCallback?.onDownloadDbTask(STARTING)
@@ -192,10 +181,10 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
 
     private fun goForrest() {
         try {
-            val destTimeFile = destinationTimeFile
-            val destDbFile = destinationDbFile
+            val destTimeFile = destTimeFile
+            val destDbFile = destDbFile
 
-            if (dbFilename.isEmpty() || timeFilename.isEmpty() || destTimeFile == null || destDbFile == null) {
+            if (dbFileUrl.isEmpty() || timeFileUrl.isEmpty() || destTimeFile == null || destDbFile == null) {
                 errorMsg = context().getString(R.string.database_name_is_invalid)
                 mCallback?.onDownloadDbTask(CRASHED)
                 return
@@ -211,9 +200,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                 ItemCodeCoroutines().getToUpload {
                     try {
                         thread {
-                            val task = SendItemCode()
-                            task.addParams(this, it)
-                            task.execute()
+                            SendItemCode(it) { it2 -> onTaskSendItemCodeEnded(it2) }.execute()
                         }
                     } catch (ex: Exception) {
                         ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
@@ -253,7 +240,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
             var downloadTask = DownloadFileTask()
             downloadTask.addParams(
                 UrlDestParam(
-                    url = completeTimeFileUrl, destination = destTimeFile
+                    url = timeFileUrl, destination = destTimeFile
                 ), this, FileType.TIMEFILE
             )
             downloadTask.execute()
@@ -283,7 +270,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                             downloadTask = DownloadFileTask()
                             downloadTask.addParams(
                                 UrlDestParam(
-                                    url = completeTimeFileUrl, destination = destTimeFile
+                                    url = timeFileUrl, destination = destTimeFile
                                 ), this, FileType.TIMEFILE
                             )
                             downloadTask.execute()
@@ -338,7 +325,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                 downloadTask = DownloadFileTask()
                 downloadTask.addParams(
                     UrlDestParam(
-                        url = completeDbFileUrl, destination = destDbFile
+                        url = dbFileUrl, destination = destDbFile
                     ), this, FileType.DBFILE
                 )
                 downloadTask.execute()
@@ -376,7 +363,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
             // Borrar la base de datos actual de Room del almacenamiento del dispositivo.
             // Copiar la nueva base de datos descargada desde la web a la ubicación de la base de datos anterior.
             // Se iniciará una nueva instancia de la base de datos de Room utilizando la base de datos actualizada la próxima vez que se la invoque.
-            FileHelper.copyDataBase(destinationDbFile)
+            FileHelper.copyDataBase(this.destDbFile)
 
         } catch (ex: Exception) {
             errorMsg = context().getString(R.string.error_downloading_the_database)
@@ -393,7 +380,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
         var dateTime = ""
         //Read text from file
         try {
-            val br = BufferedReader(FileReader(destinationTimeFile!!.absolutePath))
+            val br = BufferedReader(FileReader(destTimeFile!!.absolutePath))
             while (true) {
                 dateTime = br.readLine() ?: break
             }
@@ -407,9 +394,9 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
     }
 
     private fun deleteTimeFile() {
-        destinationTimeFile = File(context().cacheDir.absolutePath + "/" + timeFilename)
-        if (destinationTimeFile?.exists() == true) {
-            destinationTimeFile?.delete()
+        destTimeFile = File(context().cacheDir.absolutePath + "/" + timeFileName)
+        if (destTimeFile?.exists() == true) {
+            destTimeFile?.delete()
         }
     }
 
@@ -420,107 +407,6 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
             r.add(FINISHED)
             r.add(CRASHED)
             return r
-        }
-
-        @Throws(SQLException::class)
-        fun getConnection(dbPath: String): Connection? {
-            var connection: Connection? = null
-            try {
-                Class.forName("org.sqlite.JDBC")
-                connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
-            } catch (e: ClassNotFoundException) {
-                e.printStackTrace()
-            }
-            return connection
-        }
-
-        /**
-         * Convert db schema
-         * Esta función intenta convertir los tipos de SQLite en Room.
-         */
-        fun convertDbSchema() {
-            val myTag = "ConvertDbSchema"
-            Log.d(myTag, "Intentando convertir base de datos SQLite a Room...")
-            val connection =
-                getConnection(context().getDatabasePath(DATABASE_NAME).absolutePath) ?: return
-
-            val tables = connection.metaData.getTables(
-                /* catalog = */ null,
-                /* schemaPattern = */ null,
-                /* tableNamePattern = */ null,
-                /* types = */ arrayOf("TABLE")
-            )
-
-            while (tables.next()) {
-
-                val tableName = tables.getString("TABLE_NAME")
-                Log.i(myTag, "Convirtiendo $tableName")
-
-                val columns = connection.metaData.getColumns(
-                    /* catalog = */ null,
-                    /* schemaPattern = */ null,
-                    /* tableNamePattern = */ tableName,
-                    /* columnNamePattern = */ null
-                )
-
-                val newColumns = mutableListOf<String>()
-                while (columns.next()) {
-                    val columnName = columns.getString("COLUMN_NAME")
-
-                    // Convert data types
-                    val newDataType = when (val dataType = columns.getString("TYPE_NAME")) {
-                        "INT" -> "INTEGER"
-                        "INTEGER" -> "INTEGER"
-                        "TINYINT" -> "INTEGER"
-                        "SMALLINT" -> "INTEGER"
-                        "MEDIUMINT" -> "INTEGER"
-                        "BIGINT" -> "INTEGER"
-                        "UNSIGNED BIGINT" -> "INTEGER"
-                        "INT2" -> "INTEGER"
-                        "INT8" -> "INTEGER"
-
-                        "REAL" -> "REAL"
-                        "DOUBLE" -> "REAL"
-                        "DOUBLE PRECISION" -> "REAL"
-                        "FLOAT" -> "REAL"
-
-                        "CHARACTER" -> "TEXT"
-                        "VARCHAR" -> "TEXT"
-                        "VARYING CHARACTER" -> "TEXT"
-                        "NCHAR" -> "TEXT"
-                        "NATIVE CHARACTER" -> "TEXT"
-                        "NVARCHAR" -> "TEXT"
-                        "TEXT" -> "TEXT"
-                        "CLOB" -> "TEXT"
-
-                        "BLOB" -> "BLOB"
-
-                        "NUMERIC" -> "NUMERIC"
-                        "DECIMAL" -> "NUMERIC"
-                        "BOOLEAN" -> "NUMERIC"
-                        "DATE" -> "NUMERIC"
-                        "DATETIME" -> "NUMERIC"
-                        else -> dataType
-                    }
-
-                    val newColumn = "$columnName $newDataType"
-                    newColumns.add(newColumn)
-                }
-
-                val newSchema = newColumns.joinToString(", ")
-                val alterTable = "ALTER TABLE $tableName RENAME TO temp_$tableName;"
-                val createTable = "CREATE TABLE $tableName ($newSchema);"
-                val copyData = "INSERT INTO $tableName SELECT * FROM temp_$tableName;"
-                val dropTempTable = "DROP TABLE temp_$tableName;"
-
-                val statements = listOf(alterTable, createTable, copyData, dropTempTable)
-                statements.forEach {
-                    Log.i(myTag, it)
-                    connection.createStatement().execute(it)
-                }
-            }
-
-            connection.close()
         }
     }
 }

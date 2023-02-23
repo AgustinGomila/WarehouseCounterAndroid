@@ -2,6 +2,8 @@ package com.dacosys.warehouseCounter.misc.objects.collectorType
 
 import android.os.Parcel
 import android.os.Parcelable
+import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import java.util.*
 
 class CollectorType : Parcelable {
@@ -15,16 +17,6 @@ class CollectorType : Parcelable {
 
     override fun toString(): String {
         return description
-    }
-
-    override fun equals(other: Any?): Boolean {
-        return if (other !is CollectorType) {
-            false
-        } else this.id == other.id
-    }
-
-    override fun hashCode(): Int {
-        return this.id.hashCode()
     }
 
     constructor(parcel: Parcel) {
@@ -52,19 +44,15 @@ class CollectorType : Parcelable {
             return arrayOfNulls(size)
         }
 
-        var none = CollectorType(0, "No configurado")
-        var honeywell = CollectorType(1, "Honeywell")
-        var honeywellNative = CollectorType(2, "Honeywell (nativo)")
-        var zebra = CollectorType(3, "Zebra")
+        var none = CollectorType(0, context().getString(R.string.not_configured))
+        var honeywell = CollectorType(1, context().getString(R.string.honeywell))
+        var honeywellNative = CollectorType(2, context().getString(R.string.honeywell_native))
+        var zebra = CollectorType(3, context().getString(R.string.zebra))
 
         fun getAll(): ArrayList<CollectorType> {
             val allSections = ArrayList<CollectorType>()
             Collections.addAll(
-                allSections,
-                none,
-                honeywell,
-                honeywellNative,
-                zebra
+                allSections, none, honeywell, honeywellNative, zebra
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.id }))

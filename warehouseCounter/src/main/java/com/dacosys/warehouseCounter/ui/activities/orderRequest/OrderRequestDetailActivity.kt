@@ -27,9 +27,9 @@ import com.dacosys.warehouseCounter.databinding.OrderRequestDetailActivityBindin
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderRequestHeader
 import org.parceler.Parcels

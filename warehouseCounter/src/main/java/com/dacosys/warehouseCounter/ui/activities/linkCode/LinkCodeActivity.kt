@@ -38,7 +38,7 @@ import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.showKeyboard
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.SendItemCode
+import com.dacosys.warehouseCounter.retrofit.functions.SendItemCode
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.room.entity.item.Item
@@ -49,7 +49,6 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.settings.SettingsRepository
-import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.activities.item.CheckItemCode
 import com.dacosys.warehouseCounter.ui.fragments.item.ItemSelectFilterFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -65,8 +64,8 @@ import kotlin.concurrent.thread
 class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener,
     ItemAdapter.SelectedItemChangedListener, ItemAdapter.CheckedChangedListener,
     CounterHandler.CounterListener, ItemSelectFilterFragment.OnFilterChangedListener,
-    SendItemCode.TaskSendItemCodeEnded, CheckItemCode.CheckCodeEnded,
-    SwipeRefreshLayout.OnRefreshListener, ItemAdapter.DataSetChangedListener {
+    CheckItemCode.CheckCodeEnded, SwipeRefreshLayout.OnRefreshListener,
+    ItemAdapter.DataSetChangedListener {
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -108,11 +107,13 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }
     }
 
-    override fun onTaskSendItemCodeEnded(status: ProgressStatus, msg: String) {
-        if (status == ProgressStatus.finished) {
+    private fun onTaskSendItemCodeEnded(snackBarEventData: SnackBarEventData) {
+        val msg = snackBarEventData.text
+
+        if (snackBarEventData.snackBarType == SnackBarType.SUCCESS) {
             makeText(binding.root, msg, SnackBarType.SUCCESS)
             setSendButtonText()
-        } else if (status == ProgressStatus.crashed) {
+        } else if (snackBarEventData.snackBarType == ERROR) {
             makeText(binding.root, msg, ERROR)
         }
     }
@@ -460,9 +461,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 alert.setPositiveButton(R.string.ok) { _, _ ->
                     try {
                         thread {
-                            val taskItemCode = SendItemCode()
-                            taskItemCode.addParams(listener = this, itemCodeArray = it)
-                            taskItemCode.execute()
+                            SendItemCode(it) { it2 -> onTaskSendItemCodeEnded(it2) }.execute()
                         }
                     } catch (ex: Exception) {
                         ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())

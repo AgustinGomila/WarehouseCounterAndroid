@@ -57,7 +57,7 @@ class ItemCodeCoroutines {
         onResult: () -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = WcDatabase.getDatabase().itemCodeDao().insert(itemCode)
+            WcDatabase.getDatabase().itemCodeDao().insert(itemCode)
             onResult.invoke()
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())

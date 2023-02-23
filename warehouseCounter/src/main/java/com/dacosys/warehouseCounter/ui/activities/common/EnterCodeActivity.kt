@@ -12,7 +12,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.databinding.EnterCodeActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.showKeyboard
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestContent
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid

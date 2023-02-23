@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "8e707a46c6f5a7c438fca8b3315651bb",
+    "identityHash": "9d5fe410dfc5423d1bc8eadc71c97bc0",
     "entities": [
       {
         "tableName": "item",
@@ -331,7 +331,7 @@
       },
       {
         "tableName": "item_regex",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `description` TEXT NOT NULL, `regex` TEXT NOT NULL, `json_config` TEXT, `code_length` INTEGER, `active` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `description` TEXT NOT NULL, `regex` TEXT NOT NULL, `json_config` TEXT, `code_length` INTEGER, `active` INTEGER NOT NULL DEFAULT 1)",
         "fields": [
           {
             "fieldPath": "itemRegexId",
@@ -367,7 +367,8 @@
             "fieldPath": "active",
             "columnName": "active",
             "affinity": "INTEGER",
-            "notNull": true
+            "notNull": true,
+            "defaultValue": "1"
           }
         ],
         "primaryKey": {
@@ -378,13 +379,13 @@
         },
         "indices": [
           {
-            "name": "index_item_regex__id",
-            "unique": true,
+            "name": "IDX_item_regex__id",
+            "unique": false,
             "columnNames": [
               "_id"
             ],
             "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_item_regex__id` ON `${TABLE_NAME}` (`_id`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_item_regex__id` ON `${TABLE_NAME}` (`_id`)"
           }
         ],
         "foreignKeys": []
@@ -483,7 +484,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8e707a46c6f5a7c438fca8b3315651bb')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9d5fe410dfc5423d1bc8eadc71c97bc0')"
     ]
   }
 }

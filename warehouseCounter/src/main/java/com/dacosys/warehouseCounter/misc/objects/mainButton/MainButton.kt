@@ -23,29 +23,6 @@ class MainButton(mainButton: Long, description: String, iconResource: Int?) {
         return description
     }
 
-    override fun equals(other: Any?): Boolean {
-        return if (other !is MainButton) {
-            false
-        } else this.id == other.id
-
-        // Custom equality check here.
-    }
-
-    override fun hashCode(): Int {
-        return this.id.toInt()
-    }
-
-    class CustomComparator : Comparator<MainButton> {
-        override fun compare(o1: MainButton, o2: MainButton): Int {
-            if (o1.id < o2.id) {
-                return -1
-            } else if (o1.id > o2.id) {
-                return 1
-            }
-            return 0
-        }
-    }
-
     companion object {
         var PendingCounts =
             MainButton(1, context().getString(R.string.pending_counts), R.drawable.ic_review)

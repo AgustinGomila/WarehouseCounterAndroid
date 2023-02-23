@@ -147,7 +147,7 @@ class FileHelper {
         private fun getPathFromExtSD(pathData: Array<String>): String {
             val type = pathData[0]
             val relativePath = "/" + pathData[1]
-            var fullPath = ""
+            var fullPath: String
 
             // on my Sony devices (4.4.4 & 5.1.1), `type` is a dynamic string
             // something like "71F8-2C0A", some kind of unique id per storage
@@ -466,10 +466,6 @@ class FileHelper {
             }
 
             Log.d(this::class.java.simpleName, context().getString(R.string.copy_ok))
-
-            // TODO: Convertir datatypes de SQLite a Room
-            // DownloadDb.convertDbSchema()
-            // Log.d(this::class.java.simpleName, "Conversión OK")
 
             return true
         }

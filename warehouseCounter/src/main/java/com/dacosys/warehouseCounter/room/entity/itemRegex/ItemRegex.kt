@@ -10,18 +10,23 @@ import androidx.room.PrimaryKey
 import com.dacosys.warehouseCounter.room.dao.itemRegex.ItemRegexCoroutines
 import org.json.JSONObject
 import java.util.regex.PatternSyntaxException
+import com.dacosys.warehouseCounter.room.entity.itemRegex.ItemRegexEntry as Entry
 
 @Entity(
-    tableName = ItemRegexEntry.TABLE_NAME,
-    indices = [Index(value = [ItemRegexEntry.ITEM_REGEX_ID], unique = true)]
+    tableName = Entry.TABLE_NAME,
+    indices = [
+        Index(
+            value = [Entry.ITEM_REGEX_ID], name = "IDX_${Entry.TABLE_NAME}_${Entry.ITEM_REGEX_ID}"
+        ),
+    ]
 )
 data class ItemRegex(
-    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = ItemRegexEntry.ITEM_REGEX_ID) val itemRegexId: Long = 0L,
-    @ColumnInfo(name = ItemRegexEntry.DESCRIPTION) val description: String,
-    @ColumnInfo(name = ItemRegexEntry.REGEX) val regex: String,
-    @ColumnInfo(name = ItemRegexEntry.JSON_CONFIG) val jsonConfig: String?,
-    @ColumnInfo(name = ItemRegexEntry.CODE_LENGTH) val codeLength: Int?,
-    @ColumnInfo(name = ItemRegexEntry.ACTIVE) val active: Int,
+    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = Entry.ITEM_REGEX_ID) val itemRegexId: Long = 0L,
+    @ColumnInfo(name = Entry.DESCRIPTION) val description: String,
+    @ColumnInfo(name = Entry.REGEX) val regex: String,
+    @ColumnInfo(name = Entry.JSON_CONFIG) val jsonConfig: String?,
+    @ColumnInfo(name = Entry.CODE_LENGTH) val codeLength: Int?,
+    @ColumnInfo(name = Entry.ACTIVE, defaultValue = "1") val active: Int,
 ) {
     companion object {
         class RegexResult(var ean: String, var lot: String, var qty: Float?) : Parcelable {

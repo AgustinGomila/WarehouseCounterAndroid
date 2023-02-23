@@ -13,7 +13,7 @@ import com.dacosys.warehouseCounter.room.entity.lot.LotEntry as Entry
     ]
 )
 data class Lot(
-    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = Entry.LOT_ID) val lotId: Long = 0L,
-    @ColumnInfo(name = Entry.CODE) val code: String,
-    @ColumnInfo(name = Entry.ACTIVE) val active: Int,
+    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = Entry.LOT_ID) var lotId: Long = 0L,
+    @ColumnInfo(name = Entry.CODE) var code: String = "",
+    @ColumnInfo(name = Entry.ACTIVE) var active: Int = 1,
 )

@@ -43,6 +43,23 @@ class WarehouseCounterApp : Application(), KoinComponent {
             modules(koinAppModule())
         }
 
+        // Eventos del ciclo de vida de las actividades
+        // que nos interesa interceptar para conectar y
+        // desconectar los medios de lectura de códigos.
+        Jotter.Builder(this@WarehouseCounterApp)
+            .setLogEnable(true)
+            .setActivityEventFilter(
+                listOf(
+                    ActivityEvent.CREATE,
+                    ActivityEvent.RESUME,
+                    ActivityEvent.PAUSE,
+                    ActivityEvent.DESTROY
+                )
+            )
+            //.setFragmentEventFilter(listOf(FragmentEvent.VIEW_CREATE, FragmentEvent.PAUSE))
+            .setJotterListener(JotterListener).build().startListening()
+
+        // ImageControl
         ImageControl().create(applicationContext, WC_ROOT_PATH)
     }
 
@@ -78,22 +95,6 @@ class WarehouseCounterApp : Application(), KoinComponent {
         single { DynamicRetrofit() }
         single { retrofit().api.create(APIService::class.java) }
         single { retrofit().api.create(DacoService::class.java) }
-
-        single {
-            // Eventos del ciclo de vida de las actividades
-            // que nos interesa interceptar para conectar y
-            // desconectar los medios de lectura de códigos.
-            Jotter.Builder(this@WarehouseCounterApp).setLogEnable(true).setActivityEventFilter(
-                listOf(
-                    ActivityEvent.CREATE,
-                    ActivityEvent.RESUME,
-                    ActivityEvent.PAUSE,
-                    ActivityEvent.DESTROY
-                )
-            )
-                //.setFragmentEventFilter(listOf(FragmentEvent.VIEW_CREATE, FragmentEvent.PAUSE))
-                .setJotterListener(JotterListener).build().startListening()
-        }
     }
 
     companion object {
@@ -155,9 +156,5 @@ class WarehouseCounterApp : Application(), KoinComponent {
         }
 
         var Token: TokenObject = TokenObject()
-
-        fun cleanToken() {
-            Token = TokenObject("", "")
-        }
     }
 }

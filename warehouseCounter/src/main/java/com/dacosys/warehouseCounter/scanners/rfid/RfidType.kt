@@ -17,16 +17,6 @@ class RfidType : Parcelable {
         return description
     }
 
-    override fun equals(other: Any?): Boolean {
-        return if (other !is RfidType) {
-            false
-        } else this.id == other.id
-    }
-
-    override fun hashCode(): Int {
-        return this.id.hashCode()
-    }
-
     constructor(parcel: Parcel) {
         id = parcel.readLong()
         description = parcel.readString() ?: ""

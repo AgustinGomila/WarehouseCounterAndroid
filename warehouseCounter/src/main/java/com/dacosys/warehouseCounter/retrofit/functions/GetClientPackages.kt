@@ -45,13 +45,9 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
         progressStatus = ProgressStatus.starting
 
         scope.launch {
-            doInBackground()
-        }
-    }
-
-    private suspend fun doInBackground() {
-        coroutineScope {
-            withContext(Dispatchers.IO) { suspendFunction() }
+            coroutineScope {
+                withContext(Dispatchers.IO) { suspendFunction() }
+            }
         }
     }
 

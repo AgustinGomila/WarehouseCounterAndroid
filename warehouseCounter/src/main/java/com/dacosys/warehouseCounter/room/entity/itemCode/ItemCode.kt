@@ -6,7 +6,6 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.google.gson.GsonBuilder
 import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCodeEntry as Entry
 
 @Entity(
@@ -50,27 +49,6 @@ data class ItemCode(
 
         override fun newArray(size: Int): Array<ItemCode?> {
             return arrayOfNulls(size)
-        }
-
-        fun fromJson(json: String): ItemCode? {
-            // Configure GSON
-            val gSon = GsonBuilder().registerTypeAdapter(
-                ItemCode::class.java, ItemCode()
-            ).excludeFieldsWithoutExposeAnnotation().setLenient().create()
-
-            return gSon.fromJson(json, ItemCode::class.java)
-        }
-
-        fun toJson(or: ItemCode): String {
-            val gSon = GsonBuilder().registerTypeAdapter(
-                ItemCode::class.java, ItemCode()
-            ).excludeFieldsWithoutExposeAnnotation().setLenient().create()
-
-            val x = gSon.toJson(or)
-            println(x)
-
-            // Serialization
-            return x
         }
     }
 }

@@ -6,17 +6,22 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.moshi.error.ErrorObject
-import com.dacosys.warehouseCounter.moshi.price.Price
-import com.dacosys.warehouseCounter.moshi.price.PriceList
-import com.dacosys.warehouseCounter.moshi.search.SearchPrice
+import com.dacosys.warehouseCounter.moshi.user.AuthData
+import com.dacosys.warehouseCounter.moshi.user.UserAuthData.Companion.userAuthTag
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
+import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
+import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
-import com.squareup.moshi.JsonDataException
 import kotlinx.coroutines.*
+import okhttp3.MediaType
+import okhttp3.RequestBody
+import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -24,13 +29,13 @@ import java.net.MalformedURLException
 import java.net.URL
 import kotlin.concurrent.thread
 
-class GetPrice(
-    private val searchPrice: SearchPrice,
+class SendItemCode(
+    private val itemCodeArray: ArrayList<ItemCode>,
     private val onEvent: (SnackBarEventData) -> Unit = { },
-    private val onFinish: (ArrayList<Price>) -> Unit,
 ) {
-
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+    private lateinit var currentUser: User
 
     fun execute() {
         // Función que prosigue al resultado de GetToken
@@ -53,20 +58,30 @@ class GetPrice(
             }
         }
 
-        // Chequeamos que el Token sea válido
-        thread { GetToken { onEvent(it) }.execute(false) }
+        Statics.getCurrentUser { user ->
+            if (user != null) {
+                currentUser = user
+
+                // Chequeamos que el Token sea válido
+                thread { GetToken { onEvent(it) }.execute(false) }
+            } else {
+                // Token inválido.
+                onEvent.invoke(
+                    SnackBarEventData(
+                        context().getString(R.string.invalid_user), SnackBarType.ERROR
+                    )
+                )
+            }
+        }
     }
 
     private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
         // Configuración de Retrofit
         val apiUrl = setupRetrofit()
 
-        val tempInst = apiService().getPrices(apiUrl = apiUrl, body = searchPrice)
+        val body = getBody()
 
-        Log.i(
-            this::class.java.simpleName,
-            moshi().adapter(SearchPrice::class.java).toJson(searchPrice)
-        )
+        val tempInst = apiService().sendItemCode(apiUrl = apiUrl, body = body)
 
         tempInst.enqueue(object : Callback<Any?> {
             override fun onResponse(call: Call<Any?>, response: Response<Any?>) {
@@ -90,37 +105,11 @@ class GetPrice(
                     return
                 }
 
-                /**
-                 * Comprobamos si es una respuesta del tipo JsonArray
-                 */
-                try {
-                    val jsonArray = moshi().adapter(List::class.java).fromJsonValue(resp)
-                    if (jsonArray?.any() == true) {
-                        val r: ArrayList<PriceList> = ArrayList()
-                        jsonArray.mapNotNullTo(r) {
-                            moshi().adapter(PriceList::class.java).fromJsonValue(it)
-                        }
-
-                        val priceArray: ArrayList<Price> = ArrayList()
-                        r.flatMapTo(priceArray) { it.prices }
-
-                        onFinish.invoke(priceArray)
-                    } else {
-                        onEvent.invoke(
-                            SnackBarEventData(
-                                context().getString(R.string.no_results), SnackBarType.INFO
-                            )
-                        )
-                    }
-                } catch (ex: JsonDataException) {
-                    Log.e(this.javaClass.simpleName, ex.toString())
-                    onEvent.invoke(
-                        SnackBarEventData(
-                            context().getString(R.string.invalid_prices), SnackBarType.ERROR
-                        )
+                onEvent.invoke(
+                    SnackBarEventData(
+                        context().getString(R.string.ok), SnackBarType.SUCCESS
                     )
-                    return
-                }
+                )
             }
 
             override fun onFailure(call: Call<Any?>, t: Throwable) {
@@ -130,6 +119,37 @@ class GetPrice(
         })
 
         return@withContext true
+    }
+
+    private fun getBody(): RequestBody {
+        // BODY ////////////////////////////
+        val jsonParam = JSONObject()
+
+        // User Auth DATA //////////////////
+        jsonParam.put(userAuthTag, AuthData().apply {
+            username = currentUser.name
+            password = currentUser.password ?: ""
+        })
+
+        // Collector DATA //////////////////
+        val collectorData = Statics.getDeviceData()
+        jsonParam.put("collectorData", collectorData)
+
+        // Todos los ItemCodes ////////////
+        val icArrayJson = JSONObject()
+        for ((index, itemCode) in itemCodeArray.withIndex()) {
+            icArrayJson.put("itemCode$index", itemCode)
+
+            ////////////////////////////////////
+            // Actualizar en la Base de datos //
+            ItemCodeCoroutines().updateTransferred(
+                itemId = itemCode.itemId ?: 0L, code = itemCode.code ?: ""
+            )
+        }
+        jsonParam.put("itemCodes", icArrayJson)
+        // Fin Todos los ItemCodes ////////
+
+        return RequestBody.create(MediaType.parse("application/json"), jsonParam.toString())
     }
 
     private fun setupRetrofit(): String {
@@ -151,12 +171,12 @@ class GetPrice(
                 "Base URL: ${protocol}://${host}/ (Api URL: ${apiUrl.ifEmpty { "Vacío" }})"
             )
         } catch (e: MalformedURLException) {
+            Log.e(this::class.java.simpleName, e.toString())
             onEvent.invoke(
                 SnackBarEventData(
                     context().getString(R.string.url_malformed), SnackBarType.ERROR
                 )
             )
-            Log.e(this::class.java.simpleName, e.toString())
             return ""
         }
 

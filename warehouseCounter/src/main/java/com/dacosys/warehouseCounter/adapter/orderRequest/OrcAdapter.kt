@@ -22,9 +22,9 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getColorWithAlpha
-import com.dacosys.warehouseCounter.model.orderRequest.Item
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.moshi.orderRequest.Item
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
@@ -247,6 +247,8 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                 val qtyRequested = t.qty!!.qtyRequested ?: 0.toDouble()
 
                 t.qty!!.qtyCollected = qty
+
+                // TODO: Ver esto: ¿Por qué está así esta condición que evita llegar a los otros reportes?
                 // ¿La cantidad es mayor a la cantidad solicitada?
                 if (qtyRequested >= qty) {
                     // Mostrar un cartelito, si jode sacarlo.
