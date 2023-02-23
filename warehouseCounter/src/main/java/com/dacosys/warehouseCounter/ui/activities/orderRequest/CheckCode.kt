@@ -5,13 +5,13 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrcAdapter
-import com.dacosys.warehouseCounter.dataBase.item.ItemDbHelper
-import com.dacosys.warehouseCounter.dataBase.itemCode.ItemCodeDbHelper
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.itemCode.ItemCode
 import com.dacosys.warehouseCounter.model.orderRequest.Item
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
 import com.dacosys.warehouseCounter.model.orderRequest.Qty
+import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
@@ -40,15 +40,6 @@ class CheckCode {
         this.onEventData = onEventData
     }
 
-    private fun preExecute() {
-        // TODO: JotterListener.lockScanner(this, true)
-    }
-
-    private fun postExecute(orc: OrderRequestContent?) {
-        // TODO: JotterListener.lockScanner(this, false)
-        mCallback?.onCheckCodeEnded(orc, itemCode)
-    }
-
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
     fun cancel() {
@@ -56,150 +47,119 @@ class CheckCode {
     }
 
     fun execute() {
-        preExecute()
         scope.launch {
-            val it = doInBackground()
-            postExecute(it)
+            coroutineScope {
+                withContext(Dispatchers.IO) { suspendFunction() }
+            }
         }
     }
 
-    private var deferred: Deferred<OrderRequestContent?>? = null
-    private suspend fun doInBackground(): OrderRequestContent? {
-        var result: OrderRequestContent? = null
-        coroutineScope {
-            deferred = async { suspendFunction() }
-            result = deferred?.await()
-        }
-        return result
-    }
-
-    private suspend fun suspendFunction(): OrderRequestContent? = withContext(Dispatchers.IO) {
+    private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         try {
             if (Statics.demoMode) {
                 if (orcAdapter!!.count >= 5) {
                     val res =
                         context().getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
+                    mCallback?.onCheckCodeEnded(null, itemCode)
                     Log.e(this::class.java.simpleName, res)
-                    return@withContext null
+                    return@withContext
                 }
             }
 
+            val code = scannedCode
+
             // Nada que hacer, volver
-            if (scannedCode!!.isEmpty()) {
+            if (code.isNullOrEmpty()) {
                 val res = context().getString(R.string.invalid_code)
                 onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
+                mCallback?.onCheckCodeEnded(null, itemCode)
                 Log.e(this::class.java.simpleName, res)
-                return@withContext null
+                return@withContext
             }
 
             if ((orcAdapter?.count() ?: 0) > 0) {
                 // Buscar primero en el adaptador de la lista
                 (0 until orcAdapter!!.count).map { orcAdapter!!.getItem(it) }
-                    .filter { it != null && it.item!!.ean == scannedCode }
-                    .forEach { return@withContext it }
+                    .filter { it != null && it.item!!.ean == code }.forEach { it2 ->
+                        mCallback?.onCheckCodeEnded(it2, itemCode)
+                        return@withContext
+                    }
             }
 
             // Si no está en el adaptador del control, buscar en la base de datos
-            var searchItem: Item? = null
+            ItemCoroutines().getByQuery(code) { it ->
+                val itemObj = it.firstOrNull()
 
-            val a = ItemDbHelper()
-            var itemObj: com.dacosys.warehouseCounter.model.item.Item? = null
-            val allByEan = a.selectByEan(scannedCode!!)
-            if (allByEan.size > 0) {
-                itemObj = allByEan[0]
-            }
+                if (itemObj != null) {
+                    mCallback?.onCheckCodeEnded(
+                        OrderRequestContent(
+                            item = Item(itemObj, code),
+                            lot = null,
+                            qty = Qty(0.toDouble(), 0.toDouble())
+                        ), itemCode
+                    )
+                    return@getByQuery
+                }
 
-            if (itemObj != null) {
-                searchItem = Item(itemObj, scannedCode!!)
-            }
+                ItemCodeCoroutines().getByCode(code) { icList ->
+                    itemCode = icList.firstOrNull()
+                    val itemId = itemCode?.itemId
+                    if (itemId == null) {
+                        mCallback?.onCheckCodeEnded(null, null)
+                        return@getByCode
+                    }
 
-            // found it through item.ean
-            if (searchItem != null) {
-                // Agregar al adaptador con cantidades 0, después se definen y se agregan al Log
-                return@withContext OrderRequestContent(
-                    searchItem,
-                    null,
-                    Qty(0.toDouble(), 0.toDouble())
-                )
-            }
+                    // Buscar de nuevo dentro del adaptador del control
+                    for (x in 0 until orcAdapter!!.count) {
+                        val item = orcAdapter!!.getItem(x)
+                        if (item != null && item.item!!.itemId == itemId) {
+                            mCallback?.onCheckCodeEnded(item, itemCode)
+                            return@getByCode
+                        }
+                    }
 
-            // ¿No está? Buscar en la tabla item_code de la base de datos
-            val icDbH = ItemCodeDbHelper()
-            var itemCodeObj: ItemCode? = null
-            val allByItemCode = icDbH.selectByCode(scannedCode!!)
-            if (allByItemCode.size > 0) {
-                itemCodeObj = allByItemCode[0]
-            }
+                    if (settingViewModel().allowUnknownCodes) {
+                        // Item desconocido, agregar al base de datos
+                        val item = com.dacosys.warehouseCounter.room.entity.item.Item(
+                            description = context().getString(R.string.unknown_item), ean = code
+                        )
 
-            // Encontrado! Cuidado, codeRead es diferente de eanCode
-            if (itemCodeObj != null) {
-                itemCode = itemCodeObj
+                        ItemCoroutines().add(item) { id ->
+                            if (id != null) {
+                                mCallback?.onCheckCodeEnded(
+                                    OrderRequestContent(
+                                        item = Item(item, code),
+                                        lot = null,
+                                        qty = Qty(0.toDouble(), 0.toDouble())
+                                    ), itemCode
+                                )
+                            } else {
+                                mCallback?.onCheckCodeEnded(null, null)
+                                onEventData.invoke(
+                                    SnackBarEventData(
+                                        context().getString(R.string.error_attempting_to_add_item_to_database),
+                                        SnackBarType.ERROR
+                                    )
+                                )
 
-                searchItem = Item(itemCodeObj.item!!, scannedCode!!)
-
-                // Buscar de nuevo dentro del adaptador del control
-                for (x in 0 until orcAdapter!!.count) {
-                    val orc = orcAdapter!!.getItem(x)
-                    if (orc != null && orc.item!!.ean == searchItem.ean) {
-                        return@withContext orc
+                            }
+                        }
+                    } else {
+                        mCallback?.onCheckCodeEnded(null, null)
+                        onEventData.invoke(
+                            SnackBarEventData(
+                                "${context().getString(R.string.unknown_item)}: $code",
+                                SnackBarType.INFO
+                            )
+                        )
                     }
                 }
-
-                // Agregar al adaptador con cantidades 0, después se definen y se agregan al Log
-                return@withContext OrderRequestContent(
-                    searchItem,
-                    null,
-                    Qty(0.toDouble(), 0.toDouble())
-                )
-            }
-
-            if (settingViewModel().allowUnknownCodes) {
-                // Item desconocido, agregar al base de datos
-                val item = addItemToDb(scannedCode!!)
-
-                return@withContext if (item != null) {
-                    // Agregar al adaptador con cantidades 0, después se definen y se agregan al Log
-                    val finalOrc = OrderRequestContent(item, null, Qty(0.toDouble(), 0.toDouble()))
-                    finalOrc
-                } else {
-                    val res = context().getString(R.string.error_attempting_to_add_item_to_database)
-                    onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
-                    Log.e(this::class.java.simpleName, res)
-                    null
-                }
-            } else {
-                onEventData.invoke(
-                    SnackBarEventData(
-                        "${context().getString(R.string.unknown_item)}: ${scannedCode ?: ""}",
-                        SnackBarType.INFO
-                    )
-                )
-                return@withContext null
             }
         } catch (ex: Exception) {
+            mCallback?.onCheckCodeEnded(null, null)
             onEventData.invoke(SnackBarEventData(ex.message.toString(), SnackBarType.ERROR))
             Log.e(this::class.java.simpleName, ex.message ?: "")
-            return@withContext null
-        }
-    }
-
-    private fun addItemToDb(scannedCode: String): Item? {
-        val itemDbHelper = ItemDbHelper()
-        val itemId = itemDbHelper.insert(
-            description = context().getString(R.string.unknown_item),
-            ean = scannedCode,
-            price = 0.toDouble(),
-            active = true,
-            itemCategoryId = 1L,
-            externalId = "",
-            lotEnabled = false
-        )
-
-        return if (itemId!! < 0) {
-            Item(itemDbHelper.selectByEan(scannedCode)[0], scannedCode)
-        } else {
-            null
         }
     }
 }

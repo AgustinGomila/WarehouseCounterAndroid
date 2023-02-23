@@ -17,12 +17,12 @@ import androidx.appcompat.view.menu.MenuBuilder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dataBase.client.ClientDbHelper
 import com.dacosys.warehouseCounter.databinding.NewCountActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.client.Client
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
+import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -170,8 +170,10 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private fun selectDefaultClient() {
         if (isFinishing) return
 
-        client = ClientDbHelper().select().firstOrNull()
-        setClientText()
+        ClientCoroutines().get {
+            client = it.firstOrNull()
+            setClientText()
+        }
     }
 
     private fun setClientText() {

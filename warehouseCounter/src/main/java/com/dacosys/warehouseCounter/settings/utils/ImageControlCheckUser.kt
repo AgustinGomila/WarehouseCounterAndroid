@@ -5,7 +5,7 @@ import com.dacosys.imageControl.network.webService.moshi.UserAuthResult
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*

@@ -6,7 +6,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getDeviceData
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.model.user.User
+import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import kotlinx.coroutines.*
 import org.json.JSONObject
@@ -79,7 +79,7 @@ class SendCompletedOrder {
 
     fun execute() {
         progressStatus = ProgressStatus.starting
-        currentUser = Statics.getCurrentUser()
+        Statics.getCurrentUser { currentUser = it }
 
         scope.launch {
             val it = doInBackground()
@@ -115,15 +115,13 @@ class SendCompletedOrder {
                 val authenticator = object : Authenticator() {
                     override fun getPasswordAuthentication(): PasswordAuthentication {
                         return PasswordAuthentication(
-                            sv.proxyUser,
-                            sv.proxyPass.toCharArray()
+                            sv.proxyUser, sv.proxyPass.toCharArray()
                         )
                     }
                 }
                 Authenticator.setDefault(authenticator)
 
-                val proxy =
-                    Proxy(Proxy.Type.HTTP, InetSocketAddress(sv.proxy, sv.proxyPort))
+                val proxy = Proxy(Proxy.Type.HTTP, InetSocketAddress(sv.proxy, sv.proxyPort))
                 url.openConnection(proxy) as HttpsURLConnection
             } else {
                 url.openConnection() as HttpsURLConnection

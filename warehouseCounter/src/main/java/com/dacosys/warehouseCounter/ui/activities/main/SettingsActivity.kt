@@ -32,9 +32,8 @@ import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.generateQrCode
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getBarcodeForConfig
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getConfigFromScannedCode
-import com.dacosys.warehouseCounter.model.collectorType.CollectorType
-import com.dacosys.warehouseCounter.model.collectorType.CollectorTypePreference
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.moshi.clientPackage.Package
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -49,6 +48,7 @@ import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigClient
 import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigImageControl
 import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigWebservice
 import com.dacosys.warehouseCounter.settings.SettingsRepository
+import com.dacosys.warehouseCounter.settings.custom.CollectorTypePreference
 import com.dacosys.warehouseCounter.settings.custom.DevicePreference
 import com.dacosys.warehouseCounter.settings.utils.DownloadController
 import com.dacosys.warehouseCounter.settings.utils.ImageControlCheckUser

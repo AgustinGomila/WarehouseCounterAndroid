@@ -15,7 +15,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dataBase.item.ItemDbHelper
 import com.dacosys.warehouseCounter.databinding.QtySelectorBinding
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
@@ -23,9 +22,10 @@ import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.round
 import com.dacosys.warehouseCounter.misc.Statics.Companion.showKeyboard
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.model.orderRequest.Item
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -259,32 +259,33 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         }
 
     private fun setDescription(orc: OrderRequestContent, description: String) {
-        val item = updateItemDescriptionToDb(orc.item, description)
+        updateItemDescriptionToDb(orc.item, description) {
+            if (it == null) {
+                val res =
+                    getString(R.string.an_error_occurred_while_updating_the_description_of_the_item_in_the_database)
+                makeText(binding.root, res, ERROR)
+                android.util.Log.e(this::class.java.simpleName, res)
+                return@updateItemDescriptionToDb
+            }
 
-        if (item == null) {
-            val res =
-                getString(R.string.an_error_occurred_while_updating_the_description_of_the_item_in_the_database)
-            makeText(binding.root, res, ERROR)
-            android.util.Log.e(this::class.java.simpleName, res)
-            return
+            this.orc!!.item = it
+            refreshTextViews()
         }
-
-        this.orc!!.item = item
-        refreshTextViews()
     }
 
-    private fun updateItemDescriptionToDb(item: Item?, description: String): Item? {
-        val itemDbHelper = ItemDbHelper()
+    private fun updateItemDescriptionToDb(
+        item: Item?,
+        description: String,
+        onFinish: (Item?) -> Unit = {},
+    ) {
+        if (item == null) return
+        val itemId = item.itemId ?: return
 
-        item!!.itemDescription = description
-
-        val realItem = itemDbHelper.selectById(item.itemId)
-        realItem!!.description = description
-
-        return if (itemDbHelper.update(realItem)) {
-            Item(itemDbHelper.selectById(item.itemId)!!)
-        } else {
-            null
+        ItemCoroutines().updateDescription(itemId, description) {
+            ItemCoroutines().getById(itemId) {
+                if (it != null) onFinish(Item(it))
+                else onFinish(null)
+            }
         }
     }
 
@@ -411,8 +412,9 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
             var decimalPart = ""
             val integerPart: String
             if (validText.contains(decimalSeparator)) {
-                decimalPart =
-                    validText.substring(validText.indexOf(decimalSeparator) + 1, validText.length)
+                decimalPart = validText.substring(
+                    validText.indexOf(decimalSeparator) + 1, validText.length
+                )
                 integerPart = validText.substring(0, validText.indexOf(decimalSeparator))
             } else {
                 integerPart = validText

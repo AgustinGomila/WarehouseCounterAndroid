@@ -18,8 +18,8 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.collectorType.CollectorType
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.Scanner.ScannerListener
 import com.dacosys.warehouseCounter.scanners.floatingCamera.FloatingCameraBarcode
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc

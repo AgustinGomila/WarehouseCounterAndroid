@@ -2,7 +2,6 @@ package com.dacosys.warehouseCounter.moshi.error
 
 import android.util.Log
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
-import com.dacosys.warehouseCounter.model.error.ErrorData
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.JsonDataException

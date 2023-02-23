@@ -9,6 +9,7 @@ import com.dacosys.imageControl.network.webService.moshi.DocumentContent
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.model.log.Log
 import com.dacosys.warehouseCounter.model.log.LogContent
+import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.google.gson.*
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName

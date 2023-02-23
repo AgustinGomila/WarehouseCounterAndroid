@@ -33,7 +33,7 @@ class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
 
     private suspend fun doInBackground() {
         coroutineScope {
-            withContext(Dispatchers.Default) { suspendFunction() }
+            withContext(Dispatchers.IO) { suspendFunction() }
         }
     }
 

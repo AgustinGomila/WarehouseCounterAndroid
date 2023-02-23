@@ -12,7 +12,7 @@ import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.client.Client
+import com.dacosys.warehouseCounter.room.entity.client.Client
 import java.util.*
 
 /**
@@ -295,13 +295,13 @@ class ClientAdapter : ArrayAdapter<Client>, Filterable {
                     WarehouseCounterApp.context().resources, R.color.dimgray, null
                 )
 
-                val colorText = when {
-                    !client.active -> dimgray
+                val colorText = when (client.active) {
+                    1 -> dimgray
                     else -> black
                 }
 
-                val backColor = when {
-                    !client.active -> lightgray
+                val backColor = when (client.active) {
+                    1 -> lightgray
                     else -> white
                 }
 

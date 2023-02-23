@@ -3,6 +3,7 @@ package com.dacosys.warehouseCounter.model.orderRequest
 import android.os.Parcelable
 import com.google.gson.*
 import java.lang.reflect.Type
+import com.dacosys.warehouseCounter.room.entity.item.Item as ItemRoom
 
 class Item() : Parcelable, JsonDeserializer<Item>, JsonSerializer<Item> {
     override fun serialize(
@@ -75,30 +76,30 @@ class Item() : Parcelable, JsonDeserializer<Item>, JsonSerializer<Item> {
         lotEnabled = parcel.readValue(Boolean::class.java.classLoader) as? Boolean
     }
 
-    constructor(item: com.dacosys.warehouseCounter.model.item.Item) : this() {
+    constructor(item: ItemRoom) : this() {
         itemId = item.itemId
         itemDescription = item.description
         codeRead = ""
         ean = item.ean
-        price = item.price
-        active = item.active
+        price = item.price?.toDouble()
+        active = item.active == 1
         externalId = item.externalId
         itemCategoryId = item.itemCategoryId
         itemCategoryStr = item.itemCategoryStr
-        lotEnabled = item.lotEnabled
+        lotEnabled = item.lotEnabled == 1
     }
 
-    constructor(item: com.dacosys.warehouseCounter.model.item.Item, code: String) : this() {
+    constructor(item: ItemRoom, code: String) : this() {
         itemId = item.itemId
         itemDescription = item.description
         codeRead = code
         ean = item.ean
-        price = item.price
-        active = item.active
+        price = item.price?.toDouble()
+        active = item.active == 1
         externalId = item.externalId
         itemCategoryId = item.itemCategoryId
         itemCategoryStr = item.itemCategoryStr
-        lotEnabled = item.lotEnabled
+        lotEnabled = item.lotEnabled == 1
     }
 
     constructor(
@@ -166,21 +167,21 @@ class Item() : Parcelable, JsonDeserializer<Item>, JsonSerializer<Item> {
             return arrayOfNulls(size)
         }
 
-        fun toItem(items: ArrayList<com.dacosys.warehouseCounter.model.item.Item>): ArrayList<Item> {
+        fun toItem(items: ArrayList<ItemRoom>): ArrayList<Item> {
             val allItems = ArrayList<Item>()
 
             for (item in items) {
                 val temp = Item(
-                    item.itemId,
-                    item.description,
-                    "",
-                    item.ean,
-                    item.price,
-                    item.active,
-                    item.externalId,
-                    item.itemCategoryId,
-                    item.itemCategoryStr,
-                    item.lotEnabled
+                    itemId = item.itemId,
+                    itemDescription = item.description,
+                    codeRead = "",
+                    ean = item.ean,
+                    price = item.price?.toDouble(),
+                    active = item.active == 1,
+                    externalId = item.externalId,
+                    itemCategoryId = item.itemCategoryId,
+                    itemCategoryStr = item.itemCategoryStr,
+                    lotEnabled = item.lotEnabled == 1
                 )
 
                 allItems.add(temp)

@@ -7,13 +7,13 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.TooltipCompat
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.dataBase.client.ClientDbHelper
 import com.dacosys.warehouseCounter.databinding.OrderRequestHeaderBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
 
 /**
  * A simple [Fragment] subclass.
@@ -70,41 +70,36 @@ class OrderRequestHeader : Fragment() {
     }
 
     private fun fillControls() {
-        if (orderRequest == null) {
-            return
-        }
+        val or = orderRequest ?: return
+        val clientId = or.clientId ?: return
 
-        // Cliente
-        val c = ClientDbHelper()
-        val client = c.selectById(orderRequest!!.clientId!!)
-        when {
-            client != null -> {
-                binding.clientTextView.text = client.name
-                TooltipCompat.setTooltipText(binding.clientTextView, client.name)
-            }
-            else -> {
-                binding.clientTextView.text = getString(R.string.unknown_client)
-                TooltipCompat.setTooltipText(
-                    binding.clientTextView,
-                    getString(R.string.unknown_client)
-                )
+        ClientCoroutines().getById(clientId) {
+            when {
+                it != null -> {
+                    binding.clientTextView.text = it.name
+                    TooltipCompat.setTooltipText(binding.clientTextView, it.name)
+                }
+                else -> {
+                    binding.clientTextView.text = getString(R.string.unknown_client)
+                    TooltipCompat.setTooltipText(
+                        binding.clientTextView, getString(R.string.unknown_client)
+                    )
+                }
             }
         }
 
         // Descripción
         when {
-            orderRequest!!.description.isEmpty() -> {
+            or.description.isEmpty() -> {
                 binding.descriptionTextView.text = getString(R.string.count_without_description)
                 TooltipCompat.setTooltipText(
-                    binding.descriptionTextView,
-                    getString(R.string.count_without_description)
+                    binding.descriptionTextView, getString(R.string.count_without_description)
                 )
             }
             else -> {
-                binding.descriptionTextView.text = orderRequest!!.description
+                binding.descriptionTextView.text = or.description
                 TooltipCompat.setTooltipText(
-                    binding.descriptionTextView,
-                    orderRequest!!.description
+                    binding.descriptionTextView, or.description
                 )
             }
         }
@@ -134,17 +129,17 @@ class OrderRequestHeader : Fragment() {
 
             if (unknownItems > 0 || diffQtyItems > 0) {
                 resume += getString(R.string.differences_exist)
-                // confirmButton!!.isEnabled = orderRequest!!.resultAllowDiff!!
+                // confirmButton!!.isEnabled = or.resultAllowDiff!!
             }
 
-            if (orderRequest!!.resultDiffProduct!!) {
+            if (or.resultDiffProduct!!) {
                 resume += breakLine!! + String.format(
                     getString(R.string._product_differences),
                     Statics.roundToString(unknownItems.toDouble(), decimalPlaces)
                 )
             }
 
-            if (orderRequest!!.resultDiffQty!!) {
+            if (or.resultDiffQty!!) {
                 resume += breakLine!! + String.format(
                     getString(R.string._quantity_differences),
                     Statics.roundToString(diffQtyItems.toDouble(), decimalPlaces)

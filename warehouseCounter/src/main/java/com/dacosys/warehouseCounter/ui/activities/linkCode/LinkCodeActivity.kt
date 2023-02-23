@@ -32,18 +32,18 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.item.ItemAdapter
-import com.dacosys.warehouseCounter.dataBase.item.ItemDbHelper
-import com.dacosys.warehouseCounter.dataBase.itemCode.ItemCodeDbHelper
 import com.dacosys.warehouseCounter.databinding.LinkCodeActivityBottomPanelCollapsedBinding
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.showKeyboard
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.item.Item
-import com.dacosys.warehouseCounter.model.itemCategory.ItemCategory
-import com.dacosys.warehouseCounter.model.itemCode.ItemCode
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.network.SendItemCode
+import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.room.entity.item.Item
+import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
+import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -79,28 +79,27 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     override fun onSelectedItemChanged(item: Item?, pos: Int) {
         if (item != null) {
-            val arrayList = ItemCodeDbHelper().selectByItemId(item.itemId)
-            var allItemCodes = ""
-            val breakLine = Statics.lineSeparator
+            ItemCodeCoroutines().getByItemId(item.itemId) {
+                var allItemCodes = ""
+                val breakLine = Statics.lineSeparator
 
-            if (arrayList.isNotEmpty()) {
                 runOnUiThread {
-                    binding.moreCodesConstraintLayout.visibility = VISIBLE
-                }
+                    if (it.isNotEmpty()) {
+                        binding.moreCodesConstraintLayout.visibility = VISIBLE
 
-                for (i in arrayList) {
-                    allItemCodes = String.format(
-                        "%s%s (%s)%s", allItemCodes, i.code, i.qty.toString(), breakLine
+                        for (i in it) {
+                            allItemCodes = String.format(
+                                "%s%s (%s)%s", allItemCodes, i.code, i.qty.toString(), breakLine
+                            )
+                        }
+                    } else {
+                        binding.moreCodesConstraintLayout.visibility = GONE
+                    }
+
+                    binding.moreCodesEditText.setText(
+                        allItemCodes.trim(), TextView.BufferType.EDITABLE
                     )
                 }
-            } else {
-                runOnUiThread {
-                    binding.moreCodesConstraintLayout.visibility = GONE
-                }
-            }
-
-            runOnUiThread {
-                binding.moreCodesEditText.setText(allItemCodes.trim(), TextView.BufferType.EDITABLE)
             }
         } else {
             runOnUiThread {
@@ -436,47 +435,48 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun setSendButtonText() {
-        val itemCodeArray = ItemCodeDbHelper().selectToUpload()
-        runOnUiThread {
-            binding.sendButton.text = String.format(
-                "%s%s(%s)",
-                context().getString(R.string.send),
-                System.getProperty("line.separator"),
-                itemCodeArray.count()
-            )
+        ItemCodeCoroutines().getToUpload {
+            runOnUiThread {
+                binding.sendButton.text = String.format(
+                    "%s%s(%s)",
+                    context().getString(R.string.send),
+                    System.getProperty("line.separator"),
+                    it.count()
+                )
+            }
         }
     }
 
     private fun sendDialog() {
-        val itemCodeArray = ItemCodeDbHelper().selectToUpload()
-        if (itemCodeArray.isNotEmpty()) {
-            val alert = AlertDialog.Builder(this)
-            alert.setTitle(getString(R.string.send_item_codes))
-            alert.setMessage(
-                if (itemCodeArray.count() > 1) {
-                    context().getString(R.string.do_you_want_to_send_the_item_codes)
-                } else {
-                    context().getString(R.string.do_you_want_to_send_the_item_code)
-                }
-            )
-            alert.setNegativeButton(R.string.cancel, null)
-            alert.setPositiveButton(R.string.ok) { _, _ ->
-                try {
-                    thread {
-                        val taskItemCode = SendItemCode()
-                        taskItemCode.addParams(listener = this, itemCodeArray = itemCodeArray)
-                        taskItemCode.execute()
+        ItemCodeCoroutines().getToUpload {
+            if (it.isNotEmpty()) {
+                val alert = AlertDialog.Builder(this)
+                alert.setTitle(getString(R.string.send_item_codes))
+                alert.setMessage(
+                    if (it.count() > 1) context().getString(R.string.do_you_want_to_send_the_item_codes)
+                    else context().getString(R.string.do_you_want_to_send_the_item_code)
+                )
+                alert.setNegativeButton(R.string.cancel, null)
+                alert.setPositiveButton(R.string.ok) { _, _ ->
+                    try {
+                        thread {
+                            val taskItemCode = SendItemCode()
+                            taskItemCode.addParams(listener = this, itemCodeArray = it)
+                            taskItemCode.execute()
+                        }
+                    } catch (ex: Exception) {
+                        ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
                     }
-                } catch (ex: Exception) {
-                    ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
                 }
-            }
 
-            alert.show()
-        } else {
-            makeText(
-                binding.root, context().getString(R.string.there_are_no_item_codes_to_send), INFO
-            )
+                alert.show()
+            } else {
+                makeText(
+                    binding.root,
+                    context().getString(R.string.there_are_no_item_codes_to_send),
+                    INFO
+                )
+            }
         }
     }
 
@@ -521,35 +521,45 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     return
                 }
 
-                val x = ItemCodeDbHelper()
-
                 // Chequear si ya está vinculado
-                val tempItemCode = x.selectByCode(tempCode)
-                if (tempItemCode.size > 0) {
-                    makeText(
-                        binding.root,
-                        context().getString(R.string.the_code_is_already_linked_to_an_item),
-                        ERROR
-                    )
-                    return
+                ItemCodeCoroutines().getByCode(tempCode) {
+                    if (it.size > 0) {
+                        makeText(
+                            binding.root,
+                            context().getString(R.string.the_code_is_already_linked_to_an_item),
+                            ERROR
+                        )
+                        return@getByCode
+                    }
+
+                    // Actualizamos si existe
+                    ItemCodeCoroutines().countLink(item.itemId, tempCode) { ic ->
+                        if (ic > 0) {
+                            ItemCodeCoroutines().updateQty(item.itemId, tempCode, tempQty)
+                        } else {
+                            ItemCodeCoroutines().add(
+                                ItemCode(
+                                    itemId = item.itemId,
+                                    code = tempCode,
+                                    qty = tempQty,
+                                    toUpload = 1
+                                )
+                            )
+                        }
+
+                        makeText(
+                            binding.root, String.format(
+                                context().getString(R.string.item_linked_to_code),
+                                item.itemId,
+                                tempCode
+                            ), SnackBarType.SUCCESS
+                        )
+
+                        runOnUiThread { arrayAdapter?.forceSelectItem(item) }
+
+                        setSendButtonText()
+                    }
                 }
-
-                // Actualizamos si existe
-                if (x.linkExists(item.itemId, tempCode)) {
-                    x.updateQty(item.itemId, tempCode, tempQty)
-                } else {
-                    x.insert(item.itemId, tempCode, tempQty, true)
-                }
-
-                makeText(
-                    binding.root, String.format(
-                        context().getString(R.string.item_linked_to_code), item.itemId, tempCode
-                    ), SnackBarType.SUCCESS
-                )
-
-                runOnUiThread { arrayAdapter?.forceSelectItem(item) }
-
-                setSendButtonText()
             }
         }
     }
@@ -568,8 +578,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     return
                 }
 
-                val x = ItemCodeDbHelper()
-                if (x.unlinkCode(item.itemId, tempCode)) {
+                ItemCodeCoroutines().unlinkCode(item.itemId, tempCode) {
                     makeText(
                         binding.root,
                         String.format(getString(R.string.item_unlinked_from_codes), item.itemId),
@@ -577,14 +586,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     )
 
                     runOnUiThread { arrayAdapter?.forceSelectItem(item) }
-
                     setSendButtonText()
-                } else {
-                    makeText(
-                        binding.root,
-                        context().getString(R.string.the_code_could_not_be_unlinked),
-                        ERROR
-                    )
                 }
             }
         }
@@ -676,12 +678,12 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private fun fillAdapter(t: ArrayList<Item>) {
         showProgressBar(true)
 
-        var temp = t
         if (!t.any()) {
             checkedIdArray.clear()
-            temp = getItems()
+            getItems()
+            return
         }
-        completeList = temp
+        completeList = t
 
         runOnUiThread {
             try {
@@ -828,8 +830,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 return super.onOptionsItemSelected(item)
             }
             menuItemRandomIt -> {
-                val codes = ItemDbHelper().selectCodes(true)
-                if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
+                ItemCoroutines().getCodes(true) {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
+                }
                 return super.onOptionsItemSelected(item)
             }
             menuItemManualCode -> {
@@ -868,37 +871,31 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         builder.show()
     }
 
-    private fun getItems(): ArrayList<Item> {
-        var itemArray: ArrayList<Item> = ArrayList()
+    private fun getItems() {
+        val fr = itemSelectFilterFragment ?: return
 
-        val itemCode = itemSelectFilterFragment!!.itemCode
-        val itemCategory = itemSelectFilterFragment!!.itemCategory
+        val itemCode = fr.itemCode
+        val itemCategory = fr.itemCategory
 
         if (itemCode.isEmpty() && itemCategory == null) {
-            return ArrayList()
+            showProgressBar(false)
+            return
         }
 
         try {
             Log.d(this::class.java.simpleName, "Selecting items...")
-            val itemDbHelper = ItemDbHelper()
-
-            itemArray = (when {
-                itemCode.trim().isEmpty() -> when (itemCategory) {
-                    null -> itemDbHelper.select()
-                    else -> itemDbHelper.selectByItemCategory(itemCategory)
-                }
-                else -> when (itemCategory) {
-                    null -> itemDbHelper.selectByDescriptionEan(itemCode.trim())
-                    else -> itemDbHelper.selectByDescriptionEanItemCategory(
-                        itemCode.trim(), itemCategory
-                    )
-                }
-            })
+            ItemCoroutines().getByQuery(
+                ean = itemCode.trim(),
+                description = itemCode.trim(),
+                itemCategoryId = itemCategory?.itemCategoryId
+            ) {
+                if (it.any()) fillAdapter(it)
+                showProgressBar(false)
+            }
         } catch (ex: java.lang.Exception) {
             ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+            showProgressBar(false)
         }
-
-        return itemArray
     }
     // endregion
 
@@ -996,9 +993,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     ) {
         Statics.closeKeyboard(this)
         thread {
-            completeList = getItems()
             checkedIdArray.clear()
-            fillAdapter(completeList)
+            getItems()
         }
     }
 

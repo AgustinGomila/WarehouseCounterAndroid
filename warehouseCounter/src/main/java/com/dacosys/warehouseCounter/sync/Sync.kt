@@ -5,7 +5,7 @@ import android.os.Looper
 import android.util.Log
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.network.GetNewOrder

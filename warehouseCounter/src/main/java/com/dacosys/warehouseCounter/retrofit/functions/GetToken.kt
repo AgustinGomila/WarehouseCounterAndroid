@@ -166,13 +166,21 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
     private fun getBody(): UserAuthData {
         val authData = AuthData()
         val userAuth = UserAuthData()
+        var authDataOk = false
 
-        val currentUser = Statics.getCurrentUser() ?: return UserAuthData()
+        Statics.getCurrentUser {
+            if (it != null) {
+                authData.username = it.name
+                authData.password = it.password ?: ""
+            }
+            userAuth.authData = authData
+            authDataOk = true
+        }
 
-        authData.username = currentUser.name
-        authData.password = currentUser.password ?: ""
+        while (!authDataOk) {
+            Log.d(javaClass.simpleName, "Obteniendo usuario actual...")
+        }
 
-        userAuth.authData = authData
         return userAuth
     }
 

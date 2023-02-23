@@ -3,10 +3,10 @@ package com.dacosys.warehouseCounter.network
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dataBase.itemCode.ItemCodeDbHelper
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.itemCode.ItemCode
-import com.dacosys.warehouseCounter.model.user.User
+import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
+import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import kotlinx.coroutines.*
 import org.json.JSONObject
@@ -45,29 +45,6 @@ class SendItemCode {
         this.itemCodeArray = itemCodeArray
     }
 
-    private fun postExecute(result: Boolean) {
-        var isOk = true
-        if (result) {
-            val icDbHelper = ItemCodeDbHelper()
-
-            for (i in itemCodeSuccess) {
-                if (!icDbHelper.updateTransferred(i.itemId, i.code)) {
-                    isOk = false
-                    break
-                }
-            }
-        }
-
-        if (!isOk) {
-            mCallback?.onTaskSendItemCodeEnded(
-                status = ProgressStatus.crashed,
-                msg = context().getString(R.string.an_error_occurred_while_updating_item_codes)
-            )
-        } else {
-            mCallback?.onTaskSendItemCodeEnded(status = progressStatus, msg = msg)
-        }
-    }
-
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
     fun cancel() {
@@ -76,30 +53,18 @@ class SendItemCode {
 
     fun execute() {
         progressStatus = ProgressStatus.starting
-        currentUser = Statics.getCurrentUser()
+        Statics.getCurrentUser { currentUser = it }
 
         scope.launch {
-            val it = doInBackground()
-            postExecute(it)
+            coroutineScope {
+                withContext(Dispatchers.IO) { suspendFunction() }
+            }
         }
     }
 
-    private var deferred: Deferred<Boolean>? = null
-    private suspend fun doInBackground(): Boolean {
-        var result = false
-        coroutineScope {
-            deferred = async { suspendFunction() }
-            result = deferred?.await() ?: false
-        }
-        return result
-    }
-
-    private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
+    private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         progressStatus = ProgressStatus.running
-        return@withContext goForrest()
-    }
 
-    private fun goForrest(): Boolean {
         var isOk: Boolean
         val url: URL
         var connection: HttpURLConnection? = null
@@ -148,7 +113,13 @@ class SendItemCode {
                 val icJson = ItemCode.toJson(itemCode)
                 val jsonObj = JSONObject(icJson)
                 icArrayJson.put("itemCode$index", jsonObj)
-                itemCodeSuccess.add(itemCode)
+
+                ////////////////////////////////////
+                // Actualizar en la Base de datos //
+                ItemCodeCoroutines().updateTransferred(
+                    itemId = itemCode.itemId ?: 0L,
+                    code = itemCode.code ?: ""
+                )
             }
 
             jsonParam.put("itemCodes", icArrayJson)
@@ -174,7 +145,14 @@ class SendItemCode {
             connection?.disconnect()
         }
 
-        return isOk
+        if (!isOk) {
+            mCallback?.onTaskSendItemCodeEnded(
+                status = ProgressStatus.crashed,
+                msg = context().getString(R.string.an_error_occurred_while_updating_item_codes)
+            )
+        } else {
+            mCallback?.onTaskSendItemCodeEnded(status = progressStatus, msg = msg)
+        }
     }
 
     private fun getResponse(connection: HttpURLConnection): Boolean {

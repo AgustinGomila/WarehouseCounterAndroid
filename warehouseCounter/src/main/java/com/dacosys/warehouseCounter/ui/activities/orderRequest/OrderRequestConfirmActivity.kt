@@ -29,13 +29,13 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrcAdapter
 import com.dacosys.warehouseCounter.databinding.OrderRequestConfirmActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.client.Client
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
+import com.dacosys.warehouseCounter.misc.objects.table.Table
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
-import com.dacosys.warehouseCounter.model.status.ConfirmStatus
-import com.dacosys.warehouseCounter.model.table.Table
+import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderRequestHeader
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -112,8 +112,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             savedInstanceState.putInt("firstVisiblePos", (orcAdapter ?: return).firstVisiblePos())
             savedInstanceState.putParcelableArrayList("orcArray", orcAdapter?.getAll())
             savedInstanceState.putIntegerArrayList(
-                "checkedIdArray",
-                orcAdapter!!.getAllCheckedAsInt()
+                "checkedIdArray", orcAdapter!!.getAllCheckedAsInt()
             )
         }
 
@@ -123,9 +122,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         savedInstanceState.putParcelable("orderRequest", orderRequest)
 
         supportFragmentManager.putFragment(
-            savedInstanceState,
-            "imageControlFragment",
-            imageControlFragment as Fragment
+            savedInstanceState, "imageControlFragment", imageControlFragment as Fragment
         )
     }
 
@@ -177,8 +174,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
             //Restore the fragment's instance
             imageControlFragment = supportFragmentManager.getFragment(
-                savedInstanceState,
-                "imageControlFragment"
+                savedInstanceState, "imageControlFragment"
             ) as ImageControlButtonsFragment
         } else {
             // Nueva instancia de la actividad
@@ -253,8 +249,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         val newFragment: Fragment =
             if (orType == OrderRequestType.deliveryAudit || orType == OrderRequestType.prepareOrder || orType == OrderRequestType.stockAudit || orType == OrderRequestType.receptionAudit || orType == OrderRequestType.stockAuditFromDevice) {
                 OrderRequestHeader.newInstance(
-                    orderRequest = orderRequest,
-                    orcArray = orcAdapter!!.getAll()
+                    orderRequest = orderRequest, orcArray = orcAdapter!!.getAll()
                 )
             } else {
                 return
@@ -274,16 +269,14 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         if (currentFocus != null) {
             val inputManager = this.getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
             inputManager.hideSoftInputFromWindow(
-                currentFocus!!.windowToken,
-                InputMethodManager.HIDE_NOT_ALWAYS
+                currentFocus!!.windowToken, InputMethodManager.HIDE_NOT_ALWAYS
             )
         }
 
         runOnUiThread {
             fragmentTransaction = supportFragmentManager.beginTransaction()
             fragmentTransaction.setCustomAnimations(
-                R.anim.animation_fade_in,
-                R.anim.animation_fade_in
+                R.anim.animation_fade_in, R.anim.animation_fade_in
             )
             fragmentTransaction.replace(binding.panelHeader.id, newFragment)
                 .commitAllowingStateLoss()
@@ -293,40 +286,40 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     private fun setImageControlFragment() {
-        if (orderRequest == null || orderRequest?.orderRequestId == null) {
-            return
-        }
+        val tempOrId = orderRequest?.orderRequestId ?: return
 
         runOnUiThread {
             if (imageControlFragment == null) {
-                imageControlFragment =
-                    ImageControlButtonsFragment.newInstance(
-                        Table.orderRequest.tableId,
-                        orderRequest!!.orderRequestId!!,
-                        null
-                    )
+                val orId = tempOrId.toString()
+
+                imageControlFragment = ImageControlButtonsFragment.newInstance(
+                    tableId = Table.orderRequest.tableId.toLong(),
+                    objectId1 = orId,
+                    objectId2 = null
+                )
 
                 val fm = supportFragmentManager
 
-                runOnUiThread {
+                fm.beginTransaction()
+                    .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
+                    .replace(binding.imageControlLayout.id, imageControlFragment!!)
+                    .commit()
+
+                if (!(settingViewModel().useImageControl)) {
                     fm.beginTransaction()
                         .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
-                        .replace(binding.imageControlLayout.id, imageControlFragment!!).commit()
-
-                    if (!(settingViewModel().useImageControl)) {
-                        fm.beginTransaction()
-                            .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
-                            .hide(imageControlFragment as Fragment).commitAllowingStateLoss()
-                    } else {
-                        fm.beginTransaction()
-                            .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
-                            .show(imageControlFragment!! as Fragment).commitAllowingStateLoss()
-                    }
+                        .hide(imageControlFragment as Fragment)
+                        .commitAllowingStateLoss()
+                } else {
+                    fm.beginTransaction()
+                        .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
+                        .show(imageControlFragment!! as Fragment)
+                        .commitAllowingStateLoss()
                 }
             } else {
-                imageControlFragment!!.setTableId(Table.orderRequest.tableId)
-                imageControlFragment!!.setObjectId1(orderRequest!!.orderRequestId!!)
-                imageControlFragment!!.setObjectId2(null)
+                imageControlFragment?.setTableId(Table.orderRequest.tableId)
+                imageControlFragment?.setObjectId1(tempOrId)
+                imageControlFragment?.setObjectId2(null)
             }
         }
     }

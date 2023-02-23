@@ -13,7 +13,7 @@ import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.itemCategory.ItemCategory
+import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
 import java.util.*
 
 
@@ -242,7 +242,7 @@ class ItemCategoryAdapter : ArrayAdapter<ItemCategory>, Filterable {
 
             if (itemCategory != null) {
                 holder.descriptionTextView?.text = itemCategory.description
-                holder.parentCategoryTextView?.text = itemCategory.parent?.description ?: ""
+                holder.parentCategoryTextView?.text = itemCategory.parentStr
                 if (holder.checkBox != null) {
                     var isSpeakButtonLongPressed = false
 
@@ -296,12 +296,12 @@ class ItemCategoryAdapter : ArrayAdapter<ItemCategory>, Filterable {
                 val dimgray = ResourcesCompat.getColor(context().resources, R.color.dimgray, null)
 
                 val colorText = when {
-                    !itemCategory.active -> dimgray
+                    itemCategory.active != 1 -> dimgray
                     else -> black
                 }
 
                 val backColor = when {
-                    !itemCategory.active -> lightgray
+                    itemCategory.active != 1 -> lightgray
                     else -> white
                 }
 
@@ -331,8 +331,9 @@ class ItemCategoryAdapter : ArrayAdapter<ItemCategory>, Filterable {
                     for (i in 0 until itemCategoryArray.size) {
                         filterableItem = itemCategoryArray[i]
                         if (filterableItem.description.lowercase(Locale.getDefault())
-                                .contains(filterString) || (filterableItem.parent != null && (filterableItem.parent?.description
-                                ?: "").lowercase(Locale.getDefault()).contains(filterString))
+                                .contains(filterString) || (filterableItem.parentId > 0 && filterableItem.parentStr.lowercase(
+                                Locale.getDefault()
+                            ).contains(filterString))
                         ) {
                             r.add(filterableItem)
                         }
@@ -375,8 +376,7 @@ class ItemCategoryAdapter : ArrayAdapter<ItemCategory>, Filterable {
             override fun compare(o1: ItemCategory, o2: ItemCategory): Int {
                 return try {
                     val descComp = o1.description.compareTo(o2.description, true)
-                    val parentComp =
-                        (o1.parent?.description ?: "").compareTo(o2.parent?.description ?: "", true)
+                    val parentComp = o1.parentStr.compareTo(o2.parentStr, true)
 
                     // Orden natural: name, taxNumber, contactName
                     when (descComp) {

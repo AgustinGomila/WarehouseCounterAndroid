@@ -6,9 +6,9 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.model.price.Price
-import com.dacosys.warehouseCounter.model.price.PriceList
 import com.dacosys.warehouseCounter.moshi.error.ErrorObject
+import com.dacosys.warehouseCounter.moshi.price.Price
+import com.dacosys.warehouseCounter.moshi.price.PriceList
 import com.dacosys.warehouseCounter.moshi.search.SearchPrice
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult

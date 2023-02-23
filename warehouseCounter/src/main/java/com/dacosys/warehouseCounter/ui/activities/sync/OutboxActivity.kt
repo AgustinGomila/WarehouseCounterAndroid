@@ -28,7 +28,7 @@ import com.dacosys.warehouseCounter.adapter.orderRequest.OrderRequestAdapter.Com
 import com.dacosys.warehouseCounter.databinding.OutboxActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.model.log.Log
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest.CREATOR.getCompletedOrders

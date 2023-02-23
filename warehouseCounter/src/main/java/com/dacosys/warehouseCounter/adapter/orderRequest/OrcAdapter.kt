@@ -201,6 +201,24 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         }
     }
 
+    fun updateDescription(itemId: Long, desc: String) {
+        for (i in 0 until count) {
+            val t = (getItem(i) as OrderRequestContent)
+
+            if (t.item == null) continue
+
+            if (t.item?.itemId == itemId && t.item?.itemDescription != desc) {
+                t.item?.itemDescription = desc
+
+                refresh()
+
+                forceSelectItem(t)
+
+                break
+            }
+        }
+    }
+
     fun updateDescription(item: Item, desc: String) {
         for (i in 0 until count) {
             val t = (getItem(i) as OrderRequestContent)

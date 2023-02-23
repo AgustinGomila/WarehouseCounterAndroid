@@ -43,14 +43,14 @@ import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.closeKeyboard
 import com.dacosys.warehouseCounter.misc.Statics.Companion.generateTaskCode
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
-import com.dacosys.warehouseCounter.model.client.Client
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.mainButton.MainButton
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.network.GetNewOrder
 import com.dacosys.warehouseCounter.network.SendCompletedOrder
+import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.sync.*
@@ -337,10 +337,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
         var draw = ContextCompat.getDrawable(this, R.drawable.wc)
 
         /// USUARIO
-        val currentUser = Statics.getCurrentUser()
-        if (currentUser != null) {
-            binding.userTextView.text =
-                String.format("%s - %s", settingViewModel().installationCode, currentUser.name)
+        Statics.getCurrentUser {
+            if (it != null) {
+                binding.userTextView.text =
+                    String.format("%s - %s", settingViewModel().installationCode, it.name)
+            }
         }
 
         /// VERSION
@@ -602,9 +603,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, GetNewOrder.N
     private fun attemptEnterConfig(password: String) {
         val realPass = settingViewModel().confPassword
         if (password == realPass) {
-            // TODO: Eliminar o ver para qué se usa?
-            // Statics.setDebugConfigValues()
-
             if (!rejectNewInstances) {
                 rejectNewInstances = true
 

@@ -24,7 +24,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.databinding.InboxActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity

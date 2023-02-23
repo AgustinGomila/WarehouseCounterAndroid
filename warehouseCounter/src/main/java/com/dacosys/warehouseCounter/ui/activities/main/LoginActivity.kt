@@ -21,24 +21,24 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
-import com.dacosys.imageControl.dataBase.DbHelper
+import com.dacosys.imageControl.room.database.IcDatabase
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dataBase.dbHelper.DataBaseHelper
-import com.dacosys.warehouseCounter.dataBase.user.UserDbHelper
 import com.dacosys.warehouseCounter.databinding.LoginActivityBinding
 import com.dacosys.warehouseCounter.misc.Md5
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
 import com.dacosys.warehouseCounter.misc.Statics.Companion.closeKeyboard
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.user.User
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.moshi.clientPackage.Package
 import com.dacosys.warehouseCounter.retrofit.functions.GetDatabaseLocation
 import com.dacosys.warehouseCounter.retrofit.result.DbLocationResult
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
+import com.dacosys.warehouseCounter.room.dao.user.UserCoroutines
+import com.dacosys.warehouseCounter.room.database.WcDatabase
+import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigApp
@@ -481,18 +481,10 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                    Escenario en el que el usuario ha vuelto a esta
                    actividad después haber estado loggeado.
                 */
+
                 Statics.closeImageControl()
-
-                /////////////// BASE DE DATOS SQLITE ///////////////////
-                // Acá arranca la base de datos, si no existe se crea //
-                // Si existe una sesión previa se cierra.             //
-                DataBaseHelper.beginDataBase()
-
-                // Acá arranca la base de datos de ImageControl, si no existe se crea.
-                if (settingViewModel().useImageControl) {
-                    DbHelper.beginDataBase()
-                }
-                ///////////// FIN INICIALIZACIÓN SQLITE ////////////////
+                WcDatabase.cleanInstance()
+                IcDatabase.cleanInstance()
 
                 initSync()
             } catch (ex: Exception) {
@@ -555,9 +547,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     private fun attemptEnterConfig(password: String) {
         val realPass = settingViewModel().confPassword
         if (password == realPass) {
-            // TODO: Otro
-            // Statics.setDebugConfigValues()
-
             if (!rejectNewInstances) {
                 rejectNewInstances = true
 
@@ -635,6 +624,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             if (userPass == Md5.getMd5(password)) {
+
+                Statics.cleanCurrentUser()
                 Statics.currentUserId = user!!.userId
                 Statics.currentUserName = user!!.name
 
@@ -678,14 +669,14 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 val password = confJson.getString("log_password")
 
                 if (userName.isNotEmpty() && password.isNotEmpty()) {
-                    val uDbH = UserDbHelper()
-                    val user = uDbH.selectByName(userName).firstOrNull()
-                    if (user != null) {
-                        runOnUiThread {
-                            attemptLogin(user.userId, user.password ?: "", password)
+                    UserCoroutines().getByName(userName) {
+                        if (it != null) {
+                            runOnUiThread {
+                                attemptLogin(it.userId, it.password ?: "", password)
+                            }
+                        } else {
+                            makeText(binding.root, getString(R.string.invalid_user), ERROR)
                         }
-                    } else {
-                        makeText(binding.root, getString(R.string.invalid_user), ERROR)
                     }
                 } else {
                     makeText(binding.root, getString(R.string.invalid_code), ERROR)

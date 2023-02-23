@@ -26,7 +26,7 @@ import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.closeKeyboard
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getConfig
 import com.dacosys.warehouseCounter.misc.Statics.Companion.setupProxy
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.moshi.clientPackage.Package
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -296,9 +296,6 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     private fun attemptEnterConfig(password: String) {
         val realPass = settingViewModel().confPassword
         if (password == realPass) {
-            // TODO: Ver para qué?
-            // Statics.setDebugConfigValues()
-
             if (!rejectNewInstances) {
                 rejectNewInstances = true
 

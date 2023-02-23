@@ -30,13 +30,13 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.item.ItemAdapter
-import com.dacosys.warehouseCounter.dataBase.item.ItemDbHelper
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.item.Item
-import com.dacosys.warehouseCounter.model.itemCategory.ItemCategory
-import com.dacosys.warehouseCounter.model.itemCode.ItemCode
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.room.entity.item.Item
+import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
+import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -479,48 +479,42 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    private fun getItems(): ArrayList<Item> {
-        var itemArray: ArrayList<Item> = ArrayList()
+    private fun getItems() {
+        val fr = itemSelectFilterFragment ?: return
 
-        val itemCode = itemSelectFilterFragment!!.itemCode
-        val itemCategory = itemSelectFilterFragment!!.itemCategory
+        val itemCode = fr.itemCode
+        val itemCategory = fr.itemCategory
 
         if (itemCode.isEmpty() && itemCategory == null) {
-            return ArrayList()
+            showProgressBar(false)
+            return
         }
 
         try {
             Log.d(this::class.java.simpleName, "Selecting items...")
-            val itemDbHelper = ItemDbHelper()
-
-            itemArray = (when {
-                itemCode.trim().isEmpty() -> when (itemCategory) {
-                    null -> itemDbHelper.select()
-                    else -> itemDbHelper.selectByItemCategory(itemCategory)
-                }
-                else -> when (itemCategory) {
-                    null -> itemDbHelper.selectByDescriptionEan(itemCode.trim())
-                    else -> itemDbHelper.selectByDescriptionEanItemCategory(
-                        itemCode.trim(), itemCategory
-                    )
-                }
-            })
+            ItemCoroutines().getByQuery(
+                ean = itemCode.trim(),
+                description = itemCode.trim(),
+                itemCategoryId = itemCategory?.itemCategoryId
+            ) {
+                if (it.any()) fillAdapter(it)
+                showProgressBar(false)
+            }
         } catch (ex: java.lang.Exception) {
             ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+            showProgressBar(false)
         }
-
-        return itemArray
     }
 
     private fun fillAdapter(t: ArrayList<Item>) {
         showProgressBar(true)
 
-        var temp = t
         if (!t.any()) {
             checkedIdArray.clear()
-            temp = getItems()
+            getItems()
+            return
         }
-        completeList = temp
+        completeList = t
 
         runOnUiThread {
             try {
@@ -609,7 +603,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         thread {
             refreshTextViews()
-
             fillAdapter(completeList)
         }
     }
@@ -726,8 +719,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 return super.onOptionsItemSelected(item)
             }
             menuItemRandomIt -> {
-                val codes = ItemDbHelper().selectCodes(true)
-                if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
+                ItemCoroutines().getCodes(true) {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
+                }
                 return super.onOptionsItemSelected(item)
             }
             menuItemManualCode -> {
@@ -768,9 +762,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     override fun onFilterChanged(code: String, itemCategory: ItemCategory?, onlyActive: Boolean) {
         Statics.closeKeyboard(this)
         thread {
-            completeList = getItems()
             checkedIdArray.clear()
-            fillAdapter(completeList)
+            getItems()
         }
     }
 

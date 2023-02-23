@@ -17,19 +17,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.adapter.itemCategory.ItemCategoryAdapter
-import com.dacosys.warehouseCounter.dataBase.itemCategory.ItemCategoryDbHelper
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.itemCategory.ItemCategory
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.room.dao.itemCategory.ItemCategoryCoroutines
+import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
 import kotlin.concurrent.thread
 
 class ItemCategorySelectActivity : AppCompatActivity(),
-    ContractsAutoCompleteTextView.OnContractsAvailability,
-    KeyboardVisibilityEventListener {
+    ContractsAutoCompleteTextView.OnContractsAvailability, KeyboardVisibilityEventListener {
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -96,10 +95,9 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.onItemClickListener =
             AdapterView.OnItemClickListener { _, _, position, _ ->
                 if (binding.autoCompleteTextView.adapter != null && binding.autoCompleteTextView.adapter is ItemCategoryAdapter) {
-                    val it =
-                        (binding.autoCompleteTextView.adapter as ItemCategoryAdapter).getItem(
-                            position
-                        )
+                    val it = (binding.autoCompleteTextView.adapter as ItemCategoryAdapter).getItem(
+                        position
+                    )
                     if (it != null) {
                         itemCategory = it
                     }
@@ -109,12 +107,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.setOnContractsAvailability(this)
         binding.autoCompleteTextView.onFocusChangeListener =
             View.OnFocusChangeListener { _, hasFocus ->
-                if (hasFocus &&
-                    binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold &&
-                    binding.autoCompleteTextView.adapter != null &&
-                    (binding.autoCompleteTextView.adapter as ItemCategoryAdapter).count > 0 &&
-                    !binding.autoCompleteTextView.isPopupShowing
-                ) {
+                if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold && binding.autoCompleteTextView.adapter != null && (binding.autoCompleteTextView.adapter as ItemCategoryAdapter).count > 0 && !binding.autoCompleteTextView.isPopupShowing) {
                     // Display the suggestion dropdown on focus
                     Handler(Looper.getMainLooper()).post {
                         run {
@@ -147,8 +140,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
                             var founded = false
                             for (a in all) {
                                 if (a.description.startsWith(
-                                        binding.autoCompleteTextView.text.toString().trim(),
-                                        true
+                                        binding.autoCompleteTextView.text.toString().trim(), true
                                     )
                                 ) {
                                     itemCategory = a
@@ -232,34 +224,34 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         if (isFilling) return
         isFilling = true
 
-        var itemArray: ArrayList<ItemCategory> = ArrayList()
-        try {
-            Log.d(this::class.java.simpleName, "Selecting item categories...")
-            itemArray = ItemCategoryDbHelper().select()
-        } catch (ex: java.lang.Exception) {
-            ex.printStackTrace()
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
-        }
-
-        val adapter = ItemCategoryAdapter(
-            activity = this,
-            resource = R.layout.item_category_row,
-            itemCategorys = itemArray,
-            suggestedList = ArrayList()
-        )
-
         runOnUiThread {
-            binding.autoCompleteTextView.setAdapter(adapter)
-            (binding.autoCompleteTextView.adapter as ItemCategoryAdapter).notifyDataSetChanged()
+            try {
+                Log.d(this::class.java.simpleName, "Selecting item categories...")
 
-            while (binding.autoCompleteTextView.adapter == null) {
-                // Wait for complete loaded
+                ItemCategoryCoroutines().get {
+                    val adapter = ItemCategoryAdapter(
+                        activity = this,
+                        resource = R.layout.item_category_row,
+                        itemCategorys = it,
+                        suggestedList = ArrayList()
+                    )
+
+                    binding.autoCompleteTextView.setAdapter(adapter)
+                    (binding.autoCompleteTextView.adapter as ItemCategoryAdapter).notifyDataSetChanged()
+
+                    while (binding.autoCompleteTextView.adapter == null) {
+                        // Wait for complete loaded
+                    }
+                    refreshItemCategoryText(cleanText = false, focus = false)
+                    showProgressBar(GONE)
+                }
+            } catch (ex: java.lang.Exception) {
+                ex.printStackTrace()
+                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            } finally {
+                isFilling = false
             }
-            refreshItemCategoryText(cleanText = false, focus = false)
-            showProgressBar(GONE)
         }
-
-        isFilling = false
     }
 
     override fun onBackPressed() {

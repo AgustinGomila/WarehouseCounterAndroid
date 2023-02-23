@@ -42,10 +42,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dataBase.itemCode.ItemCodeDbHelper
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.itemCode.ItemCode
-import com.dacosys.warehouseCounter.model.user.User
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.moshi.clientPackage.Package
 import com.dacosys.warehouseCounter.moshi.clientPackage.Package.Companion.icPasswordTag
 import com.dacosys.warehouseCounter.moshi.clientPackage.Package.Companion.icUserTag
@@ -53,6 +50,11 @@ import com.dacosys.warehouseCounter.moshi.token.TokenObject
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
+import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.room.dao.user.UserCoroutines
+import com.dacosys.warehouseCounter.room.database.WcDatabase.Companion.DATABASE_NAME
+import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
+import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.vh75.Vh75Bt
 import com.dacosys.warehouseCounter.settings.Preference
@@ -90,8 +92,6 @@ import kotlin.math.roundToInt
 
 class Statics {
     companion object : DialogInterface.OnMultiChoiceClickListener {
-        const val testMode = false
-
         var appName: String = "${getApplicationName()}M12"
 
         // Este flag es para reinicializar el colector después de cambiar en Settings.
@@ -207,14 +207,11 @@ class Statics {
         /**
          * Modo DEMO
          */
-        var demoMode = false
-        var superDemoMode = false
+        const val demoMode = false
+        const val superDemoMode = false
+        const val downloadDbAlways = false
+        const val testMode = false
 
-        /**
-         * Base de datos SQLite local
-         */
-        const val DATABASE_VERSION = 1
-        const val DATABASE_NAME = "wc.sqlite"
         const val APP_VERSION_ID: Int = 8
 
         private const val IMAGE_CONTROL_PATH = "/image_control"
@@ -333,19 +330,20 @@ class Statics {
         private var tempItemCodes: ArrayList<ItemCode> = ArrayList()
 
         fun insertItemCodes() {
-            if (tempItemCodes.isNotEmpty()) {
-                val icDbHelper = ItemCodeDbHelper()
+            if (tempItemCodes.isEmpty()) return
 
-                for (f in tempItemCodes) {
-                    val codeCount = icDbHelper.selectByCode(f.code).count()
-                    if (codeCount == 0) {
-                        f.toUpload = false
-                        icDbHelper.insert(f)
+            for (f in tempItemCodes) {
+                if (f.code.isNullOrEmpty()) continue
+
+                ItemCodeCoroutines().getByCode(f.code) {
+                    if (!it.any()) {
+                        f.toUpload = 0
+                        ItemCodeCoroutines().add(f)
                     }
                 }
-
-                tempItemCodes.clear()
             }
+
+            tempItemCodes.clear()
         }
         // endregion
 
@@ -366,8 +364,18 @@ class Statics {
         var currentUserId: Long = -1L
         var currentUserName: String = ""
 
-        fun getCurrentUser(): User? {
-            return User.selectById(currentUserId)
+        private var currentUser: User? = null
+        fun getCurrentUser(onResult: (User?) -> Unit = {}) {
+            if (currentUser == null) {
+                UserCoroutines().getById(currentUserId) {
+                    currentUser = it
+                    onResult(currentUser)
+                }
+            } else onResult(currentUser)
+        }
+
+        fun cleanCurrentUser() {
+            currentUser = null
         }
         // endregion CURRENT USER
 

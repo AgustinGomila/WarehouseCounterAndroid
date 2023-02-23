@@ -4,7 +4,7 @@ import android.os.Build
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.model.collectorType.CollectorType
+import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
 import com.dacosys.warehouseCounter.scanners.honeywell.Honeywell
 import com.dacosys.warehouseCounter.scanners.honeywell.HoneywellNative
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra

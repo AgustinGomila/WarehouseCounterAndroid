@@ -34,20 +34,19 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrcAdapter
-import com.dacosys.warehouseCounter.dataBase.item.ItemDbHelper
 import com.dacosys.warehouseCounter.databinding.OrderRequestActivityBothPanelsCollapsedBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.closeKeyboard
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.itemCode.ItemCode
-import com.dacosys.warehouseCounter.model.itemRegex.ItemRegex
-import com.dacosys.warehouseCounter.model.itemRegex.ItemRegex.CREATOR.RegexResult
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
+import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.confirm
+import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.modify
 import com.dacosys.warehouseCounter.model.log.Log
 import com.dacosys.warehouseCounter.model.log.LogContent
 import com.dacosys.warehouseCounter.model.orderRequest.*
-import com.dacosys.warehouseCounter.model.status.ConfirmStatus
-import com.dacosys.warehouseCounter.model.status.ConfirmStatus.CREATOR.confirm
-import com.dacosys.warehouseCounter.model.status.ConfirmStatus.CREATOR.modify
+import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
+import com.dacosys.warehouseCounter.room.entity.itemRegex.ItemRegex
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -168,8 +167,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 return super.onOptionsItemSelected(item)
             }
             menuItemRandomIt -> {
-                val codes = ItemDbHelper().selectCodes(true)
-                if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
+                ItemCoroutines().getCodes(true) {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
+                }
                 return super.onOptionsItemSelected(item)
             }
             menuItemManualCode -> {
@@ -964,19 +964,23 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
                     if (items.isEmpty()) return@registerForActivityResult
 
-                    val item = ItemDbHelper().selectById(items[0].toLong())
-                        ?: return@registerForActivityResult
-                    try {
-                        addOrc(
-                            OrderRequestContent(
-                                item = Item(item), lot = null, qty = Qty(0.toDouble(), 0.toDouble())
+                    ItemCoroutines().getById(items.first().toLong()) { it2 ->
+                        if (it2 == null) return@getById
+
+                        try {
+                            addOrc(
+                                OrderRequestContent(
+                                    item = Item(it2),
+                                    lot = null,
+                                    qty = Qty(0.toDouble(), 0.toDouble())
+                                )
                             )
-                        )
-                    } catch (ex: Exception) {
-                        val res =
-                            context().getString(R.string.an_error_occurred_while_trying_to_add_the_item)
-                        makeText(binding.root, res, ERROR)
-                        android.util.Log.e(this::class.java.simpleName, res)
+                        } catch (ex: Exception) {
+                            val res =
+                                context().getString(R.string.an_error_occurred_while_trying_to_add_the_item)
+                            makeText(binding.root, res, ERROR)
+                            android.util.Log.e(this::class.java.simpleName, res)
+                        }
                     }
                 }
             } catch (ex: Exception) {
@@ -1528,21 +1532,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         description: String,
         updateDb: Boolean = true,
     ) {
-        val item: Item?
+        val item = orc.item ?: return
         if (updateDb) {
-            item = updateItemDescriptionToDb(orc.item, description)
-            if (item == null) {
-                val res =
-                    context().getString(R.string.an_error_occurred_while_updating_the_description_of_the_item_in_the_database)
-                makeText(binding.root, res, ERROR)
-                android.util.Log.e(this::class.java.simpleName, res)
-                return
+            val itemId = item.itemId ?: return
+            ItemCoroutines().updateDescription(itemId, description) {
+                orcAdapter?.updateDescription(itemId, description)
             }
         } else {
-            item = orc.item
+            orcAdapter?.updateDescription(item, description)
         }
-
-        if (item != null) orcAdapter?.updateDescription(item, description)
     }
 
     @SuppressLint("SimpleDateFormat")
@@ -1627,22 +1625,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
     }
 
-    private fun updateItemDescriptionToDb(item: Item?, description: String): Item? {
-        val tItem = item ?: return null
-        val itemDbHelper = ItemDbHelper()
-
-        tItem.itemDescription = description
-
-        val realItem = itemDbHelper.selectById(tItem.itemId) ?: return null
-        realItem.description = description
-
-        return if (itemDbHelper.update(realItem)) {
-            Item(itemDbHelper.selectById(tItem.itemId)!!)
-        } else {
-            null
-        }
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -1675,7 +1657,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     // Este flag lo vamos a usar para saber si estamos tratando con un
-    private var lastRegexResult: RegexResult? = null
+    private var lastRegexResult: ItemRegex.Companion.RegexResult? = null
 
     override fun scannerCompleted(scanCode: String) {
         if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, INFO)
@@ -1684,64 +1666,63 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         var code: String
 
-        val result: ArrayList<RegexResult> = ItemRegex.tryToRegex(scanCode)
+        ItemRegex.tryToRegex(scanCode) {
+            if (!it.any()) {
+                // No coincide con los Regex de la DB, lo
+                // usamos como un código corriente.
+                code = scanCode
+            } else {
+                // region Regex Founded
+                if (it.count() > 1) {
+                    // Mostrar advertencia.
+                    makeText(this, getString(R.string.there_are_multiple_regex_matches), INFO)
+                }
 
-        if (result.any()) {
-            // region Regex Founded
+                // Utilizamos la primer coincidencia
+                lastRegexResult = it.first()
 
-            if (result.count() > 1) {
+                // Si la cantidad no es NULL procesiguimos con el Regex
+                if (lastRegexResult!!.qty != null) {
+                    val checkCodeTask = CheckCode()
+                    checkCodeTask.addParams(callback = this,
+                        scannedCode = lastRegexResult!!.ean,
+                        adapter = orcAdapter!!,
+                        onEventData = { showSnackBar(it) })
+                    checkCodeTask.execute()
+                    gentlyReturn()
+                    return@tryToRegex
+                }
+
+                // Qty NULL ->
+                //    Actualizar scanned code y proseguir como
+                //    un código corriente pero advertir sobre el error.
+
                 // Mostrar advertencia.
-                makeText(this, getString(R.string.there_are_multiple_regex_matches), INFO)
+                makeText(this, "Cantidad nula en Regex", INFO)
+                code = lastRegexResult!!.ean
+
+                // endregion Regex Founded
             }
 
-            // Utilizamos la primer coincidencia
-            lastRegexResult = result.first()
+            if (divided) {
+                val splitCode = scanCode.split(settingViewModel().divisionChar.toRegex())
+                    .dropLastWhile { it2 -> it2.isEmpty() }
+                if (splitCode.any()) {
+                    code = splitCode.toTypedArray()[0]
+                }
+            }
 
-            // Si la cantidad no es NULL procesiguimos con el Regex
-            if (lastRegexResult!!.qty != null) {
+            try {
                 val checkCodeTask = CheckCode()
                 checkCodeTask.addParams(callback = this,
-                    scannedCode = lastRegexResult!!.ean,
+                    scannedCode = code,
                     adapter = orcAdapter!!,
-                    onEventData = { showSnackBar(it) })
+                    onEventData = { it2 -> showSnackBar(it2) })
                 checkCodeTask.execute()
-                gentlyReturn()
-                return
+            } catch (ex: Exception) {
+                makeText(binding.root, ex.message.toString(), ERROR)
+                android.util.Log.e(this::class.java.simpleName, ex.message.toString())
             }
-
-            // Qty NULL ->
-            //    Actualizar scanned code y proseguir como
-            //    un código corriente pero advertir sobre el error.
-
-            // Mostrar advertencia.
-            makeText(this, "Cantidad nula en Regex", INFO)
-            code = lastRegexResult!!.ean
-
-            // endregion Regex Founded
-        } else {
-            // No coincide con los Regex de la DB, lo
-            // usamos como un código corriente.
-            code = scanCode
-        }
-
-        if (divided) {
-            val splitCode = scanCode.split(settingViewModel().divisionChar.toRegex())
-                .dropLastWhile { it.isEmpty() }
-            if (splitCode.any()) {
-                code = splitCode.toTypedArray()[0]
-            }
-        }
-
-        try {
-            val checkCodeTask = CheckCode()
-            checkCodeTask.addParams(callback = this,
-                scannedCode = code,
-                adapter = orcAdapter!!,
-                onEventData = { showSnackBar(it) })
-            checkCodeTask.execute()
-        } catch (ex: Exception) {
-            makeText(binding.root, ex.message.toString(), ERROR)
-            android.util.Log.e(this::class.java.simpleName, ex.message.toString())
         }
     }
 
