@@ -4,7 +4,7 @@ import android.content.SharedPreferences
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
 import java.util.*
 
 class SettingsRepository(private val prefs: SharedPreferences) {

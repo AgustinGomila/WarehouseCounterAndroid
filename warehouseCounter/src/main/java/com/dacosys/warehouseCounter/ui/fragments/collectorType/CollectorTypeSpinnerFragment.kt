@@ -9,7 +9,7 @@ import android.widget.ArrayAdapter
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.databinding.FragmentSpinnerBinding
-import com.dacosys.warehouseCounter.model.collectorType.CollectorType
+import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
 import org.parceler.Parcels
 
 /**

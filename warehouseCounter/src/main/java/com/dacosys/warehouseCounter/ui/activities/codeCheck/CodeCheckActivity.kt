@@ -12,13 +12,13 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dataBase.item.ItemDbHelper
-import com.dacosys.warehouseCounter.dataBase.itemCode.ItemCodeDbHelper
 import com.dacosys.warehouseCounter.databinding.CodeCheckActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.item.Item
-import com.dacosys.warehouseCounter.model.itemCode.ItemCode
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.room.entity.item.Item
+import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -92,8 +92,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         if (savedInstanceState != null) {
             binding.codeEditText.setText(
-                savedInstanceState.getString("code"),
-                TextView.BufferType.EDITABLE
+                savedInstanceState.getString("code"), TextView.BufferType.EDITABLE
             )
         }
 
@@ -143,8 +142,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         if (currentFocus != null) {
             val inputManager = this.getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
             inputManager.hideSoftInputFromWindow(
-                (currentFocus ?: return).windowToken,
-                InputMethodManager.HIDE_NOT_ALWAYS
+                (currentFocus ?: return).windowToken, InputMethodManager.HIDE_NOT_ALWAYS
             )
         }
 
@@ -152,13 +150,11 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             runOnUiThread {
                 fragmentTransaction = supportFragmentManager.beginTransaction()
                 fragmentTransaction.setCustomAnimations(
-                    R.anim.animation_fade_in,
-                    R.anim.animation_fade_out
+                    R.anim.animation_fade_in, R.anim.animation_fade_out
                 )
                 try {
                     if (!isFinishing) fragmentTransaction.replace(
-                        binding.fragmentLayout.id,
-                        newFragment
+                        binding.fragmentLayout.id, newFragment
                     ).commitAllowingStateLoss()
                 } catch (ignore: java.lang.Exception) {
                 }
@@ -242,50 +238,45 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         var itemObj: Item? = null
         var itemCode: ItemCode? = null
 
-        val a = ItemDbHelper()
+        ItemCoroutines().getByQuery(scannedCode) {
+            if (it.size > 0) itemObj = it.first()
 
-        val allByEan = a.selectByEan(scannedCode)
-        if (allByEan.size > 0) {
-            itemObj = allByEan[0]
-        }
+            if (itemObj == null) {
+                // ¿No está? Buscar en la tabla item_code de la base de datos
+                ItemCodeCoroutines().getByCode(scannedCode) { it2 ->
+                    if (it2.size > 0) itemCode = it2.first()
 
-        if (itemObj == null) {
-            // ¿No está? Buscar en la tabla item_code de la base de datos
-            val icDbH = ItemCodeDbHelper()
-            val allByItemCode = icDbH.selectByCode(scannedCode)
-            if (allByEan.size > 0) {
-                itemCode = allByItemCode[0]
+                    try {
+                        when {
+                            itemObj != null -> {
+                                fillPanel(ItemDetailFragment.newInstance(itemObj!!))
+                                binding.infoTextView.setText(
+                                    R.string.the_code_belongs_to_an_item,
+                                    TextView.BufferType.EDITABLE
+                                )
+                            }
+                            itemCode != null -> {
+                                fillPanel(ItemDetailFragment.newInstance(itemCode!!))
+                                binding.infoTextView.setText(
+                                    R.string.the_code_belongs_to_an_item_code,
+                                    TextView.BufferType.EDITABLE
+                                )
+                            }
+                            else -> {
+                                fillPanel(null)
+                                binding.infoTextView.setText(
+                                    R.string.the_code_does_not_belong_to_any_iem_in_the_database,
+                                    TextView.BufferType.EDITABLE
+                                )
+                            }
+                        }
+                        JotterListener.lockScanner(this, false)
+                    } catch (ex: Exception) {
+                        makeText(binding.root, ex.message.toString(), ERROR)
+                        ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+                    }
+                }
             }
-        }
-
-        try {
-            when {
-                itemObj != null -> {
-                    fillPanel(ItemDetailFragment.newInstance(itemObj))
-                    binding.infoTextView.setText(
-                        R.string.the_code_belongs_to_an_item,
-                        TextView.BufferType.EDITABLE
-                    )
-                }
-                itemCode != null -> {
-                    fillPanel(ItemDetailFragment.newInstance(itemCode))
-                    binding.infoTextView.setText(
-                        R.string.the_code_belongs_to_an_item_code,
-                        TextView.BufferType.EDITABLE
-                    )
-                }
-                else -> {
-                    fillPanel(null)
-                    binding.infoTextView.setText(
-                        R.string.the_code_does_not_belong_to_any_iem_in_the_database,
-                        TextView.BufferType.EDITABLE
-                    )
-                }
-            }
-            JotterListener.lockScanner(this, false)
-        } catch (ex: Exception) {
-            makeText(binding.root, ex.message.toString(), ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
         }
     }
 
@@ -296,10 +287,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this,
-            requestCode,
-            permissions,
-            grantResults
+            this, requestCode, permissions, grantResults
         )
     }
 
@@ -308,11 +296,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             binding.codeEditText.setText(scanCode)
             binding.codeEditText.dispatchKeyEvent(
                 KeyEvent(
-                    0,
-                    0,
-                    KeyEvent.ACTION_DOWN,
-                    KeyEvent.KEYCODE_ENTER,
-                    0
+                    0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER, 0
                 )
             )
         }

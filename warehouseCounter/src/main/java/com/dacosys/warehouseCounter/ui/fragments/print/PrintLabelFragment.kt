@@ -24,14 +24,14 @@ import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dataBase.item.ItemDbHelper
 import com.dacosys.warehouseCounter.databinding.PrintLabelFragmentBinding
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.UTCDataTime
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.item.Item
-import com.dacosys.warehouseCounter.model.itemCategory.ItemCategory
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.room.dao.itemCategory.ItemCategoryCoroutines
+import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -154,8 +154,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     override fun run() {
         try {
             if (ActivityCompat.checkSelfPermission(
-                    context(),
-                    Manifest.permission.BLUETOOTH_CONNECT
+                    context(), Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 // here to request the missing permissions, and then overriding
@@ -220,8 +219,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                     val enablePrinter = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                     enablePrinter.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                     if (ActivityCompat.checkSelfPermission(
-                            requireActivity(),
-                            Manifest.permission.BLUETOOTH_CONNECT
+                            requireActivity(), Manifest.permission.BLUETOOTH_CONNECT
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -344,9 +342,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         binding.printButton.setOnClickListener {
             if (printer.isEmpty()) {
                 makeText(
-                    binding.root,
-                    getString(R.string.you_must_select_a_printer),
-                    SnackBarType.ERROR
+                    binding.root, getString(R.string.you_must_select_a_printer), SnackBarType.ERROR
                 )
                 return@setOnClickListener
             }
@@ -455,12 +451,9 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         }
 
         val items: ArrayList<Item> = ArrayList()
-        val aDb = ItemDbHelper()
-
         for (id in itemIdArray) {
-            val a = aDb.selectById(id)
-            if (a != null) {
-                items.add(a)
+            ItemCoroutines().getById(id) {
+                if (it != null) items.add(it)
             }
         }
 
@@ -479,9 +472,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
         if (mBluetoothDevice == null) {
             makeText(
-                binding.root,
-                getString(R.string.there_is_no_selected_printer),
-                SnackBarType.ERROR
+                binding.root, getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR
             )
             return
         }
@@ -489,7 +480,9 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         val qty = binding.qtyEditText.text.toString().toInt()
         var sendThis = ""
         for (item in items) {
-            sendThis += getLabel(item)
+            getLabel(item) {
+                sendThis += it
+            }
         }
 
         val t = object : Thread() {
@@ -512,44 +505,50 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         t.start()
     }
 
-    private fun getLabel(item: Item): String {
+    private fun getLabel(item: Item, onFinished: (String) -> Unit = {}) {
         val ean: String = item.ean
         var itemCategoryStr: String
         var description: String
         var price: String
 
-        val ic = ItemCategory(item.itemCategoryId, false)
-        itemCategoryStr = if (ic.parent != null) {
-            "${ic.parent!!.description} - ${ic.description}"
-        } else {
-            ic.description
+        ItemCategoryCoroutines().getById(item.itemCategoryId) {
+            itemCategoryStr = ""
+            if (it != null) {
+                if (it.parentStr.isNotEmpty()) {
+                    "${it.parentStr} - ${it.description}"
+                } else {
+                    it.description
+                }
+            }
+
+            description = item.description.uppercase(Locale.getDefault())
+            price = Statics.roundToString(item.price ?: 0f, 2)
+
+            // Trim contents
+            if (description.length > 18) {
+                description = description.substring(0, 21)
+            }
+
+            if (itemCategoryStr.length > 35) {
+                itemCategoryStr = itemCategoryStr.substring(0, 60)
+            }
+
+            if (price.length > 35) {
+                price = price.substring(0, 60)
+            }
+
+            val template = getString(R.string.wc_barcode_label_default)
+            onFinished(
+                String.format(
+                    template,
+                    ean,
+                    normalizeStrings(description),
+                    normalizeStrings(itemCategoryStr),
+                    normalizeStrings(price),
+                    UTCDataTime.getUTCDateTimeAsString()
+                )
+            )
         }
-
-        description = item.description.uppercase(Locale.getDefault())
-        price = Statics.roundToString(item.price ?: 0.toDouble(), 2)
-
-        // Trim contents
-        if (description.length > 18) {
-            description = description.substring(0, 21)
-        }
-
-        if (itemCategoryStr.length > 35) {
-            itemCategoryStr = itemCategoryStr.substring(0, 60)
-        }
-
-        if (price.length > 35) {
-            price = price.substring(0, 60)
-        }
-
-        val template = getString(R.string.wc_barcode_label_default)
-        return String.format(
-            template,
-            ean,
-            normalizeStrings(description),
-            normalizeStrings(itemCategoryStr),
-            normalizeStrings(price),
-            UTCDataTime.getUTCDateTimeAsString()
-        )
     }
 
     private fun normalizeStrings(name: String): String {

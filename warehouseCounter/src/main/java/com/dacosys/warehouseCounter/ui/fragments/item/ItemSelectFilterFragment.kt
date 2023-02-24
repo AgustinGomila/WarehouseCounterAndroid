@@ -13,8 +13,8 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ItemSelectFilterFragmentBinding
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.itemCategory.ItemCategory
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.settings.Preference
 import com.dacosys.warehouseCounter.ui.activities.item.CodeSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.itemCategory.ItemCategorySelectActivity
@@ -116,9 +116,7 @@ class ItemSelectFilterFragment : Fragment() {
             onlyActive = binding.onlyActiveCheckBox.isChecked
 
             mCallback?.onFilterChanged(
-                code = itemCode,
-                itemCategory = itemCategory,
-                onlyActive = onlyActive
+                code = itemCode, itemCategory = itemCategory, onlyActive = onlyActive
             )
         }
 
@@ -154,9 +152,7 @@ class ItemSelectFilterFragment : Fragment() {
             setCodeText()
 
             mCallback?.onFilterChanged(
-                code = itemCode,
-                itemCategory = itemCategory,
-                onlyActive = onlyActive
+                code = itemCode, itemCategory = itemCategory, onlyActive = onlyActive
             )
         }
         binding.categorySearchImageView.setOnClickListener { binding.itemCategoryTextView.performClick() }
@@ -165,9 +161,7 @@ class ItemSelectFilterFragment : Fragment() {
             setCategoryText()
 
             mCallback?.onFilterChanged(
-                code = itemCode,
-                itemCategory = itemCategory,
-                onlyActive = onlyActive
+                code = itemCode, itemCategory = itemCategory, onlyActive = onlyActive
             )
         }
 
@@ -185,9 +179,7 @@ class ItemSelectFilterFragment : Fragment() {
                     setCodeText()
 
                     mCallback?.onFilterChanged(
-                        code = itemCode,
-                        itemCategory = itemCategory,
-                        onlyActive = onlyActive
+                        code = itemCode, itemCategory = itemCategory, onlyActive = onlyActive
                     )
                 }
             } catch (ex: Exception) {
@@ -209,9 +201,7 @@ class ItemSelectFilterFragment : Fragment() {
                     setCategoryText()
 
                     mCallback?.onFilterChanged(
-                        code = itemCode,
-                        itemCategory = itemCategory,
-                        onlyActive = onlyActive
+                        code = itemCode, itemCategory = itemCategory, onlyActive = onlyActive
                     )
                 }
             } catch (ex: Exception) {

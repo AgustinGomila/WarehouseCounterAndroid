@@ -17,11 +17,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.adapter.client.ClientAdapter
-import com.dacosys.warehouseCounter.dataBase.client.ClientDbHelper
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.client.Client
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
+import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
@@ -225,31 +225,33 @@ class ClientSelectActivity : AppCompatActivity(),
         if (isFilling) return
         isFilling = true
 
-        var itemArray: ArrayList<Client> = ArrayList()
-        try {
-            Log.d(this::class.java.simpleName, "Selecting item clients...")
-            itemArray = ClientDbHelper().select()
-        } catch (ex: java.lang.Exception) {
-            ex.printStackTrace()
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
-        }
-
-        val adapter = ClientAdapter(
-            this, R.layout.client_row, itemArray, ArrayList()
-        )
-
         runOnUiThread {
-            binding.autoCompleteTextView.setAdapter(adapter)
-            (binding.autoCompleteTextView.adapter as ClientAdapter).notifyDataSetChanged()
+            try {
+                Log.d(this::class.java.simpleName, "Selecting item clients...")
+                ClientCoroutines().get {
+                    val adapter = ClientAdapter(
+                        activity = this,
+                        resource = R.layout.client_row,
+                        clients = it,
+                        suggestedList = ArrayList()
+                    )
 
-            while (binding.autoCompleteTextView.adapter == null) {
-                // Wait for complete loaded
+                    binding.autoCompleteTextView.setAdapter(adapter)
+                    (binding.autoCompleteTextView.adapter as ClientAdapter).notifyDataSetChanged()
+
+                    while (binding.autoCompleteTextView.adapter == null) {
+                        // Wait for complete loaded
+                    }
+                    refreshClientText(cleanText = false, focus = false)
+                    showProgressBar(GONE)
+                }
+            } catch (ex: java.lang.Exception) {
+                ex.printStackTrace()
+                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            } finally {
+                isFilling = false
             }
-            refreshClientText(cleanText = false, focus = false)
-            showProgressBar(GONE)
         }
-
-        isFilling = false
     }
 
     override fun onBackPressed() {

@@ -2,6 +2,7 @@ package com.dacosys.warehouseCounter.retrofit
 
 import com.dacosys.warehouseCounter.moshi.search.SearchPrice
 import com.dacosys.warehouseCounter.moshi.user.UserAuthData
+import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -20,9 +21,26 @@ interface APIService {
         @Body body: SearchPrice,
     ): Call<Any?>
 
-    @POST("{api_url}api/database/location")
-    fun getDbLocation(
+    @POST("{api_url}api/order/get")
+    fun getNewOrder(
         @Path(value = "api_url", encoded = true) apiUrl: String,
     ): Call<Any?>
-}
 
+    @POST("{api_url}api/item-code/send")
+    fun sendItemCode(
+        @Path(value = "api_url", encoded = true) apiUrl: String,
+        @Body body: RequestBody,
+    ): Call<Any?>
+
+    @POST("{api_url}api/order/send")
+    fun sendOrders(
+        @Path(value = "api_url", encoded = true) apiUrl: String,
+        @Body body: RequestBody,
+    ): Call<Any?>
+
+    @POST("{api_url}api/database/location{version}")
+    fun getDbLocation(
+        @Path("api_url", encoded = true) apiUrl: String,
+        @Path("version", encoded = true) version: String,
+    ): Call<Any?>
+}

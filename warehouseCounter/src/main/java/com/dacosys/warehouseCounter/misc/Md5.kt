@@ -10,44 +10,12 @@ class Md5 {
             return String(encodeHex(md5Bytes(getRawBytes(text))))
         }
 
-        private val DIGITS_LOWER =
-            charArrayOf(
-                '0',
-                '1',
-                '2',
-                '3',
-                '4',
-                '5',
-                '6',
-                '7',
-                '8',
-                '9',
-                'a',
-                'b',
-                'c',
-                'd',
-                'e',
-                'f'
-            )
-        private val DIGITS_UPPER =
-            charArrayOf(
-                '0',
-                '1',
-                '2',
-                '3',
-                '4',
-                '5',
-                '6',
-                '7',
-                '8',
-                '9',
-                'A',
-                'B',
-                'C',
-                'D',
-                'E',
-                'F'
-            )
+        private val DIGITS_LOWER = charArrayOf(
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+        )
+        private val DIGITS_UPPER = charArrayOf(
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+        )
 
         private fun encodeHex(data: ByteArray, toLowerCase: Boolean = true): CharArray {
             return encodeHex(data, if (toLowerCase) DIGITS_LOWER else DIGITS_UPPER)

@@ -84,7 +84,7 @@
         android:key="conf_check_barcode_digit"
         android:summary="@string/send_check_digit"
         android:title="@string/check_digit" />
-    <com.dacosys.warehouseCounter.model.collectorType.CollectorTypePreference
+    <com.dacosys.warehouseCounter.settings.custom.CollectorTypePreference
         android:defaultValue="0"
         android:icon="@drawable/ic_devices"
         android:key="collector_type"

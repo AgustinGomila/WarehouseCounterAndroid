@@ -17,16 +17,6 @@ class QRConfigType : Parcelable {
         return description
     }
 
-    override fun equals(other: Any?): Boolean {
-        return if (other !is QRConfigType) {
-            false
-        } else this.id == other.id
-    }
-
-    override fun hashCode(): Int {
-        return this.id
-    }
-
     constructor(parcel: Parcel) {
         id = parcel.readInt()
         description = parcel.readString() ?: ""

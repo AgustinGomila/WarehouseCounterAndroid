@@ -9,10 +9,10 @@ import android.widget.AdapterView
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.adapter.user.UserAdapter
-import com.dacosys.warehouseCounter.dataBase.user.UserDbHelper
 import com.dacosys.warehouseCounter.databinding.FragmentSpinnerBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.user.User
+import com.dacosys.warehouseCounter.room.dao.user.UserCoroutines
+import com.dacosys.warehouseCounter.room.entity.user.User
 import org.parceler.Parcels
 
 /**
@@ -246,33 +246,48 @@ class UserSpinnerFragment : Fragment() {
     }
 
     fun reFill() {
-        fillAdapter()
+        getUsers()
+    }
+
+    private fun getUsers() {
+        UserCoroutines().get {
+            allUser = it
+
+            if (!allUser!!.any() && Statics.superDemoMode) {
+                // En modo desarrollo o para mostrar sin datos reales
+                // y si no hay usuarios agregados, agrego
+                // DATOS FALSOS de 5 items de fantasía
+                val fantasyNames = arrayListOf<String>()
+                fantasyNames.add("miguel")
+                fantasyNames.add("adriana")
+                fantasyNames.add("milagros")
+                fantasyNames.add("arturo")
+                fantasyNames.add("agustin")
+                for (i in 1..5) {
+                    UserCoroutines().add(
+                        User(
+                            name = fantasyNames[i - 1],
+                            password = "81dc9bdb52d04dc20036dbd8313ed055"
+                        )
+                    )
+                }
+
+                UserCoroutines().get { it2 ->
+                    allUser = it2
+                    fillAdapter()
+                }
+            } else {
+                fillAdapter()
+            }
+        }
     }
 
     private fun fillAdapter() {
-        val x = UserDbHelper()
-
-        allUser = x.select()
-
-        if (!allUser!!.any() && Statics.superDemoMode) {
-            // En modo desarrollo o para mostrar sin datos reales
-            // y si no hay usuarios agregados, agrego
-            // DATOS FALSOS de 5 items de fantasía
-            val fantasyNames = arrayListOf<String>()
-            fantasyNames.add("miguel")
-            fantasyNames.add("adriana")
-            fantasyNames.add("milagros")
-            fantasyNames.add("arturo")
-            fantasyNames.add("agustin")
-            for (i in 1..5) {
-                User.add(fantasyNames[i - 1], true, "81dc9bdb52d04dc20036dbd8313ed055") //1234
-            }
-            allUser = x.select()
-        }
-
         allUser!!.sortWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
         val spinnerArrayAdapter =
-            UserAdapter(resource = R.layout.custom_spinner_dropdown_item, user = allUser!!)
+            UserAdapter(
+                resource = R.layout.custom_spinner_dropdown_item,
+                user = allUser!!)
 
         activity?.runOnUiThread {
             binding.fragmentSpinner.adapter = spinnerArrayAdapter

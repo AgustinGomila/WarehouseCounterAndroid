@@ -10,6 +10,7 @@ import com.dacosys.warehouseCounter.moshi.database.DatabaseData
 import com.dacosys.warehouseCounter.moshi.error.ErrorObject
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.DbLocationResult
+import com.dacosys.warehouseCounter.room.database.WcDatabase.Companion.DATABASE_VERSION
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import kotlinx.coroutines.*
 import retrofit2.Call
@@ -27,13 +28,9 @@ class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
 
     fun execute() {
         scope.launch {
-            doInBackground()
-        }
-    }
-
-    private suspend fun doInBackground() {
-        coroutineScope {
-            withContext(Dispatchers.Default) { suspendFunction() }
+            coroutineScope {
+                withContext(Dispatchers.IO) { suspendFunction() }
+            }
         }
     }
 
@@ -41,7 +38,12 @@ class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
         // Configuración de Retrofit
         val apiUrl = setupRetrofit()
 
-        val dbLocInst = apiService().getDbLocation(apiUrl = apiUrl)
+        var version = ""
+        if (DATABASE_VERSION > 1) {
+            version = "-v$DATABASE_VERSION"
+        }
+
+        val dbLocInst = apiService().getDbLocation(apiUrl = apiUrl, version = version)
 
         dbLocInst.enqueue(object : Callback<Any?> {
             override fun onResponse(call: Call<Any?>, response: Response<Any?>) {
@@ -102,9 +104,9 @@ class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
         val sv = settingViewModel()
 
         // URL específica del Cliente
-        var protocol = ""
-        var host = ""
-        var apiUrl = ""
+        val protocol: String
+        val host: String
+        val apiUrl: String
 
         try {
             val url = URL(sv.urlPanel)

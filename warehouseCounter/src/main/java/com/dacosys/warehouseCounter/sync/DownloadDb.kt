@@ -3,16 +3,18 @@ package com.dacosys.warehouseCounter.sync
 import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dataBase.dbHelper.DataBaseHelper.Companion.copyDataBase
-import com.dacosys.warehouseCounter.dataBase.itemCode.ItemCodeDbHelper
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.SendItemCode
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.retrofit.functions.SendItemCode
+import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.room.database.FileHelper
+import com.dacosys.warehouseCounter.room.database.WcDatabase
+import com.dacosys.warehouseCounter.room.database.WcDatabase.Companion.DATABASE_NAME
 import com.dacosys.warehouseCounter.sync.DownloadDb.DownloadStatus.*
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import kotlinx.coroutines.*
 import java.io.BufferedReader
 import java.io.File
@@ -20,7 +22,7 @@ import java.io.FileReader
 import kotlin.concurrent.thread
 
 
-class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownloadFileTask {
+class DownloadDb : DownloadFileTask.OnDownloadFileTask {
 
     interface DownloadDbTask {
         // Define data you like to return from AysncTask
@@ -34,16 +36,21 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
         )
     }
 
-    override fun onTaskSendItemCodeEnded(status: ProgressStatus, msg: String) {
-        uploadStatus = status
-        val progressStatusDesc = (uploadStatus as ProgressStatus).description
+    private fun onTaskSendItemCodeEnded(snackBarEventData: SnackBarEventData) {
+        when (snackBarEventData.snackBarType) {
+            SUCCESS -> uploadStatus = ProgressStatus.success
+            ERROR -> uploadStatus = ProgressStatus.crashed
+        }
+
+        val progressStatusDesc = uploadStatus?.description ?: ""
         val registryDesc = context().getString(R.string.item_codes)
+        val msg = snackBarEventData.text
 
         if (uploadStatus == ProgressStatus.crashed || downloadStatus == CRASHED) {
             ErrorLog.writeLog(
                 null, this::class.java.simpleName, "$progressStatusDesc: $registryDesc, $msg"
             )
-            onEventData(SnackBarEventData(msg, ERROR))
+            onEventData(snackBarEventData)
         } else {
             Log.d(this::class.java.simpleName, "$progressStatusDesc: $registryDesc, $msg")
         }
@@ -107,8 +114,6 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
     @Volatile
     private var uploadStatus: ProgressStatus? = null
 
-    private var timeFilename = ""
-    private var dbFilename = ""
     private var oldDateTimeStr: String = ""
     private var currentDateTimeStr: String = ""
     private var fileType: FileType? = null
@@ -119,12 +124,15 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
 
     ///////////////////////
     // region Constantes //
-    private var destinationTimeFile: File? = null
-    private var destinationDbFile: File? = null
+    private var destTimeFile: File? = null
+    private var destDbFile: File? = null
+
+    private val timeFileName: String = "android.wc.time.txt"
 
     private var onEventData: (SnackBarEventData) -> Unit = {}
-    private var completeDbFileUrl = ""
-    private var completeTimeFileUrl = ""
+
+    private var dbFileUrl = ""
+    private var timeFileUrl = ""
 
     // endregion Constantes //
     //////////////////////////
@@ -135,28 +143,14 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
         dbFileUrl: String, //"android.wc.sqlite.txt",
         onEventData: (SnackBarEventData) -> Unit = {},
     ) {
-        val sv = settingViewModel()
-
         mCallback = callBack
         this.onEventData = onEventData
 
-        timeFilename = timeFileUrl.substringAfterLast('/')
-        dbFilename = dbFileUrl.substringAfterLast('/')
+        this.dbFileUrl = dbFileUrl
+        this.timeFileUrl = timeFileUrl
 
-        destinationTimeFile = File("${context().cacheDir.absolutePath}/$timeFilename")
-        destinationDbFile = File("${context().cacheDir.absolutePath}/$dbFilename")
-
-        completeDbFileUrl = "${sv.urlPanel}/$dbFileUrl"
-        completeTimeFileUrl = "${sv.urlPanel}/$timeFileUrl"
-    }
-
-    private fun postExecute(result: Boolean) {
-        if (result) {
-            Log.d(this::class.java.simpleName, context().getString(R.string.ok))
-        } else {
-            onEventData(SnackBarEventData(errorMsg, ERROR))
-            ErrorLog.writeLog(null, this::class.java.simpleName, errorMsg)
-        }
+        destTimeFile = File("${context().cacheDir.absolutePath}/${timeFileName}")
+        destDbFile = File("${context().cacheDir.absolutePath}/${DATABASE_NAME}")
     }
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
@@ -169,73 +163,67 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
         if (Statics.downloadDbRequired) deleteTimeFile()
 
         scope.launch {
-            val it = doInBackground()
-            postExecute(it)
+            coroutineScope {
+                withContext(Dispatchers.IO) { suspendFunction() }
+            }
         }
     }
 
-    private var deferred: Deferred<Boolean>? = null
-    private suspend fun doInBackground(): Boolean {
-        var result = false
-        coroutineScope {
-            deferred = async { suspendFunction() }
-            result = deferred?.await() ?: false
-        }
-        return result
-    }
-
-    private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
+    private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         if (!Statics.isOnline()) {
             mCallback?.onDownloadDbTask(CANCELED)
-            return@withContext false
+            return@withContext
         }
 
         mCallback?.onDownloadDbTask(STARTING)
-        return@withContext goForrest()
+        goForrest()
     }
 
-    private fun goForrest(): Boolean {
+    private fun goForrest() {
         try {
-            val destTimeFile = destinationTimeFile
-            val destDbFile = destinationDbFile
+            val destTimeFile = destTimeFile
+            val destDbFile = destDbFile
 
-            if (dbFilename.isEmpty() || timeFilename.isEmpty() || destTimeFile == null || destDbFile == null) {
+            if (dbFileUrl.isEmpty() || timeFileUrl.isEmpty() || destTimeFile == null || destDbFile == null) {
                 errorMsg = context().getString(R.string.database_name_is_invalid)
                 mCallback?.onDownloadDbTask(CRASHED)
-                return false
+                return
             }
 
             /////////////////////////////////////
             // region: Enviar datos pendientes //
 
             // Si aún no está loggeado y hay datos por enviar, no descargar la base de datos
-            val itemCodeArray = ItemCodeDbHelper().selectToUpload()
-            if (Statics.currentUserId > 0 && itemCodeArray.isNotEmpty()) {
+            if (Statics.currentUserId > 0) {
                 uploadStatus = null
-                try {
-                    thread {
-                        val task = SendItemCode()
-                        task.addParams(this, itemCodeArray)
-                        task.execute()
-                    }
-                } catch (ex: Exception) {
-                    ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
-                }
 
-                // Espera hasta que salga del SyncUpload
-                // Tiene que terminar de enviar los datos pendientes para continuar con la descarga
-                loop@ while (true) {
-                    when (uploadStatus) {
-                        ProgressStatus.finished -> break@loop
-                        ProgressStatus.crashed, ProgressStatus.canceled,
-                        -> {
-                            errorMsg = context().getString(R.string.error_trying_to_send_item_codes)
-                            mCallback?.onDownloadDbTask(CRASHED)
-                            return false
+                ItemCodeCoroutines().getToUpload {
+                    try {
+                        thread {
+                            SendItemCode(it) { it2 -> onTaskSendItemCodeEnded(it2) }.execute()
+                        }
+                    } catch (ex: Exception) {
+                        ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
+                    }
+
+                    // Espera hasta que salga del SyncUpload
+                    // Tiene que terminar de enviar los datos pendientes para continuar con la descarga
+                    loop@ while (true) {
+                        when (uploadStatus) {
+                            ProgressStatus.finished -> break@loop
+                            ProgressStatus.crashed, ProgressStatus.canceled,
+                            -> {
+                                errorMsg =
+                                    context().getString(R.string.error_trying_to_send_item_codes)
+                                mCallback?.onDownloadDbTask(CRASHED)
+                                return@getToUpload
+                            }
                         }
                     }
                 }
             }
+
+            if (uploadStatus == ProgressStatus.crashed) return
             // endregion: Enviar datos pendientes //
             ////////////////////////////////////////
 
@@ -252,7 +240,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
             var downloadTask = DownloadFileTask()
             downloadTask.addParams(
                 UrlDestParam(
-                    url = completeTimeFileUrl, destination = destTimeFile
+                    url = timeFileUrl, destination = destTimeFile
                 ), this, FileType.TIMEFILE
             )
             downloadTask.execute()
@@ -267,12 +255,14 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                         // Si se cancela, sale
 
                         mCallback?.onDownloadDbTask(CANCELED)
-                        return false
+                        return
                     }
                     FINISHED -> {
+
                         // Si estamos descargando el archivo de la fecha
                         // y termina de descargarse salir del loop para poder hacer
                         // las comparaciones
+
                         if (fileType == FileType.TIMEFILE) {
                             break
                         } else {
@@ -280,7 +270,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                             downloadTask = DownloadFileTask()
                             downloadTask.addParams(
                                 UrlDestParam(
-                                    url = completeTimeFileUrl, destination = destTimeFile
+                                    url = timeFileUrl, destination = destTimeFile
                                 ), this, FileType.TIMEFILE
                             )
                             downloadTask.execute()
@@ -301,7 +291,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                             errorMsg =
                                 context().getString(R.string.failed_to_get_the_db_creation_date_from_the_server)
                             mCallback?.onDownloadDbTask(CRASHED)
-                            return false
+                            return
                         }
                     }
                     else -> {}
@@ -311,14 +301,18 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
 
             //Read text from file
             currentDateTimeStr = getDateTimeStr()
-            if (oldDateTimeStr == currentDateTimeStr) {
-                Log.d(
-                    this::class.java.simpleName,
-                    context().getString(R.string.is_not_necessary_to_download_the_database)
-                )
 
-                mCallback?.onDownloadDbTask(FINISHED)
-                return true
+            // True solo en DEBUG
+            if (!Statics.downloadDbAlways) {
+                if (oldDateTimeStr == currentDateTimeStr) {
+                    Log.d(
+                        this::class.java.simpleName,
+                        context().getString(R.string.is_not_necessary_to_download_the_database)
+                    )
+
+                    mCallback?.onDownloadDbTask(FINISHED)
+                    return
+                }
             }
 
             // Eliminar la base de datos antigua
@@ -331,7 +325,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                 downloadTask = DownloadFileTask()
                 downloadTask.addParams(
                     UrlDestParam(
-                        url = completeDbFileUrl, destination = destDbFile
+                        url = dbFileUrl, destination = destDbFile
                     ), this, FileType.DBFILE
                 )
                 downloadTask.execute()
@@ -345,7 +339,7 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                             errorMsg =
                                 context().getString(R.string.error_downloading_the_database_from_the_server)
                             mCallback?.onDownloadDbTask(CRASHED)
-                            return false
+                            return
                         }
                         FINISHED -> {
                             break
@@ -358,26 +352,35 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
                     context().getString(R.string.exception_error)
                 } (Download database): ${ex.message}"
                 mCallback?.onDownloadDbTask(CRASHED)
-                return false
+                return
             }
 
             Statics.downloadDbRequired = false
-            copyDataBase(destinationDbFile)
+
+            // Detener la instancia actual de la base de datos de Room.
+            WcDatabase.cleanInstance()
+
+            // Borrar la base de datos actual de Room del almacenamiento del dispositivo.
+            // Copiar la nueva base de datos descargada desde la web a la ubicación de la base de datos anterior.
+            // Se iniciará una nueva instancia de la base de datos de Room utilizando la base de datos actualizada la próxima vez que se la invoque.
+            FileHelper.copyDataBase(this.destDbFile)
+
         } catch (ex: Exception) {
             errorMsg = context().getString(R.string.error_downloading_the_database)
             mCallback?.onDownloadDbTask(CRASHED)
-            return false
+            return
         }
 
         mCallback?.onDownloadDbTask(FINISHED)
-        return true
+        return
     }
+
 
     private fun getDateTimeStr(): String {
         var dateTime = ""
         //Read text from file
         try {
-            val br = BufferedReader(FileReader(destinationTimeFile!!.absolutePath))
+            val br = BufferedReader(FileReader(destTimeFile!!.absolutePath))
             while (true) {
                 dateTime = br.readLine() ?: break
             }
@@ -391,9 +394,9 @@ class DownloadDb : SendItemCode.TaskSendItemCodeEnded, DownloadFileTask.OnDownlo
     }
 
     private fun deleteTimeFile() {
-        destinationTimeFile = File(context().cacheDir.absolutePath + "/" + timeFilename)
-        if (destinationTimeFile?.exists() == true) {
-            destinationTimeFile?.delete()
+        destTimeFile = File(context().cacheDir.absolutePath + "/" + timeFileName)
+        if (destTimeFile?.exists() == true) {
+            destTimeFile?.delete()
         }
     }
 

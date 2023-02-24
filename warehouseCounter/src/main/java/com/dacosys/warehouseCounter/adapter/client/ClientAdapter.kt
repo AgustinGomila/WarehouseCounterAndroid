@@ -12,7 +12,7 @@ import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.client.Client
+import com.dacosys.warehouseCounter.room.entity.client.Client
 import java.util.*
 
 /**
@@ -147,7 +147,7 @@ class ClientAdapter : ArrayAdapter<Client>, Filterable {
         }
     }
 
-    override fun sort(comparator: java.util.Comparator<in Client>) {
+    override fun sort(comparator: Comparator<in Client>) {
         super.sort(customComparator)
     }
 
@@ -295,13 +295,13 @@ class ClientAdapter : ArrayAdapter<Client>, Filterable {
                     WarehouseCounterApp.context().resources, R.color.dimgray, null
                 )
 
-                val colorText = when {
-                    !client.active -> dimgray
+                val colorText = when (client.active) {
+                    1 -> dimgray
                     else -> black
                 }
 
-                val backColor = when {
-                    !client.active -> lightgray
+                val backColor = when (client.active) {
+                    1 -> lightgray
                     else -> white
                 }
 
@@ -366,7 +366,7 @@ class ClientAdapter : ArrayAdapter<Client>, Filterable {
 
         var viewHeight = if (Statics.isTablet()) 202 else 115
 
-        class ClientComparator : java.util.Comparator<Client> {
+        class ClientComparator : Comparator<Client> {
             fun compareNullable(o1: Client?, o2: Client?): Int {
                 return if (o1 == null || o2 == null) {
                     -1

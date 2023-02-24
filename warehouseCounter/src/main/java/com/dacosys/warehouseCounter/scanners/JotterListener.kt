@@ -18,8 +18,8 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.collectorType.CollectorType
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.Scanner.ScannerListener
 import com.dacosys.warehouseCounter.scanners.floatingCamera.FloatingCameraBarcode
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -140,18 +140,10 @@ object JotterListener : Jotter.Listener {
         Log.v("LifeCycleCallback", "ACTIVITY IS ${tActivity::class.java.simpleName} >>> $event")
 
         when (event) {
-            "CREATE" -> {
-                onCreate(tActivity)
-            }
-            "RESUME" -> {
-                onResume(tActivity)
-            }
-            "PAUSE" -> {
-                onPause(tActivity)
-            }
-            "DESTROY" -> {
-                onDestroy(tActivity)
-            }
+            "CREATE" -> onCreate(tActivity)
+            "RESUME" -> onResume(tActivity)
+            "PAUSE" -> onPause(tActivity)
+            "DESTROY" -> onDestroy(tActivity)
         }
     }
 
@@ -192,18 +184,16 @@ object JotterListener : Jotter.Listener {
             val model = Build.MODEL
 
             when {
-                manufacturer.contains(
-                    "Honeywell",
-                    true
-                ) || manufacturer.startsWith("Universal Global Scientific Industrial") || manufacturer.startsWith(
-                    "Foxconn International Holdings Limited"
-                ) -> collectorType =
-                    CollectorType.honeywellNative
-                manufacturer.contains("Motorola", true) || manufacturer.contains(
-                    "Zebra",
-                    true
-                ) || manufacturer.contains("Symbol", true) -> collectorType =
-                    CollectorType.zebra
+                manufacturer.contains("Honeywell", true)
+                        || manufacturer.startsWith("Universal Global Scientific Industrial")
+                        || manufacturer.startsWith("Foxconn International Holdings Limited") -> {
+                    collectorType = CollectorType.honeywellNative
+                }
+                manufacturer.contains("Motorola", true)
+                        || manufacturer.contains("Zebra", true)
+                        || manufacturer.contains("Symbol", true) -> {
+                    collectorType = CollectorType.zebra
+                }
                 /*
                 manufacturer.contains("Janam", true)-> when (model) {
                     "XG3" -> collectorType = CollectorType.janamXG3

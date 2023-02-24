@@ -16,6 +16,7 @@ import com.dacosys.warehouseCounter.moshi.user.UserAuthData
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
+import com.dacosys.warehouseCounter.room.entity.user.User
 import kotlinx.coroutines.*
 import retrofit2.Call
 import retrofit2.Callback
@@ -33,11 +34,44 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
+    private lateinit var currentUser: User
+
     fun execute(force: Boolean) {
-        if (force || !preRequirements()) {
-            scope.launch { doInBackground() }
-        } else {
-            onEvent(RequestResult(ResultStatus.SUCCESS, msg = context().getString(R.string.ok)))
+        // Función que prosigue al resultado de getCurrentUser
+        fun onEvent() {
+
+            // ¿Es necesario pedir un Token nuevo?
+            if (force || !preRequirements()) {
+
+                // Pedimos el nuevo Token
+                scope.launch {
+                    coroutineScope {
+                        withContext(Dispatchers.IO) { suspendFunction() }
+                    }
+                }
+            } else {
+                onEvent(
+                    RequestResult(
+                        ResultStatus.SUCCESS, msg = context().getString(R.string.ok)
+                    )
+                )
+            }
+        }
+
+        Statics.getCurrentUser { user ->
+            if (user != null) {
+                currentUser = user
+
+                // Continuamos con la ejecución...
+                onEvent()
+            } else {
+                // Usuario inválido.
+                onEvent.invoke(
+                    RequestResult(
+                        ResultStatus.ERROR, context().getString(R.string.invalid_user)
+                    )
+                )
+            }
         }
     }
 
@@ -49,16 +83,6 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
             return Token.token != "" && tokenDate > now
         }
         return false
-    }
-
-    private var deferred: Deferred<Boolean>? = null
-    private suspend fun doInBackground(): Boolean {
-        var result = false
-        coroutineScope {
-            deferred = async { suspendFunction() }
-            result = deferred?.await() ?: false
-        }
-        return result
     }
 
     private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
@@ -129,9 +153,9 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
         val sv = settingViewModel()
 
         // URL específica del Cliente
-        var protocol = ""
-        var host = ""
-        var apiUrl = ""
+        val protocol: String
+        val host: String
+        val apiUrl: String
 
         try {
             val url = URL(sv.urlPanel)
@@ -164,16 +188,12 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
      * forma de Json para enviar a la API
      */
     private fun getBody(): UserAuthData {
-        val authData = AuthData()
-        val userAuth = UserAuthData()
-
-        val currentUser = Statics.getCurrentUser() ?: return UserAuthData()
-
-        authData.username = currentUser.name
-        authData.password = currentUser.password ?: ""
-
-        userAuth.authData = authData
-        return userAuth
+        return UserAuthData().apply {
+            authData = AuthData().apply {
+                username = currentUser.name
+                password = currentUser.password ?: ""
+            }
+        }
     }
 
     private fun getTokenDate(): Date {

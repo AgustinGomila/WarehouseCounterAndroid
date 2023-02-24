@@ -19,11 +19,10 @@ import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.item.ItemAdapter
-import com.dacosys.warehouseCounter.dataBase.item.ItemDbHelper
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.item.Item
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -188,34 +187,35 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         if (isFilling) return
         isFilling = true
 
-        var itemArray: ArrayList<Item> = ArrayList()
         try {
             Log.d(this::class.java.simpleName, "Selecting items...")
-            itemArray = ItemDbHelper().select()
+
+            ItemCoroutines().get {
+                val adapter = ItemAdapter(
+                    activity = this,
+                    resource = R.layout.item_row_simple,
+                    itemList = it,
+                    suggestedList = ArrayList()
+                )
+
+                runOnUiThread {
+                    binding.autoCompleteTextView.setAdapter(adapter)
+                    (binding.autoCompleteTextView.adapter as ItemAdapter).notifyDataSetChanged()
+
+                    while (binding.autoCompleteTextView.adapter == null) {
+                        // Wait for complete loaded
+                    }
+                    refreshCodeText(cleanText = false, focus = false)
+                    showProgressBar(GONE)
+                }
+                isFilling = false
+            }
         } catch (ex: java.lang.Exception) {
             ex.printStackTrace()
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+
+            isFilling = false
         }
-
-        val adapter = ItemAdapter(
-            activity = this,
-            resource = R.layout.item_row_simple,
-            itemList = itemArray,
-            suggestedList = ArrayList()
-        )
-
-        runOnUiThread {
-            binding.autoCompleteTextView.setAdapter(adapter)
-            (binding.autoCompleteTextView.adapter as ItemAdapter).notifyDataSetChanged()
-
-            while (binding.autoCompleteTextView.adapter == null) {
-                // Wait for complete loaded
-            }
-            refreshCodeText(cleanText = false, focus = false)
-            showProgressBar(GONE)
-        }
-
-        isFilling = false
     }
 
     private fun showProgressBar(visibility: Int) {

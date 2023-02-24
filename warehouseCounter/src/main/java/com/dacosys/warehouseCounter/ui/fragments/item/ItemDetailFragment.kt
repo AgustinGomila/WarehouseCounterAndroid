@@ -10,11 +10,12 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.databinding.ItemDetailBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.item.Item
-import com.dacosys.warehouseCounter.model.itemCode.ItemCode
-import com.dacosys.warehouseCounter.model.price.Price
+import com.dacosys.warehouseCounter.moshi.price.Price
 import com.dacosys.warehouseCounter.moshi.search.SearchPrice
 import com.dacosys.warehouseCounter.retrofit.functions.GetPrice
+import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.room.entity.item.Item
+import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import kotlin.concurrent.thread
@@ -36,6 +37,11 @@ class ItemDetailFragment : Fragment() {
         if (arguments != null) {
             item = requireArguments().getParcelable("item")
             itemCode = requireArguments().getParcelable("itemCode")
+
+            val ic = itemCode ?: return
+            ItemCoroutines().getById(ic.itemId ?: 0L) {
+                item = it
+            }
         }
     }
 
@@ -76,154 +82,154 @@ class ItemDetailFragment : Fragment() {
     }
 
     private fun fillControls() {
-        if (item != null) {
-            if (item!!.ean.isEmpty()) {
-                binding.eanAutoResizeTextView.text = ""
-                binding.eanAutoResizeTextView.visibility = GONE
-            } else {
-                binding.eanAutoResizeTextView.text = item!!.ean
-                binding.eanAutoResizeTextView.visibility = VISIBLE
+        val it = this.item ?: return
+
+        if (it.ean.isEmpty()) {
+            binding.eanAutoResizeTextView.text = ""
+            binding.eanAutoResizeTextView.visibility = GONE
+        } else {
+            binding.eanAutoResizeTextView.text = it.ean
+            binding.eanAutoResizeTextView.visibility = VISIBLE
+        }
+
+        if (it.description.isEmpty()) {
+            binding.descriptionAutoResizeTextView.text = ""
+            binding.descriptionAutoResizeTextView.visibility = GONE
+        } else {
+            binding.descriptionAutoResizeTextView.text = it.description
+            binding.descriptionAutoResizeTextView.visibility = VISIBLE
+        }
+
+        binding.idAutoResizeTextView.text = it.itemId.toString()
+        binding.idAutoResizeTextView.visibility = VISIBLE
+
+        if (it.externalId.isNullOrEmpty()) {
+            binding.extIdAutoResizeTextView.text = ""
+            binding.extIdAutoResizeTextView.visibility = GONE
+            binding.extIdTextView.visibility = GONE
+        } else {
+            binding.extIdAutoResizeTextView.text = it.externalId
+            binding.extIdAutoResizeTextView.visibility = VISIBLE
+            binding.extIdTextView.visibility = VISIBLE
+        }
+
+        if (it.itemCategoryStr.isEmpty()) {
+            binding.categoryAutoResizeTextView.text = ""
+            binding.categoryAutoResizeTextView.visibility = GONE
+            binding.categoryTextView.visibility = GONE
+        } else {
+            binding.categoryAutoResizeTextView.text = it.itemCategoryStr
+            binding.categoryAutoResizeTextView.visibility = VISIBLE
+            binding.categoryTextView.visibility = VISIBLE
+        }
+
+        if (it.price == null) {
+            binding.priceAutoResizeTextView.text = ""
+            binding.priceAutoResizeTextView.visibility = GONE
+            binding.priceTextView.visibility = GONE
+        } else {
+            binding.priceAutoResizeTextView.text =
+                String.format("$ %s", Statics.roundToString(it.price ?: 0f, 2))
+            binding.priceAutoResizeTextView.visibility = VISIBLE
+            binding.priceTextView.visibility = VISIBLE
+        }
+
+        if (itemCode != null) {
+            binding.itemCodeConstraintLayout.visibility = VISIBLE
+
+            binding.codeAutoResizeTextView.text = itemCode!!.code
+            binding.codeAutoResizeTextView.visibility = VISIBLE
+            binding.codeTextView.visibility = VISIBLE
+
+            binding.qtyAutoResizeTextView.text =
+                Statics.roundToString(itemCode?.qty ?: 0.0, Statics.decimalPlaces)
+            binding.qtyAutoResizeTextView.visibility = VISIBLE
+            binding.qtyTextView.visibility = VISIBLE
+        } else {
+            binding.itemCodeConstraintLayout.visibility = GONE
+        }
+
+        // Obtenemos los precios en un thread aparte
+        thread {
+            GetPrice(searchPrice = SearchPrice(it.itemId),
+                onEvent = { showSnackBar(it) },
+                onFinish = { fillPriceLayout(it) }).execute()
+        }
+    }
+
+    private fun fillPriceLayout(it: ArrayList<Price>) {
+        if (!it.any()) {
+            binding.priceLayout.visibility = GONE
+            return
+        }
+
+        binding.priceLayout.visibility = VISIBLE
+
+        binding.priceDescTextView1.visibility = GONE
+        binding.priceListTextView1.visibility = GONE
+
+        binding.priceDescTextView2.visibility = GONE
+        binding.priceListTextView2.visibility = GONE
+
+        binding.priceDescTextView3.visibility = GONE
+        binding.priceListTextView3.visibility = GONE
+
+        binding.priceDescTextView4.visibility = GONE
+        binding.priceListTextView4.visibility = GONE
+
+        binding.priceDescTextView5.visibility = GONE
+        binding.priceListTextView5.visibility = GONE
+
+        binding.priceDescTextView6.visibility = GONE
+        binding.priceListTextView6.visibility = GONE
+
+        binding.priceDescTextView7.visibility = GONE
+        binding.priceListTextView7.visibility = GONE
+
+        binding.priceDescTextView8.visibility = GONE
+        binding.priceListTextView8.visibility = GONE
+
+        binding.priceDescTextView9.visibility = GONE
+        binding.priceListTextView9.visibility = GONE
+
+        binding.priceDescTextView10.visibility = GONE
+        binding.priceListTextView10.visibility = GONE
+
+        val d: ArrayList<TextView> = arrayListOf(
+            binding.priceDescTextView1,
+            binding.priceDescTextView2,
+            binding.priceDescTextView3,
+            binding.priceDescTextView4,
+            binding.priceDescTextView5,
+            binding.priceDescTextView6,
+            binding.priceDescTextView7,
+            binding.priceDescTextView8,
+            binding.priceDescTextView9,
+            binding.priceDescTextView10
+        )
+        val l: ArrayList<TextView> = arrayListOf(
+            binding.priceListTextView1,
+            binding.priceListTextView2,
+            binding.priceListTextView3,
+            binding.priceListTextView4,
+            binding.priceListTextView5,
+            binding.priceListTextView6,
+            binding.priceListTextView7,
+            binding.priceListTextView8,
+            binding.priceListTextView9,
+            binding.priceListTextView10
+        )
+
+        for ((index, p) in it.withIndex()) {
+            if (index == 10) break
+            if (p.active != 1) continue
+            l[index].text = buildString {
+                append("$ ")
+                append(p.price)
             }
-
-            if (item!!.description.isEmpty()) {
-                binding.descriptionAutoResizeTextView.text = ""
-                binding.descriptionAutoResizeTextView.visibility = GONE
-            } else {
-                binding.descriptionAutoResizeTextView.text = item!!.description
-                binding.descriptionAutoResizeTextView.visibility = VISIBLE
-            }
-
-            binding.idAutoResizeTextView.text = item!!.itemId.toString()
-            binding.idAutoResizeTextView.visibility = VISIBLE
-
-            if (item!!.externalId.isNullOrEmpty()) {
-                binding.extIdAutoResizeTextView.text = ""
-                binding.extIdAutoResizeTextView.visibility = GONE
-                binding.extIdTextView.visibility = GONE
-            } else {
-                binding.extIdAutoResizeTextView.text = item!!.externalId
-                binding.extIdAutoResizeTextView.visibility = VISIBLE
-                binding.extIdTextView.visibility = VISIBLE
-            }
-
-            if (item!!.itemCategoryStr.isEmpty()) {
-                binding.categoryAutoResizeTextView.text = ""
-                binding.categoryAutoResizeTextView.visibility = GONE
-                binding.categoryTextView.visibility = GONE
-            } else {
-                binding.categoryAutoResizeTextView.text = item!!.itemCategoryStr
-                binding.categoryAutoResizeTextView.visibility = VISIBLE
-                binding.categoryTextView.visibility = VISIBLE
-            }
-
-            if (item!!.price == null) {
-                binding.priceAutoResizeTextView.text = ""
-                binding.priceAutoResizeTextView.visibility = GONE
-                binding.priceTextView.visibility = GONE
-            } else {
-                binding.priceAutoResizeTextView.text =
-                    String.format("$ %s", Statics.roundToString(item!!.price!!, 2))
-                binding.priceAutoResizeTextView.visibility = VISIBLE
-                binding.priceTextView.visibility = VISIBLE
-            }
-
-            if (itemCode != null) {
-                binding.itemCodeConstraintLayout.visibility = VISIBLE
-
-                binding.codeAutoResizeTextView.text = itemCode!!.code
-                binding.codeAutoResizeTextView.visibility = VISIBLE
-                binding.codeTextView.visibility = VISIBLE
-
-                binding.qtyAutoResizeTextView.text =
-                    Statics.roundToString(itemCode!!.qty, Statics.decimalPlaces)
-                binding.qtyAutoResizeTextView.visibility = VISIBLE
-                binding.qtyTextView.visibility = VISIBLE
-            } else {
-                binding.itemCodeConstraintLayout.visibility = GONE
-            }
-
-            fun fillPriceLayout(it: ArrayList<Price>) {
-                if (!it.any()) {
-                    binding.priceLayout.visibility = GONE
-                    return
-                }
-
-                binding.priceLayout.visibility = VISIBLE
-
-                binding.priceDescTextView1.visibility = GONE
-                binding.priceListTextView1.visibility = GONE
-
-                binding.priceDescTextView2.visibility = GONE
-                binding.priceListTextView2.visibility = GONE
-
-                binding.priceDescTextView3.visibility = GONE
-                binding.priceListTextView3.visibility = GONE
-
-                binding.priceDescTextView4.visibility = GONE
-                binding.priceListTextView4.visibility = GONE
-
-                binding.priceDescTextView5.visibility = GONE
-                binding.priceListTextView5.visibility = GONE
-
-                binding.priceDescTextView6.visibility = GONE
-                binding.priceListTextView6.visibility = GONE
-
-                binding.priceDescTextView7.visibility = GONE
-                binding.priceListTextView7.visibility = GONE
-
-                binding.priceDescTextView8.visibility = GONE
-                binding.priceListTextView8.visibility = GONE
-
-                binding.priceDescTextView9.visibility = GONE
-                binding.priceListTextView9.visibility = GONE
-
-                binding.priceDescTextView10.visibility = GONE
-                binding.priceListTextView10.visibility = GONE
-
-                val d: ArrayList<TextView> = arrayListOf(
-                    binding.priceDescTextView1,
-                    binding.priceDescTextView2,
-                    binding.priceDescTextView3,
-                    binding.priceDescTextView4,
-                    binding.priceDescTextView5,
-                    binding.priceDescTextView6,
-                    binding.priceDescTextView7,
-                    binding.priceDescTextView8,
-                    binding.priceDescTextView9,
-                    binding.priceDescTextView10
-                )
-                val l: ArrayList<TextView> = arrayListOf(
-                    binding.priceListTextView1,
-                    binding.priceListTextView2,
-                    binding.priceListTextView3,
-                    binding.priceListTextView4,
-                    binding.priceListTextView5,
-                    binding.priceListTextView6,
-                    binding.priceListTextView7,
-                    binding.priceListTextView8,
-                    binding.priceListTextView9,
-                    binding.priceListTextView10
-                )
-
-                for ((index, p) in it.withIndex()) {
-                    if (index == 10) break
-                    if (p.active != 1) continue
-                    l[index].text = buildString {
-                        append("$ ")
-                        append(p.price)
-                    }
-                    l[index].visibility = VISIBLE
-                    d[index].text = p.itemPriceListDescription
-                    d[index].visibility = VISIBLE
-                }
-            }
-
-            // Obtenemos los precios en un thread aparte
-            thread {
-                GetPrice(searchPrice = SearchPrice(item!!.itemId),
-                    onEvent = { showSnackBar(it) },
-                    onFinish = { fillPriceLayout(it) }).execute()
-            }
+            l[index].visibility = VISIBLE
+            d[index].text = p.itemPriceListDescription
+            d[index].visibility = VISIBLE
         }
     }
 
@@ -253,7 +259,6 @@ class ItemDetailFragment : Fragment() {
             val fragment = ItemDetailFragment()
 
             val args = Bundle()
-            args.putParcelable("item", itemCode.item)
             args.putParcelable("itemCode", itemCode)
 
             fragment.arguments = args

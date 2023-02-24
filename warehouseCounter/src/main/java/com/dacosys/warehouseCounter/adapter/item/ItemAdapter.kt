@@ -22,7 +22,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getColorWithAlpha
-import com.dacosys.warehouseCounter.model.item.Item
+import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
 import java.lang.ref.WeakReference
 import java.util.*
@@ -547,7 +547,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
                 val dimgray = getColor(context().resources, R.color.dimgray, null)
 
                 when {
-                    !item.active -> {
+                    item.active != 1 -> {
                         v.setBackgroundColor(lightgray)
                         holder.descriptionTextView!!.setTextColor(dimgray)
                         holder.eanTextView!!.setTextColor(dimgray)
@@ -667,7 +667,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
                 var backColor = colorDefault
                 var foreColor = if (isSelected) selectedForeColor else defaultForeColor
 
-                if (!item.active) {
+                if (item.active != 1) {
                     backColor = inactiveBackColor
                     foreColor = if (isSelected) selectedForeColor else inactiveForeColor
                 }
@@ -772,7 +772,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
                 var backColor = colorDefault
                 var foreColor = if (isSelected) selectedForeColor else defaultForeColor
 
-                if (!item.active) {
+                if (item.active != 1) {
                     backColor = inactiveBackColor
                     foreColor = if (isSelected) selectedForeColor else inactiveForeColor
                 }

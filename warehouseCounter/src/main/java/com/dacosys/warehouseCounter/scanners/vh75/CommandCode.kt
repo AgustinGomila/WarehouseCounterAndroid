@@ -17,16 +17,6 @@ class CommandCode : Parcelable {
         return description
     }
 
-    override fun equals(other: Any?): Boolean {
-        return if (other !is CommandCode) {
-            false
-        } else this.code == other.code
-    }
-
-    override fun hashCode(): Int {
-        return this.code.toInt()
-    }
-
     constructor(parcel: Parcel) {
         code = parcel.readByte()
         description = parcel.readString() ?: ""

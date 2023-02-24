@@ -592,4 +592,10 @@
     <string name="default_template">Plantilla por defecto</string>
     <string name="timeout">Timeout</string>
     <string name="column_offset">Offset columna</string>
+    <string name="invalid_orders">Pedidos inválidos</string>
+    <string name="order_request">Solicitudes de conteo</string>
+    <string name="not_configured">No configurado</string>
+    <string name="honeywell_native">Honeywell (nativo)</string>
+    <string name="honeywell">Honeywell</string>
+    <string name="zebra">Zebra</string>
 </resources>

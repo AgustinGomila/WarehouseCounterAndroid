@@ -7,10 +7,10 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.dacoService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.misc.Statics.Companion.APP_VERSION_ID
 import com.dacosys.warehouseCounter.misc.Statics.Companion.APP_VERSION_ID_IMAGECONTROL
-import com.dacosys.warehouseCounter.model.error.ErrorData
 import com.dacosys.warehouseCounter.moshi.clientPackage.AuthDataCont
 import com.dacosys.warehouseCounter.moshi.clientPackage.ClientAuthData
 import com.dacosys.warehouseCounter.moshi.clientPackage.Package
+import com.dacosys.warehouseCounter.moshi.error.ErrorData
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.sync.ProgressStatus
@@ -45,13 +45,9 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
         progressStatus = ProgressStatus.starting
 
         scope.launch {
-            doInBackground()
-        }
-    }
-
-    private suspend fun doInBackground() {
-        coroutineScope {
-            withContext(Dispatchers.Default) { suspendFunction() }
+            coroutineScope {
+                withContext(Dispatchers.IO) { suspendFunction() }
+            }
         }
     }
 

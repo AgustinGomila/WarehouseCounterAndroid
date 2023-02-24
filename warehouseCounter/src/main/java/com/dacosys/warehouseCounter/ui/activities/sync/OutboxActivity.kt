@@ -22,22 +22,23 @@ import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrderRequestAdapter.Companion.getPrefVisibleStatus
 import com.dacosys.warehouseCounter.databinding.OutboxActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.log.Log
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequest.CREATOR.getCompletedOrders
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.model.orderRequest.OrderRequestType
-import com.dacosys.warehouseCounter.network.SendCompletedOrder
-import com.dacosys.warehouseCounter.sync.ProgressStatus
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.moshi.log.Log
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest.CREATOR.getCompletedOrders
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.retrofit.functions.SendOrder
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import org.parceler.Parcels
@@ -45,7 +46,7 @@ import java.io.File
 import java.io.UnsupportedEncodingException
 import kotlin.concurrent.thread
 
-class OutboxActivity : AppCompatActivity(), SendCompletedOrder.TaskSendOrderRequestEnded {
+class OutboxActivity : AppCompatActivity() {
 
     private var isListViewFilling = false
     private var multiSelect = true
@@ -56,10 +57,12 @@ class OutboxActivity : AppCompatActivity(), SendCompletedOrder.TaskSendOrderRequ
     private var checkedIdArray: ArrayList<Int> = ArrayList()
     // endregion
 
-    override fun onTaskSendOrderRequestEnded(status: ProgressStatus, msg: String) {
-        if (status == ProgressStatus.finished) {
+    private fun onSendOrderEnded(snackBarEventData: SnackBarEventData) {
+        val msg = snackBarEventData.text
+
+        if (snackBarEventData.snackBarType == SnackBarType.SUCCESS) {
             thread { fillAdapter(ArrayList()) }
-        } else if (status == ProgressStatus.crashed) {
+        } else if (snackBarEventData.snackBarType == ERROR) {
             makeText(binding.root, msg, ERROR)
         }
     }
@@ -80,12 +83,10 @@ class OutboxActivity : AppCompatActivity(), SendCompletedOrder.TaskSendOrderRequ
         savedInstanceState.putBoolean("multiSelect", multiSelect)
         if (arrayAdapter != null) {
             savedInstanceState.putParcelableArrayList(
-                "completeList",
-                (arrayAdapter ?: return).getAll()
+                "completeList", (arrayAdapter ?: return).getAll()
             )
             savedInstanceState.putIntegerArrayList(
-                "checkedIdArray",
-                arrayAdapter!!.getAllCheckedAsInt()
+                "checkedIdArray", arrayAdapter!!.getAllCheckedAsInt()
             )
             savedInstanceState.putParcelable("lastSelected", (arrayAdapter ?: return).currentItem())
             savedInstanceState.putInt("firstVisiblePos", (arrayAdapter ?: return).firstVisiblePos())
@@ -181,12 +182,13 @@ class OutboxActivity : AppCompatActivity(), SendCompletedOrder.TaskSendOrderRequ
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
             intent.putExtra(
-                "orderRequest",
-                Parcels.wrap<OrderRequest>(arrayAdapter!!.currentItem())
+                "orderRequest", Parcels.wrap<OrderRequest>(arrayAdapter!!.currentItem())
             )
 
             // Valid content
-            intent.putParcelableArrayListExtra("orcArray", arrayAdapter!!.currentItem()!!.content)
+            intent.putParcelableArrayListExtra(
+                "orcArray", ArrayList(arrayAdapter!!.currentItem()!!.content)
+            )
 
             startActivity(intent)
         }
@@ -219,9 +221,7 @@ class OutboxActivity : AppCompatActivity(), SendCompletedOrder.TaskSendOrderRequ
     private fun sendSelected(orArray: ArrayList<OrderRequest>) {
         try {
             thread {
-                val task = SendCompletedOrder()
-                task.addParams(this, orArray)
-                task.execute()
+                SendOrder(orderRequestArray = orArray) { onSendOrderEnded(it) }.execute()
             }
         } catch (ex: Exception) {
             ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
@@ -315,16 +315,18 @@ class OutboxActivity : AppCompatActivity(), SendCompletedOrder.TaskSendOrderRequ
                 }
             }
 
-            orderRequest.content.removeAll(orcToRemove.toSet())
+            val logContent: ArrayList<OrderRequestContent> = ArrayList(orderRequest.content)
+            logContent.removeAll(orcToRemove.toSet())
+
+            orderRequest.content = logContent
             orderRequest.log = Log()
 
             try {
-                orJson = OrderRequest.toJson(orderRequest)
+                orJson = moshi().adapter(OrderRequest::class.java).toJson(orderRequest)
                 orderRequest.filename.substringAfterLast('/')
 
                 if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        this, Manifest.permission.WRITE_EXTERNAL_STORAGE
                     )
                 ) {
                     write(orFileName, orJson)
@@ -415,8 +417,7 @@ class OutboxActivity : AppCompatActivity(), SendCompletedOrder.TaskSendOrderRequ
                 )
 
                 arrayAdapter?.refreshListeners(
-                    checkedChangedListener = null,
-                    dataSetChangedListener = null
+                    checkedChangedListener = null, dataSetChangedListener = null
                 )
 
                 while (binding.itemListView.adapter == null) {
@@ -471,8 +472,7 @@ class OutboxActivity : AppCompatActivity(), SendCompletedOrder.TaskSendOrderRequ
             val icon = ResourcesCompat.getDrawable(context().resources, R.drawable.ic_lens, null)
             icon?.mutate()?.colorFilter =
                 BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                    colors[i.id.toInt() - 1],
-                    BlendModeCompat.SRC_IN
+                    colors[i.id.toInt() - 1], BlendModeCompat.SRC_IN
                 )
 
             val item = menu.getItem(i.id.toInt() - 1)
@@ -576,9 +576,7 @@ class OutboxActivity : AppCompatActivity(), SendCompletedOrder.TaskSendOrderRequ
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     makeText(
-                        binding.root,
-                        getString(R.string.cannot_write_to_external_storage),
-                        ERROR
+                        binding.root, getString(R.string.cannot_write_to_external_storage), ERROR
                     )
                 } else {
                     write(orFileName, orJson)

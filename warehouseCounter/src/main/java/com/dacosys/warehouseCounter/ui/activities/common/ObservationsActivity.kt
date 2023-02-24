@@ -11,11 +11,11 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.dataBase.item.ItemDbHelper
 import com.dacosys.warehouseCounter.databinding.ObservationsActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.model.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.model.item.Item
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -154,19 +154,16 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         autoText = ""
 
-        val itemArray = ItemDbHelper().selectByEan(tempCode)
-        var item: Item? = null
-        if (itemArray.size > 0) {
-            item = itemArray.first()
-        }
+        ItemCoroutines().getByQuery(tempCode) {
+            var item: Item? = null
+            if (it.size > 0) item = it.first()
 
-        var description = ""
-        if (item != null) {
-            description = ", " + item.description
-        }
+            var description = ""
+            if (item != null) description = ", " + item.description
 
-        if (binding.codePasteSwitch.isChecked) {
-            autoText += tempCode + description + newLine
+            if (binding.codePasteSwitch.isChecked) {
+                autoText += tempCode + description + newLine
+            }
         }
     }
 
@@ -177,10 +174,7 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this,
-            requestCode,
-            permissions,
-            grantResults
+            this, requestCode, permissions, grantResults
         )
     }
 

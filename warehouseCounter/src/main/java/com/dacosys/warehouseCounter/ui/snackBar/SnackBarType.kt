@@ -35,16 +35,6 @@ class SnackBarType(
         return description
     }
 
-    override fun equals(other: Any?): Boolean {
-        return if (other !is SnackBarType) {
-            false
-        } else this.id == other.id
-    }
-
-    override fun hashCode(): Int {
-        return this.id.hashCode()
-    }
-
     companion object CREATOR {
         var ERROR = SnackBarType(
             id = 0,
