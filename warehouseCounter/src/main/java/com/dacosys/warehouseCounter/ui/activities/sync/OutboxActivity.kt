@@ -201,21 +201,22 @@ class OutboxActivity : AppCompatActivity() {
             else -> return
         }
 
-        val alert = AlertDialog.Builder(this)
-        alert.setTitle(getString(R.string.send_counts))
-        alert.setMessage(
-            if (toSend.count() > 1) {
-                getString(R.string.do_you_want_to_send_the_selected_counts)
-            } else {
-                getString(R.string.do_you_want_to_send_the_selected_count)
+        runOnUiThread {
+            val alert = AlertDialog.Builder(this)
+            alert.setTitle(getString(R.string.send_counts))
+            alert.setMessage(
+                if (toSend.count() > 1) {
+                    getString(R.string.do_you_want_to_send_the_selected_counts)
+                } else {
+                    getString(R.string.do_you_want_to_send_the_selected_count)
+                }
+            )
+            alert.setNegativeButton(R.string.cancel, null)
+            alert.setPositiveButton(R.string.ok) { _, _ ->
+                sendSelected(toSend)
             }
-        )
-        alert.setNegativeButton(R.string.cancel, null)
-        alert.setPositiveButton(R.string.ok) { _, _ ->
-            sendSelected(toSend)
+            alert.show()
         }
-
-        alert.show()
     }
 
     private fun sendSelected(orArray: ArrayList<OrderRequest>) {
@@ -230,7 +231,7 @@ class OutboxActivity : AppCompatActivity() {
 
     private fun removeResetDialog() {
         val toRemoveReset = when {
-            ((arrayAdapter?.countChecked()) ?: 0) > 0 -> arrayAdapter?.getAllChecked()!!
+            (arrayAdapter?.countChecked() ?: 0) > 0 -> arrayAdapter?.getAllChecked()!!
             arrayAdapter?.currentItem() != null -> arrayListOf(arrayAdapter!!.currentItem()!!)
             else -> return
         }
@@ -245,6 +246,8 @@ class OutboxActivity : AppCompatActivity() {
             }
         }
 
+        if (!toRemove.any() && !toReset.any()) return
+
         val msg = when {
             toReset.isNotEmpty() && toRemove.isNotEmpty() -> getString(R.string.do_you_want_to_delete_or_reset_the_selected_counts)
             else -> when {
@@ -255,20 +258,21 @@ class OutboxActivity : AppCompatActivity() {
             }
         }
 
-        val alert = AlertDialog.Builder(this)
-        alert.setTitle(getString(R.string.cancel_count))
-        alert.setMessage(msg)
-        alert.setNegativeButton(R.string.cancel, null)
-        alert.setPositiveButton(R.string.ok) { _, _ ->
-            if (toRemove.isNotEmpty()) {
-                removeSelected(toRemove)
+        runOnUiThread {
+            val alert = AlertDialog.Builder(this)
+            alert.setTitle(getString(R.string.cancel_count))
+            alert.setMessage(msg)
+            alert.setNegativeButton(R.string.cancel, null)
+            alert.setPositiveButton(R.string.ok) { _, _ ->
+                if (toRemove.isNotEmpty()) {
+                    removeSelected(toRemove)
+                }
+                if (toReset.isNotEmpty()) {
+                    resetSelected(toReset)
+                }
             }
-            if (toReset.isNotEmpty()) {
-                resetSelected(toReset)
-            }
+            alert.show()
         }
-
-        alert.show()
     }
 
     private fun removeSelected(toRemove: ArrayList<OrderRequest>) {

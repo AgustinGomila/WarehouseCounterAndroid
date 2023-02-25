@@ -17,29 +17,15 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
 
-class CheckCode {
-    interface CheckCodeEnded {
-        // Define data you like to return from AysncTask
-        fun onCheckCodeEnded(orc: OrderRequestContent?, itemCode: ItemCode?)
-    }
+class CheckCode(
+    private var callback: (CheckCodeEnded) -> Unit = {},
+    private var scannedCode: String,
+    private var adapter: OrcAdapter,
+    private var onEventData: (SnackBarEventData) -> Unit = {},
+) {
+    data class CheckCodeEnded(var orc: OrderRequestContent?, var itemCode: ItemCode?)
 
-    private var scannedCode: String? = null
     private var itemCode: ItemCode? = null
-    private var mCallback: CheckCodeEnded? = null
-    private var orcAdapter: OrcAdapter? = null
-    private var onEventData: (SnackBarEventData) -> Unit = {}
-
-    fun addParams(
-        callback: CheckCodeEnded,
-        scannedCode: String,
-        adapter: OrcAdapter,
-        onEventData: (SnackBarEventData) -> Unit = {},
-    ) {
-        this.mCallback = callback
-        this.scannedCode = scannedCode
-        this.orcAdapter = adapter
-        this.onEventData = onEventData
-    }
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
@@ -58,11 +44,11 @@ class CheckCode {
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         try {
             if (Statics.demoMode) {
-                if (orcAdapter!!.count >= 5) {
+                if (adapter.count >= 5) {
                     val res =
                         context().getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
-                    mCallback?.onCheckCodeEnded(null, itemCode)
+                    callback.invoke(CheckCodeEnded(null, itemCode))
                     Log.e(this::class.java.simpleName, res)
                     return@withContext
                 }
@@ -71,19 +57,19 @@ class CheckCode {
             val code = scannedCode
 
             // Nada que hacer, volver
-            if (code.isNullOrEmpty()) {
+            if (code.isEmpty()) {
                 val res = context().getString(R.string.invalid_code)
                 onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
-                mCallback?.onCheckCodeEnded(null, itemCode)
+                callback.invoke(CheckCodeEnded(null, itemCode))
                 Log.e(this::class.java.simpleName, res)
                 return@withContext
             }
 
-            if ((orcAdapter?.count() ?: 0) > 0) {
+            if (adapter.count() > 0) {
                 // Buscar primero en el adaptador de la lista
-                (0 until orcAdapter!!.count).map { orcAdapter!!.getItem(it) }
+                (0 until adapter.count).map { adapter.getItem(it) }
                     .filter { it != null && it.item!!.ean == code }.forEach { it2 ->
-                        mCallback?.onCheckCodeEnded(it2, itemCode)
+                        callback.invoke(CheckCodeEnded(it2, itemCode))
                         return@withContext
                     }
             }
@@ -93,15 +79,17 @@ class CheckCode {
                 val itemObj = it.firstOrNull()
 
                 if (itemObj != null) {
-                    mCallback?.onCheckCodeEnded(
-                        OrderRequestContent().apply {
-                            item = Item(itemObj, code)
-                            lot = null
-                            qty = Qty().apply {
-                                qtyCollected = 0.toDouble()
-                                qtyRequested = 0.toDouble()
-                            }
-                        }, itemCode
+                    callback.invoke(
+                        CheckCodeEnded(
+                            OrderRequestContent().apply {
+                                item = Item(itemObj, code)
+                                lot = null
+                                qty = Qty().apply {
+                                    qtyCollected = 0.toDouble()
+                                    qtyRequested = 0.toDouble()
+                                }
+                            }, itemCode
+                        )
                     )
                     return@getByQuery
                 }
@@ -110,15 +98,15 @@ class CheckCode {
                     itemCode = icList.firstOrNull()
                     val itemId = itemCode?.itemId
                     if (itemId == null) {
-                        mCallback?.onCheckCodeEnded(null, null)
+                        callback.invoke(CheckCodeEnded(null, null))
                         return@getByCode
                     }
 
                     // Buscar de nuevo dentro del adaptador del control
-                    for (x in 0 until orcAdapter!!.count) {
-                        val item = orcAdapter!!.getItem(x)
+                    for (x in 0 until adapter.count) {
+                        val item = adapter.getItem(x)
                         if (item != null && item.item!!.itemId == itemId) {
-                            mCallback?.onCheckCodeEnded(item, itemCode)
+                            callback.invoke(CheckCodeEnded(item, itemCode))
                             return@getByCode
                         }
                     }
@@ -131,18 +119,20 @@ class CheckCode {
 
                         ItemCoroutines().add(item) { id ->
                             if (id != null) {
-                                mCallback?.onCheckCodeEnded(
-                                    OrderRequestContent().apply {
-                                        this.item = fromItemRoom(item)
-                                        lot = null
-                                        qty = Qty().apply {
-                                            qtyCollected = 0.toDouble()
-                                            qtyRequested = 0.toDouble()
-                                        }
-                                    }, itemCode
+                                callback.invoke(
+                                    CheckCodeEnded(
+                                        OrderRequestContent().apply {
+                                            this.item = fromItemRoom(item)
+                                            lot = null
+                                            qty = Qty().apply {
+                                                qtyCollected = 0.toDouble()
+                                                qtyRequested = 0.toDouble()
+                                            }
+                                        }, itemCode
+                                    )
                                 )
                             } else {
-                                mCallback?.onCheckCodeEnded(null, null)
+                                callback.invoke(CheckCodeEnded(null, null))
                                 onEventData.invoke(
                                     SnackBarEventData(
                                         context().getString(R.string.error_attempting_to_add_item_to_database),
@@ -153,7 +143,7 @@ class CheckCode {
                             }
                         }
                     } else {
-                        mCallback?.onCheckCodeEnded(null, null)
+                        callback.invoke(CheckCodeEnded(null, null))
                         onEventData.invoke(
                             SnackBarEventData(
                                 "${context().getString(R.string.unknown_item)}: $code",
@@ -164,7 +154,7 @@ class CheckCode {
                 }
             }
         } catch (ex: Exception) {
-            mCallback?.onCheckCodeEnded(null, null)
+            callback.invoke(CheckCodeEnded(null, null))
             onEventData.invoke(SnackBarEventData(ex.message.toString(), SnackBarType.ERROR))
             Log.e(this::class.java.simpleName, ex.message ?: "")
         }

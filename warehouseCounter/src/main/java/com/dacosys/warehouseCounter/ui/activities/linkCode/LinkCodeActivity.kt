@@ -64,8 +64,7 @@ import kotlin.concurrent.thread
 class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener,
     ItemAdapter.SelectedItemChangedListener, ItemAdapter.CheckedChangedListener,
     CounterHandler.CounterListener, ItemSelectFilterFragment.OnFilterChangedListener,
-    CheckItemCode.CheckCodeEnded, SwipeRefreshLayout.OnRefreshListener,
-    ItemAdapter.DataSetChangedListener {
+    SwipeRefreshLayout.OnRefreshListener, ItemAdapter.DataSetChangedListener {
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -141,19 +140,10 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }
 
         try {
-            try {
-                val checkCodeTask = CheckItemCode()
-                checkCodeTask.addParams(callback = this,
-                    scannedCode = scanCode,
-                    adapter = arrayAdapter!!,
-                    onEventData = { showSnackBar(it) })
-                checkCodeTask.execute()
-            } catch (ex: Exception) {
-                makeText(binding.root, ex.message.toString(), ERROR)
-                Log.e(this::class.java.simpleName, ex.message.toString())
-            } finally {
-                JotterListener.lockScanner(this, false)
-            }
+            CheckItemCode(callback = { onCheckCodeEnded(it) },
+                scannedCode = scanCode,
+                adapter = arrayAdapter!!,
+                onEventData = { showSnackBar(it) }).execute()
         } catch (ex: Exception) {
             ex.printStackTrace()
             makeText(binding.root, ex.message.toString(), ERROR)
@@ -451,24 +441,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private fun sendDialog() {
         ItemCodeCoroutines().getToUpload {
             if (it.isNotEmpty()) {
-                val alert = AlertDialog.Builder(this)
-                alert.setTitle(getString(R.string.send_item_codes))
-                alert.setMessage(
-                    if (it.count() > 1) context().getString(R.string.do_you_want_to_send_the_item_codes)
-                    else context().getString(R.string.do_you_want_to_send_the_item_code)
-                )
-                alert.setNegativeButton(R.string.cancel, null)
-                alert.setPositiveButton(R.string.ok) { _, _ ->
-                    try {
-                        thread {
-                            SendItemCode(it) { it2 -> onTaskSendItemCodeEnded(it2) }.execute()
-                        }
-                    } catch (ex: Exception) {
-                        ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
-                    }
-                }
-
-                alert.show()
+                sendItemCodes(it)
             } else {
                 makeText(
                     binding.root,
@@ -476,6 +449,28 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     INFO
                 )
             }
+        }
+    }
+
+    private fun sendItemCodes(it: ArrayList<ItemCode>) {
+        runOnUiThread {
+            val alert = AlertDialog.Builder(this)
+            alert.setTitle(getString(R.string.send_item_codes))
+            alert.setMessage(
+                if (it.count() > 1) context().getString(R.string.do_you_want_to_send_the_item_codes)
+                else context().getString(R.string.do_you_want_to_send_the_item_code)
+            )
+            alert.setNegativeButton(R.string.cancel, null)
+            alert.setPositiveButton(R.string.ok) { _, _ ->
+                try {
+                    thread {
+                        SendItemCode(it) { it2 -> onTaskSendItemCodeEnded(it2) }.execute()
+                    }
+                } catch (ex: Exception) {
+                    ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+                }
+            }
+            alert.show()
         }
     }
 
@@ -997,7 +992,10 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }
     }
 
-    override fun onCheckCodeEnded(scannedCode: String, item: Item?, itemCode: ItemCode?) {
+    private fun onCheckCodeEnded(it: CheckItemCode.CheckCodeEnded) {
+        val item: Item? = it.item
+        val scannedCode: String = it.scannedCode
+
         if (item != null) {
             if (arrayAdapter?.itemExists(item) == true) {
                 arrayAdapter?.selectItem(item)

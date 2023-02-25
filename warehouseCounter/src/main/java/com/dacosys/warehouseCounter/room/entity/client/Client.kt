@@ -63,6 +63,25 @@ data class Client(
         return 0
     }
 
+    override fun toString(): String {
+        return name
+    }
+
+    override fun hashCode(): Int {
+        return clientId.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Client
+
+        if (clientId != other.clientId) return false
+
+        return true
+    }
+
     companion object CREATOR : Parcelable.Creator<Client> {
         override fun createFromParcel(parcel: Parcel): Client {
             return Client(parcel)

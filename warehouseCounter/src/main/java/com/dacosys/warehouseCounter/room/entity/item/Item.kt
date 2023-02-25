@@ -57,6 +57,25 @@ data class Item(
         return 0
     }
 
+    override fun toString(): String {
+        return description
+    }
+
+    override fun hashCode(): Int {
+        return itemId.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Item
+
+        if (itemId != other.itemId) return false
+
+        return true
+    }
+
     companion object CREATOR : Parcelable.Creator<Item> {
         override fun createFromParcel(parcel: Parcel): Item {
             return Item(parcel)

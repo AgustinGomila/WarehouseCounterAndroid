@@ -224,18 +224,18 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         if (isFilling) return
         isFilling = true
 
-        runOnUiThread {
-            try {
-                Log.d(this::class.java.simpleName, "Selecting item categories...")
+        try {
+            Log.d(this::class.java.simpleName, "Selecting item categories...")
 
-                ItemCategoryCoroutines().get {
-                    val adapter = ItemCategoryAdapter(
-                        activity = this,
-                        resource = R.layout.item_category_row,
-                        itemCategorys = it,
-                        suggestedList = ArrayList()
-                    )
+            ItemCategoryCoroutines().get {
+                val adapter = ItemCategoryAdapter(
+                    activity = this,
+                    resource = R.layout.item_category_row,
+                    itemCategorys = it,
+                    suggestedList = ArrayList()
+                )
 
+                runOnUiThread {
                     binding.autoCompleteTextView.setAdapter(adapter)
                     (binding.autoCompleteTextView.adapter as ItemCategoryAdapter).notifyDataSetChanged()
 
@@ -245,12 +245,12 @@ class ItemCategorySelectActivity : AppCompatActivity(),
                     refreshItemCategoryText(cleanText = false, focus = false)
                     showProgressBar(GONE)
                 }
-            } catch (ex: java.lang.Exception) {
-                ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
-            } finally {
-                isFilling = false
             }
+        } catch (ex: java.lang.Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+        } finally {
+            isFilling = false
         }
     }
 

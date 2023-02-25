@@ -105,11 +105,8 @@ class SendItemCode(
                     return
                 }
 
-                onEvent.invoke(
-                    SnackBarEventData(
-                        context().getString(R.string.ok), SnackBarType.SUCCESS
-                    )
-                )
+                // Actualizamos los ItemCode enviados
+                updateTransferred()
             }
 
             override fun onFailure(call: Call<Any?>, t: Throwable) {
@@ -119,6 +116,22 @@ class SendItemCode(
         })
 
         return@withContext true
+    }
+
+    private val itemCodeToUpdate: ArrayList<ItemCode> = ArrayList()
+
+    /**
+     * Update transferred
+     * Actualizar los ItemCode enviados en la base de datos local
+     */
+    private fun updateTransferred() {
+        for (itemCode in itemCodeToUpdate) {
+            ItemCodeCoroutines().updateTransferred(
+                itemId = itemCode.itemId ?: 0L, code = itemCode.code ?: ""
+            )
+        }
+
+        onEvent.invoke(SnackBarEventData(context().getString(R.string.ok), SnackBarType.SUCCESS))
     }
 
     private fun getBody(): RequestBody {
@@ -140,11 +153,8 @@ class SendItemCode(
         for ((index, itemCode) in itemCodeArray.withIndex()) {
             icArrayJson.put("itemCode$index", itemCode)
 
-            ////////////////////////////////////
-            // Actualizar en la Base de datos //
-            ItemCodeCoroutines().updateTransferred(
-                itemId = itemCode.itemId ?: 0L, code = itemCode.code ?: ""
-            )
+            // Actualizamos la lista de códigos a transferir
+            itemCodeToUpdate.add(itemCode)
         }
         jsonParam.put("itemCodes", icArrayJson)
         // Fin Todos los ItemCodes ////////

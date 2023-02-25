@@ -225,17 +225,17 @@ class ClientSelectActivity : AppCompatActivity(),
         if (isFilling) return
         isFilling = true
 
-        runOnUiThread {
-            try {
-                Log.d(this::class.java.simpleName, "Selecting item clients...")
-                ClientCoroutines().get {
-                    val adapter = ClientAdapter(
-                        activity = this,
-                        resource = R.layout.client_row,
-                        clients = it,
-                        suggestedList = ArrayList()
-                    )
+        try {
+            Log.d(this::class.java.simpleName, "Selecting item clients...")
+            ClientCoroutines().get {
+                val adapter = ClientAdapter(
+                    activity = this,
+                    resource = R.layout.client_row,
+                    clients = it,
+                    suggestedList = ArrayList()
+                )
 
+                runOnUiThread {
                     binding.autoCompleteTextView.setAdapter(adapter)
                     (binding.autoCompleteTextView.adapter as ClientAdapter).notifyDataSetChanged()
 
@@ -245,12 +245,12 @@ class ClientSelectActivity : AppCompatActivity(),
                     refreshClientText(cleanText = false, focus = false)
                     showProgressBar(GONE)
                 }
-            } catch (ex: java.lang.Exception) {
-                ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
-            } finally {
-                isFilling = false
             }
+        } catch (ex: java.lang.Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+        } finally {
+            isFilling = false
         }
     }
 
@@ -350,5 +350,5 @@ class ClientSelectActivity : AppCompatActivity(),
             centerLayout()
         }
     }
-    // endregion SOFT KEYBOARD AND DROPDOWN ISSUES
+// endregion SOFT KEYBOARD AND DROPDOWN ISSUES
 }

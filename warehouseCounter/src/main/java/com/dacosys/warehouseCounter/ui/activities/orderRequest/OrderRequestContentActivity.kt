@@ -70,33 +70,32 @@ import kotlin.concurrent.thread
 
 class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChangedListener,
     OrcAdapter.EditQtyListener, OrcAdapter.EditDescriptionListener, Scanner.ScannerListener,
-    SwipeRefreshLayout.OnRefreshListener, Rfid.RfidDeviceListener, CheckCode.CheckCodeEnded {
+    SwipeRefreshLayout.OnRefreshListener, Rfid.RfidDeviceListener {
     override fun onEditDescriptionRequired(position: Int, orc: OrderRequestContent) {
         showDialogForItemDescription(orc)
     }
 
-    override fun onCheckCodeEnded(orc: OrderRequestContent?, itemCode: ItemCode?) {
-        this.itemCode = itemCode
-        if (orc != null) {
-            // El código fue chequeado, se agrega y se seleciona en la lista
-            orcAdapter?.add(arrayListOf(orc))
+    private fun onCheckCodeEnded(it: CheckCode.CheckCodeEnded) {
+        val orc = it.orc ?: return
+        itemCode = it.itemCode
 
-            // Definir las cantidades según el modo de ingreso actual
-            if (binding.requiredDescCheckBox.isChecked && orc.item?.itemDescription == context().getString(
-                    R.string.unknown_item
-                )
-            ) {
-                // Antes agregar descripción si es obligatorio.
-                // La función itemDescriptionDialog(orc) al final llama a setQty(orc)
-                showDialogForAddDescription(orc)
-                return
-            }
+        // El código fue chequeado, se agrega y se seleciona en la lista
+        orcAdapter?.add(arrayListOf(orc))
 
-            // Esta pausa permite que el Adapter se actualice a tiempo
-            Handler(mainLooper).postDelayed({
-                setQty(orc)
-            }, 250)
+        // Definir las cantidades según el modo de ingreso actual
+        if (binding.requiredDescCheckBox.isChecked &&
+            orc.item?.itemDescription == context().getString(R.string.unknown_item)
+        ) {
+            // Antes agregar descripción si es obligatorio.
+            // La función itemDescriptionDialog(orc) al final llama a setQty(orc)
+            showDialogForAddDescription(orc)
+            return
         }
+
+        // Esta pausa permite que el Adapter se actualice a tiempo
+        Handler(mainLooper).postDelayed({
+            setQty(orc)
+        }, 250)
         gentlyReturn()
     }
 
@@ -1695,13 +1694,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
                 // Si la cantidad no es NULL procesiguimos con el Regex
                 if (lastRegexResult!!.qty != null) {
-                    val checkCodeTask = CheckCode()
-                    checkCodeTask.addParams(callback = this,
+                    CheckCode(callback = { onCheckCodeEnded(it) },
                         scannedCode = lastRegexResult!!.ean,
                         adapter = orcAdapter!!,
-                        onEventData = { showSnackBar(it) })
-                    checkCodeTask.execute()
-                    gentlyReturn()
+                        onEventData = { showSnackBar(it) }).execute()
+
                     return@tryToRegex
                 }
 
@@ -1724,17 +1721,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             }
 
-            try {
-                val checkCodeTask = CheckCode()
-                checkCodeTask.addParams(callback = this,
-                    scannedCode = code,
-                    adapter = orcAdapter!!,
-                    onEventData = { it2 -> showSnackBar(it2) })
-                checkCodeTask.execute()
-            } catch (ex: Exception) {
-                makeText(binding.root, ex.message.toString(), ERROR)
-                android.util.Log.e(this::class.java.simpleName, ex.message.toString())
-            }
+            CheckCode(callback = { onCheckCodeEnded(it) },
+                scannedCode = code,
+                adapter = orcAdapter!!,
+                onEventData = { it2 -> showSnackBar(it2) }).execute()
+
+            gentlyReturn()
         }
     }
 

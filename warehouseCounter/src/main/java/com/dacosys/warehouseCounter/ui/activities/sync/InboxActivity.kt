@@ -187,27 +187,28 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
 
     private fun removeDialog() {
         val toRemove = when {
-            ((arrayAdapter?.countChecked()) ?: 0) > 0 -> arrayAdapter?.getAllChecked()!!
+            (arrayAdapter?.countChecked() ?: 0) > 0 -> arrayAdapter?.getAllChecked()!!
             arrayAdapter?.currentItem() != null -> arrayListOf(arrayAdapter!!.currentItem()!!)
             else -> return
         }
+
+        if (!toRemove.any()) return
 
         val msg = when {
             toRemove.count() > 1 -> getString(R.string.do_you_want_to_delete_the_selected_counts)
             else -> getString(R.string.do_you_want_to_delete_the_selected_count)
         }
 
-        val alert = AlertDialog.Builder(this)
-        alert.setTitle(getString(R.string.cancel_count))
-        alert.setMessage(msg)
-        alert.setNegativeButton(R.string.cancel, null)
-        alert.setPositiveButton(R.string.ok) { _, _ ->
-            if (toRemove.isNotEmpty()) {
+        runOnUiThread {
+            val alert = AlertDialog.Builder(this)
+            alert.setTitle(getString(R.string.cancel_count))
+            alert.setMessage(msg)
+            alert.setNegativeButton(R.string.cancel, null)
+            alert.setPositiveButton(R.string.ok) { _, _ ->
                 removeSelected(toRemove)
             }
+            alert.show()
         }
-
-        alert.show()
     }
 
     private fun removeSelected(toRemove: ArrayList<OrderRequest>) {

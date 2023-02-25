@@ -36,7 +36,6 @@ import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
-import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -55,8 +54,7 @@ import kotlin.concurrent.thread
 class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
     ItemSelectFilterFragment.OnFilterChangedListener, ItemAdapter.CheckedChangedListener,
-    CheckItemCode.CheckCodeEnded, PrintLabelFragment.FragmentListener,
-    ItemAdapter.DataSetChangedListener {
+    PrintLabelFragment.FragmentListener, ItemAdapter.DataSetChangedListener {
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -631,20 +629,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         JotterListener.lockScanner(this, true)
 
-        try {
-            val checkCodeTask = CheckItemCode()
-            checkCodeTask.addParams(callback = this,
-                scannedCode = scanCode,
-                adapter = arrayAdapter!!,
-                onEventData = { showSnackBar(it) })
-            checkCodeTask.execute()
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            makeText(binding.root, ex.message.toString(), ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
-        } finally {
-            JotterListener.lockScanner(this, false)
-        }
+        CheckItemCode(callback = { onCheckCodeEnded(it) },
+            scannedCode = scanCode,
+            adapter = arrayAdapter!!,
+            onEventData = { showSnackBar(it) }).execute()
     }
 
     private fun showSnackBar(it: SnackBarEventData) {
@@ -773,17 +761,19 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    override fun onCheckCodeEnded(scannedCode: String, item: Item?, itemCode: ItemCode?) {
-        if (item != null) {
-            if (arrayAdapter?.itemExists(item) == true) {
-                arrayAdapter?.selectItem(item)
-            } else {
-                itemSelectFilterFragment!!.itemCode = item.ean
-                thread {
-                    completeList = arrayListOf(item)
-                    checkedIdArray.clear()
-                    fillAdapter(completeList)
-                }
+    private fun onCheckCodeEnded(it: CheckItemCode.CheckCodeEnded) {
+        JotterListener.lockScanner(this, false)
+
+        val item: Item = it.item ?: return
+
+        if (arrayAdapter?.itemExists(item) == true) {
+            arrayAdapter?.selectItem(item)
+        } else {
+            itemSelectFilterFragment!!.itemCode = item.ean
+            thread {
+                completeList = arrayListOf(item)
+                checkedIdArray.clear()
+                fillAdapter(completeList)
             }
         }
     }

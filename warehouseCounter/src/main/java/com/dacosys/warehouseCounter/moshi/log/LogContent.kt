@@ -84,6 +84,32 @@ class LogContent() : Parcelable {
         return 0
     }
 
+    override fun hashCode(): Int {
+        var result = itemId?.hashCode() ?: 0
+        result = 31 * result + (lotId?.hashCode() ?: 0)
+        result = 31 * result + scannedCode.hashCode()
+        result = 31 * result + (variationQty?.hashCode() ?: 0)
+        result = 31 * result + (finalQty?.hashCode() ?: 0)
+        result = 31 * result + (date?.hashCode() ?: 0)
+        return result
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as LogContent
+
+        if (itemId != other.itemId) return false
+        if (lotId != other.lotId) return false
+        if (scannedCode != other.scannedCode) return false
+        if (variationQty != other.variationQty) return false
+        if (finalQty != other.finalQty) return false
+        if (date != other.date) return false
+
+        return true
+    }
+
     companion object CREATOR : Parcelable.Creator<LogContent> {
         override fun createFromParcel(parcel: Parcel): LogContent {
             return LogContent(parcel)

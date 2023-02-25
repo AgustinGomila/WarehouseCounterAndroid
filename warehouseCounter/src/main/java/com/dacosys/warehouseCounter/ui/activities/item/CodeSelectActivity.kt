@@ -208,12 +208,11 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
                     refreshCodeText(cleanText = false, focus = false)
                     showProgressBar(GONE)
                 }
-                isFilling = false
             }
         } catch (ex: java.lang.Exception) {
             ex.printStackTrace()
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
-
+        } finally {
             isFilling = false
         }
     }
