@@ -19,7 +19,7 @@ import androidx.core.content.res.ResourcesCompat.getDrawable
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.room.entity.item.Item
@@ -52,7 +52,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
         listView: ListView?,
         multiSelect: Boolean,
         checkedIdArray: ArrayList<Long>,
-    ) : super(context(), resource, suggestedList) {
+    ) : super(WarehouseCounterApp.context, resource, suggestedList) {
         this.activity = activity
         this.resource = resource
         this.multiSelect = multiSelect
@@ -69,7 +69,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
         resource: Int,
         itemList: ArrayList<Item>,
         suggestedList: ArrayList<Item>,
-    ) : super(context(), resource, suggestedList) {
+    ) : super(WarehouseCounterApp.context, resource, suggestedList) {
         this.activity = activity
         this.resource = resource
         this.suggestedList = suggestedList
@@ -539,12 +539,12 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
                 }
 
                 // Background colors
-                val lightgray = getColor(context().resources, R.color.lightgray, null)
-                val whitesmoke = getColor(context().resources, R.color.whitesmoke, null)
+                val lightgray = getColor(context.resources, R.color.lightgray, null)
+                val whitesmoke = getColor(context.resources, R.color.whitesmoke, null)
 
                 // Font colors
-                val black = getColor(context().resources, R.color.black, null)
-                val dimgray = getColor(context().resources, R.color.dimgray, null)
+                val black = getColor(context.resources, R.color.black, null)
+                val dimgray = getColor(context.resources, R.color.dimgray, null)
 
                 when {
                     item.active != 1 -> {
@@ -576,7 +576,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
     private var defaultForeColor: Int = 0
 
     private fun setupColors() {
-        selectedForeColor = getColor(context().resources, R.color.text_light, null)
+        selectedForeColor = getColor(context.resources, R.color.text_light, null)
 
         inactiveForeColor = Statics.getBestContrastColor("#C7C7C7")
         defaultForeColor = Statics.getBestContrastColor("#DFDFDF")
@@ -660,9 +660,9 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
                 }
 
                 val colorDefault =
-                    getDrawable(context().resources, R.drawable.layout_thin_border, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border, null)!!
                 val inactiveBackColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border_gray, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border_gray, null)!!
 
                 var backColor = colorDefault
                 var foreColor = if (isSelected) selectedForeColor else defaultForeColor
@@ -765,9 +765,9 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
                 }
 
                 val colorDefault =
-                    getDrawable(context().resources, R.drawable.layout_thin_border, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border, null)!!
                 val inactiveBackColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border_gray, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border_gray, null)!!
 
                 var backColor = colorDefault
                 var foreColor = if (isSelected) selectedForeColor else defaultForeColor

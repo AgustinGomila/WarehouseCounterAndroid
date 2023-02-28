@@ -22,7 +22,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.PrintLabelFragmentBinding
 import com.dacosys.warehouseCounter.misc.CounterHandler
@@ -154,7 +154,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     override fun run() {
         try {
             if (ActivityCompat.checkSelfPermission(
-                    context(), Manifest.permission.BLUETOOTH_CONNECT
+                    WarehouseCounterApp.context, Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 // here to request the missing permissions, and then overriding
@@ -203,7 +203,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     private fun initializePrinter() {
         if (Statics.printerBluetoothDevice != null) {
             val bluetoothManager =
-                context().getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
+                WarehouseCounterApp.context.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
             val mBluetoothAdapter = bluetoothManager.adapter
             if (mBluetoothAdapter == null) {
                 makeText(
@@ -364,7 +364,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     }
 
     private fun configApp() {
-        val realPass = settingViewModel().confPassword
+        val realPass = settingViewModel.confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
@@ -410,7 +410,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = settingViewModel().confPassword
+        val realPass = settingViewModel.confPassword
         if (password == realPass) {
             if (!rejectNewInstances) {
                 rejectNewInstances = true

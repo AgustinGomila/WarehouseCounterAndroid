@@ -84,7 +84,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         // Definir las cantidades según el modo de ingreso actual
         if (binding.requiredDescCheckBox.isChecked &&
-            orc.item?.itemDescription == context().getString(R.string.unknown_item)
+            orc.item?.itemDescription == context.getString(R.string.unknown_item)
         ) {
             // Antes agregar descripción si es obligatorio.
             // La función itemDescriptionDialog(orc) al final llama a setQty(orc)
@@ -109,7 +109,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel().useBtRfid) {
+        if (!settingViewModel.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -186,19 +186,21 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun enterCode() {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(R.string.enter_code)
+        runOnUiThread {
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(R.string.enter_code)
 
-        val input = EditText(this)
-        input.inputType = InputType.TYPE_CLASS_TEXT
-        builder.setView(input)
+            val input = EditText(this)
+            input.inputType = InputType.TYPE_CLASS_TEXT
+            builder.setView(input)
 
-        builder.setPositiveButton(R.string.ok) { _, _ ->
-            scannerCompleted(input.text.toString())
+            builder.setPositiveButton(R.string.ok) { _, _ ->
+                scannerCompleted(input.text.toString())
+            }
+            builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
+
+            builder.show()
         }
-        builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
-
-        builder.show()
     }
 
     private fun setQty(orc: OrderRequestContent) {
@@ -265,7 +267,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
 // region Variables privadas de la actividad
 
-    private var tempTitle = context().getString(R.string.count)
+    private var tempTitle = context.getString(R.string.count)
 
     private var panelBottomIsExpanded = false
     private var panelTopIsExpanded = false
@@ -302,7 +304,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun saveSharedPreferences() {
-        settingViewModel().scanModeCount = when {
+        settingViewModel.scanModeCount = when {
             !partialBlock && !partial -> 1 // Parcial auto
             partialBlock -> 2 // Parcial bloqueado
             partial -> 0 // Manual
@@ -397,7 +399,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             ArrayList()
         )
 
-        when (settingViewModel().scanModeCount) {
+        when (settingViewModel.scanModeCount) {
             1 -> {
                 partialBlock = false
                 partial = false // Parcial auto
@@ -432,7 +434,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         // Nunca debería ser NULL.
         if (orderRequest != null) {
             if (orderRequest!!.description.isNotEmpty()) {
-                tempTitle = "${context().getString(R.string.count)}: ${orderRequest!!.description}"
+                tempTitle = "${context.getString(R.string.count)}: ${orderRequest!!.description}"
             }
 
             if (orderRequest!!.orderRequestedType != null) {
@@ -442,7 +444,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
                     OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
                     OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
-                    else -> context().getString(R.string.counted)
+                    else -> context.getString(R.string.counted)
                 }
             }
         }
@@ -498,7 +500,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         binding.requiredDescCheckBox.setOnCheckedChangeListener(null)
         binding.requiredDescCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            settingViewModel().requiredDescription = isChecked
+            settingViewModel.requiredDescription = isChecked
         }
 
         binding.partialButton.setOnClickListener {
@@ -526,7 +528,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
         // region Traer de la configuración guardada
-        binding.requiredDescCheckBox.isChecked = settingViewModel().requiredDescription
+        binding.requiredDescCheckBox.isChecked = settingViewModel.requiredDescription
 
         binding.multiplierButton.setOnClickListener {
             if (allowClicks) {
@@ -569,16 +571,16 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         when {
             panelBottomIsExpanded -> binding.expandBottomPanelButton?.text =
-                context().getString(R.string.collapse_panel)
+                context.getString(R.string.collapse_panel)
             else -> binding.expandBottomPanelButton?.text =
-                context().getString(R.string.scan_options)
+                context.getString(R.string.scan_options)
         }
 
         when {
             panelTopIsExpanded -> binding.expandTopPanelButton?.text =
-                context().getString(R.string.collapse_panel)
+                context.getString(R.string.collapse_panel)
             else -> binding.expandTopPanelButton?.text =
-                context().getString(R.string.item_operations)
+                context.getString(R.string.item_operations)
         }
     }
 
@@ -617,9 +619,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
             when {
                 panelBottomIsExpanded -> binding.expandBottomPanelButton?.text =
-                    context().getString(R.string.collapse_panel)
+                    context.getString(R.string.collapse_panel)
                 else -> binding.expandBottomPanelButton?.text =
-                    context().getString(R.string.scan_options)
+                    context.getString(R.string.scan_options)
             }
 
             nextLayout.applyTo(binding.orderRequestContent)
@@ -664,9 +666,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
             when {
                 panelTopIsExpanded -> binding.expandTopPanelButton?.text =
-                    context().getString(R.string.collapse_panel)
+                    context.getString(R.string.collapse_panel)
                 else -> binding.expandTopPanelButton?.text =
-                    context().getString(R.string.item_operations)
+                    context.getString(R.string.item_operations)
             }
 
             nextLayout.applyTo(binding.orderRequestContent)
@@ -688,19 +690,19 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             var buttonTextColor: Int? = null
 
             if (!partialBlock && !partial) {
-                buttonText = context().getString(R.string.partial_auto)
+                buttonText = context.getString(R.string.partial_auto)
                 buttonBackground = ResourcesCompat.getDrawable(
                     this.resources, R.drawable.rounded_corner_button_ffed65, null
                 )
                 buttonTextColor = ResourcesCompat.getColor(this.resources, R.color.black, null)
             } else if (partialBlock) {
-                buttonText = context().getString(R.string.partial_locked)
+                buttonText = context.getString(R.string.partial_locked)
                 buttonBackground = ResourcesCompat.getDrawable(
                     this.resources, R.drawable.rounded_corner_button_6b2737, null
                 )
                 buttonTextColor = ResourcesCompat.getColor(this.resources, R.color.whitesmoke, null)
             } else if (partial) {
-                buttonText = context().getString(R.string.partial_manual)
+                buttonText = context.getString(R.string.partial_manual)
                 buttonBackground = ResourcesCompat.getDrawable(
                     this.resources, R.drawable.rounded_corner_button_teal, null
                 )
@@ -722,19 +724,19 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             var buttonTextColor: Int? = null
 
             if (!dividedBlock && !divided) {
-                buttonText = context().getString(R.string.without_divider)
+                buttonText = context.getString(R.string.without_divider)
                 buttonBackground = ResourcesCompat.getDrawable(
                     this.resources, R.drawable.rounded_corner_button_ffed65, null
                 )
                 buttonTextColor = ResourcesCompat.getColor(this.resources, R.color.black, null)
             } else if (dividedBlock) {
-                buttonText = context().getString(R.string.divider_locked)
+                buttonText = context.getString(R.string.divider_locked)
                 buttonBackground = ResourcesCompat.getDrawable(
                     this.resources, R.drawable.rounded_corner_button_6b2737, null
                 )
                 buttonTextColor = ResourcesCompat.getColor(this.resources, R.color.whitesmoke, null)
             } else if (divided) {
-                buttonText = context().getString(R.string.divider)
+                buttonText = context.getString(R.string.divider)
                 buttonBackground = ResourcesCompat.getDrawable(
                     this.resources, R.drawable.rounded_corner_button_teal, null
                 )
@@ -752,7 +754,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun cancelCount() {
         if ((orcAdapter?.count() ?: 0) <= 0) {
             finish()
-        } else {
+            return
+        }
+
+        runOnUiThread {
             val builder = AlertDialog.Builder(this)
             builder.setTitle(getString(R.string.save_count))
             builder.setMessage(getString(R.string.save_changes_and_continue_later))
@@ -822,10 +827,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun fillSummaryRow() {
         runOnUiThread {
             if (orderRequest?.orderRequestedType != OrderRequestType.stockAuditFromDevice) {
-                binding.totalLabelTextView.text = context().getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context().getString(R.string.cant)
+                binding.totalLabelTextView.text = context.getString(R.string.total)
+                binding.qtyReqLabelTextView.text = context.getString(R.string.cant)
                 binding.selectedLabelTextView.visibility = VISIBLE
-                binding.selectedLabelTextView.text = context().getString(R.string.checked)
+                binding.selectedLabelTextView.text = context.getString(R.string.checked)
 
                 if (orcAdapter != null) {
                     val cont = orcAdapter!!.qtyRequestedTotal()
@@ -835,8 +840,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     binding.selectedTextView.text = orcAdapter!!.countChecked().toString()
                 }
             } else {
-                binding.totalLabelTextView.text = context().getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context().getString(R.string.cont_)
+                binding.totalLabelTextView.text = context.getString(R.string.total)
+                binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
                 binding.selectedLabelTextView.visibility = GONE
 
                 if (orcAdapter != null) {
@@ -858,7 +863,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun setMultiplierButtonText() {
         runOnUiThread {
             binding.multiplierButton.text = String.format(
-                context().getString(R.string.multiplier_x), settingViewModel().scanMultiplier
+                context.getString(R.string.multiplier_x), settingViewModel.scanMultiplier
             )
         }
     }
@@ -896,50 +901,52 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         JotterListener.pauseReaderDevices(this)
 
-        try {
-            val adb = AlertDialog.Builder(this)
-            adb.setTitle(if (orcsToRemove.count() > 1) R.string.remove_items else R.string.remove_item)
-            adb.setMessage(allCodes)
-            adb.setNegativeButton(R.string.cancel, null)
-            adb.setPositiveButton(R.string.accept) { _, _ ->
+        runOnUiThread {
+            try {
+                val adb = AlertDialog.Builder(this)
+                adb.setTitle(if (orcsToRemove.count() > 1) R.string.remove_items else R.string.remove_item)
+                adb.setMessage(allCodes)
+                adb.setNegativeButton(R.string.cancel, null)
+                adb.setPositiveButton(R.string.accept) { _, _ ->
 
-                val logContent: ArrayList<LogContent> = ArrayList(log?.content ?: ArrayList())
+                    val logContent: ArrayList<LogContent> = ArrayList(log?.content ?: ArrayList())
 
-                for (i in orcsToRemove) {
-                    if (i.item != null && i.qty != null) {
-                        val itemObj = i.item!!
-                        val qtyObj = i.qty!!
-                        val lot = i.lot
+                    for (i in orcsToRemove) {
+                        if (i.item != null && i.qty != null) {
+                            val itemObj = i.item!!
+                            val qtyObj = i.qty!!
+                            val lot = i.lot
 
-                        val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
-                        val now = df.format(Calendar.getInstance().time)
+                            val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
+                            val now = df.format(Calendar.getInstance().time)
 
-                        val variationQty = qtyObj.qtyCollected!! * -1
-                        if (variationQty != 0.toDouble()) {
-                            logContent.add(
-                                LogContent(
-                                    itemId = itemObj.itemId,
-                                    itemStr = itemObj.itemDescription,
-                                    itemCode = itemObj.ean,
-                                    lotId = lot?.lotId,
-                                    lotCode = lot?.code ?: "",
-                                    scannedCode = itemObj.codeRead,
-                                    variationQty = variationQty,
-                                    finalQty = 0.toDouble(),
-                                    date = now
+                            val variationQty = qtyObj.qtyCollected!! * -1
+                            if (variationQty != 0.toDouble()) {
+                                logContent.add(
+                                    LogContent(
+                                        itemId = itemObj.itemId,
+                                        itemStr = itemObj.itemDescription,
+                                        itemCode = itemObj.ean,
+                                        lotId = lot?.lotId,
+                                        lotCode = lot?.code ?: "",
+                                        scannedCode = itemObj.codeRead,
+                                        variationQty = variationQty,
+                                        finalQty = 0.toDouble(),
+                                        date = now
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
+
+                    log?.content = logContent
+
+                    orcAdapter!!.remove(orcsToRemove)
                 }
-
-                log?.content = logContent
-
-                orcAdapter!!.remove(orcsToRemove)
+                adb.show()
+            } catch (ex: java.lang.Exception) {
+                ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
             }
-            adb.show()
-        } catch (ex: java.lang.Exception) {
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
         }
 
         JotterListener.resumeReaderDevices(this)
@@ -951,10 +958,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         rejectNewInstances = true
         JotterListener.lockScanner(this, true)
 
-        val intent = Intent(context(), ItemSelectActivity::class.java)
+        val intent = Intent(context, ItemSelectActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-        intent.putExtra("title", context().getString(R.string.select_item))
+        intent.putExtra("title", context.getString(R.string.select_item))
         intent.putExtra("multiSelect", false)
         resultForItemSelect.launch(intent)
     }
@@ -983,7 +990,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                             })
                         } catch (ex: Exception) {
                             val res =
-                                context().getString(R.string.an_error_occurred_while_trying_to_add_the_item)
+                                context.getString(R.string.an_error_occurred_while_trying_to_add_the_item)
                             makeText(binding.root, res, ERROR)
                             android.util.Log.e(this::class.java.simpleName, res)
                         }
@@ -1057,7 +1064,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         setImagesJson()
 
         try {
-            orJson = moshi().adapter(OrderRequest::class.java).toJson(tOrderRequest)
+            orJson = moshi.adapter(OrderRequest::class.java).toJson(tOrderRequest)
             android.util.Log.i(this::class.java.simpleName, orJson)
             orFileName = tOrderRequest.filename.substringAfterLast('/')
 
@@ -1120,10 +1127,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         rejectNewInstances = true
         JotterListener.lockScanner(this, true)
 
-        val intent = Intent(context(), LogContentActivity::class.java)
+        val intent = Intent(context, LogContentActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-        intent.putExtra("title", context().getString(R.string.count_log))
+        intent.putExtra("title", context.getString(R.string.count_log))
         intent.putExtra("log", log)
         intent.putExtra("logContent", ArrayList(log?.content ?: ArrayList()))
         resultForLog.launch(intent)
@@ -1135,48 +1142,48 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
     private fun manualAddItem() {
-        val input = EditText(this)
+        runOnUiThread {
+            val input = EditText(this)
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(R.string.manual_code)
+            builder.setMessage(R.string.enter_the_code)
+            builder.setView(input)
+            builder.setNegativeButton(R.string.cancel) { dialog, _ ->
+                dialog.dismiss()
+            }
+            builder.setPositiveButton(R.string.ok) { _, _ ->
+                scannerCompleted(input.text.toString())
+            }
 
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(R.string.manual_code)
-        builder.setMessage(R.string.enter_the_code)
-        builder.setView(input)
-        builder.setNegativeButton(R.string.cancel) { dialog, _ ->
-            dialog.dismiss()
-        }
-        builder.setPositiveButton(R.string.ok) { _, _ ->
-            scannerCompleted(input.text.toString())
-        }
+            val alert = builder.create()
+            alert.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            alert.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            alert.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
 
-        val alert = builder.create()
-        alert.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
-        alert.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
-        alert.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-
-        input.isFocusable = true
-        input.isFocusableInTouchMode = true
-        input.maxLines = 1
-        input.inputType = InputType.TYPE_CLASS_TEXT
-        input.filters = arrayOf<InputFilter>(InputFilter.AllCaps())
-        input.setOnKeyListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        alert.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+            input.isFocusable = true
+            input.isFocusableInTouchMode = true
+            input.maxLines = 1
+            input.inputType = InputType.TYPE_CLASS_TEXT
+            input.filters = arrayOf<InputFilter>(InputFilter.AllCaps())
+            input.setOnKeyListener { _, keyCode, event ->
+                if (event.action == KeyEvent.ACTION_DOWN) {
+                    when (keyCode) {
+                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                            alert.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+                        }
                     }
                 }
+                false
             }
-            false
+
+            alert.show()
+            input.requestFocus()
+            allowClicks = true
         }
-
-        alert.show()
-        input.requestFocus()
-
-        allowClicks = true
     }
 
     private fun setQtyManually(orc: OrderRequestContent) {
-        val multi = if (itemCode == null) settingViewModel().scanMultiplier
+        val multi = if (itemCode == null) settingViewModel.scanMultiplier
         else itemCode?.qty ?: 0
 
         qtySelectorDialog(
@@ -1194,7 +1201,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             if (Statics.demoMode) {
                 if ((orcAdapter?.count ?: 0) >= 5) {
                     val res =
-                        context().getString(R.string.maximum_amount_of_demonstration_mode_reached)
+                        context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     makeText(binding.root, res, ERROR)
                     android.util.Log.e(this::class.java.simpleName, res)
                     return false
@@ -1238,11 +1245,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         rejectNewInstances = true
         JotterListener.lockScanner(this, true)
 
-        val intent = Intent(context(), EnterCodeActivity::class.java)
+        val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-        intent.putExtra("title", context().getString(R.string.enter_description))
-        intent.putExtra("hint", context().getString(R.string.item_description_hint))
+        intent.putExtra("title", context.getString(R.string.enter_description))
+        intent.putExtra("hint", context.getString(R.string.item_description_hint))
         intent.putExtra("orc", orc)
         resultForEnterDescription.launch(intent)
     }
@@ -1266,7 +1273,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                             setDescription(orc, description)
                         }
                     } else {
-                        if ((item.itemDescription.isEmpty() || item.itemDescription == context().getString(
+                        if ((item.itemDescription.isEmpty() || item.itemDescription == context.getString(
                                 R.string.unknown_item
                             )) && binding.requiredDescCheckBox.isChecked
                         ) {
@@ -1287,11 +1294,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         rejectNewInstances = true
         JotterListener.lockScanner(this, true)
 
-        val intent = Intent(context(), EnterCodeActivity::class.java)
+        val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-        intent.putExtra("title", context().getString(R.string.enter_description))
-        intent.putExtra("hint", context().getString(R.string.item_description_hint))
+        intent.putExtra("title", context.getString(R.string.enter_description))
+        intent.putExtra("hint", context.getString(R.string.item_description_hint))
         intent.putExtra("orc", orc)
         resultForAddDescription.launch(intent)
     }
@@ -1316,7 +1323,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                             setQty(orc)
                         }
                     } else {
-                        if ((item.itemDescription.isEmpty() || item.itemDescription == context().getString(
+                        if ((item.itemDescription.isEmpty() || item.itemDescription == context.getString(
                                 R.string.unknown_item
                             )) && binding.requiredDescCheckBox.isChecked
                         ) {
@@ -1337,11 +1344,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         rejectNewInstances = true
         JotterListener.lockScanner(this, true)
 
-        val intent = Intent(context(), EnterCodeActivity::class.java)
+        val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-        intent.putExtra("title", context().getString(R.string.enter_lot_code))
-        intent.putExtra("hint", context().getString(R.string.lot_code))
+        intent.putExtra("title", context.getString(R.string.enter_lot_code))
+        intent.putExtra("hint", context.getString(R.string.lot_code))
         intent.putExtra("orc", orc)
         resultForLotCodeSelect.launch(intent)
     }
@@ -1476,10 +1483,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         rejectNewInstances = true
         JotterListener.lockScanner(this, true)
 
-        val multiplier = settingViewModel().scanMultiplier
-        val intent = Intent(context(), MultiplierSelectActivity::class.java)
+        val multiplier = settingViewModel.scanMultiplier
+        val intent = Intent(context, MultiplierSelectActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra("title", context().getString(R.string.select_multiplier))
+        intent.putExtra("title", context.getString(R.string.select_multiplier))
         intent.putExtra("multiplier", multiplier)
         resultForMultiplierSelect.launch(intent)
     }
@@ -1569,7 +1576,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             manualAdd -> 1L
             else -> {
                 when (itemCode) {
-                    null -> settingViewModel().scanMultiplier.toLong()
+                    null -> settingViewModel.scanMultiplier.toLong()
                     else -> itemCode?.qty?.toLong() ?: 0
                 }
             }
@@ -1671,7 +1678,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var lastRegexResult: ItemRegex.Companion.RegexResult? = null
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
 
@@ -1714,7 +1721,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
 
             if (divided) {
-                val splitCode = scanCode.split(settingViewModel().divisionChar.toRegex())
+                val splitCode = scanCode.split(settingViewModel.divisionChar.toRegex())
                     .dropLastWhile { it2 -> it2.isEmpty() }
                 if (splitCode.any()) {
                     code = splitCode.toTypedArray()[0]

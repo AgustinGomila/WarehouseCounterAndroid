@@ -79,7 +79,7 @@ class Sync {
             mCompletedOrderCallback = completedListener
             taskCodeParent = TASK_CODE
 
-            val t = settingViewModel().wcSyncInterval
+            val t = settingViewModel.wcSyncInterval
             timerTask = object : TimerTask() {
                 override fun run() {
                     handler.post {

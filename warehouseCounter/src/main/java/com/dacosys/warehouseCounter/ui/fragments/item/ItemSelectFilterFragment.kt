@@ -77,7 +77,7 @@ class ItemSelectFilterFragment : Fragment() {
                 Parcels.unwrap<ItemCategory>(requireArguments().getParcelable("itemCategory"))
             itemCode = requireArguments().getString("itemCode") ?: ""
 
-            onlyActive = settingViewModel().selectItemOnlyActive
+            onlyActive = settingViewModel.selectItemOnlyActive
         }
     }
 
@@ -111,7 +111,7 @@ class ItemSelectFilterFragment : Fragment() {
 
         binding.onlyActiveCheckBox.setOnCheckedChangeListener(null)
         binding.onlyActiveCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            settingViewModel().selectItemOnlyActive = isChecked
+            settingViewModel.selectItemOnlyActive = isChecked
 
             onlyActive = binding.onlyActiveCheckBox.isChecked
 
@@ -261,8 +261,8 @@ class ItemSelectFilterFragment : Fragment() {
 
     // region Visibility functions
     fun getVisibleFilters(): ArrayList<Preference> {
-        val sv = settingViewModel()
-        val sp = settingRepository()
+        val sv = settingViewModel
+        val sp = settingRepository
 
         val r: ArrayList<Preference> = ArrayList()
         if (sv.selectItemSearchByItemEan) {
@@ -277,13 +277,13 @@ class ItemSelectFilterFragment : Fragment() {
 
     private fun setVisibleFilters() {
         //Retrieve the values
-        if (settingViewModel().selectItemSearchByItemEan) {
+        if (settingViewModel.selectItemSearchByItemEan) {
             setEanDescriptionVisibility(View.VISIBLE)
         } else {
             setEanDescriptionVisibility(View.GONE)
         }
 
-        if (settingViewModel().selectItemSearchByItemCategory) {
+        if (settingViewModel.selectItemSearchByItemCategory) {
             setCategoryVisibility(View.VISIBLE)
         } else {
             setCategoryVisibility(View.GONE)
@@ -292,12 +292,12 @@ class ItemSelectFilterFragment : Fragment() {
 
     fun setEanDescriptionVisibility(visibility: Int) {
         binding.codePanel.visibility = visibility
-        settingViewModel().selectItemSearchByItemEan = visibility == View.VISIBLE
+        settingViewModel.selectItemSearchByItemEan = visibility == View.VISIBLE
     }
 
     fun setCategoryVisibility(visibility: Int) {
         binding.categoryPanel.visibility = visibility
-        settingViewModel().selectItemSearchByItemCategory = visibility == View.VISIBLE
+        settingViewModel.selectItemSearchByItemCategory = visibility == View.VISIBLE
     }
     // endregion Visibility functions
 

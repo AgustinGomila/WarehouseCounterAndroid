@@ -5,7 +5,6 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.moshi.database.DatabaseData
 import com.dacosys.warehouseCounter.moshi.error.ErrorObject
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
@@ -16,8 +15,6 @@ import kotlinx.coroutines.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.net.MalformedURLException
-import java.net.URL
 
 class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
@@ -27,6 +24,13 @@ class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
     }
 
     fun execute() {
+        if (!DynamicRetrofit.prepare()) {
+            sendEvent(
+                status = ProgressStatus.crashed, msg = context.getString(R.string.invalid_url)
+            )
+            return
+        }
+
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }
@@ -34,16 +38,13 @@ class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
         }
     }
 
-    private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
-        // Configuración de Retrofit
-        val apiUrl = setupRetrofit()
-
+    private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         var version = ""
         if (DATABASE_VERSION > 1) {
             version = "-v$DATABASE_VERSION"
         }
 
-        val dbLocInst = apiService().getDbLocation(apiUrl = apiUrl, version = version)
+        val dbLocInst = apiService.getDbLocation(version = version)
 
         dbLocInst.enqueue(object : Callback<Any?> {
             override fun onResponse(call: Call<Any?>, response: Response<Any?>) {
@@ -60,7 +61,7 @@ class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
                  * Comprobamos si es una respuesta de Error predefinida
                  */
                 if (ErrorObject.isError(resp)) {
-                    val errorObject = moshi().adapter(ErrorObject::class.java).fromJsonValue(resp)
+                    val errorObject = moshi.adapter(ErrorObject::class.java).fromJsonValue(resp)
                     Log.e(this.javaClass.simpleName, errorObject?.error.toString())
                     sendEvent(
                         status = ProgressStatus.crashed, msg = errorObject?.error.toString()
@@ -73,7 +74,7 @@ class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
                  */
                 var p = DatabaseData()
                 for (dataCont in (resp as Map<*, *>).entries) {
-                    p = moshi().adapter(DatabaseData::class.java).fromJsonValue(dataCont.value)
+                    p = moshi.adapter(DatabaseData::class.java).fromJsonValue(dataCont.value)
                         ?: continue
                     break
                 }
@@ -82,9 +83,9 @@ class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
                     status = ProgressStatus.finished,
                     result = p,
                     msg = if (p.dbDate.isNotEmpty() && p.dbFile.isNotEmpty()) {
-                        context().getString(R.string.success_response)
+                        context.getString(R.string.success_response)
                     } else {
-                        context().getString(R.string.database_name_is_invalid)
+                        context.getString(R.string.database_name_is_invalid)
                     }
                 )
                 return
@@ -97,39 +98,6 @@ class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
                 )
             }
         })
-        return@withContext true
-    }
-
-    private fun setupRetrofit(): String {
-        val sv = settingViewModel()
-
-        // URL específica del Cliente
-        val protocol: String
-        val host: String
-        val apiUrl: String
-
-        try {
-            val url = URL(sv.urlPanel)
-            protocol = url.protocol
-            host = url.host
-            apiUrl = if (url.path.isNotEmpty()) "${url.path}/" else ""
-
-            Log.d(
-                this::class.java.simpleName,
-                "Base URL: ${protocol}://${host}/ (Api URL: ${apiUrl.ifEmpty { "Vacío" }})"
-            )
-        } catch (e: MalformedURLException) {
-            sendEvent(
-                status = ProgressStatus.crashed, msg = context().getString(R.string.url_malformed)
-            )
-            Log.e(this::class.java.simpleName, e.toString())
-            return ""
-        }
-
-        // Configuración y refresco de la conexión
-        DynamicRetrofit.start(protocol = protocol, host = host)
-
-        return apiUrl
     }
 
     private fun sendEvent(

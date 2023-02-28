@@ -11,7 +11,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
 import java.util.*
@@ -40,7 +40,7 @@ class ItemCategoryAdapter : ArrayAdapter<ItemCategory>, Filterable {
         resource: Int,
         itemCategorys: ArrayList<ItemCategory>,
         suggestedList: ArrayList<ItemCategory>,
-    ) : super(context(), resource, suggestedList) {
+    ) : super(WarehouseCounterApp.context, resource, suggestedList) {
         this.activity = activity
         this.resource = resource
         this.itemCategoryArray = itemCategorys
@@ -287,13 +287,12 @@ class ItemCategoryAdapter : ArrayAdapter<ItemCategory>, Filterable {
                 }
 
                 // Background colors
-                val lightgray =
-                    ResourcesCompat.getColor(context().resources, R.color.lightgray, null)
-                val white = ResourcesCompat.getColor(context().resources, R.color.text_light, null)
+                val lightgray = ResourcesCompat.getColor(context.resources, R.color.lightgray, null)
+                val white = ResourcesCompat.getColor(context.resources, R.color.text_light, null)
 
                 // Font colors
-                val black = ResourcesCompat.getColor(context().resources, R.color.text_dark, null)
-                val dimgray = ResourcesCompat.getColor(context().resources, R.color.dimgray, null)
+                val black = ResourcesCompat.getColor(context.resources, R.color.text_dark, null)
+                val dimgray = ResourcesCompat.getColor(context.resources, R.color.dimgray, null)
 
                 val colorText = when {
                     itemCategory.active != 1 -> dimgray

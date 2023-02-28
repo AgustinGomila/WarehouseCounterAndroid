@@ -36,7 +36,7 @@ open class Scanner {
         )
 
         try {
-            val collectorType = CollectorType.getById(settingViewModel().collectorType)
+            val collectorType = CollectorType.getById(settingViewModel.collectorType)
             scannerDevice = when (collectorType) {
                 CollectorType.honeywell -> Honeywell(activity)
                 CollectorType.honeywellNative -> HoneywellNative(WeakReference(activity))

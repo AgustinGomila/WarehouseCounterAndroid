@@ -31,7 +31,7 @@ class MakeText : AppCompatActivity() {
 
         private fun makeText(v: WeakReference<View>, text: String, snackBarType: SnackBarType) {
             if (snackBarType == SnackBarType.ERROR) {
-                Log.e(context().toString(), text)
+                Log.e(context.toString(), text)
             }
 
             val snackBar = Snackbar.make(v.get() ?: return, text, snackBarType.duration)
@@ -46,7 +46,7 @@ class MakeText : AppCompatActivity() {
             snackBar.view.layoutParams = params
 
             snackBarView.background = ResourcesCompat.getDrawable(
-                context().resources, snackBarType.backColor, null
+                context.resources, snackBarType.backColor, null
             )
             snackBarView.elevation = 6f
 

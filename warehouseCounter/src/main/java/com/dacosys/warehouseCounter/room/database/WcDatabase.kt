@@ -55,7 +55,7 @@ abstract class WcDatabase : RoomDatabase() {
             return INSTANCE ?: synchronized(this) {
                 val instance =
                     Room.databaseBuilder(
-                        context(),
+                        context,
                         WcDatabase::class.java,
                         DATABASE_NAME
                     )

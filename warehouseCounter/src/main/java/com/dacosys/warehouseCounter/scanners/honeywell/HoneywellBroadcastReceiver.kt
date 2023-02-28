@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 
 @Suppress("ConvertSecondaryConstructorToPrimary", "unused")
 class HoneywellBroadcastReceiver : BroadcastReceiver {
@@ -47,7 +46,7 @@ class HoneywellBroadcastReceiver : BroadcastReceiver {
         } catch (e: Exception) {
             Log.d(
                 this::class.java.simpleName,
-                context().getString(R.string.barcode_failure)
+                context.getString(R.string.barcode_failure)
             )
         }
     }

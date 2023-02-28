@@ -46,7 +46,7 @@ class CheckCode(
             if (Statics.demoMode) {
                 if (adapter.count >= 5) {
                     val res =
-                        context().getString(R.string.maximum_amount_of_demonstration_mode_reached)
+                        context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
                     callback.invoke(CheckCodeEnded(null, itemCode))
                     Log.e(this::class.java.simpleName, res)
@@ -58,7 +58,7 @@ class CheckCode(
 
             // Nada que hacer, volver
             if (code.isEmpty()) {
-                val res = context().getString(R.string.invalid_code)
+                val res = context.getString(R.string.invalid_code)
                 onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
                 callback.invoke(CheckCodeEnded(null, itemCode))
                 Log.e(this::class.java.simpleName, res)
@@ -111,10 +111,10 @@ class CheckCode(
                         }
                     }
 
-                    if (settingViewModel().allowUnknownCodes) {
+                    if (settingViewModel.allowUnknownCodes) {
                         // Item desconocido, agregar al base de datos
                         val item = com.dacosys.warehouseCounter.room.entity.item.Item(
-                            description = context().getString(R.string.unknown_item), ean = code
+                            description = context.getString(R.string.unknown_item), ean = code
                         )
 
                         ItemCoroutines().add(item) { id ->
@@ -135,7 +135,7 @@ class CheckCode(
                                 callback.invoke(CheckCodeEnded(null, null))
                                 onEventData.invoke(
                                     SnackBarEventData(
-                                        context().getString(R.string.error_attempting_to_add_item_to_database),
+                                        context.getString(R.string.error_attempting_to_add_item_to_database),
                                         SnackBarType.ERROR
                                     )
                                 )
@@ -146,7 +146,7 @@ class CheckCode(
                         callback.invoke(CheckCodeEnded(null, null))
                         onEventData.invoke(
                             SnackBarEventData(
-                                "${context().getString(R.string.unknown_item)}: $code",
+                                "${context.getString(R.string.unknown_item)}: $code",
                                 SnackBarType.INFO
                             )
                         )

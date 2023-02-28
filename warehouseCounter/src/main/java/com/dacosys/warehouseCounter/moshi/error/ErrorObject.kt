@@ -37,7 +37,7 @@ class ErrorObject {
          */
         fun isError(jsonObj: Any): Boolean {
             try {
-                val jsonError = moshi().adapter(ErrorObject::class.java).fromJsonValue(jsonObj)
+                val jsonError = moshi.adapter(ErrorObject::class.java).fromJsonValue(jsonObj)
 
                 if (jsonError?.error != null && jsonError.error.code != "") {
                     val errorData = jsonError.error

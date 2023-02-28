@@ -97,7 +97,7 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
         fillControls()
 
         // Conectar el lectura NFC
-        if (WarehouseCounterApp.settingViewModel().useNfc) {
+        if (WarehouseCounterApp.settingViewModel.useNfc) {
             Nfc.setupNFCReader(this)
         }
 

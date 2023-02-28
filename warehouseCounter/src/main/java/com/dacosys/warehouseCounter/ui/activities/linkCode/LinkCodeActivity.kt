@@ -129,11 +129,11 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
-            val res = context().getString(R.string.invalid_code)
+            val res = context.getString(R.string.invalid_code)
             makeText(binding.root, res, ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
@@ -253,7 +253,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     private fun loadBundleValues(b: Bundle) {
         tempTitle = b.getString("title") ?: ""
-        if (tempTitle.isEmpty()) tempTitle = context().getString(R.string.link_code)
+        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.link_code)
 
         multiSelect = b.getBoolean("multiSelect", multiSelect)
         panelIsExpanded = b.getBoolean("panelIsExpanded")
@@ -272,7 +272,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     private fun loadExtrasBundleValues(b: Bundle) {
         tempTitle = b.getString("title") ?: ""
-        if (tempTitle.isEmpty()) tempTitle = context().getString(R.string.link_code)
+        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.link_code)
 
         itemSelectFilterFragment?.itemCode = b.getString("itemCode") ?: ""
         itemSelectFilterFragment?.itemCategory =
@@ -430,7 +430,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             runOnUiThread {
                 binding.sendButton.text = String.format(
                     "%s%s(%s)",
-                    context().getString(R.string.send),
+                    context.getString(R.string.send),
                     System.getProperty("line.separator"),
                     it.count()
                 )
@@ -445,7 +445,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             } else {
                 makeText(
                     binding.root,
-                    context().getString(R.string.there_are_no_item_codes_to_send),
+                    context.getString(R.string.there_are_no_item_codes_to_send),
                     INFO
                 )
             }
@@ -457,8 +457,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             val alert = AlertDialog.Builder(this)
             alert.setTitle(getString(R.string.send_item_codes))
             alert.setMessage(
-                if (it.count() > 1) context().getString(R.string.do_you_want_to_send_the_item_codes)
-                else context().getString(R.string.do_you_want_to_send_the_item_code)
+                if (it.count() > 1) context.getString(R.string.do_you_want_to_send_the_item_codes)
+                else context.getString(R.string.do_you_want_to_send_the_item_code)
             )
             alert.setNegativeButton(R.string.cancel, null)
             alert.setPositiveButton(R.string.ok) { _, _ ->
@@ -482,7 +482,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 if (tempCode.isEmpty()) {
                     makeText(
                         binding.root,
-                        context().getString(R.string.you_must_select_a_code_to_link),
+                        context.getString(R.string.you_must_select_a_code_to_link),
                         ERROR
                     )
                     return
@@ -492,7 +492,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 if (tempStrQty.isEmpty()) {
                     makeText(
                         binding.root,
-                        context().getString(R.string.you_must_select_an_amount_to_link),
+                        context.getString(R.string.you_must_select_an_amount_to_link),
                         ERROR
                     )
                     return
@@ -502,14 +502,14 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 try {
                     tempQty = java.lang.Double.parseDouble(tempStrQty)
                 } catch (e: NumberFormatException) {
-                    makeText(binding.root, context().getString(R.string.invalid_amount), ERROR)
+                    makeText(binding.root, context.getString(R.string.invalid_amount), ERROR)
                     return
                 }
 
                 if (tempQty <= 0) {
                     makeText(
                         binding.root,
-                        context().getString(R.string.you_must_select_a_positive_amount_greater_than_zero),
+                        context.getString(R.string.you_must_select_a_positive_amount_greater_than_zero),
                         ERROR
                     )
                     return
@@ -520,7 +520,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     if (it.size > 0) {
                         makeText(
                             binding.root,
-                            context().getString(R.string.the_code_is_already_linked_to_an_item),
+                            context.getString(R.string.the_code_is_already_linked_to_an_item),
                             ERROR
                         )
                         return@getByCode
@@ -543,7 +543,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
                         makeText(
                             binding.root, String.format(
-                                context().getString(R.string.item_linked_to_code),
+                                context.getString(R.string.item_linked_to_code),
                                 item.itemId,
                                 tempCode
                             ), SnackBarType.SUCCESS
@@ -566,7 +566,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 if (tempCode.isEmpty()) {
                     makeText(
                         binding.root,
-                        context().getString(R.string.you_must_select_a_code_to_link),
+                        context.getString(R.string.you_must_select_a_code_to_link),
                         ERROR
                     )
                     return
@@ -618,8 +618,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
             when {
                 panelIsExpanded -> binding.expandButton?.text =
-                    context().getString(R.string.collapse_panel)
-                else -> binding.expandButton?.text = context().getString(R.string.search_options)
+                    context.getString(R.string.collapse_panel)
+                else -> binding.expandButton?.text = context.getString(R.string.search_options)
             }
         }
     }
@@ -663,8 +663,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
             when {
                 panelIsExpanded -> binding.expandButton?.text =
-                    context().getString(R.string.collapse_panel)
-                else -> binding.expandButton?.text = context().getString(R.string.search_options)
+                    context.getString(R.string.collapse_panel)
+                else -> binding.expandButton?.text = context.getString(R.string.search_options)
             }
         }
     }
@@ -739,7 +739,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel().useBtRfid) {
+        if (!settingViewModel.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -753,7 +753,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             menu.setOptionalIconsVisible(true)
         }
 
-        val drawable = ContextCompat.getDrawable(context(), R.drawable.ic_visibility)
+        val drawable = ContextCompat.getDrawable(context, R.drawable.ic_visibility)
         val toolbar = findViewById<Toolbar>(R.id.action_bar)
         toolbar.overflowIcon = drawable
 
@@ -835,7 +835,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             }
         }
 
-        val sp = settingRepository()
+        val sp = settingRepository
         item.isChecked = !item.isChecked
         when (id) {
             sp.selectItemSearchByItemEan.key.hashCode() -> {
@@ -850,19 +850,21 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun enterCode() {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(R.string.enter_code)
+        runOnUiThread {
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(R.string.enter_code)
 
-        val input = EditText(this)
-        input.inputType = InputType.TYPE_CLASS_TEXT
-        builder.setView(input)
+            val input = EditText(this)
+            input.inputType = InputType.TYPE_CLASS_TEXT
+            builder.setView(input)
 
-        builder.setPositiveButton(R.string.ok) { _, _ ->
-            scannerCompleted(input.text.toString())
+            builder.setPositiveButton(R.string.ok) { _, _ ->
+                scannerCompleted(input.text.toString())
+            }
+            builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
+
+            builder.show()
         }
-        builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
-
-        builder.show()
     }
 
     private fun getItems() {
@@ -1039,9 +1041,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         Log.d(this::class.java.simpleName, "fillSummaryRow")
         runOnUiThread {
             if (multiSelect) {
-                binding.totalLabelTextView.text = context().getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context().getString(R.string.cant)
-                binding.selectedLabelTextView.text = context().getString(R.string.checked)
+                binding.totalLabelTextView.text = context.getString(R.string.total)
+                binding.qtyReqLabelTextView.text = context.getString(R.string.cant)
+                binding.selectedLabelTextView.text = context.getString(R.string.checked)
 
                 if (arrayAdapter != null) {
                     binding.totalTextView.text = arrayAdapter?.count.toString()
@@ -1049,9 +1051,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     binding.selectedTextView.text = arrayAdapter?.countChecked().toString()
                 }
             } else {
-                binding.totalLabelTextView.text = context().getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context().getString(R.string.cont_)
-                binding.selectedLabelTextView.text = context().getString(R.string.items)
+                binding.totalLabelTextView.text = context.getString(R.string.total)
+                binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
+                binding.selectedLabelTextView.text = context.getString(R.string.items)
 
                 if (arrayAdapter != null) {
                     val cont = 0

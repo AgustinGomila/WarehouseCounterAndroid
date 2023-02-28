@@ -9,6 +9,7 @@ import com.dacosys.warehouseCounter.moshi.token.TokenObject
 import com.dacosys.warehouseCounter.retrofit.APIService
 import com.dacosys.warehouseCounter.retrofit.DacoService
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
+import com.dacosys.warehouseCounter.retrofit.HostInterceptor
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.settings.SettingsViewModel
@@ -46,16 +47,14 @@ class WarehouseCounterApp : Application(), KoinComponent {
         // Eventos del ciclo de vida de las actividades
         // que nos interesa interceptar para conectar y
         // desconectar los medios de lectura de códigos.
-        Jotter.Builder(this@WarehouseCounterApp)
-            .setLogEnable(true)
-            .setActivityEventFilter(
-                listOf(
-                    ActivityEvent.CREATE,
-                    ActivityEvent.RESUME,
-                    ActivityEvent.PAUSE,
-                    ActivityEvent.DESTROY
-                )
+        Jotter.Builder(this@WarehouseCounterApp).setLogEnable(true).setActivityEventFilter(
+            listOf(
+                ActivityEvent.CREATE,
+                ActivityEvent.RESUME,
+                ActivityEvent.PAUSE,
+                ActivityEvent.DESTROY
             )
+        )
             //.setFragmentEventFilter(listOf(FragmentEvent.VIEW_CREATE, FragmentEvent.PAUSE))
             .setJotterListener(JotterListener).build().startListening()
 
@@ -64,23 +63,22 @@ class WarehouseCounterApp : Application(), KoinComponent {
     }
 
     private fun koinAppModule() = module {
-        single { sharedPreferences() }
-        single { SettingsRepository(get()) }
+        single { sharedPreferences }
+        single { SettingsRepository() }
 
-        viewModel { SettingsViewModel(get()) }
+        viewModel { SettingsViewModel() }
 
         single { Moshi.Builder().add(KotlinJsonAdapterFactory()).build() }
         single { MoshiConverterFactory.create(get()) }
 
         factory {
-            val sv = settingViewModel()
+            val sv = settingViewModel
 
             // Proxy
             val proxy = if (sv.useProxy) {
                 val authenticator = object : Authenticator() {
-                    override fun getPasswordAuthentication(): PasswordAuthentication {
-                        return PasswordAuthentication(sv.proxyUser, sv.proxyPass.toCharArray())
-                    }
+                    override fun getPasswordAuthentication(): PasswordAuthentication =
+                        PasswordAuthentication(sv.proxyUser, sv.proxyPass.toCharArray())
                 }
                 Authenticator.setDefault(authenticator)
                 Proxy(Proxy.Type.HTTP, InetSocketAddress(sv.proxy, sv.proxyPort))
@@ -90,64 +88,56 @@ class WarehouseCounterApp : Application(), KoinComponent {
 
             // Connection Timeouts
             OkHttpClient.Builder().connectTimeout(sv.connectionTimeout.toLong(), TimeUnit.SECONDS)
-                .proxy(proxy).build()
+                .addInterceptor(HostInterceptor())
+                .proxy(proxy)
+                .build()
         }
         single { DynamicRetrofit() }
-        single { retrofit().api.create(APIService::class.java) }
-        single { retrofit().api.create(DacoService::class.java) }
+        single { retrofit.api.create(APIService::class.java) }
+        single { retrofit.api.create(DacoService::class.java) }
     }
 
     companion object {
-        fun context(): Context {
-            return get().get()
-        }
+        val context: Context
+            get() = get().get()
 
-        fun moshi(): Moshi {
-            return get().get()
-        }
+        val moshi: Moshi
+            get() = get().get()
 
-        fun okHttp(): OkHttpClient {
-            return get().get()
-        }
+        val okHttp: OkHttpClient
+            get() = get().get()
 
-        fun moshiConverterFactory(): MoshiConverterFactory {
-            return get().get()
-        }
+        val moshiConverterFactory: MoshiConverterFactory
+            get() = get().get()
 
-        fun settingRepository(): SettingsRepository {
-            return get().get()
-        }
+        val settingRepository: SettingsRepository
+            get() = get().get()
 
-        fun retrofit(): DynamicRetrofit {
-            return get().get()
-        }
+        val retrofit: DynamicRetrofit
+            get() = get().get()
 
-        fun apiService(): APIService {
-            return get().get()
-        }
+        val apiService: APIService
+            get() = get().get()
 
-        fun dacoService(): DacoService {
-            return get().get()
-        }
+        val dacoService: DacoService
+            get() = get().get()
 
-        fun settingViewModel(): SettingsViewModel {
-            return get().get()
-        }
+        val settingViewModel: SettingsViewModel
+            get() = get().get()
 
         private fun applicationName(): String {
-            val applicationInfo = context().applicationInfo
+            val applicationInfo = context.applicationInfo
             val stringId = applicationInfo.labelRes
             return if (stringId == 0) applicationInfo.nonLocalizedLabel.toString()
-            else context().getString(stringId)
+            else context.getString(stringId)
         }
 
-        fun sharedPreferences(): SharedPreferences {
-            return context().getSharedPreferences("${applicationName()}_prefs", MODE_PRIVATE)
-        }
+        val sharedPreferences: SharedPreferences
+            get() = context.getSharedPreferences("${applicationName()}_prefs", MODE_PRIVATE)
 
         fun cleanPrefs(): Boolean {
             return try {
-                sharedPreferences().edit().clear().apply()
+                sharedPreferences.edit().clear().apply()
                 true
             } catch (ex: java.lang.Exception) {
                 ex.printStackTrace()

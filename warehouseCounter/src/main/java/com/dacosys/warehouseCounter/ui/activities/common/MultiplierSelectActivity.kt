@@ -129,7 +129,7 @@ class MultiplierSelectActivity : AppCompatActivity() {
             setResult(RESULT_CANCELED, null)
             finish()
         } else {
-            settingViewModel().scanMultiplier = tempMultiplier!!
+            settingViewModel.scanMultiplier = tempMultiplier!!
 
             data.putExtra("multiplier", Parcels.wrap(tempMultiplier))
             setResult(RESULT_OK, data)

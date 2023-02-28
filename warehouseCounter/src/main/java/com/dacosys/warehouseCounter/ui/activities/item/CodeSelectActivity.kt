@@ -337,7 +337,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel().showScannedCode) makeText(
+        if (settingViewModel.showScannedCode) makeText(
             binding.root,
             scanCode,
             SnackBarType.INFO

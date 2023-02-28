@@ -167,7 +167,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
 
     private fun showDetail() {
         if (arrayAdapter != null && arrayAdapter!!.currentItem() != null) {
-            val intent = Intent(context(), OrderRequestDetailActivity::class.java)
+            val intent = Intent(context, OrderRequestDetailActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
             intent.putExtra(
@@ -357,7 +357,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         //endregion Icon colors
 
         for (i in OrderRequestType.getAll()) {
-            val icon = ResourcesCompat.getDrawable(context().resources, R.drawable.ic_lens, null)
+            val icon = ResourcesCompat.getDrawable(context.resources, R.drawable.ic_lens, null)
             icon?.mutate()?.colorFilter =
                 BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
                     colors[i.id.toInt() - 1],
@@ -450,7 +450,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         for (i in visibleStatus) {
             set.add(i.id.toString())
         }
-        settingViewModel().orderRequestVisibleStatus = set
+        settingViewModel.orderRequestVisibleStatus = set
 
         return true
     }

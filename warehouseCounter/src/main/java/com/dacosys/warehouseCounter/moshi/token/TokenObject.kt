@@ -42,7 +42,7 @@ class TokenObject() {
          */
         fun isToken(jsonObj: Any): Boolean {
             try {
-                val jsonToken = moshi().adapter(TokenObject::class.java).fromJsonValue(jsonObj)
+                val jsonToken = moshi.adapter(TokenObject::class.java).fromJsonValue(jsonObj)
 
                 if (jsonToken?.token != null &&
                     jsonToken.token != "" &&

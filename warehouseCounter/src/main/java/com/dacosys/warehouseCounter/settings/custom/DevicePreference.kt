@@ -11,7 +11,6 @@ import android.util.AttributeSet
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.preference.ListPreference
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 
 /**
  * Created by Agustin on 16/01/2017.
@@ -35,7 +34,7 @@ class DevicePreference
             //action to provide entry data in char sequence array for list
             val allCollector = getAll()
             if (ActivityCompat.checkSelfPermission(
-                    context(),
+                    context,
                     Manifest.permission.BLUETOOTH_CONNECT
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
@@ -70,10 +69,10 @@ class DevicePreference
     private fun getAll(): ArrayList<BluetoothDevice> {
         val itemArray: ArrayList<BluetoothDevice> = ArrayList()
         try {
-            val bluetoothManager = context().getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+            val bluetoothManager = context.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
             val mBluetoothAdapter = bluetoothManager.adapter
             if (ActivityCompat.checkSelfPermission(
-                    context(),
+                    context,
                     Manifest.permission.BLUETOOTH_CONNECT
                 ) == PackageManager.PERMISSION_GRANTED
             ) {

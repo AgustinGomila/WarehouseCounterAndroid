@@ -24,6 +24,7 @@ import androidx.preference.*
 import androidx.preference.Preference.OnPreferenceClickListener
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
@@ -255,11 +256,11 @@ class SettingsActivity : AppCompatActivity(),
             // guidelines.
 
             if (BuildConfig.DEBUG) {
-                bindPreferenceSummaryToValue(this, settingRepository().clientEmail)
-                bindPreferenceSummaryToValue(this, settingRepository().clientPassword)
+                bindPreferenceSummaryToValue(this, settingRepository.clientEmail)
+                bindPreferenceSummaryToValue(this, settingRepository.clientPassword)
             }
 
-            val emailEditText = findPreference<Preference>(settingRepository().clientEmail.key)
+            val emailEditText = findPreference<Preference>(settingRepository.clientEmail.key)
             emailEditText?.setOnPreferenceChangeListener { preference, newValue ->
                 if (alreadyAnsweredYes) {
                     preference.summary = newValue.toString()
@@ -276,8 +277,7 @@ class SettingsActivity : AppCompatActivity(),
                 }
             }
 
-            val passwordEditText =
-                findPreference<Preference>(settingRepository().clientPassword.key)
+            val passwordEditText = findPreference<Preference>(settingRepository.clientPassword.key)
             passwordEditText?.setOnPreferenceChangeListener { preference, newValue ->
                 if (alreadyAnsweredYes) {
                     preference.summary = newValue.toString()
@@ -297,8 +297,8 @@ class SettingsActivity : AppCompatActivity(),
             val selectPackageButton = findPreference<Preference>("select_package")
             selectPackageButton?.onPreferenceClickListener = OnPreferenceClickListener {
                 if (emailEditText != null && passwordEditText != null) {
-                    val email = settingViewModel().clientEmail
-                    val password = settingViewModel().clientPassword
+                    val email = settingViewModel.clientEmail
+                    val password = settingViewModel.clientPassword
 
                     if (alreadyAnsweredYes) {
                         Statics.downloadDbRequired = true
@@ -335,15 +335,17 @@ class SettingsActivity : AppCompatActivity(),
 
             val qrCodeButton = findPreference<Preference>("ac_qr_code")
             qrCodeButton?.onPreferenceClickListener = OnPreferenceClickListener {
-                val urlPanel = settingViewModel().urlPanel
-                val installationCode = settingViewModel().installationCode
-                val clientEmail = settingViewModel().clientEmail
-                val clientPassword = settingViewModel().clientPassword
-                val clientPackage = settingViewModel().clientPackage
+                val urlPanel = settingViewModel.urlPanel
+                val installationCode = settingViewModel.installationCode
+                val clientEmail = settingViewModel.clientEmail
+                val clientPassword = settingViewModel.clientPassword
+                val clientPackage = settingViewModel.clientPackage
 
                 if (urlPanel.isEmpty() || installationCode.isEmpty() || clientPackage.isEmpty() || clientEmail.isEmpty() || clientPassword.isEmpty()) {
                     if (view != null) makeText(
-                        requireView(), context().getString(R.string.invalid_client_data), ERROR
+                        requireView(),
+                        WarehouseCounterApp.context.getString(R.string.invalid_client_data),
+                        ERROR
                     )
                     return@OnPreferenceClickListener false
                 }
@@ -375,7 +377,7 @@ class SettingsActivity : AppCompatActivity(),
             }
 
             // Si ya está loggeado, deshabilitar estas opciones
-            if (Statics.currentUserId > 0) {
+            if (Statics.isLogged) {
                 passwordEditText?.isEnabled = false
                 emailEditText?.isEnabled = false
                 selectPackageButton?.isEnabled = false
@@ -497,8 +499,7 @@ class SettingsActivity : AppCompatActivity(),
                 pref: com.dacosys.warehouseCounter.settings.Preference,
             ) {
                 val preference = frag.findPreference<Preference>(pref.key)
-                val all: Map<String, *> =
-                    PreferenceManager.getDefaultSharedPreferences(context()).all
+                val all: Map<String, *> = PreferenceManager.getDefaultSharedPreferences(context).all
 
                 // Set the listener to watch for value changes.
                 preference?.onPreferenceChangeListener = sBindPreferenceSummaryToValueListener
@@ -612,7 +613,7 @@ class SettingsActivity : AppCompatActivity(),
                     requireView(), getString(R.string.configuration_applied), INFO
                 )
                 Statics.removeDataBases()
-                requireActivity().onBackPressed()
+                requireActivity().finish()
             } else if (status == ProgressStatus.crashed) {
                 if (view != null) makeText(
                     requireView(), getString(R.string.error_setting_user_panel), ERROR
@@ -655,12 +656,12 @@ class SettingsActivity : AppCompatActivity(),
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
-            bindPreferenceSummaryToValue(this, settingRepository().divisionChar)
+            bindPreferenceSummaryToValue(this, settingRepository.divisionChar)
 
-            findPreference<Preference>(settingRepository().registryError.key) as Preference
-            findPreference<Preference>(settingRepository().showConfButton.key) as Preference
+            findPreference<Preference>(settingRepository.registryError.key) as Preference
+            findPreference<Preference>(settingRepository.showConfButton.key) as Preference
             if (BuildConfig.DEBUG) {
-                bindPreferenceSummaryToValue(this, settingRepository().confPassword)
+                bindPreferenceSummaryToValue(this, settingRepository.confPassword)
             }
 
             val removeLogFiles = findPreference<Preference>("remove_log_files")
@@ -778,7 +779,7 @@ class SettingsActivity : AppCompatActivity(),
 
         private fun setupRfidReader() {
             try {
-                if (settingViewModel().useBtRfid) {
+                if (settingViewModel.useBtRfid) {
                     Rfid.setListener(this, RfidType.vh75)
                 }
             } catch (ex: Exception) {
@@ -796,11 +797,11 @@ class SettingsActivity : AppCompatActivity(),
 
         private fun setCollectorPref() {
             ////////////////// COLECTOR //////////////////
-            bindPreferenceSummaryToValue(this, settingRepository().collectorType)
+            bindPreferenceSummaryToValue(this, settingRepository.collectorType)
 
             // PERMITE ACTUALIZAR EN PANTALLA EL ITEM SELECCIONADO EN EL SUMMARY DEL CONTROL
             val collectorTypeListPreference =
-                findPreference<Preference>(settingRepository().collectorType.key) as CollectorTypePreference
+                findPreference<Preference>(settingRepository.collectorType.key) as CollectorTypePreference
             if (collectorTypeListPreference.value == null) {
                 // to ensure we don't selectByItemId a null value
                 // set first value by default
@@ -868,7 +869,7 @@ class SettingsActivity : AppCompatActivity(),
 
             //region //// DEVICE LIST
             val deviceListPreference =
-                findPreference<Preference>(settingRepository().printerBtAddress.key) as DevicePreference
+                findPreference<Preference>(settingRepository.printerBtAddress.key) as DevicePreference
             if (deviceListPreference.value == null) {
                 // to ensure we don't selectByItemId a null value
                 // set first value by default
@@ -890,11 +891,11 @@ class SettingsActivity : AppCompatActivity(),
 
             //region //// PRINTER IP / PORT
             val portNetPrinterPref =
-                findPreference<Preference>(settingRepository().portNetPrinter.key) as EditTextPreference
+                findPreference<Preference>(settingRepository.portNetPrinter.key) as EditTextPreference
             portNetPrinterPref.summary = portNetPrinterPref.text
 
             val ipNetPrinterPref =
-                findPreference<Preference>(settingRepository().ipNetPrinter.key) as EditTextPreference
+                findPreference<Preference>(settingRepository.ipNetPrinter.key) as EditTextPreference
             ipNetPrinterPref.summary = ipNetPrinterPref.text
 
             ipNetPrinterPref.setOnBindEditTextListener {
@@ -925,11 +926,11 @@ class SettingsActivity : AppCompatActivity(),
 
             //region //// USE BLUETOOTH / NET PRINTER
             val swPrefBtPrinter =
-                findPreference<Preference>(settingRepository().useBtPrinter.key) as SwitchPreference
+                findPreference<Preference>(settingRepository.useBtPrinter.key) as SwitchPreference
             useBtPrinter = swPrefBtPrinter.isChecked
 
             val swPrefNetPrinter =
-                findPreference<Preference>(settingRepository().useNetPrinter.key) as SwitchPreference
+                findPreference<Preference>(settingRepository.useNetPrinter.key) as SwitchPreference
             useNetPrinter = swPrefNetPrinter.isChecked
 
             swPrefBtPrinter.setOnPreferenceChangeListener { _, newValue ->
@@ -953,7 +954,7 @@ class SettingsActivity : AppCompatActivity(),
             //region //// POTENCIA Y VELOCIDAD
             val maxPower = 23
             val printerPowerPref =
-                findPreference<Preference>(settingRepository().printerPower.key) as EditTextPreference
+                findPreference<Preference>(settingRepository.printerPower.key) as EditTextPreference
             printerPowerPref.summary = printerPowerPref.text
             printerPowerPref.setOnBindEditTextListener {
                 val filters = arrayOf(InputFilter { source, _, _, dest, _, _ ->
@@ -968,13 +969,13 @@ class SettingsActivity : AppCompatActivity(),
             }
             printerPowerPref.setOnPreferenceChangeListener { preference, newValue ->
                 preference.summary = newValue.toString()
-                settingRepository().printerPower.value = newValue
+                settingRepository.printerPower.value = newValue
                 true
             }
 
             val maxSpeed = 10
             val printerSpeedPref =
-                findPreference<Preference>(settingRepository().printerSpeed.key) as EditTextPreference
+                findPreference<Preference>(settingRepository.printerSpeed.key) as EditTextPreference
             printerSpeedPref.summary = printerSpeedPref.text
             printerSpeedPref.setOnBindEditTextListener {
                 val filters = arrayOf(InputFilter { source, _, _, dest, _, _ ->
@@ -989,7 +990,7 @@ class SettingsActivity : AppCompatActivity(),
             }
             printerSpeedPref.setOnPreferenceChangeListener { preference, newValue ->
                 preference.summary = newValue.toString()
-                settingRepository().printerSpeed.value = newValue
+                settingRepository.printerSpeed.value = newValue
                 true
             }
             //endregion //// POTENCIA Y VELOCIDAD
@@ -1000,13 +1001,13 @@ class SettingsActivity : AppCompatActivity(),
             val swPrefCharCR =
                 findPreference<Preference>("conf_printer_new_line_char_cr") as SwitchPreference
 
-            val lineSeparator = settingViewModel().lineSeparator
+            val lineSeparator = settingViewModel.lineSeparator
             if (lineSeparator == Char(10).toString()) swPrefCharLF.isChecked
             else if (lineSeparator == Char(13).toString()) swPrefCharCR.isChecked
 
             swPrefCharLF.setOnPreferenceChangeListener { _, newValue ->
                 if (newValue == true) {
-                    settingViewModel().lineSeparator = Char(10).toString()
+                    settingViewModel.lineSeparator = Char(10).toString()
                     swPrefCharCR.isChecked = false
                 }
                 true
@@ -1014,7 +1015,7 @@ class SettingsActivity : AppCompatActivity(),
 
             swPrefCharCR.setOnPreferenceChangeListener { _, newValue ->
                 if (newValue == true) {
-                    settingViewModel().lineSeparator = Char(13).toString()
+                    settingViewModel.lineSeparator = Char(13).toString()
                     swPrefCharLF.isChecked = false
                 }
                 true
@@ -1046,7 +1047,9 @@ class SettingsActivity : AppCompatActivity(),
                 // permission is granted or not
                 if (!isGranted) {
                     makeText(
-                        v, context().getString(R.string.app_dont_have_necessary_permissions), ERROR
+                        v,
+                        WarehouseCounterApp.context.getString(R.string.app_dont_have_necessary_permissions),
+                        ERROR
                     )
                 } else {
                     setupRfidReader()
@@ -1063,7 +1066,7 @@ class SettingsActivity : AppCompatActivity(),
 
             //region //// USE RFID
             val swPrefBtRfid =
-                findPreference<Preference>(settingRepository().useBtRfid.key) as SwitchPreference
+                findPreference<Preference>(settingRepository.useBtRfid.key) as SwitchPreference
             useRfid = swPrefBtRfid.isChecked
 
             swPrefBtRfid.setOnPreferenceChangeListener { _, newValue ->
@@ -1101,7 +1104,7 @@ class SettingsActivity : AppCompatActivity(),
 
             //region //// DEVICE LIST PREFERENCE
             val deviceListPreference =
-                findPreference<Preference>(settingRepository().rfidBtAddress.key) as DevicePreference
+                findPreference<Preference>(settingRepository.rfidBtAddress.key) as DevicePreference
             if (deviceListPreference.value == null) {
                 // to ensure we don't selectByItemId a null value
                 // set first value by default
@@ -1128,12 +1131,12 @@ class SettingsActivity : AppCompatActivity(),
 
             //region //// RFID POWER
             val rfidReadPower =
-                findPreference<Preference>(settingRepository().rfidReadPower.key) as SeekBarPreference
+                findPreference<Preference>(settingRepository.rfidReadPower.key) as SeekBarPreference
             rfidReadPower.setOnPreferenceChangeListener { _, newValue ->
                 rfidReadPower.summary = "$newValue dB"
                 true
             }
-            rfidReadPower.summary = "${settingViewModel().rfidReadPower} dB"
+            rfidReadPower.summary = "${settingViewModel.rfidReadPower} dB"
             //endregion //// RFID POWER
 
             //region //// RESET TO FACTORY
@@ -1164,7 +1167,8 @@ class SettingsActivity : AppCompatActivity(),
         private fun connectToRfidDevice() {
             if (!useRfid) return
 
-            val bluetoothManager = context().getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+            val bluetoothManager =
+                WarehouseCounterApp.context.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
             val mBluetoothAdapter = bluetoothManager.adapter
             if (mBluetoothAdapter == null) {
                 makeText(v, getString(R.string.there_are_no_bluetooth_devices), INFO)
@@ -1206,7 +1210,9 @@ class SettingsActivity : AppCompatActivity(),
                 // permission is granted or not
                 if (!isGranted) {
                     makeText(
-                        v, context().getString(R.string.app_dont_have_necessary_permissions), ERROR
+                        v,
+                        WarehouseCounterApp.context.getString(R.string.app_dont_have_necessary_permissions),
+                        ERROR
                     )
                 }
             }
@@ -1216,11 +1222,11 @@ class SettingsActivity : AppCompatActivity(),
 
             if (address != null) {
                 val bluetoothManager =
-                    context().getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+                    WarehouseCounterApp.context.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
                 val mBluetoothAdapter = bluetoothManager.adapter
 
                 if (ActivityCompat.checkSelfPermission(
-                        context(), Manifest.permission.BLUETOOTH_CONNECT
+                        WarehouseCounterApp.context, Manifest.permission.BLUETOOTH_CONNECT
                     ) != PackageManager.PERMISSION_GRANTED
                 ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -1270,30 +1276,29 @@ class SettingsActivity : AppCompatActivity(),
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
 
-            bindPreferenceSummaryToValue(this, settingRepository().icPhotoMaxHeightOrWidth)
-            bindPreferenceSummaryToValue(this, settingRepository().icWsServer)
-            bindPreferenceSummaryToValue(this, settingRepository().icWsNamespace)
+            bindPreferenceSummaryToValue(this, settingRepository.icPhotoMaxHeightOrWidth)
+            bindPreferenceSummaryToValue(this, settingRepository.icWsServer)
+            bindPreferenceSummaryToValue(this, settingRepository.icWsNamespace)
 
             if (BuildConfig.DEBUG) {
-                bindPreferenceSummaryToValue(this, settingRepository().icWsUser)
-                bindPreferenceSummaryToValue(this, settingRepository().icWsPass)
-                bindPreferenceSummaryToValue(this, settingRepository().icUser)
-                bindPreferenceSummaryToValue(this, settingRepository().icPass)
+                bindPreferenceSummaryToValue(this, settingRepository.icWsUser)
+                bindPreferenceSummaryToValue(this, settingRepository.icWsPass)
+                bindPreferenceSummaryToValue(this, settingRepository.icUser)
+                bindPreferenceSummaryToValue(this, settingRepository.icPass)
             }
 
-            val urlEditText = findPreference<Preference>(settingRepository().icWsServer.key)
-            val namespaceEditText =
-                findPreference<Preference>(settingRepository().icWsNamespace.key)
+            val urlEditText = findPreference<Preference>(settingRepository.icWsServer.key)
+            val namespaceEditText = findPreference<Preference>(settingRepository.icWsNamespace.key)
             /*
             val userWsEditText = findPreference<Preference>(P.icWsUser.key)
             val passWsEditText = findPreference<Preference>(P.icWsPass.key)
             */
-            val userEditText = findPreference<Preference>(settingRepository().icUser.key)
-            val passEditText = findPreference<Preference>(settingRepository().icPass.key)
+            val userEditText = findPreference<Preference>(settingRepository.icUser.key)
+            val passEditText = findPreference<Preference>(settingRepository.icPass.key)
 
-            findPreference<Preference>(settingRepository().icWsUseProxy.key)
-            bindPreferenceSummaryToValue(this, settingRepository().icWsProxy)
-            bindPreferenceSummaryToValue(this, settingRepository().icWsProxyPort)
+            findPreference<Preference>(settingRepository.icWsUseProxy.key)
+            bindPreferenceSummaryToValue(this, settingRepository.icWsProxy)
+            bindPreferenceSummaryToValue(this, settingRepository.icWsProxyPort)
 
             /*
             val proxyUrlEditText = findPreference<Preference>(P.icWsProxy.key)
@@ -1307,8 +1312,8 @@ class SettingsActivity : AppCompatActivity(),
             button?.onPreferenceClickListener = OnPreferenceClickListener {
 
                 if (urlEditText != null && namespaceEditText != null && userEditText != null && passEditText != null) {
-                    val url = settingViewModel().icWsServer
-                    val namespace = settingViewModel().icWsNamespace
+                    val url = settingViewModel.icWsServer
+                    val namespace = settingViewModel.icWsNamespace
 
                     testImageControlConnection(url = url, namespace = namespace)
                 }
@@ -1325,14 +1330,16 @@ class SettingsActivity : AppCompatActivity(),
 
             val qrCodeButton = findPreference<Preference>("ic_qr_code")
             qrCodeButton?.onPreferenceClickListener = OnPreferenceClickListener {
-                val icUrl = settingViewModel().icWsServer
-                val icNamespace = settingViewModel().icWsNamespace
-                val icUserWs = settingViewModel().icWsUser
-                val icPasswordWs = settingViewModel().icWsPass
+                val icUrl = settingViewModel.icWsServer
+                val icNamespace = settingViewModel.icWsNamespace
+                val icUserWs = settingViewModel.icWsUser
+                val icPasswordWs = settingViewModel.icWsPass
 
                 if (icUrl.isEmpty() || icNamespace.isEmpty() || icUserWs.isEmpty() || icPasswordWs.isEmpty()) {
                     if (view != null) makeText(
-                        requireView(), context().getString(R.string.invalid_webservice_data), ERROR
+                        requireView(),
+                        WarehouseCounterApp.context.getString(R.string.invalid_webservice_data),
+                        ERROR
                     )
                     return@OnPreferenceClickListener false
                 }
@@ -1368,7 +1375,7 @@ class SettingsActivity : AppCompatActivity(),
                 .setPositiveButton(getString(R.string.delete)) { dialog, _ ->
                     //your deleting code
                     val albumFolder = File(
-                        context().getExternalFilesDir(Environment.DIRECTORY_PICTURES),
+                        WarehouseCounterApp.context.getExternalFilesDir(Environment.DIRECTORY_PICTURES),
                         "ImageControl"
                     )
 
@@ -1393,7 +1400,9 @@ class SettingsActivity : AppCompatActivity(),
         ) {
             if (url.isEmpty() || namespace.isEmpty()) {
                 if (view != null) makeText(
-                    requireView(), context().getString(R.string.invalid_webservice_data), INFO
+                    requireView(),
+                    WarehouseCounterApp.context.getString(R.string.invalid_webservice_data),
+                    INFO
                 )
                 return
             }
@@ -1470,7 +1479,7 @@ class SettingsActivity : AppCompatActivity(),
             preference: Preference,
             defaultValue: Any?,
         ) {
-            val all: Map<String, *> = PreferenceManager.getDefaultSharedPreferences(context()).all
+            val all: Map<String, *> = PreferenceManager.getDefaultSharedPreferences(context).all
 
             // Set the listener to watch for value changes.
             preference.onPreferenceChangeListener = sBindPreferenceSummaryToValueListener

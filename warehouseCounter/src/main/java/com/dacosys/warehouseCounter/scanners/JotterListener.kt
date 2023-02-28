@@ -176,7 +176,7 @@ object JotterListener : Jotter.Listener {
     }
 
     fun autodetectDeviceModel(activity: AppCompatActivity) {
-        var collectorType: CollectorType? = CollectorType.getById(settingViewModel().collectorType)
+        var collectorType: CollectorType? = CollectorType.getById(settingViewModel.collectorType)
 
         // Sólo si no fue configurado o cambió la configuración
         if (collectorType == null || collectorType == CollectorType.none) {
@@ -206,10 +206,10 @@ object JotterListener : Jotter.Listener {
             Log.v(this::class.java.simpleName, "Manufacturer: $manufacturer, Model: $model")
 
             if (collectorType != null) {
-                settingViewModel().collectorType = collectorType.id
+                settingViewModel.collectorType = collectorType.id
                 makeText(
                     activity.window.decorView,
-                    "${context().getString(R.string.device)}: $manufacturer $model",
+                    "${context.getString(R.string.device)}: $manufacturer $model",
                     SnackBarType.INFO
                 )
                 Statics.collectorTypeChanged = true
@@ -257,9 +257,9 @@ object JotterListener : Jotter.Listener {
             // Creamos y agregamos el escáner de la actividad
             createBarcodeReader(activity)
 
-            if (settingViewModel().useNfc) Nfc.setupNFCReader(activity)
+            if (settingViewModel.useNfc) Nfc.setupNFCReader(activity)
 
-            if (activity is Rfid.RfidDeviceListener && settingViewModel().useBtRfid) {
+            if (activity is Rfid.RfidDeviceListener && settingViewModel.useBtRfid) {
                 rfidStart(activity)
                 rfidSetup(activity)
             }
@@ -273,7 +273,7 @@ object JotterListener : Jotter.Listener {
 
     private fun rfidSetup(activity: AppCompatActivity) {
         val bluetoothManager =
-            context().getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
+            context.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
         val mBluetoothAdapter = bluetoothManager.adapter
         if (mBluetoothAdapter == null) {
             makeText(
@@ -348,9 +348,9 @@ object JotterListener : Jotter.Listener {
     }
 
     fun resumeReaderDevices(activity: AppCompatActivity) {
-        if (settingViewModel().useNfc) enableNfcForegroundDispatch(activity)
+        if (settingViewModel.useNfc) enableNfcForegroundDispatch(activity)
 
-        if (activity is Rfid.RfidDeviceListener && settingViewModel().useBtRfid) Rfid.resume(
+        if (activity is Rfid.RfidDeviceListener && settingViewModel.useBtRfid) Rfid.resume(
             activity
         )
 
@@ -386,9 +386,9 @@ object JotterListener : Jotter.Listener {
     }
 
     fun pauseReaderDevices(activity: AppCompatActivity) {
-        if (activity is Rfid.RfidDeviceListener && settingViewModel().useBtRfid) Rfid.pause()
+        if (activity is Rfid.RfidDeviceListener && settingViewModel.useBtRfid) Rfid.pause()
 
-        if (settingViewModel().useNfc) Nfc.disableNfcForegroundDispatch(activity)
+        if (settingViewModel.useNfc) Nfc.disableNfcForegroundDispatch(activity)
 
         scannerList.firstOrNull { it.activityName() == activity::class.java.simpleName }?.onPause()
         floatingWindowList.firstOrNull { it.activityName == activity::class.java.simpleName }

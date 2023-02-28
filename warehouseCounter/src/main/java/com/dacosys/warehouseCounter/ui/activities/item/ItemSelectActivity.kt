@@ -143,7 +143,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private fun loadBundleValues(b: Bundle) {
         tempTitle = b.getString("title") ?: ""
-        if (tempTitle.isEmpty()) tempTitle = context().getString(R.string.select_item)
+        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
         multiSelect = b.getBoolean("multiSelect", multiSelect)
         hideFilterPanel = b.getBoolean("hideFilterPanel", hideFilterPanel)
@@ -162,7 +162,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private fun loadExtrasBundleValues(b: Bundle) {
         tempTitle = b.getString("title") ?: ""
-        if (tempTitle.isEmpty()) tempTitle = context().getString(R.string.select_item)
+        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
         itemSelectFilterFragment?.itemCode = b.getString("itemCode") ?: ""
         itemSelectFilterFragment?.itemCategory =
@@ -329,19 +329,19 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         when {
             panelBottomIsExpanded -> {
-                binding.expandBottomPanelButton?.text = context().getString(R.string.collapse_panel)
+                binding.expandBottomPanelButton?.text = context.getString(R.string.collapse_panel)
             }
             else -> {
-                binding.expandBottomPanelButton?.text = context().getString(R.string.search_options)
+                binding.expandBottomPanelButton?.text = context.getString(R.string.search_options)
             }
         }
 
         when {
             panelTopIsExpanded -> {
-                binding.expandTopPanelButton.text = context().getString(R.string.collapse_panel)
+                binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
             }
             else -> {
-                binding.expandTopPanelButton.text = context().getString(R.string.print_labels)
+                binding.expandTopPanelButton.text = context.getString(R.string.print_labels)
             }
         }
     }
@@ -386,11 +386,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             when {
                 panelBottomIsExpanded -> {
                     binding.expandBottomPanelButton?.text =
-                        context().getString(R.string.collapse_panel)
+                        context.getString(R.string.collapse_panel)
                 }
                 else -> {
                     binding.expandBottomPanelButton?.text =
-                        context().getString(R.string.search_options)
+                        context.getString(R.string.search_options)
                 }
             }
 
@@ -434,10 +434,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
             when {
                 panelTopIsExpanded -> {
-                    binding.expandTopPanelButton.text = context().getString(R.string.collapse_panel)
+                    binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
                 }
                 else -> {
-                    binding.expandTopPanelButton.text = context().getString(R.string.print_labels)
+                    binding.expandTopPanelButton.text = context.getString(R.string.print_labels)
                 }
             }
 
@@ -561,9 +561,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         Log.d(this::class.java.simpleName, "fillSummaryRow")
         runOnUiThread {
             if (multiSelect) {
-                binding.totalLabelTextView.text = context().getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context().getString(R.string.cant)
-                binding.selectedLabelTextView.text = context().getString(R.string.checked)
+                binding.totalLabelTextView.text = context.getString(R.string.total)
+                binding.qtyReqLabelTextView.text = context.getString(R.string.cant)
+                binding.selectedLabelTextView.text = context.getString(R.string.checked)
 
                 if (arrayAdapter != null) {
                     binding.totalTextView.text = arrayAdapter?.count.toString()
@@ -571,9 +571,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                     binding.selectedTextView.text = arrayAdapter?.countChecked().toString()
                 }
             } else {
-                binding.totalLabelTextView.text = context().getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context().getString(R.string.cont_)
-                binding.selectedLabelTextView.text = context().getString(R.string.items)
+                binding.totalLabelTextView.text = context.getString(R.string.total)
+                binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
+                binding.selectedLabelTextView.text = context.getString(R.string.items)
 
                 if (arrayAdapter != null) {
                     val cont = 0
@@ -617,11 +617,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
-            val res = context().getString(R.string.invalid_code)
+            val res = context.getString(R.string.invalid_code)
             makeText(binding.root, res, ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
@@ -659,11 +659,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             menu.setOptionalIconsVisible(true)
         }
 
-        if (!settingViewModel().useBtRfid) {
+        if (!settingViewModel.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
-        val drawable = ContextCompat.getDrawable(context(), R.drawable.ic_visibility)
+        val drawable = ContextCompat.getDrawable(context, R.drawable.ic_visibility)
         val toolbar = findViewById<Toolbar>(R.id.action_bar)
         toolbar.overflowIcon = drawable
 
@@ -720,10 +720,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         item.isChecked = !item.isChecked
         when (id) {
-            settingRepository().selectItemSearchByItemEan.key.hashCode() -> {
+            settingRepository.selectItemSearchByItemEan.key.hashCode() -> {
                 itemSelectFilterFragment!!.setEanDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
-            settingRepository().selectItemSearchByItemCategory.key.hashCode() -> {
+            settingRepository.selectItemSearchByItemCategory.key.hashCode() -> {
                 itemSelectFilterFragment!!.setCategoryVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
             else -> return super.onOptionsItemSelected(item)
@@ -732,19 +732,21 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     private fun enterCode() {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(R.string.enter_code)
+        runOnUiThread {
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(R.string.enter_code)
 
-        val input = EditText(this)
-        input.inputType = InputType.TYPE_CLASS_TEXT
-        builder.setView(input)
+            val input = EditText(this)
+            input.inputType = InputType.TYPE_CLASS_TEXT
+            builder.setView(input)
 
-        builder.setPositiveButton(R.string.ok) { _, _ ->
-            scannerCompleted(input.text.toString())
+            builder.setPositiveButton(R.string.ok) { _, _ ->
+                scannerCompleted(input.text.toString())
+            }
+            builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
+
+            builder.show()
         }
-        builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
-
-        builder.show()
     }
 
     override fun onFilterChanged(code: String, itemCategory: ItemCategory?, onlyActive: Boolean) {

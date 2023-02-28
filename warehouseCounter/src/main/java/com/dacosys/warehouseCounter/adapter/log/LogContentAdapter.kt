@@ -9,7 +9,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getColorWithAlpha
@@ -28,7 +28,7 @@ class LogContentAdapter : ArrayAdapter<LogContent>, Filterable {
         resource: Int,
         logContArray: ArrayList<LogContent>,
         listView: ListView?,
-    ) : super(context(), resource, logContArray) {
+    ) : super(WarehouseCounterApp.context, resource, logContArray) {
         this.activity = activity
         this.listView = listView
         this.resource = resource
@@ -195,20 +195,20 @@ class LogContentAdapter : ArrayAdapter<LogContent>, Filterable {
 
                 // Background layouts
                 val layoutRed = ResourcesCompat.getDrawable(
-                    context().resources,
+                    context.resources,
                     R.drawable.layout_thin_border_red,
                     null
                 )
                 val layoutDefault = ResourcesCompat.getDrawable(
-                    context().resources,
+                    context.resources,
                     R.drawable.layout_thin_border,
                     null
                 )
 
                 // Font colors
-                val black = ResourcesCompat.getColor(context().resources, R.color.black, null)
+                val black = ResourcesCompat.getColor(context.resources, R.color.black, null)
                 val whitesmoke =
-                    ResourcesCompat.getColor(context().resources, R.color.whitesmoke, null)
+                    ResourcesCompat.getColor(context.resources, R.color.whitesmoke, null)
 
                 var backColor = layoutDefault!!
                 var foreColor = black

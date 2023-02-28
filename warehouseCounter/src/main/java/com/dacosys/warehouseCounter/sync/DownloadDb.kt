@@ -43,7 +43,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
         }
 
         val progressStatusDesc = uploadStatus?.description ?: ""
-        val registryDesc = context().getString(R.string.item_codes)
+        val registryDesc = context.getString(R.string.item_codes)
         val msg = snackBarEventData.text
 
         if (uploadStatus == ProgressStatus.crashed || downloadStatus == CRASHED) {
@@ -77,7 +77,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
             if (fileType == FileType.TIMEFILE) {
                 onEventData(
                     SnackBarEventData(
-                        context().getString(R.string.offline_mode), SnackBarType.INFO
+                        context.getString(R.string.offline_mode), SnackBarType.INFO
                     )
                 )
             } else {
@@ -149,8 +149,8 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
         this.dbFileUrl = dbFileUrl
         this.timeFileUrl = timeFileUrl
 
-        destTimeFile = File("${context().cacheDir.absolutePath}/${timeFileName}")
-        destDbFile = File("${context().cacheDir.absolutePath}/${DATABASE_NAME}")
+        destTimeFile = File("${context.cacheDir.absolutePath}/${timeFileName}")
+        destDbFile = File("${context.cacheDir.absolutePath}/${DATABASE_NAME}")
     }
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
@@ -185,7 +185,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
             val destDbFile = destDbFile
 
             if (dbFileUrl.isEmpty() || timeFileUrl.isEmpty() || destTimeFile == null || destDbFile == null) {
-                errorMsg = context().getString(R.string.database_name_is_invalid)
+                errorMsg = context.getString(R.string.database_name_is_invalid)
                 mCallback?.onDownloadDbTask(CRASHED)
                 return
             }
@@ -214,7 +214,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                             ProgressStatus.crashed, ProgressStatus.canceled,
                             -> {
                                 errorMsg =
-                                    context().getString(R.string.error_trying_to_send_item_codes)
+                                    context.getString(R.string.error_trying_to_send_item_codes)
                                 mCallback?.onDownloadDbTask(CRASHED)
                                 return@getToUpload
                             }
@@ -289,7 +289,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                         if (crashNr > 1) {
                             // Si ya falló dos veces en bajar la fecha, a la mierda.
                             errorMsg =
-                                context().getString(R.string.failed_to_get_the_db_creation_date_from_the_server)
+                                context.getString(R.string.failed_to_get_the_db_creation_date_from_the_server)
                             mCallback?.onDownloadDbTask(CRASHED)
                             return
                         }
@@ -307,7 +307,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                 if (oldDateTimeStr == currentDateTimeStr) {
                     Log.d(
                         this::class.java.simpleName,
-                        context().getString(R.string.is_not_necessary_to_download_the_database)
+                        context.getString(R.string.is_not_necessary_to_download_the_database)
                     )
 
                     mCallback?.onDownloadDbTask(FINISHED)
@@ -337,7 +337,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                         CANCELED, CRASHED -> {
                             // Si se cancela o choca, sale
                             errorMsg =
-                                context().getString(R.string.error_downloading_the_database_from_the_server)
+                                context.getString(R.string.error_downloading_the_database_from_the_server)
                             mCallback?.onDownloadDbTask(CRASHED)
                             return
                         }
@@ -349,7 +349,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                 }
             } catch (ex: Exception) {
                 errorMsg = "${
-                    context().getString(R.string.exception_error)
+                    context.getString(R.string.exception_error)
                 } (Download database): ${ex.message}"
                 mCallback?.onDownloadDbTask(CRASHED)
                 return
@@ -366,7 +366,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
             FileHelper.copyDataBase(this.destDbFile)
 
         } catch (ex: Exception) {
-            errorMsg = context().getString(R.string.error_downloading_the_database)
+            errorMsg = context.getString(R.string.error_downloading_the_database)
             mCallback?.onDownloadDbTask(CRASHED)
             return
         }
@@ -387,14 +387,14 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
             br.close()
         } catch (ex: Exception) {
             errorMsg = "${
-                context().getString(R.string.failed_to_get_the_date_from_the_file)
+                context.getString(R.string.failed_to_get_the_date_from_the_file)
             }: ${ex.message}"
         }
         return dateTime
     }
 
     private fun deleteTimeFile() {
-        destTimeFile = File(context().cacheDir.absolutePath + "/" + timeFileName)
+        destTimeFile = File(context.cacheDir.absolutePath + "/" + timeFileName)
         if (destTimeFile?.exists() == true) {
             destTimeFile?.delete()
         }

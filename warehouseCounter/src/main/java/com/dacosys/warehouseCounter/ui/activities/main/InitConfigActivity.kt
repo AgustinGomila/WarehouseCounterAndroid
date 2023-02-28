@@ -124,7 +124,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             // Vamos a reconstruir el scanner por si cambió la configuración
             JotterListener.autodetectDeviceModel(this)
 
-            if (settingViewModel().urlPanel.isEmpty()) {
+            if (settingViewModel.urlPanel.isEmpty()) {
                 makeText(binding.root, getString(R.string.server_is_not_configured), ERROR)
                 return
             }
@@ -248,53 +248,56 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     private fun configApp() {
-        val realPass = settingViewModel().confPassword
+        val realPass = settingViewModel.confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
         }
 
-        var alertDialog: AlertDialog? = null
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(getString(R.string.enter_password))
+        runOnUiThread {
+            var alertDialog: AlertDialog? = null
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(getString(R.string.enter_password))
 
-        val inputLayout = TextInputLayout(this)
-        inputLayout.endIconMode = TextInputLayout.END_ICON_PASSWORD_TOGGLE
+            val inputLayout = TextInputLayout(this)
+            inputLayout.endIconMode = TextInputLayout.END_ICON_PASSWORD_TOGGLE
 
-        val input = TextInputEditText(this)
-        input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-        input.isFocusable = true
-        input.isFocusableInTouchMode = true
-        input.setOnKeyListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        if (alertDialog != null) {
-                            alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+            val input = TextInputEditText(this)
+            input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            input.isFocusable = true
+            input.isFocusableInTouchMode = true
+            input.setOnKeyListener { _, keyCode, event ->
+                if (event.action == KeyEvent.ACTION_DOWN) {
+                    when (keyCode) {
+                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                            if (alertDialog != null) {
+                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
+                                    .performClick()
+                            }
                         }
                     }
                 }
+                false
             }
-            false
-        }
 
-        inputLayout.addView(input)
-        builder.setView(inputLayout)
-        builder.setPositiveButton(R.string.accept) { _, _ ->
-            attemptEnterConfig(input.text.toString())
-        }
-        builder.setNegativeButton(R.string.cancel, null)
-        alertDialog = builder.create()
+            inputLayout.addView(input)
+            builder.setView(inputLayout)
+            builder.setPositiveButton(R.string.accept) { _, _ ->
+                attemptEnterConfig(input.text.toString())
+            }
+            builder.setNegativeButton(R.string.cancel, null)
+            alertDialog = builder.create()
 
-        alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
-        alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
-        alertDialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        alertDialog.show()
-        input.requestFocus()
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            alertDialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+            alertDialog.show()
+            input.requestFocus()
+        }
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = settingViewModel().confPassword
+        val realPass = settingViewModel.confPassword
         if (password == realPass) {
             if (!rejectNewInstances) {
                 rejectNewInstances = true
@@ -378,11 +381,11 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_login, menu)
 
-        if (!settingViewModel().showConfButton) {
+        if (!settingViewModel.showConfButton) {
             menu.removeItem(menu.findItem(R.id.action_settings).itemId)
         }
 
-        if (!settingViewModel().useBtRfid) {
+        if (!settingViewModel.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 

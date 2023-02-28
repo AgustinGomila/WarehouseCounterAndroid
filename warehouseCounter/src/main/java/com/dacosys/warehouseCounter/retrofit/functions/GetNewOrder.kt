@@ -5,7 +5,6 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.moshi.error.ErrorObject
 import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
@@ -17,8 +16,6 @@ import kotlinx.coroutines.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.net.MalformedURLException
-import java.net.URL
 import kotlin.concurrent.thread
 
 interface NewOrderListener {
@@ -46,21 +43,25 @@ class GetNewOrder(
                 // Token inválido.
                 onEvent.invoke(
                     SnackBarEventData(
-                        context().getString(R.string.invalid_or_expired_token), SnackBarType.ERROR
+                        context.getString(R.string.invalid_or_expired_token), SnackBarType.ERROR
                     )
                 )
             }
+        }
+
+        if (!DynamicRetrofit.prepare()) {
+            onEvent.invoke(
+                SnackBarEventData(context.getString(R.string.invalid_url), SnackBarType.ERROR)
+            )
+            return
         }
 
         // Chequeamos que el Token sea válido
         thread { GetToken { onEvent(it) }.execute(false) }
     }
 
-    private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
-        // Configuración de Retrofit
-        val apiUrl = setupRetrofit()
-
-        val tempInst = apiService().getNewOrder(apiUrl = apiUrl)
+    private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
+        val tempInst = apiService.getNewOrder()
 
         tempInst.enqueue(object : Callback<Any?> {
             override fun onResponse(call: Call<Any?>, response: Response<Any?>) {
@@ -76,7 +77,7 @@ class GetNewOrder(
                  * Comprobamos si es una respuesta de Error predefinida
                  */
                 if (ErrorObject.isError(resp)) {
-                    val errorObject = moshi().adapter(ErrorObject::class.java).fromJsonValue(resp)
+                    val errorObject = moshi.adapter(ErrorObject::class.java).fromJsonValue(resp)
                     onEvent.invoke(
                         SnackBarEventData(
                             errorObject?.error.toString(), SnackBarType.ERROR
@@ -92,7 +93,7 @@ class GetNewOrder(
                     for (allOrderRequests in (resp as Map<*, *>).entries) {
                         val orderRequestMap = allOrderRequests.value as Map<*, *>
                         for (pack in orderRequestMap.values) {
-                            val p = moshi().adapter(OrderRequest::class.java).fromJsonValue(pack)
+                            val p = moshi.adapter(OrderRequest::class.java).fromJsonValue(pack)
                                 ?: continue
                             r.add(p)
                         }
@@ -100,8 +101,7 @@ class GetNewOrder(
                 } catch (ex: Exception) {
                     onEvent.invoke(
                         SnackBarEventData(
-                            context().getString(R.string.invalid_orders),
-                            SnackBarType.ERROR
+                            context.getString(R.string.invalid_orders), SnackBarType.ERROR
                         )
                     )
                     return
@@ -111,7 +111,7 @@ class GetNewOrder(
                 else {
                     onEvent.invoke(
                         SnackBarEventData(
-                            context().getString(R.string.no_results), SnackBarType.INFO
+                            context.getString(R.string.no_results), SnackBarType.INFO
                         )
                     )
                 }
@@ -122,41 +122,5 @@ class GetNewOrder(
                 onEvent.invoke(SnackBarEventData(t.toString(), SnackBarType.ERROR))
             }
         })
-
-        return@withContext true
-    }
-
-    private fun setupRetrofit(): String {
-        val sv = settingViewModel()
-
-        // URL específica del Cliente
-        val protocol: String
-        val host: String
-        val apiUrl: String
-
-        try {
-            val url = URL(sv.urlPanel)
-            protocol = url.protocol
-            host = url.host
-            apiUrl = if (url.path.isNotEmpty()) "${url.path}/" else ""
-
-            Log.d(
-                this::class.java.simpleName,
-                "Base URL: ${protocol}://${host}/ (Api URL: ${apiUrl.ifEmpty { "Vacío" }})"
-            )
-        } catch (e: MalformedURLException) {
-            Log.e(this::class.java.simpleName, e.toString())
-            onEvent.invoke(
-                SnackBarEventData(
-                    context().getString(R.string.url_malformed), SnackBarType.ERROR
-                )
-            )
-            return ""
-        }
-
-        // Configuración y refresco de la conexión
-        DynamicRetrofit.start(protocol = protocol, host = host)
-
-        return apiUrl
     }
 }

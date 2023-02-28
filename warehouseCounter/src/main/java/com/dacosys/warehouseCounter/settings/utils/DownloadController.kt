@@ -27,7 +27,7 @@ class DownloadController(private val view: View) {
     }
 
     fun enqueueDownload() {
-        val context = context()
+        val context = context
 
         var destination =
             context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).toString() + "/"

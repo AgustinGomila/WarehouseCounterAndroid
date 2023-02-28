@@ -148,7 +148,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, SnackBarType.INFO)
+        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, SnackBarType.INFO)
 
         binding.codeEditText.setText(scanCode)
     }

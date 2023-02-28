@@ -93,7 +93,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                     getString(R.string.completed_orders_) + itemArray.count()
                 )
 
-                if (settingViewModel().autoSend) {
+                if (settingViewModel.autoSend) {
                     val orArray = getCompletedOrders()
                     if (orArray.isNotEmpty()) {
                         try {
@@ -131,7 +131,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
 
@@ -214,11 +214,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_main, menu)
 
-        if (!(settingViewModel().showConfButton)) {
+        if (!(settingViewModel.showConfButton)) {
             menu.removeItem(menu.findItem(R.id.action_settings).itemId)
         }
 
-        if (!settingViewModel().useBtRfid) {
+        if (!settingViewModel.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -275,7 +275,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
         Statics.getCurrentUser {
             if (it != null) {
                 binding.userTextView.text =
-                    String.format("%s - %s", settingViewModel().installationCode, it.name)
+                    String.format("%s - %s", settingViewModel.installationCode, it.name)
             }
         }
 
@@ -295,13 +295,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
         setupMainButton()
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-        Statics.currentUserId = -1L
-
-        this.finish()
-    }
-
     override fun onPause() {
         super.onPause()
         pauseInboxOutboxListener()
@@ -317,7 +310,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                 if (rejectNewInstances) return
                 rejectNewInstances = true
 
-                val intent = Intent(context(), NewCountActivity::class.java)
+                val intent = Intent(context, NewCountActivity::class.java)
                 intent.putExtra("title", getString(R.string.new_count))
                 resultForNewCount.launch(intent)
             }
@@ -326,7 +319,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                 rejectNewInstances = true
                 JotterListener.lockScanner(this, true)
 
-                val intent = Intent(context(), InboxActivity::class.java)
+                val intent = Intent(context, InboxActivity::class.java)
                 intent.putExtra("title", getString(R.string.pending_counts))
                 resultForPendingCount.launch(intent)
             }
@@ -334,7 +327,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                 if (rejectNewInstances) return
                 rejectNewInstances = true
 
-                val intent = Intent(context(), OutboxActivity::class.java)
+                val intent = Intent(context, OutboxActivity::class.java)
                 intent.putExtra("title", getString(R.string.completed_counts))
                 startActivity(intent)
             }
@@ -342,7 +335,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                 if (rejectNewInstances) return
                 rejectNewInstances = true
 
-                val intent = Intent(context(), CodeCheckActivity::class.java)
+                val intent = Intent(context, CodeCheckActivity::class.java)
                 intent.putExtra("title", getString(R.string.code_read))
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                 startActivity(intent)
@@ -352,7 +345,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                 rejectNewInstances = true
 
                 try {
-                    val intent = Intent(context(), LinkCodeActivity::class.java)
+                    val intent = Intent(context, LinkCodeActivity::class.java)
                     intent.putExtra("title", getString(R.string.link_code))
                     startActivity(intent)
                 } catch (ex: Exception) {
@@ -365,7 +358,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                 JotterListener.lockScanner(this, true)
 
                 try {
-                    val intent = Intent(context(), ItemSelectActivity::class.java)
+                    val intent = Intent(context, ItemSelectActivity::class.java)
                     intent.putExtra("title", getString(R.string.print_code))
                     intent.putExtra("multiSelect", true)
                     startActivity(intent)
@@ -427,7 +420,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                         log = log
                     )
 
-                    val intent = Intent(context(), OrderRequestContentActivity::class.java)
+                    val intent = Intent(context, OrderRequestContentActivity::class.java)
                     intent.putExtra("orderRequest", Parcels.wrap(or))
                     intent.putExtra("isNew", true)
 
@@ -468,7 +461,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                             ), INFO
                         )
 
-                        val intent = Intent(context(), OrderRequestContentActivity::class.java)
+                        val intent = Intent(context, OrderRequestContentActivity::class.java)
                         intent.putExtra("orderRequest", Parcels.wrap(or))
                         intent.putExtra("isNew", false)
 
@@ -490,58 +483,61 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
         }
 
     private fun configApp() {
-        val realPass = settingViewModel().confPassword
+        val realPass = settingViewModel.confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
         }
 
-        var alertDialog: AlertDialog? = null
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(getString(R.string.enter_password))
+        runOnUiThread {
+            var alertDialog: AlertDialog? = null
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(getString(R.string.enter_password))
 
-        val inputLayout = TextInputLayout(this)
-        inputLayout.endIconMode = END_ICON_PASSWORD_TOGGLE
+            val inputLayout = TextInputLayout(this)
+            inputLayout.endIconMode = END_ICON_PASSWORD_TOGGLE
 
-        val input = TextInputEditText(this)
-        input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-        input.isFocusable = true
-        input.isFocusableInTouchMode = true
-        input.setOnKeyListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        if (alertDialog != null) {
-                            alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+            val input = TextInputEditText(this)
+            input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            input.isFocusable = true
+            input.isFocusableInTouchMode = true
+            input.setOnKeyListener { _, keyCode, event ->
+                if (event.action == KeyEvent.ACTION_DOWN) {
+                    when (keyCode) {
+                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                            if (alertDialog != null) {
+                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
+                                    .performClick()
+                            }
                         }
                     }
                 }
+                false
             }
-            false
-        }
 
-        inputLayout.addView(input)
-        builder.setView(inputLayout)
-        builder.setPositiveButton(R.string.accept) { _, _ ->
-            attemptEnterConfig(input.text.toString())
-        }
-        builder.setNegativeButton(R.string.cancel, null)
-        alertDialog = builder.create()
+            inputLayout.addView(input)
+            builder.setView(inputLayout)
+            builder.setPositiveButton(R.string.accept) { _, _ ->
+                attemptEnterConfig(input.text.toString())
+            }
+            builder.setNegativeButton(R.string.cancel, null)
+            alertDialog = builder.create()
 
-        alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
-        alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
-        alertDialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        alertDialog.show()
-        input.requestFocus()
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            alertDialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+            alertDialog.show()
+            input.requestFocus()
+        }
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = settingViewModel().confPassword
+        val realPass = settingViewModel.confPassword
         if (password == realPass) {
             if (!rejectNewInstances) {
                 rejectNewInstances = true
 
-                val intent = Intent(context(), SettingsActivity::class.java)
+                val intent = Intent(context, SettingsActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                 startActivity(intent)
             }
@@ -585,7 +581,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
 
         if (freshSessionReq) {
             // Inicializar la actividad
-            if (settingViewModel().urlPanel.isEmpty()) {
+            if (settingViewModel.urlPanel.isEmpty()) {
                 makeText(binding.root, getString(R.string.server_is_not_configured), ERROR)
                 setupInitConfig()
             } else {
@@ -607,7 +603,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
     private val resultForInitConfig =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             try {
-                if (settingViewModel().urlPanel.isEmpty()) {
+                if (settingViewModel.urlPanel.isEmpty()) {
                     makeText(binding.root, getString(R.string.server_is_not_configured), ERROR)
                     setupInitConfig()
                 } else {
@@ -717,7 +713,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                     b.compoundDrawables.filterNotNull().forEach {
                         it.colorFilter =
                             BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                                ResourcesCompat.getColor(context().resources, R.color.white, null),
+                                ResourcesCompat.getColor(context.resources, R.color.white, null),
                                 BlendModeCompat.SRC_IN
                             )
                     }
@@ -823,7 +819,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
 
         var isOk = true
         for (newOrder in newOrArray) {
-            val orJson = moshi().adapter(OrderRequest::class.java).toJson(newOrder)
+            val orJson = moshi.adapter(OrderRequest::class.java).toJson(newOrder)
 
             // Acá se comprueba si el ID ya existe y actualizamos la orden.
             // Si no se agrega una orden nueva.
@@ -881,7 +877,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
         var error = false
 
         try {
-            val orJson = moshi().adapter(OrderRequest::class.java).toJson(newOrder)
+            val orJson = moshi.adapter(OrderRequest::class.java).toJson(newOrder)
             Log.i(this::class.java.simpleName, orJson)
             val orFileName = origOrder.filename.substringAfterLast('/')
 
@@ -961,10 +957,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                     )
 
                     if (itemArray.isNotEmpty()) {
-                        if (settingViewModel().shakeOnPendingOrders) {
+                        if (settingViewModel.shakeOnPendingOrders) {
                             shakeDevice()
                         }
-                        if (settingViewModel().soundOnPendingOrders) {
+                        if (settingViewModel.soundOnPendingOrders) {
                             playNotification()
                         }
                         shakeView(button, 20, 5)

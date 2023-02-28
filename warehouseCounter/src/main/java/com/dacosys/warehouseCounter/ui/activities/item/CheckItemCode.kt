@@ -46,7 +46,7 @@ class CheckItemCode(
             if (Statics.demoMode) {
                 if (adapter.count >= 5) {
                     val res =
-                        context().getString(R.string.maximum_amount_of_demonstration_mode_reached)
+                        context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     onEventData(SnackBarEventData(res, SnackBarType.ERROR))
                     callback.invoke(
                         CheckCodeEnded(
@@ -62,7 +62,7 @@ class CheckItemCode(
 
             // Nada que hacer, volver
             if (code.isEmpty()) {
-                val res = context().getString(R.string.invalid_code)
+                val res = context.getString(R.string.invalid_code)
                 onEventData(SnackBarEventData(res, SnackBarType.ERROR))
                 callback.invoke(CheckCodeEnded(scannedCode = "", item = null, itemCode = null))
                 Log.e(this::class.java.simpleName, res)

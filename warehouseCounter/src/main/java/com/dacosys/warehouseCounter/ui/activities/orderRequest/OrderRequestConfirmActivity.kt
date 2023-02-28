@@ -133,7 +133,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     private fun saveSharedPreferences() {
-        settingViewModel().finishOrder = binding.finishCheckBox.isChecked
+        settingViewModel.finishOrder = binding.finishCheckBox.isChecked
     }
 
     private fun destroyLocals() {
@@ -191,7 +191,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 if (t2 != null) orcArray = t2
             }
 
-            finishOrder = settingViewModel().finishOrder
+            finishOrder = settingViewModel.finishOrder
         }
 
         title = tempTitle
@@ -221,7 +221,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         binding.confirmButton.setOnClickListener { confirm() }
 
         // Si no está configurado el WebService de ImageControl ocultar botones
-        if (settingViewModel().icWsServer.isEmpty()) {
+        if (settingViewModel.icWsServer.isEmpty()) {
             binding.imageControlLayout.visibility = View.GONE
         }
 
@@ -305,7 +305,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                     .replace(binding.imageControlLayout.id, imageControlFragment!!)
                     .commit()
 
-                if (!(settingViewModel().useImageControl)) {
+                if (!(settingViewModel.useImageControl)) {
                     fm.beginTransaction()
                         .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
                         .hide(imageControlFragment as Fragment)
@@ -523,7 +523,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     private fun confirm() {
-        if (settingViewModel().signMandatory && imageControlFragment?.isSigned == false) {
+        if (settingViewModel.signMandatory && imageControlFragment?.isSigned == false) {
             makeText(binding.root, getString(R.string.mandatory_sign), SnackBarType.ERROR)
         } else {
             val allowDiff = orderRequest!!.resultAllowDiff ?: true

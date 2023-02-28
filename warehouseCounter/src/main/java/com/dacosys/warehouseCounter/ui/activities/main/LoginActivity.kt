@@ -287,6 +287,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         JotterListener.lockScanner(this, false)
         rejectNewInstances = false
 
+        Statics.isLogged = false
+
         // Parece que las actividades de tipo Setting no devuelven resultados
         // así que de esta manera puedo volver a llenar el fragmento de usuarios
         if (isReturnedFromSettings) {
@@ -422,8 +424,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             if (connectionSuccess) {
                 user = userSpinnerFragment!!.selectedUser
                 password = binding.passwordEditText.text.toString()
-
-                runOnUiThread { attemptLogin() }
+                attemptLogin()
             } else {
                 initialSetup()
             }
@@ -469,7 +470,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
         setButton(ButtonStyle.BUSY)
 
-        if (settingViewModel().urlPanel.isEmpty()) {
+        if (settingViewModel.urlPanel.isEmpty()) {
             makeText(binding.root, text = getString(R.string.server_is_not_configured), ERROR)
 
             setButton(ButtonStyle.REFRESH)
@@ -499,58 +500,61 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     private fun configApp() {
-        val realPass = settingViewModel().confPassword
+        val realPass = settingViewModel.confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
         }
 
-        var alertDialog: AlertDialog? = null
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(getString(R.string.enter_password))
+        runOnUiThread {
+            var alertDialog: AlertDialog? = null
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(getString(R.string.enter_password))
 
-        val inputLayout = TextInputLayout(this)
-        inputLayout.endIconMode = END_ICON_PASSWORD_TOGGLE
+            val inputLayout = TextInputLayout(this)
+            inputLayout.endIconMode = END_ICON_PASSWORD_TOGGLE
 
-        val input = TextInputEditText(this)
-        input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-        input.isFocusable = true
-        input.isFocusableInTouchMode = true
-        input.setOnKeyListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        if (alertDialog != null) {
-                            alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+            val input = TextInputEditText(this)
+            input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            input.isFocusable = true
+            input.isFocusableInTouchMode = true
+            input.setOnKeyListener { _, keyCode, event ->
+                if (event.action == KeyEvent.ACTION_DOWN) {
+                    when (keyCode) {
+                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                            if (alertDialog != null) {
+                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
+                                    .performClick()
+                            }
                         }
                     }
                 }
+                false
             }
-            false
-        }
 
-        inputLayout.addView(input)
-        builder.setView(inputLayout)
-        builder.setPositiveButton(R.string.accept) { _, _ ->
-            attemptEnterConfig(input.text.toString())
-        }
-        builder.setNegativeButton(R.string.cancel, null)
-        alertDialog = builder.create()
+            inputLayout.addView(input)
+            builder.setView(inputLayout)
+            builder.setPositiveButton(R.string.accept) { _, _ ->
+                attemptEnterConfig(input.text.toString())
+            }
+            builder.setNegativeButton(R.string.cancel, null)
+            alertDialog = builder.create()
 
-        alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
-        alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
-        alertDialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        alertDialog.show()
-        input.requestFocus()
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            alertDialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+            alertDialog.show()
+            input.requestFocus()
+        }
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = settingViewModel().confPassword
+        val realPass = settingViewModel.confPassword
         if (password == realPass) {
             if (!rejectNewInstances) {
                 rejectNewInstances = true
 
-                val intent = Intent(context(), SettingsActivity::class.java)
+                val intent = Intent(context, SettingsActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                 startActivity(intent)
             }
@@ -592,34 +596,33 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         val userPass = userSpinnerFragment!!.selectedUserPass
         val password = binding.passwordEditText.text.toString()
 
-        runOnUiThread {
-            attemptLogin(userId.toLong(), userPass, password)
-        }
+        attemptLogin(userId.toLong(), userPass, password)
     }
 
     private fun attemptLogin(userId: Long?, userPass: String, password: String) {
-        binding.passwordEditText.error = null
+        runOnUiThread {
+            binding.passwordEditText.error = null
+        }
 
         var cancel = false
-        var focusView: View? = null
 
         // Check for a valid email address.
         if (userId == null || userId <= 0) {
-            //userSpinnerFragment.setError(getString(R.string.error_field_required));
-            focusView = userSpinnerFragment!!.view
             makeText(binding.root, getString(R.string.you_must_select_a_user), ERROR)
             cancel = true
         } else if (!isUserValid(userId)) {
-            //userSpinnerFragment.setError(getString(R.string.error_invalid_email));
-            focusView = userSpinnerFragment!!.view
             makeText(binding.root, getString(R.string.you_must_select_a_user), ERROR)
             cancel = true
         }
+
+        attemptRunning = false
 
         if (cancel) {
             // There was an error; don't attempt login and focus the first
             // form field with an error.
-            focusView?.requestFocus()
+            runOnUiThread {
+                userSpinnerFragment!!.view?.requestFocus()
+            }
         } else {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
@@ -628,6 +631,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 Statics.cleanCurrentUser()
                 Statics.currentUserId = user!!.userId
                 Statics.currentUserName = user!!.name
+                Statics.isLogged = true
 
                 Statics.setupImageControl()
 
@@ -636,8 +640,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 makeText(binding.root, getString(R.string.wrong_user_password_combination), ERROR)
             }
         }
-
-        attemptRunning = false
     }
 
     override fun onRequestPermissionsResult(
@@ -652,7 +654,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel().showScannedCode && BuildConfig.DEBUG) makeText(
+        if (settingViewModel.showScannedCode && BuildConfig.DEBUG) makeText(
             binding.root, scanCode, SnackBarType.INFO
         )
 
@@ -671,9 +673,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 if (userName.isNotEmpty() && password.isNotEmpty()) {
                     UserCoroutines().getByName(userName) {
                         if (it != null) {
-                            runOnUiThread {
-                                attemptLogin(it.userId, it.password ?: "", password)
-                            }
+                            attemptLogin(it.userId, it.password ?: "", password)
                         } else {
                             makeText(binding.root, getString(R.string.invalid_user), ERROR)
                         }
@@ -687,23 +687,25 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             when {
                 mainJson.has("config") -> {
                     // CLIENT CONFIGURATION
-                    try {
-                        val adb = AlertDialog.Builder(this)
-                        adb.setTitle(getString(R.string.download_database_required))
-                        adb.setMessage(getString(R.string.download_database_required_question))
-                        adb.setNegativeButton(R.string.cancel, null)
-                        adb.setPositiveButton(R.string.accept) { _, _ ->
-                            Statics.downloadDbRequired = true
-                            Statics.getConfigFromScannedCode(
-                                onEvent = { onGetPackagesEnded(it) },
-                                scanCode = scanCode,
-                                mode = QRConfigClientAccount
-                            )
+                    runOnUiThread {
+                        try {
+                            val adb = AlertDialog.Builder(this)
+                            adb.setTitle(getString(R.string.download_database_required))
+                            adb.setMessage(getString(R.string.download_database_required_question))
+                            adb.setNegativeButton(R.string.cancel, null)
+                            adb.setPositiveButton(R.string.accept) { _, _ ->
+                                Statics.downloadDbRequired = true
+                                Statics.getConfigFromScannedCode(
+                                    onEvent = { onGetPackagesEnded(it) },
+                                    scanCode = scanCode,
+                                    mode = QRConfigClientAccount
+                                )
+                            }
+                            adb.show()
+                        } catch (ex: java.lang.Exception) {
+                            ex.printStackTrace()
+                            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
                         }
-                        adb.show()
-                    } catch (ex: java.lang.Exception) {
-                        ex.printStackTrace()
-                        ErrorLog.writeLog(this, this::class.java.simpleName, ex)
                     }
                 }
                 mainJson.has(appName) -> {
@@ -736,11 +738,11 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_login, menu)
 
-        if (!settingViewModel().showConfButton) {
+        if (!settingViewModel.showConfButton) {
             menu.removeItem(menu.findItem(R.id.action_settings).itemId)
         }
 
-        if (!settingViewModel().useBtRfid) {
+        if (!settingViewModel.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 

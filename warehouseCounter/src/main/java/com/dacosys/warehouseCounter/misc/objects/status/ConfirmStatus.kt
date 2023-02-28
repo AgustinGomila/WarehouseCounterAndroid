@@ -57,9 +57,9 @@ class ConfirmStatus : Parcelable {
             return arrayOfNulls(size)
         }
 
-        var cancel = ConfirmStatus(0, context().getString(R.string.cancel))
-        var modify = ConfirmStatus(1, context().getString(R.string.modify))
-        var confirm = ConfirmStatus(2, context().getString(R.string.confirm))
+        var cancel = ConfirmStatus(0, context.getString(R.string.cancel))
+        var modify = ConfirmStatus(1, context.getString(R.string.modify))
+        var confirm = ConfirmStatus(2, context.getString(R.string.confirm))
 
         fun getAll(): ArrayList<ConfirmStatus> {
             val allSections = ArrayList<ConfirmStatus>()

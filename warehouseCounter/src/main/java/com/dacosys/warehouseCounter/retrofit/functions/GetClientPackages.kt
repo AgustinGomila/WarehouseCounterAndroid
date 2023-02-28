@@ -23,7 +23,6 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
     private var myEmail = ""
     private var myPassword = ""
     private var myInstallationCode = ""
-    private var progressStatus = ProgressStatus.unknown
 
     fun addParams(
         email: String,
@@ -42,7 +41,13 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
     }
 
     fun execute() {
-        progressStatus = ProgressStatus.starting
+        // Datos de conexión
+        if (!DynamicRetrofit.prepare(protocol = "https", host = "config.dacosys.com")) {
+            sendEvent(
+                status = ProgressStatus.crashed, msg = context.getString(R.string.invalid_url)
+            )
+            return
+        }
 
         scope.launch {
             coroutineScope {
@@ -51,11 +56,9 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
         }
     }
 
-    private suspend fun suspendFunction(): Boolean = withContext(Dispatchers.IO) {
-        setupRetrofit()
-
+    private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         // Llamado a la función del servidor
-        val packages = dacoService().getClientPackage(body = getBody())
+        val packages = dacoService.getClientPackage(body = getBody())
 
         packages.enqueue(object : Callback<Any?> {
             override fun onResponse(call: Call<Any?>, response: Response<Any?>) {
@@ -63,9 +66,7 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
                 if (resp == null) {
                     Log.e(this.javaClass.simpleName, response.raw().toString())
                     sendEvent(
-                        status = ProgressStatus.crashed,
-                        result = ArrayList(),
-                        msg = response.message()
+                        status = ProgressStatus.crashed, msg = response.message()
                     )
                     return
                 }
@@ -73,13 +74,11 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
                 /**
                  * Comprobamos si es una respuesta de Error predefinida
                  */
-                val errorObject = moshi().adapter(ErrorData::class.java).fromJsonValue(resp)
+                val errorObject = moshi.adapter(ErrorData::class.java).fromJsonValue(resp)
                 if (errorObject != null && errorObject.code.isNotEmpty()) {
                     Log.e(this.javaClass.simpleName, errorObject.description)
                     sendEvent(
-                        status = ProgressStatus.crashed,
-                        result = ArrayList(),
-                        msg = errorObject.description
+                        status = ProgressStatus.crashed, msg = errorObject.description
                     )
                     return
                 }
@@ -90,8 +89,7 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
                 if (!isMapOfStringsToAny(resp)) {
                     sendEvent(
                         status = ProgressStatus.crashed,
-                        result = ArrayList(),
-                        msg = context().getString(R.string.client_has_no_software_packages)
+                        msg = context.getString(R.string.client_has_no_software_packages)
                     )
                     return
                 }
@@ -102,7 +100,7 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
                 for (allPackages in (resp as Map<*, *>).entries) {
                     val packageMap = allPackages.value as Map<*, *>
                     for (pack in packageMap.values) {
-                        val p = moshi().adapter(Package::class.java).fromJsonValue(pack) ?: continue
+                        val p = moshi.adapter(Package::class.java).fromJsonValue(pack) ?: continue
 
                         val installationCode = p.installationCode
                         if (myInstallationCode.isNotEmpty() && installationCode != myInstallationCode) {
@@ -119,7 +117,7 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
                 sendEvent(
                     status = ProgressStatus.finished,
                     result = allClientPackage,
-                    msg = context().getString(R.string.successful_connection)
+                    msg = context.getString(R.string.successful_connection)
                 )
                 return
             }
@@ -127,20 +125,10 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
             override fun onFailure(call: Call<Any?>, t: Throwable) {
                 Log.e(this.javaClass.simpleName, t.toString())
                 sendEvent(
-                    status = ProgressStatus.crashed, result = ArrayList(), msg = t.toString()
+                    status = ProgressStatus.crashed, msg = t.toString()
                 )
             }
         })
-        return@withContext true
-    }
-
-    private fun setupRetrofit() {
-        // Datos de conexión
-        val host = "config.dacosys.com"
-        val protocol = "https"
-
-        // Configuración y refresco de la conexión
-        DynamicRetrofit.start(protocol = protocol, host = host)
     }
 
     private fun getBody(): AuthDataCont {
@@ -176,5 +164,10 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
                 msg = msg
             )
         )
+
+        if (status in ProgressStatus.getEnded()) {
+            // Como esta API tiene una configuración especial, reseteamos los datos de conexión.
+            DynamicRetrofit.reset()
+        }
     }
 }

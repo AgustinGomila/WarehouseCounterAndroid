@@ -64,7 +64,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
 
     private fun initializeScanner() {
         // Use SET_CONFIG: http://techdocs.zebra.com/datawedge/latest/guide/api/setconfig/
-        val sv = settingViewModel()
+        val sv = settingViewModel
 
         // Main bundle properties
         val profileConfig = Bundle()
@@ -107,7 +107,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
 
         // Create APP_LIST bundle to associate app with profile
         val appConfig = Bundle()
-        appConfig.putString("PACKAGE_NAME", context().packageName)
+        appConfig.putString("PACKAGE_NAME", context.packageName)
         appConfig.putStringArray("ACTIVITY_LIST", arrayOf("*"))
         profileConfig.putParcelableArray("APP_LIST", arrayOf(appConfig))
         sendDataWedgeIntentWithExtra(EXTRA_SET_CONFIG, profileConfig)
@@ -115,7 +115,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
         // Register for status change notification
         // Use REGISTER_FOR_NOTIFICATION: http://techdocs.zebra.com/datawedge/latest/guide/api/registerfornotification/
         val b = Bundle()
-        b.putString(EXTRA_KEY_APPLICATION_NAME, context().packageName)
+        b.putString(EXTRA_KEY_APPLICATION_NAME, context.packageName)
         b.putString(
             EXTRA_KEY_NOTIFICATION_TYPE,
             "SCANNER_STATUS"
@@ -158,7 +158,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
 
         // Associate profile with this app
         val appConfig = Bundle()
-        appConfig.putString("PACKAGE_NAME", context().packageName)
+        appConfig.putString("PACKAGE_NAME", context.packageName)
         appConfig.putStringArray("ACTIVITY_LIST", arrayOf("*"))
         profileConfig.putParcelableArray("APP_LIST", arrayOf(appConfig))
         profileConfig.remove("PLUGIN_CONFIG")
@@ -211,7 +211,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
     private fun unRegisterScannerStatus() {
         Log.v(this::class.java.simpleName, "unRegisterScannerStatus() on $activityName")
         val b = Bundle()
-        b.putString(EXTRA_KEY_APPLICATION_NAME, context().packageName)
+        b.putString(EXTRA_KEY_APPLICATION_NAME, context.packageName)
         b.putString(EXTRA_KEY_NOTIFICATION_TYPE, EXTRA_KEY_VALUE_SCANNER_STATUS)
         val i = Intent()
         i.action = ContactsContract.Intents.Insert.ACTION

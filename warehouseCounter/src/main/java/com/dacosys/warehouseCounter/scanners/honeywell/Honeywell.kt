@@ -177,7 +177,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
     }
 
     private fun loadProperties() {
-        val sv = settingViewModel()
+        val sv = settingViewModel
         properties = Bundle()
 
         // Barcode camera scanner view
@@ -328,7 +328,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
     }
 
     private fun sendImplicitBroadcast(i: Intent) {
-        val appContext = context()
+        val appContext = context
         val pm: PackageManager = appContext.packageManager
         val matches = pm.queryBroadcastReceivers(i, 0)
         if (matches.size > 0) {

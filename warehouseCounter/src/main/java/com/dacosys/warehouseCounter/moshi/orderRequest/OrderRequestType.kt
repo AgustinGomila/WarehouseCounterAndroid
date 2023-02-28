@@ -59,12 +59,12 @@ class OrderRequestType() : Parcelable {
             return arrayOfNulls(size)
         }
 
-        var prepareOrder = OrderRequestType(1, context().getString(R.string.order_preparation))
-        var stockAudit = OrderRequestType(2, context().getString(R.string.warehouse_counter))
-        var receptionAudit = OrderRequestType(3, context().getString(R.string.reception_control))
-        var deliveryAudit = OrderRequestType(4, context().getString(R.string.delivery_control))
+        var prepareOrder = OrderRequestType(1, context.getString(R.string.order_preparation))
+        var stockAudit = OrderRequestType(2, context.getString(R.string.warehouse_counter))
+        var receptionAudit = OrderRequestType(3, context.getString(R.string.reception_control))
+        var deliveryAudit = OrderRequestType(4, context.getString(R.string.delivery_control))
         var stockAuditFromDevice =
-            OrderRequestType(5, context().getString(R.string.warehouse_counter_from_device))
+            OrderRequestType(5, context.getString(R.string.warehouse_counter_from_device))
 
         fun getAll(): ArrayList<OrderRequestType> {
             val allSections = ArrayList<OrderRequestType>()

@@ -137,7 +137,7 @@ class OrderRequest() : Parcelable {
         val completeJson = Statics.getJsonFromFile(filename)
 
         try {
-            val or = moshi().adapter(OrderRequest::class.java).fromJson(completeJson) ?: return
+            val or = moshi.adapter(OrderRequest::class.java).fromJson(completeJson) ?: return
             if (or.orderRequestId == null || or.orderRequestId!! <= 0L) return
 
             this.orderRequestId = or.orderRequestId

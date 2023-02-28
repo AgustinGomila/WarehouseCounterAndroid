@@ -16,7 +16,7 @@ import androidx.core.content.res.ResourcesCompat.getDrawable
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getColorWithAlpha
@@ -54,7 +54,7 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
         checkedIdArray: ArrayList<Int>,
         listView: ListView?,
         multiSelect: Boolean,
-    ) : super(context(), resource, suggestedList) {
+    ) : super(WarehouseCounterApp.context, resource, suggestedList) {
         this.activity = activity
         this.resource = resource
         this.multiSelect = multiSelect
@@ -386,7 +386,7 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
     private var defaultForeColor: Int = 0
 
     private fun setupColors() {
-        selectedForeColor = getColor(context().resources, R.color.text_light, null)
+        selectedForeColor = getColor(context.resources, R.color.text_light, null)
 
         prepareOrderForeColor = Statics.getBestContrastColor("#FF009688")
         stockAuditFromDeviceForeColor = Statics.getBestContrastColor("#FFC107")
@@ -416,11 +416,11 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
 
             if (orderRequest != null) {
                 holder.descriptionTextView?.text = orderRequest.description.ifEmpty {
-                    context().getString(R.string.without_description)
+                    context.getString(R.string.without_description)
                 }
                 holder.creationDateTextView?.text = orderRequest.creationDate.toString()
                 holder.finishDateTextView?.text =
-                    orderRequest.finishDate ?: context().getString(R.string.uncompleted)
+                    orderRequest.finishDate ?: context.getString(R.string.uncompleted)
                 holder.filenameTextView?.text = orderRequest.filename.substringAfterLast('/')
 
                 if (holder.checkBox != null) {
@@ -467,15 +467,15 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
                 }
 
                 val colorDefault =
-                    getDrawable(context().resources, R.drawable.layout_thin_border, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border, null)!!
                 val pepareOrderBackColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border_green, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border_green, null)!!
                 val stockAuditFromDeviceBackColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border_yellow, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border_yellow, null)!!
                 val stockAuditBackColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border_blue, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border_blue, null)!!
                 val receptionAuditBackColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border_orange, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border_orange, null)!!
 
                 var backColor = colorDefault
                 var foreColor = if (isSelected) selectedForeColor else defaultForeColor
@@ -601,7 +601,7 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
             val orderRequest = getItem(position)
             if (orderRequest != null) {
                 holder.descriptionTextView?.text = orderRequest.description.ifEmpty {
-                    context().getString(R.string.without_description)
+                    context.getString(R.string.without_description)
                 }
                 holder.filenameTextView?.text = orderRequest.filename.substringAfterLast('/')
                 holder.creationDateTextView?.text = orderRequest.creationDate
@@ -650,21 +650,21 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
                 }
 
                 // Font colors
-                val black = getColor(context().resources, R.color.black, null)
-                val white = getColor(context().resources, R.color.white, null)
+                val black = getColor(context.resources, R.color.black, null)
+                val white = getColor(context.resources, R.color.white, null)
 
                 // CheckBox color
-                val darkslategray = getColor(context().resources, R.color.darkslategray, null)
+                val darkslategray = getColor(context.resources, R.color.darkslategray, null)
 
                 var backColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border, null)!!
                 var foreColor = black
 
                 val orType = orderRequest.orderRequestedType
                 when (orType) {
                     OrderRequestType.prepareOrder -> {
                         backColor = getDrawable(
-                            context().resources,
+                            context.resources,
                             R.drawable.layout_thin_border_green,
                             null
                         )!!
@@ -672,7 +672,7 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
                     }
                     OrderRequestType.stockAudit -> {
                         backColor = getDrawable(
-                            context().resources,
+                            context.resources,
                             R.drawable.layout_thin_border_blue,
                             null
                         )!!
@@ -680,7 +680,7 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
                     }
                     OrderRequestType.receptionAudit -> {
                         backColor = getDrawable(
-                            context().resources,
+                            context.resources,
                             R.drawable.layout_thin_border_orange,
                             null
                         )!!
@@ -688,7 +688,7 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
                     }
                     OrderRequestType.deliveryAudit -> {
                         backColor = getDrawable(
-                            context().resources,
+                            context.resources,
                             R.drawable.layout_thin_border_green_2,
                             null
                         )!!
@@ -696,7 +696,7 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
                     }
                     OrderRequestType.stockAuditFromDevice -> {
                         backColor = getDrawable(
-                            context().resources,
+                            context.resources,
                             R.drawable.layout_thin_border_yellow,
                             null
                         )!!
@@ -801,7 +801,7 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
         fun getPrefVisibleStatus(): ArrayList<OrderRequestType> {
             val visibleStatusArray: ArrayList<OrderRequestType> = ArrayList()
             //Retrieve the values
-            val set = settingViewModel().orderRequestVisibleStatus
+            val set = settingViewModel.orderRequestVisibleStatus
             for (i in set) {
                 if (i.trim().isEmpty()) continue
                 val status = OrderRequestType.getById(i.toLong())

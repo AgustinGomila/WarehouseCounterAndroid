@@ -44,10 +44,10 @@ class CollectorType : Parcelable {
             return arrayOfNulls(size)
         }
 
-        var none = CollectorType(0, context().getString(R.string.not_configured))
-        var honeywell = CollectorType(1, context().getString(R.string.honeywell))
-        var honeywellNative = CollectorType(2, context().getString(R.string.honeywell_native))
-        var zebra = CollectorType(3, context().getString(R.string.zebra))
+        var none = CollectorType(0, context.getString(R.string.not_configured))
+        var honeywell = CollectorType(1, context.getString(R.string.honeywell))
+        var honeywellNative = CollectorType(2, context.getString(R.string.honeywell_native))
+        var zebra = CollectorType(3, context.getString(R.string.zebra))
 
         fun getAll(): ArrayList<CollectorType> {
             val allSections = ArrayList<CollectorType>()

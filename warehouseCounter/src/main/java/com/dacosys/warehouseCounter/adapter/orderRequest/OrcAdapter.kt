@@ -18,7 +18,7 @@ import androidx.core.content.res.ResourcesCompat.getDrawable
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getColorWithAlpha
@@ -65,7 +65,7 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         allowEditQty: Boolean,
         orType: OrderRequestType,
         setQtyOnCheckedChanged: Boolean,
-    ) : super(context(), resource, orcs) {
+    ) : super(WarehouseCounterApp.context, resource, orcs) {
         this.resource = resource
         this.activity = activity
 
@@ -276,7 +276,7 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         val listView = listView ?: return
 
         val res = "${orc.item!!.ean}: ${
-            context().getString(R.string.qty_requested_exceeded)
+            context.getString(R.string.qty_requested_exceeded)
         }"
         makeText(listView, res, SnackBarType.UPDATE)
         Log.d(this::class.java.simpleName, res)
@@ -288,7 +288,7 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         val listView = listView ?: return
 
         val res = "${orc.item!!.ean}: ${
-            context().getString(R.string.qty_requested_reached)
+            context.getString(R.string.qty_requested_reached)
         }"
         makeText(listView, res, SnackBarType.UPDATE)
         Log.d(this::class.java.simpleName, res)
@@ -326,8 +326,8 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         }
 
         res += ": " + if (orcArray.count() > 1) " ${
-            context().getString(R.string.added_plural)
-        }" else " ${context().getString(R.string.added)}"
+            context.getString(R.string.added_plural)
+        }" else " ${context.getString(R.string.added)}"
 
         makeText(listView, res, SnackBarType.ADD)
         Log.d(this::class.java.simpleName, res)
@@ -353,8 +353,8 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         }
 
         res += ": " + if (orcArray.count() > 1) " ${
-            context().getString(R.string.removed_plural)
-        }" else " ${context().getString(R.string.removed)}"
+            context.getString(R.string.removed_plural)
+        }" else " ${context.getString(R.string.removed)}"
 
         makeText(listView, res, SnackBarType.REMOVE)
         Log.d(this::class.java.simpleName, res)
@@ -821,7 +821,7 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                                     orc.qty!!.qtyCollected ?: 0.toDouble(),
                                     0.toDouble(),
                                     999999.toDouble(),
-                                    settingViewModel().scanMultiplier
+                                    settingViewModel.scanMultiplier
                                 )
                             }
                         }
@@ -843,13 +843,13 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
 
                 // Background layouts
                 val colorDefault =
-                    getDrawable(context().resources, R.drawable.layout_thin_border, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border, null)!!
                 val collQtyEqualBackColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border_green, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border_green, null)!!
                 val collQtyMoreBackColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border_blue, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border_blue, null)!!
                 val collQtyLessBackColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border_red, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border_red, null)!!
 
                 var backColor = colorDefault
                 var foreColor = if (isSelected) selectedForeColor else defaultForeColor
@@ -1042,13 +1042,13 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
 
                 // region Background layouts
                 val colorDefault =
-                    getDrawable(context().resources, R.drawable.layout_thin_border, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border, null)!!
                 val collQtyEqualBackColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border_green, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border_green, null)!!
                 val collQtyMoreBackColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border_blue, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border_blue, null)!!
                 val collQtyLessBackColor =
-                    getDrawable(context().resources, R.drawable.layout_thin_border_red, null)!!
+                    getDrawable(context.resources, R.drawable.layout_thin_border_red, null)!!
 
                 var backColor = colorDefault
                 var foreColor = if (isSelected) selectedForeColor else defaultForeColor
@@ -1118,7 +1118,7 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
     private var defaultForeColor: Int = 0
 
     private fun setupColors() {
-        selectedForeColor = getColor(context().resources, R.color.text_light, null)
+        selectedForeColor = getColor(context.resources, R.color.text_light, null)
 
         collQtyEqualForeColor = Statics.getBestContrastColor("#FF009688")
         collQtyLessForeColor = Statics.getBestContrastColor("#FFE91E63")

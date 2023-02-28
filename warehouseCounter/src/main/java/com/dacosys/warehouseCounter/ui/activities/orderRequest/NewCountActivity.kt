@@ -49,7 +49,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     override fun scannerCompleted(scanCode: String) {
         if (isFinishing) return
 
-        if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, SnackBarType.INFO)
+        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, SnackBarType.INFO)
 
         runOnUiThread {
             binding.countCodeEditText.setText(scanCode)
@@ -71,7 +71,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private fun loadBundleValues(b: Bundle) {
         val t1 = b.getString("title")
         tempTitle = if (t1 != null && t1.isNotEmpty()) t1
-        else context().getString(R.string.setup_new_count)
+        else context.getString(R.string.setup_new_count)
 
         tempDescription = b.getString("description") ?: ""
         client = b.getParcelable("client")
@@ -80,7 +80,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private fun loadExtraBundleValues(b: Bundle) {
         val t1 = b.getString("title")
         tempTitle = if (t1 != null && t1.isNotEmpty()) t1
-        else context().getString(R.string.setup_new_count)
+        else context.getString(R.string.setup_new_count)
     }
 
     private lateinit var binding: NewCountActivityBinding
@@ -111,7 +111,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             val intent = Intent(this, ClientSelectActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
             intent.putExtra("client", client)
-            intent.putExtra("title", context().getString(R.string.select_client))
+            intent.putExtra("title", context.getString(R.string.select_client))
             resultForClientSelect.launch(intent)
         }
 
@@ -180,7 +180,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         runOnUiThread {
             if (client == null) {
                 binding.clientTextView.typeface = Typeface.DEFAULT
-                binding.clientTextView.text = context().getString(R.string.search_client)
+                binding.clientTextView.text = context.getString(R.string.search_client)
             } else {
                 binding.clientTextView.typeface = Typeface.DEFAULT_BOLD
                 binding.clientTextView.text = client!!.name
@@ -201,7 +201,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
         // Check for a valid data.
         if (!TextUtils.isEmpty(description) && !isDescriptionValid(description)) {
-            binding.countCodeEditText.error = context().getString(R.string.invalid_description)
+            binding.countCodeEditText.error = context.getString(R.string.invalid_description)
             focusView = binding.countCodeEditText
             cancel = true
         }
@@ -280,7 +280,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel().useBtRfid) {
+        if (!settingViewModel.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 

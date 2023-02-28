@@ -38,7 +38,7 @@ class ClientAdapter : ArrayAdapter<Client>, Filterable {
         resource: Int,
         clients: ArrayList<Client>,
         suggestedList: ArrayList<Client>,
-    ) : super(WarehouseCounterApp.context(), resource, suggestedList) {
+    ) : super(WarehouseCounterApp.context, resource, suggestedList) {
         this.activity = activity
         this.resource = resource
         this.clientArray = clients
@@ -281,18 +281,18 @@ class ClientAdapter : ArrayAdapter<Client>, Filterable {
 
                 // Background colors
                 val lightgray = ResourcesCompat.getColor(
-                    WarehouseCounterApp.context().resources, R.color.lightgray, null
+                    WarehouseCounterApp.context.resources, R.color.lightgray, null
                 )
                 val white = ResourcesCompat.getColor(
-                    WarehouseCounterApp.context().resources, R.color.text_light, null
+                    WarehouseCounterApp.context.resources, R.color.text_light, null
                 )
 
                 // Font colors
                 val black = ResourcesCompat.getColor(
-                    WarehouseCounterApp.context().resources, R.color.text_dark, null
+                    WarehouseCounterApp.context.resources, R.color.text_dark, null
                 )
                 val dimgray = ResourcesCompat.getColor(
-                    WarehouseCounterApp.context().resources, R.color.dimgray, null
+                    WarehouseCounterApp.context.resources, R.color.dimgray, null
                 )
 
                 val colorText = when (client.active) {

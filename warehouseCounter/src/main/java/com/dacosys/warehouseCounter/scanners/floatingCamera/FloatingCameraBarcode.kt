@@ -86,7 +86,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
     // Vista que usa EasyFloat como Layout
     private var v: View? = null
 
-    private var getOrientation: Int = context().resources.configuration.orientation
+    private var getOrientation: Int = context.resources.configuration.orientation
 
     init {
         activityName = activity::class.java.simpleName
@@ -163,7 +163,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
     private fun getView(): View {
         _binding =
             FloatingCameraActivityBinding.inflate(
-                (context().getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater),
+                (context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater),
                 null,
                 false
             )
@@ -248,12 +248,12 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
                 barcodeScanner.decodeContinuous(this)
                 (v as ImageView).setImageResource(R.drawable.ic_multi_barcode_scan)
                 ivFilterRepeat.setColorFilter(ContextCompat.getColor(activity, R.color.deepskyblue))
-                v.contentDescription = context().getString(R.string.continuous_mode)
+                v.contentDescription = context.getString(R.string.continuous_mode)
             } else {
                 barcodeScanner.decodeSingle(this)
                 (v as ImageView).setImageResource(R.drawable.ic_barcode_scan)
                 ivFilterRepeat.setColorFilter(ContextCompat.getColor(activity, R.color.gray))
-                v.contentDescription = context().getString(R.string.single_mode)
+                v.contentDescription = context.getString(R.string.single_mode)
             }
         }
 
@@ -262,11 +262,11 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
             if (isTorchOn) {
                 barcodeScanner.setTorchOff()
                 (v as ImageView).setImageResource(R.drawable.ic_flash_off)
-                v.contentDescription = context().getString(R.string.flash_off)
+                v.contentDescription = context.getString(R.string.flash_off)
             } else {
                 barcodeScanner.setTorchOn()
                 (v as ImageView).setImageResource(R.drawable.ic_flash_on)
-                v.contentDescription = context().getString(R.string.flash_on)
+                v.contentDescription = context.getString(R.string.flash_on)
             }
         }
 
@@ -275,10 +275,10 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
             filterRepeatedReads = !filterRepeatedReads
             if (filterRepeatedReads) {
                 (v as ImageView).setImageResource(R.drawable.ic_filter_on)
-                v.contentDescription = context().getString(R.string.filter_repeated_reads)
+                v.contentDescription = context.getString(R.string.filter_repeated_reads)
             } else {
                 (v as ImageView).setImageResource(R.drawable.ic_filter_off)
-                v.contentDescription = context().getString(R.string.allow_repeated_reads)
+                v.contentDescription = context.getString(R.string.allow_repeated_reads)
             }
         }
 
@@ -311,20 +311,20 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
 
         if (continuousOn) {
             ivScanMode.setImageResource(R.drawable.ic_multi_barcode_scan)
-            ivScanMode.contentDescription = context().getString(R.string.continuous_mode)
+            ivScanMode.contentDescription = context.getString(R.string.continuous_mode)
             ivFilterRepeat.setColorFilter(ContextCompat.getColor(activity, R.color.deepskyblue))
         } else {
             ivScanMode.setImageResource(R.drawable.ic_barcode_scan)
-            ivScanMode.contentDescription = context().getString(R.string.single_mode)
+            ivScanMode.contentDescription = context.getString(R.string.single_mode)
             ivFilterRepeat.setColorFilter(ContextCompat.getColor(activity, R.color.gray))
         }
 
         if (isTorchOn) {
             ivTorch.setImageResource(R.drawable.ic_flash_on)
-            ivTorch.contentDescription = context().getString(R.string.flash_on)
+            ivTorch.contentDescription = context.getString(R.string.flash_on)
         } else {
             ivTorch.setImageResource(R.drawable.ic_flash_off)
-            ivTorch.contentDescription = context().getString(R.string.flash_off)
+            ivTorch.contentDescription = context.getString(R.string.flash_off)
         }
 
         // Beep manager
@@ -333,22 +333,22 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
 
     private fun getDefaultHeight(): Int {
         return if (getOrientation == Configuration.ORIENTATION_PORTRAIT) {
-            settingViewModel().flCameraPortraitHeight
+            settingViewModel.flCameraPortraitHeight
         } else {
-            settingViewModel().flCameraLandscapeHeight
+            settingViewModel.flCameraLandscapeHeight
         }
     }
 
     private fun getDefaultWidth(): Int {
         return if (getOrientation == Configuration.ORIENTATION_PORTRAIT) {
-            settingViewModel().flCameraPortraitWidth
+            settingViewModel.flCameraPortraitWidth
         } else {
-            settingViewModel().flCameraLandscapeHeight
+            settingViewModel.flCameraLandscapeHeight
         }
     }
 
     private fun loadValues() {
-        val sv = settingViewModel()
+        val sv = settingViewModel
         allBarHeight = getSystemBarsHeight(activity)
         screenHeight = Statics.getScreenHeight(activity)
         screenWidth = Statics.getScreenWidth(activity)
@@ -372,16 +372,16 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
         if (!floatWindowCreated) return
 
         // Guardar datos de la ventana flotante
-        settingViewModel().flCameraPortraitLocX = flCameraPortraitLoc[0]
-        settingViewModel().flCameraPortraitLocY = flCameraPortraitLoc[1]
-        settingViewModel().flCameraPortraitWidth = flCameraPortraitWidth
-        settingViewModel().flCameraPortraitHeight = flCameraPortraitHeight
-        settingViewModel().flCameraLandscapeLocX = flCameraLandscapeLoc[0]
-        settingViewModel().flCameraLandscapeLocY = flCameraLandscapeLoc[1]
-        settingViewModel().flCameraLandscapeWidth = flCameraLandscapeWidth
-        settingViewModel().flCameraLandscapeHeight = flCameraLandscapeHeight
-        settingViewModel().flCameraContinuousMode = continuousOn
-        settingViewModel().flCameraFilterRepeatedReads = filterRepeatedReads
+        settingViewModel.flCameraPortraitLocX = flCameraPortraitLoc[0]
+        settingViewModel.flCameraPortraitLocY = flCameraPortraitLoc[1]
+        settingViewModel.flCameraPortraitWidth = flCameraPortraitWidth
+        settingViewModel.flCameraPortraitHeight = flCameraPortraitHeight
+        settingViewModel.flCameraLandscapeLocX = flCameraLandscapeLoc[0]
+        settingViewModel.flCameraLandscapeLocY = flCameraLandscapeLoc[1]
+        settingViewModel.flCameraLandscapeWidth = flCameraLandscapeWidth
+        settingViewModel.flCameraLandscapeHeight = flCameraLandscapeHeight
+        settingViewModel.flCameraContinuousMode = continuousOn
+        settingViewModel.flCameraFilterRepeatedReads = filterRepeatedReads
     }
 
     private fun checkCameraFloatingPermission() {
@@ -404,7 +404,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
             onCreate()
         } else {
             android.app.AlertDialog.Builder(activity)
-                .setMessage(context().getString(R.string.to_use_the_floating_window_function_you_must_authorize_the_floating_window_permission))
+                .setMessage(context.getString(R.string.to_use_the_floating_window_function_you_must_authorize_the_floating_window_permission))
                 .setPositiveButton(R.string.ok) { _, _ ->
                     onCreate()
                 }.setNegativeButton(R.string.cancel) { _, _ -> }.show()
@@ -418,7 +418,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
             if (!isGranted) {
                 makeText(
                     activity.window.decorView,
-                    context().getString(R.string.app_dont_have_necessary_permissions),
+                    context.getString(R.string.app_dont_have_necessary_permissions),
                     SnackBarType.ERROR
                 )
             } else {
@@ -458,7 +458,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
         val lastCodeScannedTv: TextView = binding.lastCodeScanned
 
         // Barcode camera scanner view
-        val sv = settingViewModel()
+        val sv = settingViewModel
         val formats: ArrayList<BarcodeFormat> = ArrayList()
         if (sv.symbologyPDF417) formats.add(BarcodeFormat.PDF_417)
         if (sv.symbologyAztec) formats.add(BarcodeFormat.AZTEC)
@@ -496,7 +496,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
                 // se detiene o inicia una nueva lectura.
                 if (barcodeScanner.barcodeView.decodeMode == CONTINUOUS) {
                     barcodeScanner.barcodeView.stopDecoding()
-                    messageTv.text = context().getString(R.string.touch_the_image_to_start_reading)
+                    messageTv.text = context.getString(R.string.touch_the_image_to_start_reading)
                     messageTv.visibility = VISIBLE
                 } else if (barcodeScanner.barcodeView.decodeMode == NONE) {
                     messageTv.visibility = GONE
@@ -567,7 +567,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
         // Bloquear nuevamente si está en Modo de disparo simple
         if (binding.barcodeView.barcodeView.decodeMode == SINGLE) {
             binding.messageTextView.text =
-                context().getString(R.string.touch_the_image_to_start_reading)
+                context.getString(R.string.touch_the_image_to_start_reading)
             binding.messageTextView.visibility = VISIBLE
         }
     }

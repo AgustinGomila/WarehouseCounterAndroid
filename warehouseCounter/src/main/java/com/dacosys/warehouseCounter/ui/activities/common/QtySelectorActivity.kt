@@ -231,7 +231,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         rejectNewInstances = true
         JotterListener.lockScanner(this, true)
 
-        val intent = Intent(context(), EnterCodeActivity::class.java)
+        val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
         intent.putExtra("title", getString(R.string.enter_description))
         intent.putExtra("orc", orc)
@@ -338,7 +338,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel().showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
         if (equals(scanCode, orc!!.item!!.ean)) {

@@ -11,6 +11,7 @@ import android.media.ToneGenerator
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
@@ -62,14 +63,14 @@ class Vh75Bt(
     }
 
     private fun pairDevice() {
-        val sv = settingViewModel()
+        val sv = settingViewModel
         val btAddress = sv.rfidBtAddress
         if (btAddress.isEmpty()) {
             return
         }
 
         if (ActivityCompat.checkSelfPermission(
-                context(),
+                WarehouseCounterApp.context,
                 Manifest.permission.BLUETOOTH_CONNECT
             ) != PackageManager.PERMISSION_GRANTED
         ) {
@@ -113,7 +114,7 @@ class Vh75Bt(
             // given BluetoothDevice
             try {
                 if (ActivityCompat.checkSelfPermission(
-                        context(),
+                        WarehouseCounterApp.context,
                         Manifest.permission.BLUETOOTH_CONNECT
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
@@ -133,7 +134,7 @@ class Vh75Bt(
             Log.v(tag, "BEGIN mConnectThread")
 
             if (ActivityCompat.checkSelfPermission(
-                    context(),
+                    WarehouseCounterApp.context,
                     Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
@@ -900,7 +901,7 @@ class Vh75Bt(
     }
 
     fun setConfigParameters(ret2: ByteArray) {
-        val sv = settingViewModel()
+        val sv = settingViewModel
         val param = parseReadParamResult(ret2)
         Log.v(
             tag,
@@ -1117,7 +1118,7 @@ class Vh75Bt(
 
         override val remoteDeviceName: String
             get() = if (ActivityCompat.checkSelfPermission(
-                    context(),
+                    context,
                     Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
@@ -1129,7 +1130,7 @@ class Vh75Bt(
         @Throws(IOException::class)
         override fun connect() {
             if (ActivityCompat.checkSelfPermission(
-                    context(),
+                    context,
                     Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
@@ -1161,7 +1162,7 @@ class Vh75Bt(
         @Throws(IOException::class)
         override fun connect() {
             if (ActivityCompat.checkSelfPermission(
-                    context(),
+                    context,
                     Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {

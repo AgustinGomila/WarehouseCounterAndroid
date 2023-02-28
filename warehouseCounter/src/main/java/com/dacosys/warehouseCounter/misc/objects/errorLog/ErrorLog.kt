@@ -101,7 +101,7 @@ class ErrorLog {
         private fun reallyWriteLog() {
             Log.e(tClassName, tMsg)
 
-            val writeLog = settingViewModel().registryError
+            val writeLog = settingViewModel.registryError
             if (writeLog) {
                 val logFileName = getFileName()
                 val logPath = errorLogPath

@@ -131,7 +131,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
 
     override fun onFailureEvent(barcodeFailureEvent: BarcodeFailureEvent) {
         if (lockScannerEvent) return
-        Log.v(this::class.java.simpleName, context().getString(R.string.barcode_failure))
+        Log.v(this::class.java.simpleName, context.getString(R.string.barcode_failure))
     }
 
     // When using Automatic Trigger control do not need to implement the
@@ -186,7 +186,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
     }
 
     private fun loadProperties() {
-        val sv = settingViewModel()
+        val sv = settingViewModel
         properties = HashMap()
         properties[BarcodeReader.PROPERTY_PDF_417_ENABLED] = sv.symbologyPDF417
         properties[BarcodeReader.PROPERTY_AZTEC_ENABLED] = sv.symbologyAztec

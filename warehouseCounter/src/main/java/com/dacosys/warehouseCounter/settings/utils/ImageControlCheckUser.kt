@@ -56,9 +56,9 @@ class ImageControlCheckUser(private var onSnackBarEvent: (SnackBarEventData) -> 
             onUiEvent(
                 SnackBarEventData(
                     when {
-                        fError -> context().getString(R.string.connection_error)
-                        !fReturn -> context().getString(R.string.incorrect_username_password_combination)
-                        else -> context().getString(R.string.ok)
+                        fError -> context.getString(R.string.connection_error)
+                        !fReturn -> context.getString(R.string.incorrect_username_password_combination)
+                        else -> context.getString(R.string.ok)
                     }, when {
                         fError -> SnackBarType.ERROR
                         !fReturn -> SnackBarType.ERROR

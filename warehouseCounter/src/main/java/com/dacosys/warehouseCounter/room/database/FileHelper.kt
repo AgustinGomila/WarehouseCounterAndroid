@@ -53,7 +53,7 @@ class FileHelper {
             if (isDownloadsDocument(uri)) {
                 var cursor: Cursor? = null
                 try {
-                    cursor = context().contentResolver.query(
+                    cursor = context.contentResolver.query(
                         uri, arrayOf(MediaStore.MediaColumns.DISPLAY_NAME), null, null, null
                     )
                     if (cursor != null && cursor.moveToFirst()) {
@@ -178,7 +178,7 @@ class FileHelper {
 
         private fun getDriveFilePath(uri: Uri): String? {
             val returnUri: Uri = uri
-            val returnCursor: Cursor = context().contentResolver.query(
+            val returnCursor: Cursor = context.contentResolver.query(
                 returnUri, null, null, null, null
             ) ?: return null
             /*
@@ -191,11 +191,11 @@ class FileHelper {
             returnCursor.moveToFirst()
             val name: String = returnCursor.getString(nameIndex)
             val size = returnCursor.getLong(sizeIndex).toString()
-            val file = File(context().cacheDir, name)
+            val file = File(context.cacheDir, name)
 
             try {
                 val inputStream: InputStream =
-                    context().contentResolver.openInputStream(uri) ?: return null
+                    context.contentResolver.openInputStream(uri) ?: return null
                 val outputStream = FileOutputStream(file)
                 var read: Int
                 val maxBufferSize = 1 * 1024 * 1024
@@ -230,7 +230,7 @@ class FileHelper {
             newDirName: String,
         ): String? {
             val returnUri: Uri = uri
-            val returnCursor: Cursor = context().contentResolver.query(
+            val returnCursor: Cursor = context.contentResolver.query(
                 returnUri, arrayOf(
                     OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE
                 ), null, null, null
@@ -248,18 +248,18 @@ class FileHelper {
             val size = returnCursor.getLong(sizeIndex).toString()
 
             val output = if (newDirName != "") {
-                val dir = File(context().filesDir.toString() + "/" + newDirName)
+                val dir = File(context.filesDir.toString() + "/" + newDirName)
                 if (!dir.exists()) {
                     dir.mkdir()
                 }
-                File(context().filesDir.toString() + "/" + newDirName + "/" + name)
+                File(context.filesDir.toString() + "/" + newDirName + "/" + name)
             } else {
-                File(context().filesDir.toString() + "/" + name)
+                File(context.filesDir.toString() + "/" + name)
             }
 
             try {
                 val inputStream: InputStream =
-                    context().contentResolver.openInputStream(uri) ?: return null
+                    context.contentResolver.openInputStream(uri) ?: return null
                 val outputStream = FileOutputStream(output)
                 var read: Int
                 val bufferSize = 1024
@@ -289,7 +289,7 @@ class FileHelper {
             val column = "_data"
             val projection = arrayOf(column)
             try {
-                cursor = context().contentResolver.query(
+                cursor = context.contentResolver.query(
                     uri, projection, selection, selectionArgs, null
                 )
                 if (cursor != null && cursor.moveToFirst()) {
@@ -328,7 +328,7 @@ class FileHelper {
 
         fun copyDbToDocuments(): Boolean {
             try {
-                val dbFile = File(context().getDatabasePath(DATABASE_NAME).toString())
+                val dbFile = File(context.getDatabasePath(DATABASE_NAME).toString())
 
                 //Open your local db as the input stream
                 val myInput = FileInputStream(dbFile)
@@ -381,10 +381,10 @@ class FileHelper {
         @Throws(IOException::class)
         private fun copyDataBase() {
             //Open your local db as the input stream
-            val myInput = context().assets.open(DATABASE_NAME)
+            val myInput = context.assets.open(DATABASE_NAME)
 
             // Path to the just created empty db
-            val outFileName = context().getDatabasePath(DATABASE_NAME).toString()
+            val outFileName = context.getDatabasePath(DATABASE_NAME).toString()
 
             try {
                 //Open the empty db as the output stream
@@ -414,14 +414,14 @@ class FileHelper {
             if (inputDbFile == null) return false
 
             Log.d(
-                this::class.java.simpleName, context().getString(R.string.copying_database)
+                this::class.java.simpleName, context.getString(R.string.copying_database)
             )
 
             //Open your local db as the input stream
             val myInput = FileInputStream(inputDbFile)
 
             // Path to the just created empty db
-            val outFileName = context().getDatabasePath(DATABASE_NAME).toString()
+            val outFileName = context.getDatabasePath(DATABASE_NAME).toString()
 
             val file = File(outFileName)
             if (file.exists()) {
@@ -431,11 +431,11 @@ class FileHelper {
 
             Log.d(
                 this::class.java.simpleName,
-                "${context().getString(R.string.origin)}: ${inputDbFile.absolutePath}"
+                "${context.getString(R.string.origin)}: ${inputDbFile.absolutePath}"
             )
             Log.d(
                 this::class.java.simpleName,
-                "${context().getString(R.string.destination)}: $outFileName"
+                "${context.getString(R.string.destination)}: $outFileName"
             )
 
             try {
@@ -459,13 +459,13 @@ class FileHelper {
             } catch (e: IOException) {
                 ErrorLog.writeLog(
                     null, this::class.java.simpleName, "${
-                        context().getString(R.string.exception_error)
+                        context.getString(R.string.exception_error)
                     } (Copy database): ${e.message}"
                 )
                 return false
             }
 
-            Log.d(this::class.java.simpleName, context().getString(R.string.copy_ok))
+            Log.d(this::class.java.simpleName, context.getString(R.string.copy_ok))
 
             return true
         }

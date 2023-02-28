@@ -39,15 +39,15 @@ object Nfc {
             // Stop here, we definitely need NFC
             Log.d(
                 this::class.java.simpleName,
-                context().getString(R.string.this_device_doesnt_support_NFC)
+                context.getString(R.string.this_device_doesnt_support_NFC)
             )
             return
         }
 
         if (!mNfcAdapter!!.isEnabled) {
-            Log.d(this::class.java.simpleName, context().getString(R.string.NFC_is_disabled))
+            Log.d(this::class.java.simpleName, context.getString(R.string.NFC_is_disabled))
         } else {
-            Log.d(this::class.java.simpleName, context().getString(R.string.NFC_is_enabled))
+            Log.d(this::class.java.simpleName, context.getString(R.string.NFC_is_enabled))
         }
 
         nfcHandleIntent(targetActivity.intent, targetActivity)
