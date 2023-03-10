@@ -19,15 +19,14 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.cleanPrefs
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
 import com.dacosys.warehouseCounter.databinding.InitConfigActivityBinding
+import com.dacosys.warehouseCounter.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.closeKeyboard
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getConfig
 import com.dacosys.warehouseCounter.misc.Statics.Companion.setupProxy
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.moshi.clientPackage.Package
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
@@ -38,6 +37,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.lang.ref.WeakReference
@@ -129,7 +129,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                 return
             }
 
-            closeKeyboard(this)
+            Screen.closeKeyboard(this)
 
             setResult(RESULT_OK)
             finish()
@@ -159,7 +159,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = InitConfigActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -193,7 +193,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         binding.passwordEditText.setText(password, TextView.BufferType.EDITABLE)
         binding.passwordEditText.setOnKeyListener { _, keyCode, _ ->
             if (keyCode == KeyEvent.ACTION_DOWN || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-                closeKeyboard(this)
+                Screen.closeKeyboard(this)
                 attemptToConfigure()
                 true
             } else {
@@ -202,13 +202,13 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         }
         binding.passwordEditText.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
-                Statics.showKeyboard(this)
+                Screen.showKeyboard(this)
             }
         }
         binding.passwordEditText.setOnEditorActionListener { _, actionId, _ ->
             return@setOnEditorActionListener when (actionId) {
                 EditorInfo.IME_ACTION_DONE -> {
-                    closeKeyboard(this)
+                    Screen.closeKeyboard(this)
                     attemptToConfigure()
                     true
                 }
@@ -219,7 +219,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         binding.emailEditText.setText(email, TextView.BufferType.EDITABLE)
         binding.emailEditText.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
-                Statics.showKeyboard(this)
+                Screen.showKeyboard(this)
             }
         }
         binding.emailEditText.setOnKeyListener { _, keyCode, _ ->
@@ -244,7 +244,11 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     private fun clearOldPrefs() {
-        cleanPrefs()
+        return try {
+            sharedPreferences.edit().clear().apply()
+        } catch (ex: java.lang.Exception) {
+            ex.printStackTrace()
+        }
     }
 
     private fun configApp() {

@@ -9,10 +9,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.*
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.Switch
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -27,20 +23,21 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrderRequestAdapter.Companion.getPrefVisibleStatus
 import com.dacosys.warehouseCounter.databinding.OutboxActivityBinding
+import com.dacosys.warehouseCounter.dto.log.Log
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest.CREATOR.getCompletedOrders
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.moshi.log.Log
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest.CREATOR.getCompletedOrders
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.retrofit.functions.SendOrder
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import org.parceler.Parcels
 import java.io.File
 import java.io.UnsupportedEncodingException
@@ -93,33 +90,12 @@ class OutboxActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private fun setupUI(view: View) {
-// Set up touch checkedChangedListener for non-text box views to hide keyboard.
-        if (view !is EditText) {
-            view.setOnTouchListener { _, motionEvent ->
-                Statics.closeKeyboard(this)
-                if (view is Button && view !is Switch && view !is CheckBox) {
-                    touchButton(motionEvent, view)
-                    true
-                } else {
-                    false
-                }
-            }
-        }
-
-        //If a layout container, iterate over children and seed recursion.
-        if (view is ViewGroup) {
-            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
-        }
-    }
-
     private lateinit var binding: OutboxActivityBinding
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = OutboxActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -161,19 +137,7 @@ class OutboxActivity : AppCompatActivity() {
         fillAdapter(completeList)
 
         // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        setupUI(binding.outbox)
-    }
-
-    private fun touchButton(motionEvent: MotionEvent, button: Button) {
-        when (motionEvent.action) {
-            MotionEvent.ACTION_UP -> {
-                button.isPressed = false
-                button.performClick()
-            }
-            MotionEvent.ACTION_DOWN -> {
-                button.isPressed = true
-            }
-        }
+        Screen.setupUI(binding.outbox, this)
     }
 
     private fun showDetail() {
@@ -386,7 +350,7 @@ class OutboxActivity : AppCompatActivity() {
         if (isListViewFilling) return
         isListViewFilling = true
 
-        Handler(Looper.getMainLooper()).post { run { Statics.closeKeyboard(this) } }
+        Handler(Looper.getMainLooper()).post { run { Screen.closeKeyboard(this) } }
 
         var temp = t
         if (!temp.any()) {
@@ -597,7 +561,7 @@ class OutboxActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()

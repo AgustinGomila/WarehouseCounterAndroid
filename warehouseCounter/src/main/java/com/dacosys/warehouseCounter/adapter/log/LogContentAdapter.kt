@@ -10,10 +10,10 @@ import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.dto.log.LogContent
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
-import com.dacosys.warehouseCounter.misc.Statics.Companion.getColorWithAlpha
-import com.dacosys.warehouseCounter.moshi.log.LogContent
+import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
 import java.util.*
 

@@ -5,10 +5,10 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
-import com.dacosys.warehouseCounter.moshi.error.ErrorObject
-import com.dacosys.warehouseCounter.moshi.price.Price
-import com.dacosys.warehouseCounter.moshi.price.PriceList
-import com.dacosys.warehouseCounter.moshi.search.SearchPrice
+import com.dacosys.warehouseCounter.dto.error.ErrorObject
+import com.dacosys.warehouseCounter.dto.price.Price
+import com.dacosys.warehouseCounter.dto.price.PriceList
+import com.dacosys.warehouseCounter.dto.search.SearchObject
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
@@ -22,7 +22,7 @@ import retrofit2.Response
 import kotlin.concurrent.thread
 
 class GetPrice(
-    private val searchPrice: SearchPrice,
+    private val searchObject: SearchObject,
     private val onEvent: (SnackBarEventData) -> Unit = { },
     private val onFinish: (ArrayList<Price>) -> Unit,
 ) {
@@ -61,10 +61,11 @@ class GetPrice(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        val tempInst = apiService.getPrices(body = searchPrice)
+        val tempInst = apiService.getPrices(body = searchObject)
 
         Log.i(
-            this::class.java.simpleName, moshi.adapter(SearchPrice::class.java).toJson(searchPrice)
+            this::class.java.simpleName,
+            moshi.adapter(SearchObject::class.java).toJson(searchObject)
         )
 
         tempInst.enqueue(object : Callback<Any?> {

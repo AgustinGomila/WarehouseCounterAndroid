@@ -27,12 +27,11 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.LoginActivityBinding
+import com.dacosys.warehouseCounter.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.misc.Md5
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
-import com.dacosys.warehouseCounter.misc.Statics.Companion.closeKeyboard
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.moshi.clientPackage.Package
 import com.dacosys.warehouseCounter.retrofit.functions.GetDatabaseLocation
 import com.dacosys.warehouseCounter.retrofit.result.DbLocationResult
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
@@ -50,6 +49,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
@@ -319,27 +319,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         setEditTextFocus()
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private fun setupUI(view: View) {
-        // Set up touch setOnTouchListener for non-text box views to hide keyboard.
-        if (view !is EditText) {
-            view.setOnTouchListener { _, motionEvent ->
-                closeKeyboard(this)
-                if (view is Button && view !is Switch && view !is CheckBox) {
-                    touchButton(motionEvent, view)
-                    true
-                } else {
-                    false
-                }
-            }
-        }
-
-        //If a layout container, iterate over children and seed recursion.
-        if (view is ViewGroup) {
-            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
-        }
-    }
-
     override fun onBackPressed() {
         // Esto sirve para salir del programa desde la pantalla de Login
         moveTaskToBack(true)
@@ -357,7 +336,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = LoginActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -404,9 +383,9 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         }
         binding.passwordEditText.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus && !KeyboardVisibilityEvent.isKeyboardVisible(this)) {
-                Statics.showKeyboard(this)
+                Screen.showKeyboard(this)
             } else {
-                closeKeyboard(this)
+                Screen.closeKeyboard(this)
             }
         }
         binding.passwordEditText.setOnEditorActionListener { _, actionId, _ ->
@@ -433,7 +412,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         initialSetup()
 
         // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        setupUI(binding.login)
+        Screen.setupUI(binding.login, this)
     }
 
     private fun showProgressBar(show: Boolean, msg: String) {
@@ -561,18 +540,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             isReturnedFromSettings = true
         } else {
             makeText(binding.root, getString(R.string.invalid_password), ERROR)
-        }
-    }
-
-    private fun touchButton(motionEvent: MotionEvent, button: Button) {
-        when (motionEvent.action) {
-            MotionEvent.ACTION_UP -> {
-                button.isPressed = false
-                button.performClick()
-            }
-            MotionEvent.ACTION_DOWN -> {
-                button.isPressed = true
-            }
         }
     }
 

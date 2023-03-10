@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.KeyEvent
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView
-import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.ui.utils.Screen
 
 class ContractsAutoCompleteTextView : AppCompatAutoCompleteTextView {
     private var myThreshold = 0
@@ -12,9 +12,7 @@ class ContractsAutoCompleteTextView : AppCompatAutoCompleteTextView {
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
-        context,
-        attrs,
-        defStyleAttr
+        context, attrs, defStyleAttr
     )
 
     override fun onFilterComplete(count: Int) {
@@ -58,7 +56,7 @@ class ContractsAutoCompleteTextView : AppCompatAutoCompleteTextView {
 
     override fun dispatchKeyEventPreIme(event: KeyEvent): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_BACK && isPopupShowing) {
-            if (Statics.isKeyboardVisible()) {
+            if (Screen.isKeyboardVisible()) {
                 return false
             }
         }

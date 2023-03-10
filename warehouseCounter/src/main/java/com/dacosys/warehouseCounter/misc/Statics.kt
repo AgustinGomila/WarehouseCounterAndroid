@@ -1,20 +1,14 @@
 package com.dacosys.warehouseCounter.misc
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.DialogInterface
-import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.content.res.Configuration
-import android.content.res.Resources
-import android.content.res.TypedArray
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.Insets
 import android.graphics.Typeface
 import android.graphics.drawable.InsetDrawable
 import android.net.ConnectivityManager
@@ -23,17 +17,13 @@ import android.os.Build
 import android.os.Environment
 import android.text.InputType
 import android.text.method.PasswordTransformationMethod
-import android.util.DisplayMetrics
 import android.util.Log
 import android.view.*
-import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.annotation.ColorInt
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.FragmentActivity
@@ -41,11 +31,11 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.dto.clientPackage.Package
+import com.dacosys.warehouseCounter.dto.clientPackage.Package.Companion.icPasswordTag
+import com.dacosys.warehouseCounter.dto.clientPackage.Package.Companion.icUserTag
+import com.dacosys.warehouseCounter.dto.token.TokenObject
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.moshi.clientPackage.Package
-import com.dacosys.warehouseCounter.moshi.clientPackage.Package.Companion.icPasswordTag
-import com.dacosys.warehouseCounter.moshi.clientPackage.Package.Companion.icUserTag
-import com.dacosys.warehouseCounter.moshi.token.TokenObject
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
@@ -67,6 +57,8 @@ import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
+import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.getScreenHeight
+import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.getScreenWidth
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
@@ -74,7 +66,6 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.WriterException
 import com.google.zxing.qrcode.QRCodeWriter
 import com.journeyapps.barcodescanner.ScanOptions
-import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import org.json.JSONObject
 import java.io.*
 import java.lang.ref.WeakReference
@@ -85,8 +76,6 @@ import java.nio.channels.FileChannel
 import java.nio.charset.Charset
 import java.util.*
 import kotlin.concurrent.thread
-import kotlin.math.min
-import kotlin.math.roundToInt
 
 class Statics {
     companion object : DialogInterface.OnMultiChoiceClickListener {
@@ -212,10 +201,8 @@ class Statics {
 
         const val APP_VERSION_ID: Int = 8
 
-        private const val IMAGE_CONTROL_PATH = "/image_control"
         private const val IMAGE_CONTROL_DATABASE_NAME = "imagecontrol.sqlite"
         const val APP_VERSION_ID_IMAGECONTROL = 7
-        private const val INTERNAL_IMAGE_CONTROL_APP_ID: Int = 1
 
         const val WC_ROOT_PATH = "/warehouse_counter"
         private const val PENDING_COUNT_PATH = "/pending_counts"
@@ -1114,207 +1101,6 @@ class Statics {
             // for now eat exceptions
             return ""
         }
-
-        fun getBestContrastColorId(colorId: Int): Int {
-            return try {
-                val color = ResourcesCompat.getColor(context.resources, colorId, null)
-                val backColor = Color.rgb(Color.red(color), Color.green(color), Color.blue(color))
-                val l =
-                    0.2126 * Color.red(backColor) + 0.7152 * Color.green(backColor) + 0.0722 * Color.blue(
-                        backColor
-                    )
-                if (l <= 128) textLightColor()
-                else textDarkColor()
-            } catch (ex: Exception) {
-                Log.e(this::class.java.simpleName, ex.message.toString())
-                textDarkColor()
-            }
-        }
-
-        fun getBestContrastColor(color: String): Int {
-            val backColor = Color.parseColor(color)
-            val l =
-                0.2126 * Color.red(backColor) + 0.7152 * Color.green(backColor) + 0.0722 * Color.blue(
-                    backColor
-                )
-            return if (l <= 128) textLightColor()
-            else textDarkColor()
-        }
-
-        @ColorInt
-        fun textLightColor(): Int {
-            return ResourcesCompat.getColor(context.resources, R.color.text_light, null)
-        }
-
-        @ColorInt
-        fun textDarkColor(): Int {
-            return ResourcesCompat.getColor(context.resources, R.color.text_dark, null)
-        }
-
-        fun manipulateColor(color: Int, factor: Float): Int {
-            val a = Color.alpha(color)
-            val r = (Color.red(color) * factor).roundToInt()
-            val g = (Color.green(color) * factor).roundToInt()
-            val b = (Color.blue(color) * factor).roundToInt()
-            return Color.argb(a, min(r, 255), min(g, 255), min(b, 255))
-        }
-
-        fun getColorWithAlpha(colorId: Int, alpha: Int): Int {
-            val color = ResourcesCompat.getColor(context.resources, colorId, null)
-
-            val red = Color.red(color)
-            val blue = Color.blue(color)
-            val green = Color.green(color)
-
-            return Color.argb(alpha, red, green, blue)
-        }
-
-        @SuppressLint("SourceLockedOrientationActivity")
-        fun setScreenRotation(activity: FragmentActivity) {
-            val viewModel = settingViewModel
-
-            val rotation: Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val display = activity.display
-                display?.rotation ?: Surface.ROTATION_0
-            } else {
-                @Suppress("DEPRECATION") val display = activity.windowManager.defaultDisplay
-                display.rotation
-            }
-            val height: Int
-            val width: Int
-
-            val displayMetrics = Resources.getSystem().displayMetrics
-            height = displayMetrics.heightPixels
-            width = displayMetrics.widthPixels
-
-            if (viewModel.allowScreenRotation) {
-                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            } else {
-                when (rotation) {
-                    Surface.ROTATION_90 -> when {
-                        width > height -> activity.requestedOrientation =
-                            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                        else -> activity.requestedOrientation =
-                            ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
-                    }
-                    Surface.ROTATION_180 -> when {
-                        height > width -> activity.requestedOrientation =
-                            ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
-                        else -> activity.requestedOrientation =
-                            ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
-                    }
-                    Surface.ROTATION_270 -> when {
-                        width > height -> activity.requestedOrientation =
-                            ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
-                        else -> activity.requestedOrientation =
-                            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                    }
-                    Surface.ROTATION_0 -> activity.requestedOrientation =
-                        ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                    else -> when {
-                        height > width -> activity.requestedOrientation =
-                            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                        else -> activity.requestedOrientation =
-                            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                    }
-                }
-            }
-        }
-
-        fun getScreenWidth(activity: FragmentActivity): Int {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val windowMetrics = activity.windowManager.currentWindowMetrics
-                val bounds = windowMetrics.bounds
-                val insets: Insets =
-                    windowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
-                if (activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && activity.resources.configuration.smallestScreenWidthDp < 600) { // landscape and phone
-                    val navigationBarSize: Int = insets.right + insets.left
-                    bounds.width() - navigationBarSize
-                } else { // portrait or tablet
-                    bounds.width()
-                }
-            } else {
-                val outMetrics = DisplayMetrics()
-                @Suppress("DEPRECATION") activity.windowManager.defaultDisplay.getMetrics(outMetrics)
-                outMetrics.widthPixels
-            }
-        }
-
-        fun getScreenHeight(activity: FragmentActivity): Int {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val windowMetrics = activity.windowManager.currentWindowMetrics
-                val bounds = windowMetrics.bounds
-                val insets: Insets =
-                    windowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
-                if (activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && activity.resources.configuration.smallestScreenWidthDp < 600) { // landscape and phone
-                    bounds.height()
-                } else { // portrait or tablet
-                    val navigationBarSize: Int = insets.bottom
-                    bounds.height() - navigationBarSize
-                }
-            } else {
-                val outMetrics = DisplayMetrics()
-                @Suppress("DEPRECATION") activity.windowManager.defaultDisplay.getMetrics(outMetrics)
-                outMetrics.heightPixels
-            }
-        }
-
-        fun getSystemBarsHeight(activity: FragmentActivity): Int {
-            // Valores de la pantalla actual
-            // status bar height
-            var statusBarHeight = 0
-            val resourceId1: Int =
-                activity.resources.getIdentifier("status_bar_height", "dimen", "android")
-            if (resourceId1 > 0) {
-                statusBarHeight = activity.resources.getDimensionPixelSize(resourceId1)
-            }
-
-            // action bar height
-            val styledAttributes: TypedArray =
-                activity.theme.obtainStyledAttributes(intArrayOf(android.R.attr.actionBarSize))
-            val actionBarHeight = styledAttributes.getDimension(0, 0f).toInt()
-            styledAttributes.recycle()
-
-            // navigation bar height
-            var navigationBarHeight = 0
-            val resourceId2: Int =
-                activity.resources.getIdentifier("navigation_bar_height", "dimen", "android")
-            if (resourceId2 > 0) {
-                navigationBarHeight = activity.resources.getDimensionPixelSize(resourceId2)
-            }
-
-            return statusBarHeight + actionBarHeight + navigationBarHeight
-        }
-
-        fun isTablet(): Boolean {
-            return context.resources.getBoolean(R.bool.isTab)
-        }
-
-        // region Keyboard
-        fun isKeyboardVisible(): Boolean {
-            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
-            return imm != null && imm.isActive
-        }
-
-        fun showKeyboard(activity: AppCompatActivity) {
-            if (!KeyboardVisibilityEvent.isKeyboardVisible(activity)) {
-                val imm =
-                    activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.showSoftInput(activity.window.decorView.rootView, 0)
-            }
-        }
-
-        fun closeKeyboard(activity: AppCompatActivity) {
-            if (KeyboardVisibilityEvent.isKeyboardVisible(activity)) {
-                val imm =
-                    activity.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE) as InputMethodManager
-                val cf = activity.currentFocus
-                if (cf != null) {
-                    imm.hideSoftInputFromWindow(cf.windowToken, 0)
-                }
-            }
-        }
-        // endregion
 
         fun getFiles(directoryPath: String): ArrayList<String>? {
             val filesArrayList = ArrayList<String>()

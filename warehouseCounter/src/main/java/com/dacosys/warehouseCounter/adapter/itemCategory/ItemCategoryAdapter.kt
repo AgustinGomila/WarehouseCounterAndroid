@@ -12,8 +12,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
 
 
@@ -361,7 +361,7 @@ class ItemCategoryAdapter : ArrayAdapter<ItemCategory>, Filterable {
 
     companion object {
 
-        var viewHeight = if (Statics.isTablet()) 186 else 107
+        var viewHeight = if (Screen.isTablet()) 186 else 107
 
         class ItemCategoryComparator : Comparator<ItemCategory> {
             fun compareNullable(o1: ItemCategory?, o2: ItemCategory?): Int {

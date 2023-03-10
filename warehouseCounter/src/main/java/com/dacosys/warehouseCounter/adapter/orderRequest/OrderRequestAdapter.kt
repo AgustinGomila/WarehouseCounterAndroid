@@ -18,11 +18,11 @@ import androidx.core.graphics.BlendModeCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.getColorWithAlpha
-import com.dacosys.warehouseCounter.misc.Statics.Companion.manipulateColor
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.ui.utils.Colors
+import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
+import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
 import com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
 import java.lang.ref.WeakReference
 import java.util.*
@@ -388,11 +388,11 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
     private fun setupColors() {
         selectedForeColor = getColor(context.resources, R.color.text_light, null)
 
-        prepareOrderForeColor = Statics.getBestContrastColor("#FF009688")
-        stockAuditFromDeviceForeColor = Statics.getBestContrastColor("#FFC107")
-        stockAuditForeColor = Statics.getBestContrastColor("#2196F3")
-        receptionAuditForeColor = Statics.getBestContrastColor("#FF5722")
-        defaultForeColor = Statics.getBestContrastColor("#DFDFDF")
+        prepareOrderForeColor = Colors.getBestContrastColor("#FF009688")
+        stockAuditFromDeviceForeColor = Colors.getBestContrastColor("#FFC107")
+        stockAuditForeColor = Colors.getBestContrastColor("#2196F3")
+        receptionAuditForeColor = Colors.getBestContrastColor("#FF5722")
+        defaultForeColor = Colors.getBestContrastColor("#DFDFDF")
     }
 
     //endregion
@@ -503,7 +503,7 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
 
                 val darkerColor = when {
                     isSelected -> true
-                    foreColor == Statics.textLightColor() -> true
+                    foreColor == Colors.textLightColor() -> true
                     else -> false
                 }
 
@@ -524,11 +524,10 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
                     parentLayout.layoutParams = ConstraintLayout.LayoutParams(0, 0)
                 } else {
                     parentLayout.visibility = VISIBLE
-                    parentLayout.layoutParams =
-                        ConstraintLayout.LayoutParams(
-                            ConstraintLayout.LayoutParams.MATCH_PARENT,
-                            ConstraintLayout.LayoutParams.WRAP_CONTENT
-                        )
+                    parentLayout.layoutParams = ConstraintLayout.LayoutParams(
+                        ConstraintLayout.LayoutParams.MATCH_PARENT,
+                        ConstraintLayout.LayoutParams.WRAP_CONTENT
+                    )
                 }
             }
 
@@ -664,41 +663,31 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
                 when (orType) {
                     OrderRequestType.prepareOrder -> {
                         backColor = getDrawable(
-                            context.resources,
-                            R.drawable.layout_thin_border_green,
-                            null
+                            context.resources, R.drawable.layout_thin_border_green, null
                         )!!
                         foreColor = white
                     }
                     OrderRequestType.stockAudit -> {
                         backColor = getDrawable(
-                            context.resources,
-                            R.drawable.layout_thin_border_blue,
-                            null
+                            context.resources, R.drawable.layout_thin_border_blue, null
                         )!!
                         foreColor = white
                     }
                     OrderRequestType.receptionAudit -> {
                         backColor = getDrawable(
-                            context.resources,
-                            R.drawable.layout_thin_border_orange,
-                            null
+                            context.resources, R.drawable.layout_thin_border_orange, null
                         )!!
                         foreColor = white
                     }
                     OrderRequestType.deliveryAudit -> {
                         backColor = getDrawable(
-                            context.resources,
-                            R.drawable.layout_thin_border_green_2,
-                            null
+                            context.resources, R.drawable.layout_thin_border_green_2, null
                         )!!
                         foreColor = white
                     }
                     OrderRequestType.stockAuditFromDevice -> {
                         backColor = getDrawable(
-                            context.resources,
-                            R.drawable.layout_thin_border_yellow,
-                            null
+                            context.resources, R.drawable.layout_thin_border_yellow, null
                         )!!
                         foreColor = black
                     }
@@ -717,11 +706,10 @@ class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
                     parentLayout.layoutParams = ConstraintLayout.LayoutParams(0, 0)
                 } else {
                     parentLayout.visibility = VISIBLE
-                    parentLayout.layoutParams =
-                        ConstraintLayout.LayoutParams(
-                            ConstraintLayout.LayoutParams.MATCH_PARENT,
-                            ConstraintLayout.LayoutParams.WRAP_CONTENT
-                        )
+                    parentLayout.layoutParams = ConstraintLayout.LayoutParams(
+                        ConstraintLayout.LayoutParams.MATCH_PARENT,
+                        ConstraintLayout.LayoutParams.WRAP_CONTENT
+                    )
                 }
             }
 

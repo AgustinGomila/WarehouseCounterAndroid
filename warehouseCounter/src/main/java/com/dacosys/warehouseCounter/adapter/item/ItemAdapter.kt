@@ -21,8 +21,10 @@ import androidx.core.graphics.BlendModeCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.room.entity.item.Item
+import com.dacosys.warehouseCounter.ui.utils.Colors
+import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
 import java.lang.ref.WeakReference
 import java.util.*
@@ -578,8 +580,8 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
     private fun setupColors() {
         selectedForeColor = getColor(context.resources, R.color.text_light, null)
 
-        inactiveForeColor = Statics.getBestContrastColor("#C7C7C7")
-        defaultForeColor = Statics.getBestContrastColor("#DFDFDF")
+        inactiveForeColor = Colors.getBestContrastColor("#C7C7C7")
+        defaultForeColor = Colors.getBestContrastColor("#DFDFDF")
     }
 
     //endregion
@@ -674,12 +676,12 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
 
                 val darkerColor = when {
                     isSelected -> true
-                    foreColor == Statics.textLightColor() -> true
+                    foreColor == Colors.textLightColor() -> true
                     else -> false
                 }
 
                 val titleForeColor: Int =
-                    Statics.manipulateColor(foreColor, if (darkerColor) 0.8f else 1.4f)
+                    Colors.manipulateColor(foreColor, if (darkerColor) 0.8f else 1.4f)
 
                 v.background = backColor
                 holder.descriptionTextView?.setTextColor(foreColor)
@@ -779,12 +781,12 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
 
                 val darkerColor = when {
                     isSelected -> true
-                    foreColor == Statics.textLightColor() -> true
+                    foreColor == Colors.textLightColor() -> true
                     else -> false
                 }
 
                 val titleForeColor: Int =
-                    Statics.manipulateColor(foreColor, if (darkerColor) 0.8f else 1.4f)
+                    Colors.manipulateColor(foreColor, if (darkerColor) 0.8f else 1.4f)
 
                 v.background = backColor
                 holder.descriptionTextView?.setTextColor(foreColor)
@@ -913,7 +915,7 @@ class ItemAdapter : ArrayAdapter<Item>, Filterable {
     }
 
     companion object {
-        var viewHeightForDropDown = if (Statics.isTablet()) 251 else 143
+        var viewHeightForDropDown = if (Screen.isTablet()) 251 else 143
 
         class ItemComparator : Comparator<Item> {
             fun compareNullable(o1: Item?, o2: Item?): Int {

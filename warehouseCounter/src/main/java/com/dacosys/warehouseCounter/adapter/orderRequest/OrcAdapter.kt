@@ -20,13 +20,14 @@ import androidx.core.graphics.BlendModeCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.dto.orderRequest.Item
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.getColorWithAlpha
-import com.dacosys.warehouseCounter.moshi.orderRequest.Item
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.Colors
+import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
 import java.lang.ref.WeakReference
 import java.util.*
@@ -654,8 +655,6 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
         holder.extIdTextView = v.findViewById(R.id.extIdCheckedTextView)
         holder.lotIdTextView = v.findViewById(R.id.lotIdCheckedTextView)
 
-        holder.qtyReqTitleTextView = v.findViewById(R.id.qtyReqTitleTextView)
-        holder.qtyTitleTextView = v.findViewById(R.id.qtyTitleTextView)
         holder.itemIdLabelTextView = v.findViewById(R.id.itemIdLabelTextView)
         holder.extIdLabelTextView = v.findViewById(R.id.extIdLabelTextView)
         holder.lotIdLabelTextView = v.findViewById(R.id.lotIdLabelTextView)
@@ -733,16 +732,12 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                 holder.eanTextView?.text = item.ean
                 if (orc.qty != null) {
                     val qty = orc.qty!!
-                    holder.qtyCollectedTextView?.text =
-                        Statics.roundToString(
-                            qty.qtyCollected ?: 0.toDouble(),
-                            Statics.decimalPlaces
-                        )
-                    holder.qtyRequestedTextView?.text =
-                        Statics.roundToString(
-                            qty.qtyRequested ?: 0.toDouble(),
-                            Statics.decimalPlaces
-                        )
+                    holder.qtyCollectedTextView?.text = Statics.roundToString(
+                        qty.qtyCollected ?: 0.toDouble(), Statics.decimalPlaces
+                    )
+                    holder.qtyRequestedTextView?.text = Statics.roundToString(
+                        qty.qtyRequested ?: 0.toDouble(), Statics.decimalPlaces
+                    )
                 }
 
                 holder.itemIdTextView?.text = item.itemId?.toString() ?: 0.toString()
@@ -770,9 +765,7 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                         CompoundButton.OnCheckedChangeListener { _, isChecked ->
                             if (orc.qty != null) {
                                 this.setChecked(
-                                    orc,
-                                    (orc.qty!!.qtyRequested ?: 0.toDouble()) > 0,
-                                    isChecked
+                                    orc, (orc.qty!!.qtyRequested ?: 0.toDouble()) > 0, isChecked
                                 )
                             }
                         }
@@ -877,12 +870,12 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
 
                 val darkerColor = when {
                     isSelected -> true
-                    foreColor == Statics.textLightColor() -> true
+                    foreColor == Colors.textLightColor() -> true
                     else -> false
                 }
 
                 val titleForeColor: Int =
-                    Statics.manipulateColor(foreColor, if (darkerColor) 0.8f else 1.4f)
+                    Colors.manipulateColor(foreColor, if (darkerColor) 0.8f else 1.4f)
 
                 v.background = backColor
                 holder.descriptionTextView?.setTextColor(foreColor)
@@ -979,16 +972,12 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                 holder.eanTextView?.text = item.ean
                 if (orc.qty != null) {
                     val qty = orc.qty!!
-                    holder.qtyCollectedTextView?.text =
-                        Statics.roundToString(
-                            qty.qtyCollected ?: 0.toDouble(),
-                            Statics.decimalPlaces
-                        )
-                    holder.qtyRequestedTextView?.text =
-                        Statics.roundToString(
-                            qty.qtyRequested ?: 0.toDouble(),
-                            Statics.decimalPlaces
-                        )
+                    holder.qtyCollectedTextView?.text = Statics.roundToString(
+                        qty.qtyCollected ?: 0.toDouble(), Statics.decimalPlaces
+                    )
+                    holder.qtyRequestedTextView?.text = Statics.roundToString(
+                        qty.qtyRequested ?: 0.toDouble(), Statics.decimalPlaces
+                    )
                 }
 
 
@@ -999,9 +988,7 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                         CompoundButton.OnCheckedChangeListener { _, isChecked ->
                             if (orc.qty != null) {
                                 this.setChecked(
-                                    orc,
-                                    (orc.qty!!.qtyRequested ?: 0.toDouble()) > 0,
-                                    isChecked
+                                    orc, (orc.qty!!.qtyRequested ?: 0.toDouble()) > 0, isChecked
                                 )
                             }
                         }
@@ -1076,12 +1063,12 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
 
                 val darkerColor = when {
                     isSelected -> true
-                    foreColor == Statics.textLightColor() -> true
+                    foreColor == Colors.textLightColor() -> true
                     else -> false
                 }
 
                 val titleForeColor: Int =
-                    Statics.manipulateColor(foreColor, if (darkerColor) 0.8f else 1.4f)
+                    Colors.manipulateColor(foreColor, if (darkerColor) 0.8f else 1.4f)
 
                 v.background = backColor
                 holder.descriptionTextView?.setTextColor(foreColor)
@@ -1120,10 +1107,10 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
     private fun setupColors() {
         selectedForeColor = getColor(context.resources, R.color.text_light, null)
 
-        collQtyEqualForeColor = Statics.getBestContrastColor("#FF009688")
-        collQtyLessForeColor = Statics.getBestContrastColor("#FFE91E63")
-        collQtyMoreForeColor = Statics.getBestContrastColor("#2196F3")
-        defaultForeColor = Statics.getBestContrastColor("#DFDFDF")
+        collQtyEqualForeColor = Colors.getBestContrastColor("#FF009688")
+        collQtyLessForeColor = Colors.getBestContrastColor("#FFE91E63")
+        collQtyMoreForeColor = Colors.getBestContrastColor("#2196F3")
+        defaultForeColor = Colors.getBestContrastColor("#DFDFDF")
     }
 
     override fun getFilter(): Filter {

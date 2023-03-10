@@ -40,15 +40,16 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest.CREATOR.getCompletedOrders
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.closeKeyboard
 import com.dacosys.warehouseCounter.misc.Statics.Companion.generateTaskCode
+import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest.CREATOR.getCompletedOrders
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.retrofit.functions.NewOrderListener
 import com.dacosys.warehouseCounter.retrofit.functions.SendOrder
 import com.dacosys.warehouseCounter.room.entity.client.Client
@@ -60,12 +61,16 @@ import com.dacosys.warehouseCounter.ui.activities.item.ItemSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.NewCountActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity
+import com.dacosys.warehouseCounter.ui.activities.ptlOrder.NewPtlOrdersActivity
+import com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderActivity
 import com.dacosys.warehouseCounter.ui.activities.sync.InboxActivity
 import com.dacosys.warehouseCounter.ui.activities.sync.OutboxActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.Colors
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
@@ -114,7 +119,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                             button.text = String.format(
                                 "%s%s(%s)",
                                 MainButton.CompletedCounts.description,
-                                System.getProperty("line.separator"),
+                                lineSeparator,
                                 itemArray.count()
                             )
                         }
@@ -163,7 +168,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
     override fun onResume() {
         super.onResume()
 
-        closeKeyboard(this)
+        Screen.closeKeyboard(this)
 
         rejectNewInstances = false
 
@@ -176,7 +181,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
             JotterListener.autodetectDeviceModel(this)
 
             // Permitir o no la rotación de pantalla
-            Statics.setScreenRotation(this)
+            Screen.setScreenRotation(this)
 
             // Todavía no está loggeado
             if (Statics.currentUserId < 0L) {
@@ -196,18 +201,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
 
     private fun destroyLocals() {
         pauseInboxOutboxListener()
-    }
-
-    private fun touchButton(motionEvent: MotionEvent, button: Button) {
-        when (motionEvent.action) {
-            MotionEvent.ACTION_UP -> {
-                button.isPressed = false
-                button.performClick()
-            }
-            MotionEvent.ACTION_DOWN -> {
-                button.isPressed = true
-            }
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -352,6 +345,12 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                     makeText(binding.root, "Error:" + ex.message, ERROR)
                 }
             }
+            MainButton.PtlOrder -> {
+                if (rejectNewInstances) return
+                rejectNewInstances = true
+
+                startNewPtlOrderActivity()
+            }
             MainButton.PrintItemLabel -> {
                 if (rejectNewInstances) return
                 rejectNewInstances = true
@@ -372,6 +371,57 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
         }
     }
 
+    private fun startNewPtlOrderActivity() {
+        val intent = Intent(context, NewPtlOrdersActivity::class.java)
+        intent.putExtra("title", getString(R.string.setup_new_ptl))
+        resultForNewPtl.launch(intent)
+    }
+
+    private val resultForNewPtl =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            val data = it?.data
+            try {
+                if (it?.resultCode == RESULT_OK && data != null) {
+                    val warehouseArea =
+                        Parcels.unwrap<WarehouseArea>(data.getParcelableExtra("warehouseArea"))
+                    if (warehouseArea == null) {
+                        rejectNewInstances = false
+                        return@registerForActivityResult
+                    }
+
+                    makeText(
+                        binding.root, String.format(
+                            getString(R.string.area),
+                            warehouseArea.description,
+                            lineSeparator,
+                            "(${warehouseArea.warehouseDescription})"
+                        ), INFO
+                    )
+
+                    val intent = Intent(context, PtlOrderActivity::class.java)
+                    intent.putExtra("warehouseArea", Parcels.wrap(warehouseArea))
+                    resultForPtlFinish.launch(intent)
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            } finally {
+                rejectNewInstances = false
+            }
+        }
+
+    private val resultForPtlFinish =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            try {
+                startNewPtlOrderActivity()
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            } finally {
+                rejectNewInstances = false
+            }
+        }
+
     private val resultForNewCount =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             val data = it?.data
@@ -381,13 +431,13 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                     val description = data.getStringExtra("description")
                     val orderRequestType =
                         Parcels.unwrap<OrderRequestType>(data.getParcelableExtra<OrderRequestType>("orderRequestType"))
-                    val log = com.dacosys.warehouseCounter.moshi.log.Log()
+                    val log = com.dacosys.warehouseCounter.dto.log.Log()
 
                     makeText(
                         binding.root, String.format(
                             getString(R.string.client_description),
                             client?.name ?: getString(R.string.no_client),
-                            System.getProperty("line.separator"),
+                            lineSeparator,
                             description
                         ), INFO
                     )
@@ -559,7 +609,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
     override fun onCreate(savedInstanceState: Bundle?) {
         createSplashScreen()
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -657,6 +707,18 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
         })
     }
 
+    private fun touchButton(motionEvent: MotionEvent, button: Button) {
+        when (motionEvent.action) {
+            MotionEvent.ACTION_UP -> {
+                button.isPressed = false
+                button.performClick()
+            }
+            MotionEvent.ACTION_DOWN -> {
+                button.isPressed = true
+            }
+        }
+    }
+
     @SuppressLint("DiscouragedPrivateApi") /// El campo mGradientState no es parte de la SDK
     private fun setupMainButton() {
         buttonCollection.add(binding.mainButton1)
@@ -665,6 +727,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
         buttonCollection.add(binding.mainButton4)
         buttonCollection.add(binding.mainButton5)
         buttonCollection.add(binding.mainButton6)
+        buttonCollection.add(binding.mainButton7)
+        buttonCollection.add(binding.mainButton8)
 
         val allButtonMain = MainButton.getAllMain()
         for (i in buttonCollection.indices) {
@@ -696,7 +760,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                     }
                 }
 
-                val textColor = Statics.getBestContrastColor("#" + Integer.toHexString(backColor))
+                val textColor = Colors.getBestContrastColor("#" + Integer.toHexString(backColor))
 
                 b.setTextColor(textColor)
                 b.visibility = View.VISIBLE
@@ -829,17 +893,16 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                     if (pendingOr.orderRequestId == newOrder.orderRequestId) {
                         alreadyExists = true
 
-                        if (newOrder.completed == true) {
+                        isOk = if (newOrder.completed == true) {
                             // Está completada, eliminar localmente
                             val currentDir = Statics.getPendingPath()
                             val filePath =
                                 currentDir.absolutePath + File.separator + pendingOr.filename
                             val fl = File(filePath)
-                            if (!fl.delete()) isOk = false
+                            fl.delete()
                         } else {
                             // Actualizar contenido local
-                            if (!updateOrder(origOrder = pendingOr, newOrder = newOrder)) isOk =
-                                false
+                            updateOrder(origOrder = pendingOr, newOrder = newOrder)
                         }
 
                         break
@@ -952,7 +1015,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                     button.text = String.format(
                         "%s%s(%s)",
                         MainButton.PendingCounts.description,
-                        System.getProperty("line.separator"),
+                        lineSeparator,
                         countPending()
                     )
 
@@ -966,6 +1029,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
                         shakeView(button, 20, 5)
                     }
                 }
+                break
             }
         }
     }

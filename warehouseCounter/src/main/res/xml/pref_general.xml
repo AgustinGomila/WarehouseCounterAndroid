@@ -31,6 +31,30 @@
             android:title="@string/remove_old_error_registries" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/program_options">
+        <EditTextPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:defaultValue="60"
+            android:icon="@drawable/ic_sync_interval"
+            android:inputType="textCapWords"
+            android:key="sync_interval"
+            android:maxLength="1"
+            android:maxLines="1"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/sync_interval" />
+        <EditTextPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:defaultValue="10"
+            android:icon="@drawable/ic_sync_interval"
+            android:inputType="textCapWords"
+            android:key="sync_refresh_order"
+            android:maxLength="1"
+            android:maxLines="1"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/refresh_order_interval" />
         <SwitchPreference
             android:layout_height="wrap_content"
             android:defaultValue="true"

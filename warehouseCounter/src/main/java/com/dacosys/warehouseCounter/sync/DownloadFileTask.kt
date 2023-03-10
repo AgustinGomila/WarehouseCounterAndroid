@@ -9,7 +9,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.lang.System.getProperty
+import java.lang.System.lineSeparator
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -141,7 +141,7 @@ class DownloadFileTask {
         mCallback?.onDownloadFileTask(
             msg = "${
                 context.getString(R.string.destination)
-            }: $destination${getProperty("line.separator")}URL: $urlStr",
+            }: $destination${lineSeparator()}URL: $urlStr",
             fileType = fileType!!,
             downloadStatus = DownloadDb.DownloadStatus.INFO,
             progress = null,

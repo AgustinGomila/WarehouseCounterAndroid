@@ -379,6 +379,12 @@ class SettingsViewModel : ViewModel() {
             settingRepository.wcSyncInterval.value = value
         }
 
+    var wcSyncRefreshOrder: Int
+        get() = settingRepository.wcSyncRefreshOrder.value as Int
+        set(value) {
+            settingRepository.wcSyncRefreshOrder.value = value
+        }
+
     var symbologyAztec: Boolean
         get() = settingRepository.symbologyAztec.value as Boolean
         set(value) {

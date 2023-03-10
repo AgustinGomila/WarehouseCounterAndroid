@@ -1,6 +1,6 @@
 package com.dacosys.warehouseCounter.retrofit.result
 
-import com.dacosys.warehouseCounter.moshi.clientPackage.Package
+import com.dacosys.warehouseCounter.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 
 class PackagesResult(

@@ -5,11 +5,11 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
+import com.dacosys.warehouseCounter.dto.error.ErrorObject
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.dto.user.AuthData
+import com.dacosys.warehouseCounter.dto.user.UserAuthData.Companion.userAuthTag
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.moshi.error.ErrorObject
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.moshi.user.AuthData
-import com.dacosys.warehouseCounter.moshi.user.UserAuthData.Companion.userAuthTag
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus

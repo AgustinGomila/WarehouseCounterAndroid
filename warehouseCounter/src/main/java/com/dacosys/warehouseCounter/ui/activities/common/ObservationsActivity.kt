@@ -4,15 +4,11 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.view.MotionEvent
-import android.view.View
-import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.databinding.ObservationsActivityBinding
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.entity.item.Item
@@ -21,6 +17,7 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.Screen
 
 class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
     private var obs = ""
@@ -36,27 +33,6 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
     private fun destroyLocals() {
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private fun setupUI(view: View) {
-        // Set up touch listener for non-text box views to hide keyboard.
-        if (view !is EditText) {
-            view.setOnTouchListener { _, motionEvent ->
-                Statics.closeKeyboard(this)
-                if (view is Button && view !is Switch && view !is CheckBox) {
-                    touchButton(motionEvent, view)
-                    true
-                } else {
-                    false
-                }
-            }
-        }
-
-        //If a layout container, iterate over children and seed recursion.
-        if (view is ViewGroup) {
-            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
-        }
-    }
-
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
@@ -68,7 +44,7 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = ObservationsActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -102,11 +78,11 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
         }
 
         // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        setupUI(binding.root)
+        Screen.setupUI(binding.root, this)
     }
 
     private fun confirmObs() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
 
         val data = Intent()
         data.putExtra("obs", binding.obsEditText.text.trim().toString())
@@ -121,22 +97,10 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
     }
 
     private fun cancelObs() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED, null)
         finish()
-    }
-
-    private fun touchButton(motionEvent: MotionEvent, button: Button) {
-        when (motionEvent.action) {
-            MotionEvent.ACTION_UP -> {
-                button.isPressed = false
-                button.performClick()
-            }
-            MotionEvent.ACTION_DOWN -> {
-                button.isPressed = true
-            }
-        }
     }
 
     private fun addAutoText(code: String) {
@@ -215,7 +179,7 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
     }
 
     override fun onBackPressed() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()

@@ -32,6 +32,8 @@ class MainButton(mainButton: Long, description: String, iconResource: Int?) {
             MainButton(3, context.getString(R.string.new_count), R.drawable.ic_new_count)
         var CodeRead =
             MainButton(4, context.getString(R.string.code_read), R.drawable.ic_coderead)
+        var PtlOrder =
+            MainButton(5, context.getString(R.string.ptl_order), R.drawable.ic_order)
         var LinkItemCodes =
             MainButton(6, context.getString(R.string.code_link), R.drawable.ic_barcode_link)
         var PrintItemLabel =
@@ -47,6 +49,7 @@ class MainButton(mainButton: Long, description: String, iconResource: Int?) {
                 PendingCounts,
                 CompletedCounts,
                 CodeRead,
+                PtlOrder,
                 LinkItemCodes,
                 PrintItemLabel,
                 Configuration
@@ -62,6 +65,7 @@ class MainButton(mainButton: Long, description: String, iconResource: Int?) {
                 NewCount,
                 PendingCounts,
                 CompletedCounts,
+                PtlOrder,
                 CodeRead,
                 LinkItemCodes,
                 PrintItemLabel

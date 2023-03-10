@@ -1,6 +1,6 @@
 package com.dacosys.warehouseCounter.sync
 
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
 
 interface CompletedOrderListener {
     fun onCompletedOrderResult(

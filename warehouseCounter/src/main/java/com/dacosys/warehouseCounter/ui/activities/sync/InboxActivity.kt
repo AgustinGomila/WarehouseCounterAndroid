@@ -7,10 +7,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.*
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.Switch
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -23,13 +19,14 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.databinding.InboxActivityBinding
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import org.parceler.Parcels
 import java.io.File
 import kotlin.concurrent.thread
@@ -74,33 +71,13 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private fun setupUI(view: View) {
-        // Set up touch checkedChangedListener for non-text box views to hide keyboard.
-        if (view !is EditText) {
-            view.setOnTouchListener { _, motionEvent ->
-                Statics.closeKeyboard(this)
-                if (view is Button && view !is Switch && view !is CheckBox) {
-                    touchButton(motionEvent, view)
-                    true
-                } else {
-                    false
-                }
-            }
-        }
-
-        //If a layout container, iterate over children and seed recursion.
-        if (view is ViewGroup) {
-            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
-        }
-    }
 
     private lateinit var binding: InboxActivityBinding
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = InboxActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -150,19 +127,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         fillAdapter(completeList)
 
         // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        setupUI(binding.inbox)
-    }
-
-    private fun touchButton(motionEvent: MotionEvent, button: Button) {
-        when (motionEvent.action) {
-            MotionEvent.ACTION_UP -> {
-                button.isPressed = false
-                button.performClick()
-            }
-            MotionEvent.ACTION_DOWN -> {
-                button.isPressed = true
-            }
-        }
+        Screen.setupUI(binding.inbox, this)
     }
 
     private fun showDetail() {
@@ -237,7 +202,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
 
     private fun continueOrder() {
         if (!multiSelect && arrayAdapter?.currentItem() != null) {
-            Statics.closeKeyboard(this)
+            Screen.closeKeyboard(this)
 
             val data = Intent()
             data.putParcelableArrayListExtra(
@@ -247,7 +212,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
             setResult(RESULT_OK, data)
             finish()
         } else if (multiSelect && ((arrayAdapter?.countChecked()) ?: 0) > 0) {
-            Statics.closeKeyboard(this)
+            Screen.closeKeyboard(this)
 
             val data = Intent()
             data.putParcelableArrayListExtra("orderRequests", arrayAdapter!!.getAllChecked())
@@ -268,7 +233,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         if (isListViewFilling) return
         isListViewFilling = true
 
-        Handler(Looper.getMainLooper()).post { run { Statics.closeKeyboard(this) } }
+        Handler(Looper.getMainLooper()).post { run { Screen.closeKeyboard(this) } }
 
         var temp = t
         if (!temp.any()) {
@@ -456,7 +421,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
     }
 
     override fun onBackPressed() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()

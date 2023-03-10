@@ -10,10 +10,10 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.adapter.log.LogContentAdapter
 import com.dacosys.warehouseCounter.databinding.LogContentActivityBinding
-import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.dto.log.Log
+import com.dacosys.warehouseCounter.dto.log.LogContent
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.moshi.log.Log
-import com.dacosys.warehouseCounter.moshi.log.LogContent
+import com.dacosys.warehouseCounter.ui.utils.Screen
 
 class LogContentActivity :
     AppCompatActivity(),
@@ -57,7 +57,7 @@ class LogContentActivity :
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = LogContentActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

@@ -31,7 +31,6 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingReposit
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.item.ItemAdapter
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.entity.item.Item
@@ -47,6 +46,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import org.parceler.Parcels
 import java.util.*
 import kotlin.concurrent.thread
@@ -120,26 +120,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         b.putString("searchText", searchText)
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private fun setupUI(view: View) {
-        // Set up touch checkedChangedListener for non-text box views to hide keyboard.
-        if (view !is EditText) {
-            view.setOnTouchListener { _, motionEvent ->
-                Statics.closeKeyboard(this)
-                if (view is Button && view !is Switch && view !is CheckBox) {
-                    touchButton(motionEvent, view)
-                    true
-                } else {
-                    false
-                }
-            }
-        }
-
-        //If a layout container, iterate over children and seed recursion.
-        if (view is ViewGroup) {
-            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
-        }
-    }
 
     private fun loadBundleValues(b: Bundle) {
         tempTitle = b.getString("title") ?: ""
@@ -177,7 +157,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = ItemPrintLabelActivityTopPanelCollapsedBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -238,7 +218,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             if (event.action == KeyEvent.ACTION_DOWN) {
                 when (keyCode) {
                     KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        Statics.closeKeyboard(this)
+                        Screen.closeKeyboard(this)
                     }
                 }
             }
@@ -266,11 +246,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         setPanels()
 
-        setupUI(binding.root)
+        Screen.setupUI(binding.root, this)
     }
 
     private fun itemSelect() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
 
         val data = Intent()
 
@@ -465,18 +445,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }, 20)
     }
 
-    private fun touchButton(motionEvent: MotionEvent, button: Button) {
-        when (motionEvent.action) {
-            MotionEvent.ACTION_UP -> {
-                button.isPressed = false
-                button.performClick()
-            }
-            MotionEvent.ACTION_DOWN -> {
-                button.isPressed = true
-            }
-        }
-    }
-
     private fun getItems() {
         val fr = itemSelectFilterFragment ?: return
 
@@ -596,7 +564,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         super.onStart()
         rejectNewInstances = false
 
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
         JotterListener.resumeReaderDevices(this)
 
         thread {
@@ -640,7 +608,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun onBackPressed() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()
@@ -750,7 +718,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun onFilterChanged(code: String, itemCategory: ItemCategory?, onlyActive: Boolean) {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
         thread {
             checkedIdArray.clear()
             getItems()

@@ -5,6 +5,73 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <TextView
+        android:id="@+id/titleTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_corner_button_808f87"
+        android:gravity="center_horizontal"
+        android:text="@string/printer"
+        android:textColor="@color/whitesmoke"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/printerPanel"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/titleTextView">
+
+        <TextView
+            android:id="@+id/printerTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:dropDownHeight="200dp"
+            android:freezesText="true"
+            android:hint="@string/select_printer_"
+            android:lines="1"
+            android:maxLines="1"
+            android:paddingStart="4dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="4dp"
+            android:text=""
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/printerClearImageView"
+            app:layout_constraintStart_toEndOf="@+id/printerSearchImageView"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:layout_constraintLeft_creator="1"
+            tools:layout_constraintRight_creator="1"
+            tools:layout_constraintTop_creator="1" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/printerClearImageView"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginEnd="1dp"
+            android:alpha="0.5"
+            android:scaleType="fitCenter"
+            app:layout_constraintBottom_toBottomOf="@+id/printerTextView"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/printerTextView"
+            app:srcCompat="@drawable/ic_close_black" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/printerSearchImageView"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:alpha="0.5"
+            android:scaleType="fitCenter"
+            app:layout_constraintBottom_toBottomOf="@+id/printerTextView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/printerTextView"
+            app:srcCompat="@drawable/ic_search_black" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/qtyPanel"
         android:layout_width="match_parent"
@@ -102,60 +169,6 @@
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/ic_arrow_down"
             app:tint="@color/whitesmoke" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/printerPanel"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <TextView
-            android:id="@+id/printerTextView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:dropDownHeight="200dp"
-            android:freezesText="true"
-            android:hint="@string/select_printer_"
-            android:lines="1"
-            android:maxLines="1"
-            android:paddingStart="4dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="4dp"
-            android:paddingBottom="4dp"
-            android:text=""
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/printerClearImageView"
-            app:layout_constraintStart_toEndOf="@+id/printerSearchImageView"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:layout_constraintLeft_creator="1"
-            tools:layout_constraintRight_creator="1"
-            tools:layout_constraintTop_creator="1" />
-
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/printerClearImageView"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:layout_marginEnd="1dp"
-            android:alpha="0.5"
-            android:scaleType="fitCenter"
-            app:layout_constraintBottom_toBottomOf="@+id/printerTextView"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/printerTextView"
-            app:srcCompat="@drawable/ic_close_black" />
-
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/printerSearchImageView"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:alpha="0.5"
-            android:scaleType="fitCenter"
-            app:layout_constraintBottom_toBottomOf="@+id/printerTextView"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/printerTextView"
-            app:srcCompat="@drawable/ic_search_black" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

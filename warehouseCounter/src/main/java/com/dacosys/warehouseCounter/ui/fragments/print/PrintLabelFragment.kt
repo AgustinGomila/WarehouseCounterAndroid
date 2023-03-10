@@ -25,8 +25,10 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.PrintLabelFragmentBinding
+import com.dacosys.warehouseCounter.dto.ptlOrder.Label
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.UTCDataTime
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
@@ -194,43 +196,45 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             } else {
                 // if permission denied then check whether never ask
                 // again is selected or not by making use of
-                // !ActivityCompat.shouldShowRequestPermissionRationale(
-                // requireActivity(), Manifest.permission.CAMERA)
                 Log.i("DEBUG", "permission denied")
+
+                !ActivityCompat.shouldShowRequestPermissionRationale(
+                    requireActivity(), Manifest.permission.CAMERA
+                )
             }
         }
 
     private fun initializePrinter() {
-        if (Statics.printerBluetoothDevice != null) {
-            val bluetoothManager =
-                WarehouseCounterApp.context.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
-            val mBluetoothAdapter = bluetoothManager.adapter
-            if (mBluetoothAdapter == null) {
-                makeText(
-                    binding.root,
-                    getString(R.string.there_are_no_bluetooth_devices),
-                    SnackBarType.ERROR
-                )
-            } else {
-                if (!mBluetoothAdapter.isEnabled) {
-                    if (rejectNewInstances) return
-                    rejectNewInstances = true
+        if (Statics.printerBluetoothDevice == null) return
 
-                    val enablePrinter = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                    enablePrinter.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    if (ActivityCompat.checkSelfPermission(
-                            requireActivity(), Manifest.permission.BLUETOOTH_CONNECT
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            requestConnectPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
-                        }
-                        return
+        val bluetoothManager =
+            WarehouseCounterApp.context.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
+
+        val mBluetoothAdapter = bluetoothManager.adapter
+
+        if (mBluetoothAdapter == null) {
+            makeText(
+                binding.root, getString(R.string.there_are_no_bluetooth_devices), SnackBarType.ERROR
+            )
+        } else {
+            if (!mBluetoothAdapter.isEnabled) {
+                if (rejectNewInstances) return
+                rejectNewInstances = true
+
+                val enablePrinter = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                enablePrinter.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                if (ActivityCompat.checkSelfPermission(
+                        requireActivity(), Manifest.permission.BLUETOOTH_CONNECT
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        requestConnectPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
                     }
-                    resultForPrinterConnect.launch(enablePrinter)
-                } else {
-                    connectToPrinter(Statics.printerBluetoothDevice!!.address)
+                    return
                 }
+                resultForPrinterConnect.launch(enablePrinter)
+            } else {
+                connectToPrinter(Statics.printerBluetoothDevice!!.address)
             }
         }
     }
@@ -299,6 +303,8 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                 if (validStr != null && validStr != s.toString()) {
                     s.clear()
                     s.insert(0, validStr)
+
+                    qty = validStr.toString().toInt()
                 }
             }
 
@@ -440,6 +446,28 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         }
     }
 
+    fun printPtlLabels(labelArray: ArrayList<Label>) {
+        if (labelArray.isEmpty()) {
+            makeText(
+                binding.root,
+                getString(R.string.you_must_select_at_least_one_label),
+                SnackBarType.ERROR
+            )
+            return
+        }
+
+        if (mBluetoothDevice == null) {
+            makeText(
+                binding.root, getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR
+            )
+            return
+        }
+
+        val sendThis = labelArray.joinToString(lineSeparator) { it.body }
+
+        printItem(sendThis)
+    }
+
     fun printItemById(itemIdArray: ArrayList<Long>) {
         if (itemIdArray.isEmpty()) {
             makeText(
@@ -457,10 +485,6 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             }
         }
 
-        printItem(items)
-    }
-
-    private fun printItem(items: ArrayList<Item>) {
         if (items.isEmpty()) {
             makeText(
                 binding.root,
@@ -477,7 +501,6 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             return
         }
 
-        val qty = binding.qtyEditText.text.toString().toInt()
         var sendThis = ""
         for (item in items) {
             getLabel(item) {
@@ -485,6 +508,10 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             }
         }
 
+        printItem(sendThis)
+    }
+
+    private fun printItem(sendThis: String) {
         val t = object : Thread() {
             override fun run() {
                 try {

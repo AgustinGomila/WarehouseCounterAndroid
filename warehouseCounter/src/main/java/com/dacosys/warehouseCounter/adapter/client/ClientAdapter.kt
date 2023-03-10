@@ -11,8 +11,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.room.entity.client.Client
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
 
 /**
@@ -364,7 +364,7 @@ class ClientAdapter : ArrayAdapter<Client>, Filterable {
 
     companion object {
 
-        var viewHeight = if (Statics.isTablet()) 202 else 115
+        var viewHeight = if (Screen.isTablet()) 202 else 115
 
         class ClientComparator : Comparator<Client> {
             fun compareNullable(o1: Client?, o2: Client?): Int {

@@ -1,0 +1,122 @@
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    tools:context="com.dacosys.warehouseCounter.ui.activities.ptlOrder.NewPtlOrdersActivity"
+    tools:layout_editor_absoluteX="0dp"
+    tools:layout_editor_absoluteY="81dp">
+
+    <TextView
+        android:id="@+id/textView9"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/area"
+        android:textColor="@color/triad3"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/headerLabelEditText" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/mainGuideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.7" />
+
+    <TextView
+        android:id="@+id/areaTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:dropDownHeight="200dp"
+        android:freezesText="true"
+        android:hint="@string/search_area_"
+        android:lines="1"
+        android:maxLines="1"
+        android:paddingStart="4dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="4dp"
+        android:paddingBottom="4dp"
+        android:text=""
+        android:visibility="visible"
+        app:layout_constraintEnd_toStartOf="@+id/areaClearImageView"
+        app:layout_constraintStart_toEndOf="@+id/areaSearchImageView"
+        app:layout_constraintTop_toBottomOf="@+id/textView9"
+        tools:layout_constraintLeft_creator="1"
+        tools:layout_constraintRight_creator="1"
+        tools:layout_constraintTop_creator="1" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/areaSearchImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:alpha="0.5"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="@+id/areaTextView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/areaTextView"
+        app:srcCompat="@drawable/ic_search_black" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/areaClearImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginEnd="2dp"
+        android:alpha="0.5"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="@+id/areaTextView"
+        app:layout_constraintEnd_toStartOf="@+id/mainGuideline"
+        app:layout_constraintTop_toTopOf="@+id/areaTextView"
+        app:srcCompat="@drawable/ic_close_black" />
+
+
+    <Button
+        android:id="@+id/continueButton"
+        style="?android:textAppearanceSmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        android:layout_marginBottom="2dp"
+        android:background="@drawable/rounded_corner_button_seagreen"
+        android:text="@string/continue_"
+        android:textColor="@color/text_light"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/mainGuideline" />
+
+    <EditText
+        android:id="@+id/headerLabelEditText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="1dp"
+        android:layout_marginTop="1dp"
+        android:layout_marginEnd="1dp"
+        android:background="#f7f78a"
+        android:cursorVisible="false"
+        android:ems="10"
+        android:focusable="false"
+        android:importantForAutofill="no"
+        android:inputType="none"
+        android:maxLines="100"
+        android:scrollHorizontally="false"
+        android:singleLine="false"
+        android:text="@string/select_area_to_ptl"
+        android:textAlignment="center"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toStartOf="@+id/mainGuideline"
+        app:layout_constraintHorizontal_bias="0.9"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:clickable="false"
+        tools:focusableInTouchMode="false" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+

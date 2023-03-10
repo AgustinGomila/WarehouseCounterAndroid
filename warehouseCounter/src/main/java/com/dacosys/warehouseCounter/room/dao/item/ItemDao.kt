@@ -1,9 +1,7 @@
 package com.dacosys.warehouseCounter.room.dao.item
 
 import androidx.room.*
-import androidx.room.migration.Migration
 import androidx.sqlite.db.SimpleSQLiteQuery
-import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.room.entity.item.ItemEntry as Entry

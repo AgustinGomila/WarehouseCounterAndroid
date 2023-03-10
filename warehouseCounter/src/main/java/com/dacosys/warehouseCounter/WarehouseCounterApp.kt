@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.dacosys.imageControl.ImageControl
 import com.dacosys.warehouseCounter.misc.Statics.Companion.WC_ROOT_PATH
-import com.dacosys.warehouseCounter.moshi.token.TokenObject
 import com.dacosys.warehouseCounter.retrofit.APIService
 import com.dacosys.warehouseCounter.retrofit.DacoService
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
@@ -88,9 +87,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
 
             // Connection Timeouts
             OkHttpClient.Builder().connectTimeout(sv.connectionTimeout.toLong(), TimeUnit.SECONDS)
-                .addInterceptor(HostInterceptor())
-                .proxy(proxy)
-                .build()
+                .addInterceptor(HostInterceptor()).proxy(proxy).build()
         }
         single { DynamicRetrofit() }
         single { retrofit.api.create(APIService::class.java) }
@@ -134,17 +131,5 @@ class WarehouseCounterApp : Application(), KoinComponent {
 
         val sharedPreferences: SharedPreferences
             get() = context.getSharedPreferences("${applicationName()}_prefs", MODE_PRIVATE)
-
-        fun cleanPrefs(): Boolean {
-            return try {
-                sharedPreferences.edit().clear().apply()
-                true
-            } catch (ex: java.lang.Exception) {
-                ex.printStackTrace()
-                false
-            }
-        }
-
-        var Token: TokenObject = TokenObject()
     }
 }

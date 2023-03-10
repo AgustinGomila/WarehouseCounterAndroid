@@ -1,6 +1,6 @@
 package com.dacosys.warehouseCounter.retrofit
 
-import com.dacosys.warehouseCounter.moshi.clientPackage.AuthDataCont
+import com.dacosys.warehouseCounter.dto.clientPackage.AuthDataCont
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST

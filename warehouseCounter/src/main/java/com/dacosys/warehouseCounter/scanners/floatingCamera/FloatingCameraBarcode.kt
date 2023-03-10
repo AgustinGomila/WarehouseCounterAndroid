@@ -21,11 +21,10 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.FloatingCameraActivityBinding
-import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.getSystemBarsHeight
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.scaleImageView.ScaleImage
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.client.android.BeepManager
@@ -109,8 +108,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
             .setLocation(
                 if (getOrientation == Configuration.ORIENTATION_PORTRAIT) flCameraPortraitLoc[0] else flCameraLandscapeLoc[0],
                 if (getOrientation == Configuration.ORIENTATION_PORTRAIT) flCameraPortraitLoc[1] else flCameraLandscapeLoc[1]
-            )
-            .setAnimator(DefaultAnimator()).setLayout(v!!) { }.registerCallback {
+            ).setAnimator(DefaultAnimator()).setLayout(v!!) { }.registerCallback {
                 createResult { _, _, _ ->
                     createResult()
                 }
@@ -161,12 +159,11 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
     }
 
     private fun getView(): View {
-        _binding =
-            FloatingCameraActivityBinding.inflate(
-                (context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater),
-                null,
-                false
-            )
+        _binding = FloatingCameraActivityBinding.inflate(
+            (context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater),
+            null,
+            false
+        )
         setLayout()
         return binding.root
     }
@@ -231,9 +228,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
                 // Actualice el tamaño de la ventana flotante para evitar la limitación
                 // de ancho cuando otras aplicaciones se proyectan horizontalmente
                 EasyFloat.updateFloat(
-                    easyFloatTag,
-                    width = params.width,
-                    height = params.height
+                    easyFloatTag, width = params.width, height = params.height
                 )
             }
         }
@@ -349,9 +344,9 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
 
     private fun loadValues() {
         val sv = settingViewModel
-        allBarHeight = getSystemBarsHeight(activity)
-        screenHeight = Statics.getScreenHeight(activity)
-        screenWidth = Statics.getScreenWidth(activity)
+        allBarHeight = Screen.getSystemBarsHeight(activity)
+        screenHeight = Screen.getScreenHeight(activity)
+        screenWidth = Screen.getScreenWidth(activity)
 
         // Cargar la información de posición y tamaño de la ventana flotante
         flCameraMinWidth = sv.flCameraPortraitWidth
@@ -387,8 +382,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
     private fun checkCameraFloatingPermission() {
         // Check if the storage permission has been granted
         if (ActivityCompat.checkSelfPermission(
-                activity,
-                Manifest.permission.CAMERA
+                activity, Manifest.permission.CAMERA
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             // Permission is missing and must be requested.

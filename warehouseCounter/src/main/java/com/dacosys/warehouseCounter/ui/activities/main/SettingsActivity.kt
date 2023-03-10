@@ -29,13 +29,13 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.SettingsActivityBinding
+import com.dacosys.warehouseCounter.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.generateQrCode
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getBarcodeForConfig
 import com.dacosys.warehouseCounter.misc.Statics.Companion.getConfigFromScannedCode
 import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.moshi.clientPackage.Package
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
@@ -61,6 +61,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.gms.common.api.CommonStatusCodes
 import java.io.File
 import java.lang.ref.WeakReference
@@ -169,7 +170,7 @@ class SettingsActivity : AppCompatActivity(),
 
     override fun onStart() {
         super.onStart()
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -657,6 +658,8 @@ class SettingsActivity : AppCompatActivity(),
             // updated to reflect the new value, per the Android Design
             // guidelines.
             bindPreferenceSummaryToValue(this, settingRepository.divisionChar)
+            bindPreferenceSummaryToValue(this, settingRepository.wcSyncInterval)
+            bindPreferenceSummaryToValue(this, settingRepository.wcSyncRefreshOrder)
 
             findPreference<Preference>(settingRepository.registryError.key) as Preference
             findPreference<Preference>(settingRepository.showConfButton.key) as Preference

@@ -5,11 +5,11 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrcAdapter
+import com.dacosys.warehouseCounter.dto.orderRequest.Item
+import com.dacosys.warehouseCounter.dto.orderRequest.Item.CREATOR.fromItemRoom
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.dto.orderRequest.Qty
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.moshi.orderRequest.Item
-import com.dacosys.warehouseCounter.moshi.orderRequest.Item.CREATOR.fromItemRoom
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.moshi.orderRequest.Qty
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode

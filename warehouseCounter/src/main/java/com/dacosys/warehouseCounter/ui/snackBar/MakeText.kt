@@ -10,7 +10,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.misc.Statics.Companion.getBestContrastColorId
+import com.dacosys.warehouseCounter.ui.utils.Colors
 import com.google.android.material.snackbar.BaseTransientBottomBar.ANIMATION_MODE_FADE
 import com.google.android.material.snackbar.Snackbar
 import java.lang.ref.WeakReference
@@ -51,7 +51,7 @@ class MakeText : AppCompatActivity() {
             snackBarView.elevation = 6f
 
             snackBar.animationMode = ANIMATION_MODE_FADE
-            snackBar.setTextColor(getBestContrastColorId(snackBarType.backColor))
+            snackBar.setTextColor(Colors.getBestContrastColorId(snackBarType.backColor))
 
             val textView =
                 snackBarView.findViewById<View>(com.google.android.material.R.id.snackbar_text) as TextView

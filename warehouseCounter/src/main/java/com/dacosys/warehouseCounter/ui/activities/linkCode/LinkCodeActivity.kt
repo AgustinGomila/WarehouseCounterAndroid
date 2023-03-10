@@ -36,7 +36,7 @@ import com.dacosys.warehouseCounter.databinding.LinkCodeActivityBottomPanelColla
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalSeparator
-import com.dacosys.warehouseCounter.misc.Statics.Companion.showKeyboard
+import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.retrofit.functions.SendItemCode
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
@@ -56,6 +56,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import org.parceler.Parcels
 import java.util.*
 import kotlin.concurrent.thread
@@ -197,38 +198,6 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private var checkedIdArray: ArrayList<Long> = ArrayList()
     // endregion
 
-    @SuppressLint("ClickableViewAccessibility")
-    private fun setupUI(view: View) {
-        // Set up touch checkedChangedListener for non-text box views to hide keyboard.
-        if (view !is EditText) {
-            view.setOnTouchListener { _, motionEvent ->
-                Statics.closeKeyboard(this)
-                if (view is Button && view !is Switch && view !is CheckBox) {
-                    touchButton(motionEvent, view)
-                    true
-                } else {
-                    false
-                }
-            }
-        }
-
-        //If a layout container, iterate over children and seed recursion.
-        if (view is ViewGroup) {
-            (0 until view.childCount).map { view.getChildAt(it) }.forEach { setupUI(it) }
-        }
-    }
-
-    private fun touchButton(motionEvent: MotionEvent, button: Button) {
-        when (motionEvent.action) {
-            MotionEvent.ACTION_UP -> {
-                button.isPressed = false
-                button.performClick()
-            }
-            MotionEvent.ACTION_DOWN -> {
-                button.isPressed = true
-            }
-        }
-    }
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
@@ -285,7 +254,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = LinkCodeActivityBottomPanelCollapsedBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -346,7 +315,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         binding.qtyEditText.setText(1.toString(), TextView.BufferType.EDITABLE)
         binding.qtyEditText.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
-                showKeyboard(this)
+                Screen.showKeyboard(this)
             }
         }
         binding.qtyEditText.setOnKeyListener { _, keyCode, event ->
@@ -388,7 +357,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             if (event.action == KeyEvent.ACTION_DOWN) {
                 when (keyCode) {
                     KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        Statics.closeKeyboard(this)
+                        Screen.closeKeyboard(this)
                     }
                 }
             }
@@ -422,7 +391,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         // Ocultar panel de códigos vinculados al ítem seleccionado
         binding.moreCodesConstraintLayout.visibility = GONE
 
-        setupUI(binding.linkCode)
+        Screen.setupUI(binding.linkCode, this)
     }
 
     private fun setSendButtonText() {
@@ -431,7 +400,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 binding.sendButton.text = String.format(
                     "%s%s(%s)",
                     context.getString(R.string.send),
-                    System.getProperty("line.separator"),
+                    lineSeparator,
                     it.count()
                 )
             }
@@ -987,7 +956,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         itemCategory: ItemCategory?,
         onlyActive: Boolean,
     ) {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
         thread {
             checkedIdArray.clear()
             getItems()

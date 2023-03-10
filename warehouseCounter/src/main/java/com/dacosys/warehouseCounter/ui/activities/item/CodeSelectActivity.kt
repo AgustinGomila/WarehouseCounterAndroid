@@ -20,13 +20,13 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.item.ItemAdapter
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
@@ -41,7 +41,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     private fun destroyLocals() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
         binding.autoCompleteTextView.setOnContractsAvailability(null)
         binding.autoCompleteTextView.setAdapter(null)
     }
@@ -59,7 +59,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = CodeSelectActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -123,11 +123,11 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
         binding.autoCompleteTextView.setOnTouchListener { _, motionEvent ->
             if (motionEvent.action == MotionEvent.ACTION_UP) {
-                Statics.showKeyboard(this)
+                Screen.showKeyboard(this)
                 adjustDropDownHeight()
                 return@setOnTouchListener false
             } else if (motionEvent.action == MotionEvent.BUTTON_BACK) {
-                Statics.closeKeyboard(this)
+                Screen.closeKeyboard(this)
 
                 setResult(RESULT_CANCELED, null)
                 finish()
@@ -174,7 +174,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     private fun itemSelected() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
 
         val data = Intent()
         data.putExtra("itemCode", code)
@@ -226,7 +226,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     override fun onBackPressed() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()
@@ -329,18 +329,13 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this,
-            requestCode,
-            permissions,
-            grantResults
+            this, requestCode, permissions, grantResults
         )
     }
 
     override fun scannerCompleted(scanCode: String) {
         if (settingViewModel.showScannedCode) makeText(
-            binding.root,
-            scanCode,
-            SnackBarType.INFO
+            binding.root, scanCode, SnackBarType.INFO
         )
 
         JotterListener.lockScanner(this, true)

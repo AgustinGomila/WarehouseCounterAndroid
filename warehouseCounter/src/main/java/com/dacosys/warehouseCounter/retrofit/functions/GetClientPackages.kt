@@ -5,12 +5,12 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.dacoService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
+import com.dacosys.warehouseCounter.dto.clientPackage.AuthDataCont
+import com.dacosys.warehouseCounter.dto.clientPackage.ClientAuthData
+import com.dacosys.warehouseCounter.dto.clientPackage.Package
+import com.dacosys.warehouseCounter.dto.error.ErrorData
 import com.dacosys.warehouseCounter.misc.Statics.Companion.APP_VERSION_ID
 import com.dacosys.warehouseCounter.misc.Statics.Companion.APP_VERSION_ID_IMAGECONTROL
-import com.dacosys.warehouseCounter.moshi.clientPackage.AuthDataCont
-import com.dacosys.warehouseCounter.moshi.clientPackage.ClientAuthData
-import com.dacosys.warehouseCounter.moshi.clientPackage.Package
-import com.dacosys.warehouseCounter.moshi.error.ErrorData
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.sync.ProgressStatus

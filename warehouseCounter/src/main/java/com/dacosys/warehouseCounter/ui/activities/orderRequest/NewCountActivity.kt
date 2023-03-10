@@ -18,9 +18,8 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.NewCountActivityBinding
-import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
 import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -30,6 +29,7 @@ import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.ui.activities.client.ClientSelectActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import org.parceler.Parcels
 import kotlin.concurrent.thread
@@ -88,7 +88,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = NewCountActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -124,9 +124,9 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         binding.countCodeEditText.clearFocus()
         binding.countCodeEditText.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus && !KeyboardVisibilityEvent.isKeyboardVisible(this)) {
-                Statics.showKeyboard(this)
+                Screen.showKeyboard(this)
             } else {
-                Statics.closeKeyboard(this)
+                Screen.closeKeyboard(this)
             }
         }
         binding.countCodeEditText.setOnKeyListener { _, keyCode, keyEvent ->
@@ -219,7 +219,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             // Hacer foco en el problema
             focusView?.requestFocus()
         } else {
-            Statics.closeKeyboard(this)
+            Screen.closeKeyboard(this)
 
             val data = Intent()
             data.putExtra("description", description.trim())

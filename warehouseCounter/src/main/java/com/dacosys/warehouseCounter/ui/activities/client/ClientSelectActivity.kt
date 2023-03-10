@@ -18,10 +18,10 @@ import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.adapter.client.ClientAdapter
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
 import com.dacosys.warehouseCounter.room.entity.client.Client
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
@@ -35,7 +35,7 @@ class ClientSelectActivity : AppCompatActivity(),
     }
 
     private fun destroyLocals() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
         binding.autoCompleteTextView.setOnContractsAvailability(null)
         binding.autoCompleteTextView.setAdapter(null)
     }
@@ -52,7 +52,7 @@ class ClientSelectActivity : AppCompatActivity(),
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = CodeSelectActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -118,11 +118,11 @@ class ClientSelectActivity : AppCompatActivity(),
             }
         binding.autoCompleteTextView.setOnTouchListener { _, motionEvent ->
             if (motionEvent.action == MotionEvent.ACTION_UP) {
-                Statics.showKeyboard(this)
+                Screen.showKeyboard(this)
                 adjustDropDownHeight()
                 return@setOnTouchListener false
             } else if (motionEvent.action == MotionEvent.BUTTON_BACK) {
-                Statics.closeKeyboard(this)
+                Screen.closeKeyboard(this)
 
                 setResult(RESULT_CANCELED, null)
                 finish()
@@ -212,7 +212,7 @@ class ClientSelectActivity : AppCompatActivity(),
     }
 
     private fun clientSelected() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
 
         val data = Intent()
         data.putExtra("client", client)
@@ -255,7 +255,7 @@ class ClientSelectActivity : AppCompatActivity(),
     }
 
     override fun onBackPressed() {
-        Statics.closeKeyboard(this)
+        Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()

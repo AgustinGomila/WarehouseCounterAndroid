@@ -244,7 +244,7 @@ object JotterListener : Jotter.Listener {
      * por lo tanto tenemos que evitar volver a registrar la actividad porque:
      *
      * java.lang.IllegalStateException:
-     * LifecycleOwner com.dacosys.stockControl.xxx.xxxActivity@cf72429
+     * LifecycleOwner com.dacosys.warehouseCounter.xxx.xxxActivity@cf72429
      * is attempting to register while current state is STARTED.
      * LifecycleOwners must call register before they are STARTED.
      */

@@ -86,6 +86,13 @@ class SnackBarType(
             return ArrayList(allSections.sortedWith(compareBy { it.id }))
         }
 
+        fun getFinish(): ArrayList<SnackBarType> {
+            val allSections = ArrayList<SnackBarType>()
+            Collections.addAll(allSections, ERROR, SUCCESS)
+
+            return ArrayList(allSections.sortedWith(compareBy { it.id }))
+        }
+
         fun getById(id: Long): SnackBarType {
             return getAll().firstOrNull { it.id == id.toInt() } ?: INFO
         }

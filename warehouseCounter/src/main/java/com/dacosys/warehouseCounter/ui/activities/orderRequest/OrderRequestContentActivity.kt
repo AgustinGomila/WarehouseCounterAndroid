@@ -36,16 +36,15 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrcAdapter
 import com.dacosys.warehouseCounter.databinding.OrderRequestActivityBothPanelsCollapsedBinding
+import com.dacosys.warehouseCounter.dto.log.Log
+import com.dacosys.warehouseCounter.dto.log.LogContent
+import com.dacosys.warehouseCounter.dto.orderRequest.*
+import com.dacosys.warehouseCounter.dto.orderRequest.Item.CREATOR.fromItemRoom
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.closeKeyboard
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.confirm
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.modify
-import com.dacosys.warehouseCounter.moshi.log.Log
-import com.dacosys.warehouseCounter.moshi.log.LogContent
-import com.dacosys.warehouseCounter.moshi.orderRequest.*
-import com.dacosys.warehouseCounter.moshi.orderRequest.Item.CREATOR.fromItemRoom
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.room.entity.itemRegex.ItemRegex
@@ -62,6 +61,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import org.parceler.Parcels
 import java.io.UnsupportedEncodingException
 import java.text.SimpleDateFormat
@@ -83,8 +83,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         orcAdapter?.add(arrayListOf(orc))
 
         // Definir las cantidades según el modo de ingreso actual
-        if (binding.requiredDescCheckBox.isChecked &&
-            orc.item?.itemDescription == context.getString(R.string.unknown_item)
+        if (binding.requiredDescCheckBox.isChecked && orc.item?.itemDescription == context.getString(
+                R.string.unknown_item
+            )
         ) {
             // Antes agregar descripción si es obligatorio.
             // La función itemDescriptionDialog(orc) al final llama a setQty(orc)
@@ -416,7 +417,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Statics.setScreenRotation(this)
+        Screen.setScreenRotation(this)
         binding = OrderRequestActivityBothPanelsCollapsedBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -572,15 +573,13 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         when {
             panelBottomIsExpanded -> binding.expandBottomPanelButton?.text =
                 context.getString(R.string.collapse_panel)
-            else -> binding.expandBottomPanelButton?.text =
-                context.getString(R.string.scan_options)
+            else -> binding.expandBottomPanelButton?.text = context.getString(R.string.scan_options)
         }
 
         when {
             panelTopIsExpanded -> binding.expandTopPanelButton?.text =
                 context.getString(R.string.collapse_panel)
-            else -> binding.expandTopPanelButton?.text =
-                context.getString(R.string.item_operations)
+            else -> binding.expandTopPanelButton?.text = context.getString(R.string.item_operations)
         }
     }
 
@@ -1749,7 +1748,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             setupDivided()
         }
 
-        closeKeyboard(this)
+        Screen.closeKeyboard(this)
         allowClicks = true
         JotterListener.lockScanner(this, false)
         rejectNewInstances = false

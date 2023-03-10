@@ -60,7 +60,7 @@
             android:enabled="true"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.dacosys.stockControl.intent.action.BARCODE" />
+                <action android:name="com.dacosys.warehouseCounter.intent.action.BARCODE" />
             </intent-filter>
         </receiver>
         <!-- END HONEYWELL -->
@@ -192,9 +192,15 @@
             android:excludeFromRecents="true"
             android:theme="@style/Theme.AppCompat.DayNight.Dialog"
             android:windowSoftInputMode="stateAlwaysVisible" />
-        <activity android:name="com.dacosys.warehouseCounter.ui.activities.common.ObservationsActivity" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.ui.activities.common.ObservationsActivity"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity android:name=".ui.activities.orderRequest.OrderRequestDetailActivity" />
-        <activity android:name=".ui.activities.item.ItemSelectActivity" />
+        <activity
+            android:name=".ui.activities.item.ItemSelectActivity"
+            android:configChanges="keyboardHidden"
+            android:exported="false"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity
             android:name=".ui.activities.client.ClientSelectActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
@@ -210,6 +216,28 @@
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".ui.activities.itemCategory.ItemCategorySelectActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.AppCompat.Translucent"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.ui.activities.ptlOrder.NewPtlOrdersActivity"
+            android:exported="false"
+            android:label="@string/setup_new_ptl"
+            android:windowSoftInputMode="stateAlwaysHidden" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderActivity"
+            android:configChanges="keyboardHidden"
+            android:exported="false"
+            android:label="@string/ptl_order"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderSelectActivity"
+            android:exported="false"
+            android:label="@string/setup_new_ptl"
+            android:windowSoftInputMode="stateAlwaysHidden" />
+        <activity
+            android:name="com.dacosys.warehouseCounter.ui.activities.ptlOrder.WarehouseAreaSelectActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:excludeFromRecents="true"
             android:theme="@style/Theme.AppCompat.Translucent"

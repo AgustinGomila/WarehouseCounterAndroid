@@ -4,7 +4,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
-import com.dacosys.warehouseCounter.moshi.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
 import java.util.*
 
 class SettingsRepository {
@@ -545,7 +545,7 @@ class SettingsRepository {
     )
     var wcSyncInterval = Preference(
         prefs = sharedPreferences,
-        key = "ftp_sync_interval",
+        key = "sync_interval",
         description = context.getString(R.string.sync_interval),
         default = 60
     )
@@ -560,6 +560,12 @@ class SettingsRepository {
         key = "proxy_pass",
         description = context.getString(R.string.proxy_pass),
         default = ""
+    )
+    var wcSyncRefreshOrder = Preference(
+        prefs = sharedPreferences,
+        key = "sync_refresh_order",
+        description = context.getString(R.string.refresh_order_interval),
+        default = 15
     )
     /* endregion WarehouseCounter WebService */
 
@@ -674,6 +680,7 @@ class SettingsRepository {
                 sp.useProxy,
 
                 sp.wcSyncInterval,
+                sp.wcSyncRefreshOrder,
 
                 sp.flCameraPortraitLocX,
                 sp.flCameraPortraitLocY,

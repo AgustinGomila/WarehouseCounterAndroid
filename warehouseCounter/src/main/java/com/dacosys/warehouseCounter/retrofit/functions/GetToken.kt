@@ -5,13 +5,13 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
+import com.dacosys.warehouseCounter.dto.error.ErrorObject
+import com.dacosys.warehouseCounter.dto.token.TokenObject
+import com.dacosys.warehouseCounter.dto.user.AuthData
+import com.dacosys.warehouseCounter.dto.user.UserAuthData
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.Token
 import com.dacosys.warehouseCounter.misc.Statics.Companion.cleanToken
-import com.dacosys.warehouseCounter.moshi.error.ErrorObject
-import com.dacosys.warehouseCounter.moshi.token.TokenObject
-import com.dacosys.warehouseCounter.moshi.user.AuthData
-import com.dacosys.warehouseCounter.moshi.user.UserAuthData
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus

@@ -5,8 +5,8 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
-import com.dacosys.warehouseCounter.moshi.database.DatabaseData
-import com.dacosys.warehouseCounter.moshi.error.ErrorObject
+import com.dacosys.warehouseCounter.dto.database.DatabaseData
+import com.dacosys.warehouseCounter.dto.error.ErrorObject
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.DbLocationResult
 import com.dacosys.warehouseCounter.room.database.WcDatabase.Companion.DATABASE_VERSION
