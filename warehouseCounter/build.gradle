@@ -115,6 +115,9 @@ dependencies {
     implementation 'com.github.tiann:FreeReflection:3.1.0'
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
 
+    // Version 1.3+ requiere API 33
+    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+
     // Permite utilizar las librerías Zxing en API 23
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.6'
 

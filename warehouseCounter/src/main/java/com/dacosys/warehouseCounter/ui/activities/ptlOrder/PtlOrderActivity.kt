@@ -19,12 +19,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.ptlItem.PtlContentAdapter
+import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlContentAdapter
 import com.dacosys.warehouseCounter.databinding.PtlOrderActivityBottomPanelCollapsedBinding
 import com.dacosys.warehouseCounter.dto.ptlOrder.Label
 import com.dacosys.warehouseCounter.dto.ptlOrder.PickItem
@@ -34,7 +35,6 @@ import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.retrofit.functions.*
-import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -60,7 +60,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     }
 
     private fun destroyLocals() {
-        adapter?.refreshListeners(null, null, null)
+        adapter?.refreshListeners()
         orderHeaderFragment?.onDestroy()
         printLabelFragment?.onDestroy()
         stopSyncTimer()
@@ -68,7 +68,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     override fun onEditQtyRequired(
         position: Int,
-        item: PtlContent,
+        content: PtlContent,
         initialQty: Double,
         minValue: Double,
         maxValue: Double,
@@ -177,7 +177,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                 itemId = item.itemId, qtyCollected = item.qtyCollected.toDouble()
             )
 
-            val all = adapter?.getAll() ?: ArrayList()
+            val all = adapter?.fullList ?: ArrayList()
 
             // Comprobamos si está completada la orden...
             if (all.any() && checkForCompletedOrder(all)) {
@@ -268,10 +268,10 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         b.putParcelableArrayList("tempWacArray", tempContArray)
         if (adapter != null) {
-            b.putParcelable("lastSelected", (adapter ?: return).currentContent())
-            b.putInt("firstVisiblePos", (adapter ?: return).firstVisiblePos())
-            b.putParcelableArrayList("completeList", adapter?.getAll())
-            b.putLongArray("checkedIdArray", adapter?.getAllIdChecked()?.map { it }?.toLongArray())
+            b.putParcelable("lastSelected", adapter?.currentContent())
+            b.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
+            b.putParcelableArrayList("completeList", adapter?.fullList)
+            b.putLongArray("checkedIdArray", adapter?.checkedIdArray?.map { it }?.toLongArray())
         }
 
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
@@ -575,21 +575,19 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         runOnUiThread {
             try {
                 if (adapter != null) {
-                    lastSelected = (adapter ?: return@runOnUiThread).currentContent()
-                    firstVisiblePos = (adapter ?: return@runOnUiThread).firstVisiblePos()
+                    lastSelected = adapter?.currentContent()
+                    firstVisiblePos = adapter?.firstVisiblePos()
                 }
 
                 adapter = PtlContentAdapter(
-                    activity = this,
-                    resource = R.layout.ptl_item_row,
-                    ptlContents = ptlContArray,
+                    recyclerView = binding.itemListView,
+                    fullList = ptlContArray,
                     checkedIdArray = checkedIdArray,
-                    listView = binding.itemListView,
-                    multiSelect = false,
-                    showQtyPanel = true,
-                    allowEditQty = false,
-                    setQtyOnCheckedChanged = false
+                    showQtyPanel = true
                 )
+
+                binding.itemListView.layoutManager = LinearLayoutManager(this)
+                binding.itemListView.adapter = adapter
 
                 refreshAdapterListeners()
 
@@ -597,7 +595,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                     // Horrible wait for full load
                 }
 
-                adapter?.setSelectItemAndScrollPos(lastSelected, firstVisiblePos)
+                adapter?.setSelectItemAndScrollPos(lastSelected)
             } catch (ex: Exception) {
                 ex.printStackTrace()
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex)
@@ -608,9 +606,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     }
 
     private fun refreshAdapterListeners() {
-        adapter?.refreshListeners(
-            checkedChangedListener = null, dataSetChangedListener = this, editQtyListener = this
-        )
+        adapter?.refreshListeners(dataSetChangedListener = this, editQtyListener = this)
     }
 
     private val multiselect: Boolean
@@ -626,10 +622,10 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                 binding.selectedLabelTextView.text = getString(R.string.checked)
 
                 if (adapter != null) {
-                    binding.totalTextView.text = adapter!!.count.toString()
+                    binding.totalTextView.text = adapter?.itemCount.toString()
                     binding.qtyReqTextView.text =
-                        Statics.roundToString(adapter!!.qtyRequestedTotal(), 3)
-                    binding.selectedTextView.text = adapter!!.countChecked().toString()
+                        Statics.roundToString(adapter?.qtyRequestedTotal() ?: 0.0, 3)
+                    binding.selectedTextView.text = adapter?.countChecked().toString()
                 }
             } else {
                 binding.totalLabelTextView.text = getString(R.string.total)
@@ -637,12 +633,11 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                 binding.selectedLabelTextView.text = getString(R.string.cont_)
 
                 if (adapter != null) {
-                    val t = adapter!!.count
-                    val r = adapter!!.qtyRequestedTotal()
-                    val c = adapter!!.qtyCollectedTotal()
-                    binding.totalTextView.text = t.toString()
-                    binding.qtyReqTextView.text = r.toString()
-                    binding.selectedTextView.text = c.toString()
+                    binding.totalTextView.text = adapter?.itemCount.toString()
+                    binding.qtyReqTextView.text =
+                        Statics.roundToString(adapter?.qtyRequestedTotal() ?: 0.0, 3)
+                    binding.selectedTextView.text =
+                        Statics.roundToString(adapter?.qtyCollectedTotal() ?: 0.0, 3)
                 }
             }
 
@@ -720,11 +715,6 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         showProgressBar(false)
     }
 
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
-    private val menuItemRandomOnListL = 999003
-    private val menuRegexItem = 999004
-
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -732,13 +722,6 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         if (!settingViewModel.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
-        }
-
-        if (BuildConfig.DEBUG || Statics.testMode) {
-            menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
-            menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
-            menu.add(Menu.NONE, menuRegexItem, Menu.NONE, "Regex")
         }
 
         if (menu is MenuBuilder) {
@@ -768,31 +751,6 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
             }
             R.id.action_read_barcode -> {
                 JotterListener.toggleCameraFloatingWindowVisibility(this)
-                return super.onOptionsItemSelected(item)
-            }
-            menuItemRandomOnListL -> {
-                val codes: ArrayList<String> = ArrayList()
-                (adapter?.getAll()
-                    ?: ArrayList<PtlContent>().filter { it.item.first().ean.isNotEmpty() }).mapTo(
-                    codes
-                ) {
-                    it.item.first().ean
-                }
-                if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
-                return super.onOptionsItemSelected(item)
-            }
-            menuItemRandomIt -> {
-                ItemCoroutines().getCodes(true) {
-                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
-                }
-                return super.onOptionsItemSelected(item)
-            }
-            menuItemManualCode -> {
-                enterCode()
-                return super.onOptionsItemSelected(item)
-            }
-            menuRegexItem -> {
-                scannerCompleted("0SM20220721092826007792261002857001038858")
                 return super.onOptionsItemSelected(item)
             }
         }
