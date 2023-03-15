@@ -122,7 +122,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
         val settingViewModel: SettingsViewModel
             get() = get().get()
 
-        private fun applicationName(): String {
+        fun applicationName(): String {
             val applicationInfo = context.applicationInfo
             val stringId = applicationInfo.labelRes
             return if (stringId == 0) applicationInfo.nonLocalizedLabel.toString()

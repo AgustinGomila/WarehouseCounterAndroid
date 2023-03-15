@@ -192,7 +192,7 @@ class Screen {
             }
         }
 
-        fun touchButton(motionEvent: MotionEvent, button: Button) {
+        private fun touchButton(motionEvent: MotionEvent, button: Button) {
             when (motionEvent.action) {
                 MotionEvent.ACTION_UP -> {
                     button.isPressed = false

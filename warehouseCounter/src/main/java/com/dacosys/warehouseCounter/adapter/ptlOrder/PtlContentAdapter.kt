@@ -385,7 +385,7 @@ class PtlContentAdapter(
     }
 
     fun setSelectItemAndScrollPos(a: PtlContent?) {
-        var pos = -1
+        var pos = RecyclerView.NO_POSITION
         if (a != null) pos = getIndex(a)
         selectItem(pos)
     }
@@ -457,6 +457,7 @@ class PtlContentAdapter(
     fun qtyCollectedTotal() = filteredList.sumOf { it.qtyCollected }
 
     fun currentContent(): PtlContent? {
+        if (currentIndex == RecyclerView.NO_POSITION) return null
         return if (filteredList.any() && filteredList.count() > currentIndex) filteredList[currentIndex]
         else null
     }

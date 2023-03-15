@@ -9,6 +9,7 @@ import com.dacosys.warehouseCounter.dto.ptlOrder.Label
 import com.dacosys.warehouseCounter.dto.ptlOrder.LabelResponse
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
+import com.dacosys.warehouseCounter.retrofit.functions.GetToken.Companion.Token
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
 import com.dacosys.warehouseCounter.room.entity.user.User
@@ -134,7 +135,7 @@ class PrintBox(
 
         // Token DATA //////////////////
         val jsonParam = JSONObject()
-        jsonParam.put("userToken", Statics.Token.token).put("ptlQuery", ptlQuery)
+        jsonParam.put("userToken", Token.token).put("ptlQuery", ptlQuery)
 
         return RequestBody.create(MediaType.parse("application/json"), jsonParam.toString())
     }

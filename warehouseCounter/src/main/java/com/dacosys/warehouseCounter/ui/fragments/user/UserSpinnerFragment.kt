@@ -25,7 +25,7 @@ import org.parceler.Parcels
  */
 class UserSpinnerFragment : Fragment() {
     interface OnSpinnerFillListener {
-        fun onSpinnerFill(status: Int)
+        fun onSpinnerFill(status: SyncStatus)
     }
 
     interface OnItemSelectedListener {
@@ -284,10 +284,9 @@ class UserSpinnerFragment : Fragment() {
 
     private fun fillAdapter() {
         allUser!!.sortWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
-        val spinnerArrayAdapter =
-            UserAdapter(
-                resource = R.layout.custom_spinner_dropdown_item,
-                user = allUser!!)
+        val spinnerArrayAdapter = UserAdapter(
+            resource = R.layout.custom_spinner_dropdown_item, user = allUser!!
+        )
 
         activity?.runOnUiThread {
             binding.fragmentSpinner.adapter = spinnerArrayAdapter
@@ -302,7 +301,7 @@ class UserSpinnerFragment : Fragment() {
         }
 
         if (mListener != null) {
-            mListener!!.onSpinnerFill(Statics.FINISHED)
+            mListener!!.onSpinnerFill(SyncStatus.FINISHED)
         }
     }
 
@@ -310,6 +309,13 @@ class UserSpinnerFragment : Fragment() {
         // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
         private const val ARG_ALL_USER = "allUser"
         private const val ARG_SHOW_GENERAL_LEVEL = "showGeneralLevel"
+
+        /**
+         * Estados de las tareas asincrónicas
+         */
+        enum class SyncStatus(val id: Int) {
+            STARTING(1), CANCELED(2), FINISHED(3), RUNNING(4), CRASHED(5)
+        }
 
         /**
          * Use this factory method to create a new instance of

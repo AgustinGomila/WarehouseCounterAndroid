@@ -4,6 +4,7 @@ package com.dacosys.warehouseCounter.settings
 
 import androidx.lifecycle.ViewModel
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
+import com.dacosys.warehouseCounter.misc.Statics
 
 @Suppress("unused")
 class SettingsViewModel : ViewModel() {
@@ -577,4 +578,27 @@ class SettingsViewModel : ViewModel() {
         set(value) {
             settingRepository.flCameraFilterRepeatedReads.value = value
         }
+
+    fun setupImageControl() {
+        // Setup ImageControl
+        com.dacosys.imageControl.Statics.appAllowScreenRotation = allowScreenRotation
+
+        com.dacosys.imageControl.Statics.currentUserId = Statics.currentUserId
+        com.dacosys.imageControl.Statics.currentUserName = Statics.currentUserName
+        com.dacosys.imageControl.Statics.newInstance()
+
+        com.dacosys.imageControl.Statics.useImageControl = useImageControl
+        com.dacosys.imageControl.Statics.wsIcUrl = icWsServer
+        com.dacosys.imageControl.Statics.wsIcNamespace = icWsNamespace
+        com.dacosys.imageControl.Statics.wsIcProxy = icWsProxy
+        com.dacosys.imageControl.Statics.wsIcProxyPort = icWsProxyPort
+        com.dacosys.imageControl.Statics.wsIcUseProxy = icWsUseProxy
+        com.dacosys.imageControl.Statics.wsIcProxyUser = icWsProxyUser
+        com.dacosys.imageControl.Statics.wsIcProxyPass = icWsProxyPass
+        com.dacosys.imageControl.Statics.icUser = icUser
+        com.dacosys.imageControl.Statics.icPass = icPass
+        com.dacosys.imageControl.Statics.wsIcUser = icWsUser
+        com.dacosys.imageControl.Statics.wsIcPass = icWsPass
+        com.dacosys.imageControl.Statics.maxHeightOrWidth = icPhotoMaxHeightOrWidth
+    }
 }

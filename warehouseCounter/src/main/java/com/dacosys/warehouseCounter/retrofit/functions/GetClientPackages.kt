@@ -18,8 +18,29 @@ import kotlinx.coroutines.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import kotlin.concurrent.thread
 
 class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
+
+    companion object {
+        fun getConfig(
+            onEvent: (PackagesResult) -> Unit,
+            email: String,
+            password: String,
+            installationCode: String = "",
+        ) {
+            if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
+                thread {
+                    val get = GetClientPackages(onEvent)
+                    get.addParams(
+                        email = email, password = password, installationCode = installationCode
+                    )
+                    get.execute()
+                }
+            }
+        }
+    }
+
     private var myEmail = ""
     private var myPassword = ""
     private var myInstallationCode = ""

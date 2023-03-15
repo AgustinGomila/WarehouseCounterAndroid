@@ -7,8 +7,8 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlContent
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlContentResponse
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
+import com.dacosys.warehouseCounter.retrofit.functions.GetToken.Companion.Token
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
@@ -106,7 +106,7 @@ class GetPtlOrderContent(
 
         // Token DATA //////////////////
         val jsonParam = JSONObject()
-        jsonParam.put("userToken", Statics.Token.token).put("ptlQuery", ptlQuery)
+        jsonParam.put("userToken", Token.token).put("ptlQuery", ptlQuery)
 
         return RequestBody.create(MediaType.parse("application/json"), jsonParam.toString())
     }

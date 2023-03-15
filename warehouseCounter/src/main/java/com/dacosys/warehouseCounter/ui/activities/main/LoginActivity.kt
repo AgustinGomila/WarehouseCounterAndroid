@@ -29,9 +29,11 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.databinding.LoginActivityBinding
 import com.dacosys.warehouseCounter.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.misc.Md5
+import com.dacosys.warehouseCounter.misc.Proxy
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages.Companion.getConfig
 import com.dacosys.warehouseCounter.retrofit.functions.GetDatabaseLocation
 import com.dacosys.warehouseCounter.retrofit.result.DbLocationResult
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
@@ -42,9 +44,13 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigApp
 import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigClientAccount
+import com.dacosys.warehouseCounter.sync.ClientPackage
+import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.getConfigFromScannedCode
+import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.selectClientPackage
 import com.dacosys.warehouseCounter.sync.DownloadDb
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment
+import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.*
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -61,14 +67,18 @@ import kotlin.concurrent.thread
 
 class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedListener,
     UserSpinnerFragment.OnSpinnerFillListener, Scanner.ScannerListener,
-    Statics.Companion.TaskSetupProxyEnded, Statics.Companion.TaskConfigPanelEnded,
+    Proxy.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded,
     DownloadDb.DownloadDbTask {
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
-            makeText(binding.root, getString(R.string.configuration_applied), SnackBarType.SUCCESS)
+            showSnackBar(
+                SnackBarEventData(
+                    getString(R.string.configuration_applied), SnackBarType.SUCCESS
+                )
+            )
             initialSetup()
         } else if (status == ProgressStatus.crashed) {
-            makeText(binding.root, getString(R.string.error_setting_user_panel), ERROR)
+            showSnackBar(SnackBarEventData(getString(R.string.error_setting_user_panel), ERROR))
         }
     }
 
@@ -91,7 +101,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         if (status == ProgressStatus.finished) {
             if (result.isNotEmpty()) {
                 runOnUiThread {
-                    Statics.selectClientPackage(weakAct = WeakReference(this),
+                    selectClientPackage(weakAct = WeakReference(this),
                         callback = this,
                         allPackage = result,
                         email = clientEmail,
@@ -99,12 +109,12 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                         onEventData = { showSnackBar(it) })
                 }
             } else {
-                makeText(binding.root, msg, SnackBarType.INFO)
+                showSnackBar(SnackBarEventData(msg, SnackBarType.INFO))
             }
         } else if (status == ProgressStatus.success) {
-            makeText(binding.root, msg, SnackBarType.SUCCESS)
+            showSnackBar(SnackBarEventData(msg, SnackBarType.SUCCESS))
         } else if (status == ProgressStatus.crashed) {
-            makeText(binding.root, msg, ERROR)
+            showSnackBar(SnackBarEventData(msg, ERROR))
         }
     }
 
@@ -116,8 +126,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
         when (status) {
             ProgressStatus.crashed -> {
-                makeText(binding.root, msg, ERROR)
-                showProgressBar(false, "")
+                showSnackBar(SnackBarEventData(msg, ERROR))
+                showProgressBar()
 
                 setButton(ButtonStyle.REFRESH)
                 attemptSync = false
@@ -126,8 +136,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 setButton(ButtonStyle.BUSY)
             }
             ProgressStatus.canceled -> {
-                makeText(binding.root, msg, ERROR)
-                showProgressBar(false, "")
+                showSnackBar(SnackBarEventData(msg, ERROR))
+                showProgressBar()
                 attemptSync = false
 
                 // Sin conexión
@@ -158,7 +168,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         when (downloadStatus) {
             DownloadDb.DownloadStatus.STARTING -> {
                 setButton(ButtonStyle.BUSY)
-                showProgressBar(true, getString(R.string.downloading_database))
+                showProgressBar(getString(R.string.downloading_database))
             }
             DownloadDb.DownloadStatus.FINISHED,
             DownloadDb.DownloadStatus.CANCELED,
@@ -169,7 +179,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             }
             DownloadDb.DownloadStatus.CRASHED -> {
                 setButton(ButtonStyle.REFRESH)
-                showProgressBar(false, "")
+                showProgressBar()
             }
             DownloadDb.DownloadStatus.DOWNLOADING -> {
                 setButton(ButtonStyle.BUSY)
@@ -180,13 +190,13 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     private fun enableLogin() {
-        showProgressBar(true, getString(R.string.updating_item_codes))
+        showProgressBar(getString(R.string.updating_item_codes))
 
         Statics.insertItemCodes()
         refreshUsers()
 
         setButton(ButtonStyle.READY)
-        showProgressBar(false, "")
+        showProgressBar()
     }
 
     override fun onDownloadFileTask(
@@ -204,7 +214,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         installationCode: String,
     ) {
         if (status == ProgressStatus.finished) {
-            Statics.getConfig(
+            getConfig(
                 onEvent = { onGetPackagesEnded(it) },
                 email = email,
                 password = password,
@@ -212,13 +222,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             )
         }
     }
-
-    private var userSpinnerFragment: UserSpinnerFragment? = null
-    private var rejectNewInstances = false
-    private var isReturnedFromSettings = false
-
-    private var user: User? = null
-    private var password: String = ""
 
     private fun setEditTextFocus() {
         runOnUiThread {
@@ -228,8 +231,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             binding.passwordEditText.requestFocus()
         }
     }
-
-    private var connectionSuccess = false
 
     enum class ButtonStyle {
         READY, REFRESH, BUSY
@@ -331,6 +332,17 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         savedInstanceState.putString("password", binding.passwordEditText.text.toString())
     }
 
+    private var userSpinnerFragment: UserSpinnerFragment? = null
+    private var rejectNewInstances = false
+    private var isReturnedFromSettings = false
+
+    private var attemptSync = false
+    private var attemptRunning = false
+    private var connectionSuccess = false
+
+    private var user: User? = null
+    private var password: String = ""
+
     private lateinit var binding: LoginActivityBinding
 
     @SuppressLint("ClickableViewAccessibility")
@@ -415,9 +427,9 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         Screen.setupUI(binding.login, this)
     }
 
-    private fun showProgressBar(show: Boolean, msg: String) {
+    private fun showProgressBar(msg: String = "") {
         runOnUiThread {
-            if (show) {
+            if (msg.isNotEmpty()) {
                 binding.syncStatusTextView.text = msg
                 binding.progressBarLayout.visibility = VISIBLE
                 binding.progressBarLayout.bringToFront()
@@ -425,6 +437,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 ViewCompat.setZ(binding.progressBarLayout, 0F)
             } else {
                 binding.progressBarLayout.visibility = GONE
+                binding.syncStatusTextView.text = ""
             }
         }
     }
@@ -442,7 +455,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         }
     }
 
-    private var attemptSync: Boolean = false
     private fun initialSetup() {
         if (attemptSync) return
         attemptSync = true
@@ -450,7 +462,11 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         setButton(ButtonStyle.BUSY)
 
         if (settingViewModel.urlPanel.isEmpty()) {
-            makeText(binding.root, text = getString(R.string.server_is_not_configured), ERROR)
+            showSnackBar(
+                SnackBarEventData(
+                    text = getString(R.string.server_is_not_configured), ERROR
+                )
+            )
 
             setButton(ButtonStyle.REFRESH)
             attemptSync = false
@@ -462,14 +478,13 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                    actividad después haber estado loggeado.
                 */
 
-                Statics.closeImageControl()
                 WcDatabase.cleanInstance()
                 IcDatabase.cleanInstance()
 
                 initSync()
             } catch (ex: Exception) {
-                showProgressBar(false, "")
-                makeText(binding.root, text = ex.message.toString(), ERROR)
+                showProgressBar()
+                showSnackBar(SnackBarEventData(text = ex.message.toString(), ERROR))
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
 
                 setButton(ButtonStyle.REFRESH)
@@ -539,7 +554,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             }
             isReturnedFromSettings = true
         } else {
-            makeText(binding.root, getString(R.string.invalid_password), ERROR)
+            showSnackBar(SnackBarEventData(getString(R.string.invalid_password), ERROR))
         }
     }
 
@@ -551,7 +566,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         return BitmapDrawable(resources, bitmapResized)
     }
 
-    private var attemptRunning = false
     private fun attemptLogin() {
         if (attemptRunning) {
             return
@@ -575,10 +589,10 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
         // Check for a valid email address.
         if (userId == null || userId <= 0) {
-            makeText(binding.root, getString(R.string.you_must_select_a_user), ERROR)
+            showSnackBar(SnackBarEventData(getString(R.string.you_must_select_a_user), ERROR))
             cancel = true
         } else if (!isUserValid(userId)) {
-            makeText(binding.root, getString(R.string.you_must_select_a_user), ERROR)
+            showSnackBar(SnackBarEventData(getString(R.string.you_must_select_a_user), ERROR))
             cancel = true
         }
 
@@ -600,11 +614,15 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 Statics.currentUserName = user!!.name
                 Statics.isLogged = true
 
-                Statics.setupImageControl()
+                settingViewModel.setupImageControl()
 
                 finish()
             } else {
-                makeText(binding.root, getString(R.string.wrong_user_password_combination), ERROR)
+                showSnackBar(
+                    SnackBarEventData(
+                        getString(R.string.wrong_user_password_combination), ERROR
+                    )
+                )
             }
         }
     }
@@ -642,11 +660,11 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                         if (it != null) {
                             attemptLogin(it.userId, it.password ?: "", password)
                         } else {
-                            makeText(binding.root, getString(R.string.invalid_user), ERROR)
+                            showSnackBar(SnackBarEventData(getString(R.string.invalid_user), ERROR))
                         }
                     }
                 } else {
-                    makeText(binding.root, getString(R.string.invalid_code), ERROR)
+                    showSnackBar(SnackBarEventData(getString(R.string.invalid_code), ERROR))
                 }
                 return
             }
@@ -662,7 +680,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                             adb.setNegativeButton(R.string.cancel, null)
                             adb.setPositiveButton(R.string.accept) { _, _ ->
                                 Statics.downloadDbRequired = true
-                                Statics.getConfigFromScannedCode(
+                                getConfigFromScannedCode(
                                     onEvent = { onGetPackagesEnded(it) },
                                     scanCode = scanCode,
                                     mode = QRConfigClientAccount
@@ -677,19 +695,19 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 }
                 mainJson.has(appName) -> {
                     // APP CONFIGURATION
-                    Statics.getConfigFromScannedCode(
+                    getConfigFromScannedCode(
                         onEvent = { onGetPackagesEnded(it) },
                         scanCode = scanCode,
                         mode = QRConfigApp
                     )
                 }
                 else -> {
-                    makeText(binding.root, getString(R.string.invalid_code), ERROR)
+                    showSnackBar(SnackBarEventData(getString(R.string.invalid_code), ERROR))
                 }
             }
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(binding.root, ex.message.toString(), ERROR)
+            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial
@@ -754,18 +772,18 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         }
     }
 
-    override fun onSpinnerFill(status: Int) {
+    override fun onSpinnerFill(status: UserSpinnerFragment.Companion.SyncStatus) {
         when (status) {
-            Statics.STARTING -> {
+            STARTING -> {
                 setButton(ButtonStyle.BUSY)
-                showProgressBar(true, getString(R.string.loading_users))
+                showProgressBar(getString(R.string.loading_users))
             }
-            Statics.CANCELED, Statics.CRASHED -> {
+            CANCELED, CRASHED -> {
                 setButton(ButtonStyle.REFRESH)
-                showProgressBar(false, "")
+                showProgressBar()
             }
-            Statics.FINISHED -> {
-                showProgressBar(false, "")
+            FINISHED -> {
+                showProgressBar()
                 if (userSpinnerFragment!!.count < 1) {
                     setButton(ButtonStyle.REFRESH)
                     Log.d(
@@ -776,6 +794,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                     setButton(ButtonStyle.READY)
                 }
             }
+            RUNNING -> {}
         }
     }
 }

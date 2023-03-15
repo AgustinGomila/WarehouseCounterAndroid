@@ -1,6 +1,6 @@
 package com.dacosys.warehouseCounter.dto.search
 
-import com.dacosys.warehouseCounter.misc.Statics.Companion.Token
+import com.dacosys.warehouseCounter.retrofit.functions.GetToken.Companion.Token
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 

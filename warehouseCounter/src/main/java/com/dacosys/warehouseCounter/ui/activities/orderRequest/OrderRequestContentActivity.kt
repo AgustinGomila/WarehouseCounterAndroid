@@ -207,7 +207,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun setQty(orc: OrderRequestContent) {
         if (lastRegexResult != null) {
             val qty = lastRegexResult?.qty?.toDouble()
-            if (qty == null) makeText(this, getString(R.string.null_quantity_in_regex), ERROR)
+            if (qty == null) showSnackBar(
+                SnackBarEventData(
+                    getString(R.string.null_quantity_in_regex), ERROR
+                )
+            )
 
             setQtyCollected(orc = orc, qty = qty ?: 1.toDouble())
         } else {
@@ -990,7 +994,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                         } catch (ex: Exception) {
                             val res =
                                 context.getString(R.string.an_error_occurred_while_trying_to_add_the_item)
-                            makeText(binding.root, res, ERROR)
+                            showSnackBar(SnackBarEventData(res, ERROR))
                             android.util.Log.e(this::class.java.simpleName, res)
                         }
                     }
@@ -1201,7 +1205,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 if ((orcAdapter?.count ?: 0) >= 5) {
                     val res =
                         context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
-                    makeText(binding.root, res, ERROR)
+                    showSnackBar(SnackBarEventData(res, ERROR))
                     android.util.Log.e(this::class.java.simpleName, res)
                     return false
                 }
@@ -1233,7 +1237,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
             return true
         } catch (ex: Exception) {
-            makeText(binding.root, ex.message.toString(), ERROR)
+            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
             android.util.Log.e(this::class.java.simpleName, ex.message.toString())
             return false
         }
@@ -1677,7 +1681,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var lastRegexResult: ItemRegex.Companion.RegexResult? = null
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
 
         JotterListener.lockScanner(this, true)
 
@@ -1692,7 +1696,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 // region Regex Founded
                 if (it.count() > 1) {
                     // Mostrar advertencia.
-                    makeText(this, getString(R.string.there_are_multiple_regex_matches), INFO)
+                    showSnackBar(
+                        SnackBarEventData(
+                            getString(R.string.there_are_multiple_regex_matches), INFO
+                        )
+                    )
                 }
 
                 // Utilizamos la primer coincidencia
@@ -1713,7 +1721,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 //    un código corriente pero advertir sobre el error.
 
                 // Mostrar advertencia.
-                makeText(this, "Cantidad nula en Regex", INFO)
+                showSnackBar(SnackBarEventData("Cantidad nula en Regex", INFO))
                 code = lastRegexResult!!.ean
 
                 // endregion Regex Founded

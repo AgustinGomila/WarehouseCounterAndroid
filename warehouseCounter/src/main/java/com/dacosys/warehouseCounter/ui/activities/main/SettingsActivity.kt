@@ -31,12 +31,12 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.databinding.SettingsActivityBinding
 import com.dacosys.warehouseCounter.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.generateQrCode
-import com.dacosys.warehouseCounter.misc.Statics.Companion.getBarcodeForConfig
-import com.dacosys.warehouseCounter.misc.Statics.Companion.getConfigFromScannedCode
+import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
 import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages.Companion.getConfig
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
+import com.dacosys.warehouseCounter.room.database.FileHelper.Companion.removeDataBases
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
@@ -53,6 +53,11 @@ import com.dacosys.warehouseCounter.settings.custom.CollectorTypePreference
 import com.dacosys.warehouseCounter.settings.custom.DevicePreference
 import com.dacosys.warehouseCounter.settings.utils.DownloadController
 import com.dacosys.warehouseCounter.settings.utils.ImageControlCheckUser
+import com.dacosys.warehouseCounter.sync.ClientPackage
+import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.generateQrCode
+import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.getBarcodeForConfig
+import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.getConfigFromScannedCode
+import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.selectClientPackage
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.AccountPreferenceFragment.Companion.currentQRConfigType
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.AccountPreferenceFragment.Companion.okDoShit
@@ -83,7 +88,7 @@ import kotlin.concurrent.thread
 
 class SettingsActivity : AppCompatActivity(),
     PreferenceFragmentCompat.OnPreferenceStartFragmentCallback,
-    Statics.Companion.TaskConfigPanelEnded, Scanner.ScannerListener {
+    ClientPackage.Companion.TaskConfigPanelEnded, Scanner.ScannerListener {
 
     class HeaderFragment : PreferenceFragmentCompat() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -189,7 +194,7 @@ class SettingsActivity : AppCompatActivity(),
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
             makeText(binding.settings, getString(R.string.configuration_applied), INFO)
-            Statics.removeDataBases()
+            removeDataBases()
             onBackPressed()
         } else if (status == ProgressStatus.crashed) {
             makeText(binding.settings, getString(R.string.error_setting_user_panel), ERROR)
@@ -206,7 +211,7 @@ class SettingsActivity : AppCompatActivity(),
         if (status == ProgressStatus.finished) {
             if (result.size > 0) {
                 runOnUiThread {
-                    Statics.selectClientPackage(callback = this,
+                    selectClientPackage(callback = this,
                         weakAct = WeakReference(this),
                         allPackage = result,
                         email = clientEmail,
@@ -228,7 +233,7 @@ class SettingsActivity : AppCompatActivity(),
     }
 
     class AccountPreferenceFragment : PreferenceFragmentCompat(),
-        Statics.Companion.TaskConfigPanelEnded {
+        ClientPackage.Companion.TaskConfigPanelEnded {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             var key = rootKey
             if (arguments != null) {
@@ -304,7 +309,7 @@ class SettingsActivity : AppCompatActivity(),
                     if (alreadyAnsweredYes) {
                         Statics.downloadDbRequired = true
                         if (email.isNotEmpty() && password.isNotEmpty()) {
-                            Statics.getConfig(
+                            getConfig(
                                 onEvent = { onGetPackagesEnded(it) },
                                 email = email,
                                 password = password,
@@ -441,7 +446,7 @@ class SettingsActivity : AppCompatActivity(),
                     alreadyAnsweredYes = true
 
                     if (email.isNotEmpty() && password.isNotEmpty()) {
-                        Statics.getConfig(
+                        getConfig(
                             onEvent = { onGetPackagesEnded(it) },
                             email = email,
                             password = password,
@@ -591,7 +596,7 @@ class SettingsActivity : AppCompatActivity(),
             if (status == ProgressStatus.finished) {
                 if (result.size > 0) {
                     requireActivity().runOnUiThread {
-                        Statics.selectClientPackage(callback = this,
+                        selectClientPackage(callback = this,
                             weakAct = WeakReference(requireActivity()),
                             allPackage = result,
                             email = clientEmail,
@@ -613,7 +618,7 @@ class SettingsActivity : AppCompatActivity(),
                 if (view != null) makeText(
                     requireView(), getString(R.string.configuration_applied), INFO
                 )
-                Statics.removeDataBases()
+                removeDataBases()
                 requireActivity().finish()
             } else if (status == ProgressStatus.crashed) {
                 if (view != null) makeText(
@@ -694,7 +699,7 @@ class SettingsActivity : AppCompatActivity(),
             qrCodeButton?.onPreferenceClickListener = OnPreferenceClickListener {
                 generateQrCode(
                     WeakReference(requireActivity()),
-                    getBarcodeForConfig(SettingsRepository.getAppConf(), Statics.appName)
+                    getBarcodeForConfig(SettingsRepository.getAppConf(), appName)
                 )
                 true
             }
@@ -1258,7 +1263,7 @@ class SettingsActivity : AppCompatActivity(),
      * activity is showing a two-pane settings UI.
      */
     class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
-        Statics.Companion.TaskConfigPanelEnded {
+        ClientPackage.Companion.TaskConfigPanelEnded {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             var key = rootKey
             if (arguments != null) {
@@ -1349,7 +1354,7 @@ class SettingsActivity : AppCompatActivity(),
 
                 generateQrCode(
                     WeakReference(requireActivity()),
-                    getBarcodeForConfig(SettingsRepository.getImageControl(), Statics.appName)
+                    getBarcodeForConfig(SettingsRepository.getImageControl(), appName)
                 )
                 true
             }
@@ -1417,7 +1422,7 @@ class SettingsActivity : AppCompatActivity(),
                 if (view != null) makeText(
                     requireView(), getString(R.string.configuration_applied), INFO
                 )
-                Statics.removeDataBases()
+                removeDataBases()
                 requireActivity().onBackPressed()
             } else if (status == ProgressStatus.crashed) {
                 if (view != null) makeText(

@@ -134,14 +134,14 @@ class OrderRequestHeader : Fragment() {
             }
 
             if (or.resultDiffProduct!!) {
-                resume += breakLine!! + String.format(
+                resume += breakLine + String.format(
                     getString(R.string._product_differences),
                     Statics.roundToString(unknownItems.toDouble(), decimalPlaces)
                 )
             }
 
             if (or.resultDiffQty!!) {
-                resume += breakLine!! + String.format(
+                resume += breakLine + String.format(
                     getString(R.string._quantity_differences),
                     Statics.roundToString(diffQtyItems.toDouble(), decimalPlaces)
                 )
@@ -161,7 +161,7 @@ class OrderRequestHeader : Fragment() {
             }
         }
 
-        resume += breakLine!! + String.format(
+        resume += breakLine + String.format(
             getString(R.string._total_counted),
             Statics.roundToString(totalQtyCollected, decimalPlaces)
         )

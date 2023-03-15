@@ -26,6 +26,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.PrintLabelFragmentBinding
 import com.dacosys.warehouseCounter.dto.ptlOrder.Label
+import com.dacosys.warehouseCounter.misc.BtPrinter.Companion.printerBluetoothDevice
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
@@ -205,7 +206,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         }
 
     private fun initializePrinter() {
-        if (Statics.printerBluetoothDevice == null) return
+        if (printerBluetoothDevice == null) return
 
         val bluetoothManager =
             WarehouseCounterApp.context.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
@@ -234,7 +235,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                 }
                 resultForPrinterConnect.launch(enablePrinter)
             } else {
-                connectToPrinter(Statics.printerBluetoothDevice!!.address)
+                connectToPrinter(printerBluetoothDevice!!.address)
             }
         }
     }
@@ -242,7 +243,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     private val resultForPrinterConnect =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (it?.resultCode == CommonStatusCodes.SUCCESS || it?.resultCode == CommonStatusCodes.SUCCESS_CACHE) {
-                connectToPrinter(Statics.printerBluetoothDevice!!.address)
+                connectToPrinter(printerBluetoothDevice!!.address)
             }
         }
 

@@ -2,10 +2,12 @@ package com.dacosys.warehouseCounter.misc.objects.errorLog
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Environment
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.FragmentActivity
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.UTCDataTime
@@ -15,6 +17,13 @@ import java.util.*
 
 class ErrorLog {
     companion object : ActivityCompat.OnRequestPermissionsResultCallback {
+        private const val ERROR_LOG_PATH = "/error_log"
+
+        val errorLogPath: File
+            get() {
+                return File("${WarehouseCounterApp.context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}${Statics.WC_ROOT_PATH}/${settingViewModel.installationCode}${ERROR_LOG_PATH}/")
+            }
+
         override fun onRequestPermissionsResult(
             requestCode: Int,
             permissions: Array<out String>,
@@ -29,22 +38,18 @@ class ErrorLog {
             }
         }
 
-        var errorLogPath = Statics.getLogPath()
         private const val REQUEST_EXTERNAL_STORAGE = 1777
         private val PERMISSIONS_STORAGE = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
         private fun verifyPermissions(activity: AppCompatActivity) {
             // Check if we have write permission
             val storagePermission = ActivityCompat.checkSelfPermission(
-                activity,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                activity, Manifest.permission.WRITE_EXTERNAL_STORAGE
             )
 
             if (storagePermission != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(
-                    activity,
-                    PERMISSIONS_STORAGE,
-                    REQUEST_EXTERNAL_STORAGE
+                    activity, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE
                 )
             } else {
                 reallyWriteLog()

@@ -4,7 +4,7 @@ import com.dacosys.imageControl.ImageControl.Companion.webservice
 import com.dacosys.imageControl.moshi.UserAuthResult
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -33,7 +33,7 @@ class ImageControlCheckUser(private var onSnackBarEvent: (SnackBarEventData) -> 
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         return@withContext try {
-            Statics.setupImageControl()
+            settingViewModel.setupImageControl()
             val r = webservice.imageControlUserCheck()
 
             postExecute(r)

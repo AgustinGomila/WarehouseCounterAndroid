@@ -20,6 +20,45 @@ import kotlin.math.min
 
 class FileHelper {
     companion object {
+        private const val IMAGE_CONTROL_DATABASE_NAME = "imagecontrol.sqlite"
+
+        fun removeDataBases() {
+            removeImageControlDataBase()
+            removeLocalDataBase()
+        }
+
+        private fun removeImageControlDataBase() {
+            // Path to the just created empty db
+            val outFileName = context.getDatabasePath(IMAGE_CONTROL_DATABASE_NAME).toString()
+
+            try {
+                Log.i("IC DataBase", "Eliminando: $outFileName")
+                val f = File(outFileName)
+                if (f.exists()) {
+                    f.delete()
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+                ErrorLog.writeLog(null, "removeICDataBase", e)
+            }
+        }
+
+        private fun removeLocalDataBase() {
+            // Path to the just created empty db
+            val outFileName = context.getDatabasePath(DATABASE_NAME).toString()
+
+            try {
+                Log.i("Local DataBase", "Eliminando: $outFileName")
+                val f = File(outFileName)
+                if (f.exists()) {
+                    f.delete()
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+                ErrorLog.writeLog(null, "removeLocalDataBase", e)
+            }
+        }
+
         /**
          * Get a file path from a Uri. This will get the the path for Storage Access
          * Framework Documents, as well as the _data field for the MediaStore and

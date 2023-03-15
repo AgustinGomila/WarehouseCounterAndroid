@@ -10,8 +10,6 @@ import com.dacosys.warehouseCounter.dto.token.TokenObject
 import com.dacosys.warehouseCounter.dto.user.AuthData
 import com.dacosys.warehouseCounter.dto.user.UserAuthData
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.Token
-import com.dacosys.warehouseCounter.misc.Statics.Companion.cleanToken
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.result.RequestResult
 import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
@@ -28,6 +26,14 @@ import java.util.*
  */
 
 class GetToken(private val onEvent: (RequestResult) -> Unit) {
+
+    companion object {
+        var Token: TokenObject = TokenObject()
+
+        fun cleanToken() {
+            Token = TokenObject("", "")
+        }
+    }
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 

@@ -23,14 +23,18 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
 import com.dacosys.warehouseCounter.databinding.InitConfigActivityBinding
 import com.dacosys.warehouseCounter.dto.clientPackage.Package
-import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.getConfig
-import com.dacosys.warehouseCounter.misc.Statics.Companion.setupProxy
+import com.dacosys.warehouseCounter.misc.Proxy
+import com.dacosys.warehouseCounter.misc.Proxy.Companion.setupProxy
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages.Companion.getConfig
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
+import com.dacosys.warehouseCounter.room.database.FileHelper.Companion.removeDataBases
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigClientAccount
+import com.dacosys.warehouseCounter.sync.ClientPackage
+import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.getConfigFromScannedCode
+import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.selectClientPackage
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
@@ -43,12 +47,16 @@ import com.google.android.material.textfield.TextInputLayout
 import java.lang.ref.WeakReference
 
 class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
-    Statics.Companion.TaskSetupProxyEnded, Statics.Companion.TaskConfigPanelEnded {
+    Proxy.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded {
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
             isConfiguring = false
-            makeText(binding.root, getString(R.string.configuration_applied), SnackBarType.SUCCESS)
-            Statics.removeDataBases()
+            showSnackBar(
+                SnackBarEventData(
+                    getString(R.string.configuration_applied), SnackBarType.SUCCESS
+                )
+            )
+            removeDataBases()
             finish()
         }
     }
@@ -63,7 +71,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         if (status == ProgressStatus.finished) {
             if (result.size > 0) {
                 runOnUiThread {
-                    Statics.selectClientPackage(callback = this,
+                    selectClientPackage(callback = this,
                         weakAct = WeakReference(this),
                         allPackage = result,
                         email = clientEmail,
@@ -72,15 +80,15 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                 }
             } else {
                 isConfiguring = false
-                makeText(binding.root, msg, INFO)
+                showSnackBar(SnackBarEventData(msg, INFO))
             }
         } else if (status == ProgressStatus.success) {
             isConfiguring = false
-            makeText(binding.root, msg, SnackBarType.SUCCESS)
+            showSnackBar(SnackBarEventData(msg, SnackBarType.SUCCESS))
             finish()
         } else if (status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
             isConfiguring = false
-            makeText(binding.root, msg, ERROR)
+            showSnackBar(SnackBarEventData(msg, ERROR))
         }
     }
 
@@ -125,7 +133,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             JotterListener.autodetectDeviceModel(this)
 
             if (settingViewModel.urlPanel.isEmpty()) {
-                makeText(binding.root, getString(R.string.server_is_not_configured), ERROR)
+                showSnackBar(SnackBarEventData(getString(R.string.server_is_not_configured), ERROR))
                 return
             }
 
@@ -312,7 +320,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
             isReturnedFromSettings = true
         } else {
-            makeText(binding.root, getString(R.string.invalid_password), ERROR)
+            showSnackBar(SnackBarEventData(getString(R.string.invalid_password), ERROR))
         }
     }
 
@@ -366,14 +374,14 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     override fun scannerCompleted(scanCode: String) {
         JotterListener.lockScanner(this, true)
         try {
-            Statics.getConfigFromScannedCode(
+            getConfigFromScannedCode(
                 onEvent = { onGetPackagesEnded(it) },
                 scanCode = scanCode,
                 mode = QRConfigClientAccount
             )
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(binding.root, ex.message.toString(), ERROR)
+            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial

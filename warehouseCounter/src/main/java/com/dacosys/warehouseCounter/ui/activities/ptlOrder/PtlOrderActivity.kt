@@ -85,17 +85,20 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
             return
         }
 
-        val newOrder = ptlOrder ?: return
-        val waId = warehouseArea?.id ?: return
-        currentPtlOrder = newOrder
+        val waId = warehouseArea?.id
+
+        if (ptlOrder == null || waId == null) {
+            gentlyReturn()
+            return
+        }
 
         showProgressBar(true)
 
-        val oldOrder = orderHeaderFragment?.ptlOrder
-        if (oldOrder == null || oldOrder == newOrder) {
+        val oldOrder = currentPtlOrder
+        if (oldOrder == null || oldOrder == ptlOrder) {
             // Es la misma orden o
             // No había ninguna orden seleccionada, buscamos los contenidos directamente...
-            getContents(newOrder.id, waId)
+            getContents(ptlOrder.id, waId)
         } else {
             // Desacoplamos la orden anterior y proseguimos...
             thread {
@@ -103,7 +106,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                     warehouseAreaId = waId,
                     onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
                     onFinish = {
-                        if (it) getContents(newOrder.id, waId)
+                        if (it) getContents(ptlOrder.id, waId)
                         else gentlyReturn()
                     }).execute()
             }
@@ -114,15 +117,12 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         makeText(binding.root, it.text, it.snackBarType)
     }
 
-    private fun getContents(oldOrderId: Long, waId: Long) {
-        if (getContentBlocked) {
-            showProgressBar(false)
-            return
-        }
+    private fun getContents(orderId: Long, waId: Long) {
+        if (getContentBlocked) return
         getContentBlocked = true
 
         thread {
-            GetPtlOrderContent(orderId = oldOrderId,
+            GetPtlOrderContent(orderId = orderId,
                 warehouseAreaId = waId,
                 onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
                 onFinish = { onGetContent(it) }).execute()
@@ -131,48 +131,56 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     private fun checkForCompletedOrder(contents: ArrayList<PtlContent>): Boolean {
         if (contents.sumOf { it.qtyCollected } >= contents.sumOf { it.qtyRequested }) {
-            makeText(this, context.getString(R.string.completed_order), SUCCESS)
+            showSnackBar(SnackBarEventData(context.getString(R.string.completed_order), SUCCESS))
             return true
         }
         return false
     }
 
     private fun onGetContent(contents: ArrayList<PtlContent>) {
+        // Recién ahora que tenemos los contenidos, definimos la orden actual.
+        currentPtlOrder = orderHeaderFragment?.ptlOrder
+
         // Comprobar si la orden fue completada
         if (contents.any() && checkForCompletedOrder(contents)) {
-            finish()
+            finishOrder()
         } else {
-            val oldOrder = orderHeaderFragment?.ptlOrder
-            if (oldOrder == currentPtlOrder) {
-                // Actualizamos la lista...
-                fillAdapter(contents)
-            } else {
-                val waId = warehouseArea?.id ?: return
-                val oldOrderId = oldOrder?.id ?: return
+            val oldOrderId = currentPtlOrder?.id
+            val waId = warehouseArea?.id
 
-                // Tomamos la orden y actualizamos la lista...
-                thread {
-                    AttachOrderToLocation(orderId = oldOrderId,
-                        warehouseAreaId = waId,
-                        onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
-                        onFinish = {
-                            if (it) fillAdapter(contents)
-                            else gentlyReturn()
-                        }).execute()
-                }
+            if (waId == null || oldOrderId == null) {
+                gentlyReturn()
+                return
             }
-            getContentBlocked = false
+
+            // Tomamos la orden y actualizamos la lista...
+            thread {
+                AttachOrderToLocation(orderId = oldOrderId,
+                    warehouseAreaId = waId,
+                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
+                    onFinish = {
+                        if (it) fillAdapter(contents)
+                        else gentlyReturn()
+                    }).execute()
+            }
         }
     }
 
     private fun onGetLabel(it: ArrayList<Label>) {
-        printLabelFragment?.printPtlLabels(it)
+        if (it.any()) {
+            printLabelFragment?.printPtlLabels(it)
+        }
+        gentlyReturn()
     }
 
     private fun onPickItem(it: ArrayList<PickItem>) {
-        runOnUiThread {
-            val item = it.firstOrNull() ?: return@runOnUiThread
+        val item = it.firstOrNull()
+        if (item == null) {
+            gentlyReturn()
+            return
+        }
 
+        runOnUiThread {
             adapter?.updateQtyCollected(
                 itemId = item.itemId, qtyCollected = item.qtyCollected.toDouble()
             )
@@ -181,7 +189,9 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
             // Comprobamos si está completada la orden...
             if (all.any() && checkForCompletedOrder(all)) {
-                finish()
+                finishOrder()
+            } else {
+                gentlyReturn()
             }
         }
     }
@@ -366,8 +376,14 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     }
 
     private fun setSyncTimer() {
-        val oId = currentPtlOrder?.id ?: return
-        val waId = warehouseArea?.id ?: return
+        val oId = currentPtlOrder?.id
+        val waId = warehouseArea?.id
+
+        if (oId == null || waId == null) {
+            gentlyReturn()
+            return
+        }
+
         val updateTime = settingViewModel.wcSyncRefreshOrder
 
         timer = Timer()
@@ -685,14 +701,14 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     // region Events from SCANNER, RFID, NFC
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
 
         JotterListener.lockScanner(this, true)
 
         thread {
             GetPtlOrderByCode(code = scanCode,
                 onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
-                onFinish = { if (it.any()) onGetPtlOrder(it) }).execute()
+                onFinish = { onGetPtlOrder(it) }).execute()
         }
     }
 
@@ -708,6 +724,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     private fun gentlyReturn() {
         Screen.closeKeyboard(this)
         allowClicks = true
+        getContentBlocked = false
 
         JotterListener.lockScanner(this, false)
         rejectNewInstances = false
@@ -776,101 +793,115 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     }
 
     private fun finishOrder() {
-        val waId = warehouseArea?.id ?: return
-        val orderId = currentPtlOrder?.id ?: return
+        val waId = warehouseArea?.id
+        val orderId = currentPtlOrder?.id
 
-        if (allowClicks) {
-            allowClicks = false
+        if (waId == null || orderId == null) {
+            gentlyReturn()
+            return
+        }
 
-            thread {
-                DetachOrderToLocation(orderId = orderId,
-                    warehouseAreaId = waId,
-                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
-                    onFinish = {
-                        if (it) finish()
-                        else allowClicks = true
-                    }).execute()
-            }
+        thread {
+            DetachOrderToLocation(orderId = orderId,
+                warehouseAreaId = waId,
+                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
+                onFinish = {
+                    if (it) finish()
+                    else gentlyReturn()
+                }).execute()
         }
     }
 
     private fun flashItem() {
-        val waId = warehouseArea?.id ?: return
-        val orderId = currentPtlOrder?.id ?: return
+        val waId = warehouseArea?.id
+        val orderId = currentPtlOrder?.id
 
-        if (allowClicks) {
-            allowClicks = false
+        if (waId == null || orderId == null) {
+            gentlyReturn()
+            return
+        }
 
-            val cc = adapter?.currentContent()
+        if (!allowClicks) return
+        allowClicks = false
 
-            if (cc != null) {
-                thread {
-                    BlinkOneItem(itemId = cc.itemId,
-                        warehouseAreaId = waId,
-                        onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
-                        onFinish = { allowClicks = true }).execute()
-                }
-            } else {
-                thread {
-                    BlinkAllOrder(orderId = orderId,
-                        warehouseAreaId = waId,
-                        onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
-                        onFinish = { allowClicks = true }).execute()
-                }
+        val cc = adapter?.currentContent()
+
+        if (cc != null) {
+            thread {
+                BlinkOneItem(itemId = cc.itemId,
+                    warehouseAreaId = waId,
+                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
+                    onFinish = { gentlyReturn() }).execute()
+            }
+        } else {
+            thread {
+                BlinkAllOrder(orderId = orderId,
+                    warehouseAreaId = waId,
+                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
+                    onFinish = { gentlyReturn() }).execute()
             }
         }
     }
 
     private fun addBox() {
-        val waId = warehouseArea?.id ?: return
-        val orderId = currentPtlOrder?.id ?: return
+        val waId = warehouseArea?.id
+        val orderId = currentPtlOrder?.id
 
-        if (allowClicks) {
-            allowClicks = false
+        if (waId == null || orderId == null) {
+            gentlyReturn()
+            return
+        }
 
-            thread {
-                AddBoxToOrder(orderId = orderId, onFinish = {
-                    if (it) getContents(orderId, waId)
-                    allowClicks = true
-                }, onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) }).execute()
-            }
+        if (!allowClicks) return
+        allowClicks = false
+
+        thread {
+            AddBoxToOrder(orderId = orderId, onFinish = {
+                if (it) getContents(orderId, waId)
+                else gentlyReturn()
+            }, onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) }).execute()
         }
     }
 
     private fun manualPick() {
-        val waId = warehouseArea?.id ?: return
-        val orderId = currentPtlOrder?.id ?: return
-        val cc = adapter?.currentContent() ?: return
+        val waId = warehouseArea?.id
+        val orderId = currentPtlOrder?.id
+        val cc = adapter?.currentContent()
 
-        if (allowClicks) {
-            allowClicks = false
+        if (waId == null || orderId == null || cc == null) {
+            gentlyReturn()
+            return
+        }
 
-            thread {
-                PickManual(orderId = orderId,
-                    warehouseAreaId = waId,
-                    itemId = cc.itemId,
-                    qty = 1,
-                    onFinish = {
-                        if (it.any()) onPickItem(it)
-                        allowClicks = true
-                    },
-                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) }).execute()
-            }
+        if (!allowClicks) return
+        allowClicks = false
+
+        val qtyLeft = (cc.qtyRequested - cc.qtyCollected).toInt()
+
+        thread {
+            PickManual(orderId = orderId,
+                warehouseAreaId = waId,
+                itemId = cc.itemId,
+                qty = qtyLeft,
+                onFinish = { onPickItem(it) },
+                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) }).execute()
         }
     }
 
     private fun printSelected() {
-        val orderId = currentPtlOrder?.id ?: return
+        val orderId = currentPtlOrder?.id
+        if (orderId == null) {
+            gentlyReturn()
+            return
+        }
 
-        if (allowClicks) {
-            allowClicks = false
+        if (!allowClicks) return
+        allowClicks = false
 
-            thread {
-                PrintBox(orderId = orderId, onFinish = {
-                    if (it.any()) onGetLabel(it)
-                    allowClicks = true
-                }, onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) }).execute()
-            }
+        thread {
+            PrintBox(orderId = orderId,
+                onFinish = { onGetLabel(it) },
+                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) }).execute()
         }
     }
 
