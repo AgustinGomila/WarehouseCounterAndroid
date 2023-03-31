@@ -227,9 +227,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         // Check LOT ENABLED
         val item = orc.item ?: return
         if ((item.itemId ?: 0) > 0 && item.lotEnabled == true) {
-            if (orc.lot != null || !lastRegexResult?.lot.isNullOrEmpty()) {
-                setLotCode(orc, lastRegexResult?.lot ?: "")
+            val tLot = lastRegexResult?.lot ?: orc.lot?.lotId?.toString() ?: ""
+            if (tLot.isNotEmpty()) {
                 lastRegexResult = null
+                setLotCode(orc, tLot)
             } else {
                 lotCodeDialog(orc)
             }
