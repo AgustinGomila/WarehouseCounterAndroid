@@ -5,11 +5,9 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.provider.Settings
 import android.text.InputFilter
 import android.text.Spanned
 import android.view.*
@@ -51,7 +49,6 @@ import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigWebser
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.settings.custom.CollectorTypePreference
 import com.dacosys.warehouseCounter.settings.custom.DevicePreference
-import com.dacosys.warehouseCounter.settings.utils.DownloadController
 import com.dacosys.warehouseCounter.settings.utils.ImageControlCheckUser
 import com.dacosys.warehouseCounter.sync.ClientPackage
 import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.generateQrCode
@@ -365,20 +362,24 @@ class SettingsActivity : AppCompatActivity(),
 
             // Actualizar el programa
             val updateAppButton = findPreference<Preference>("update_app") as Preference
+            updateAppButton.isEnabled = false
             updateAppButton.onPreferenceClickListener = OnPreferenceClickListener {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !requireContext().packageManager.canRequestPackageInstalls()) {
-                    val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).setData(
-                        Uri.parse(
-                            String.format(
-                                "package:%s", requireContext().packageName
-                            )
-                        )
-                    )
-                    resultForRequestPackageInstall.launch(intent)
-                } else {
-                    // check storage permission granted if yes then start downloading file
-                    checkStoragePermission()
-                }
+                // if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !requireContext().packageManager.canRequestPackageInstalls()) {
+                //     val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).setData(
+                //         Uri.parse(
+                //             String.format(
+                //                 "package:%s", requireContext().packageName
+                //             )
+                //         )
+                //     )
+                //     resultForRequestPackageInstall.launch(intent)
+                // } else {
+                //     // check storage permission granted if yes then start downloading file
+                //     checkStoragePermission()
+                // }
+                makeText(
+                    requireView(), getString(R.string.no_available_option), INFO
+                )
                 true
             }
 
@@ -391,46 +392,46 @@ class SettingsActivity : AppCompatActivity(),
             }
         }
 
-        private val resultForRequestPackageInstall =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-                if (it?.resultCode == CommonStatusCodes.SUCCESS || it?.resultCode == CommonStatusCodes.SUCCESS_CACHE) {
-                    // check storage permission granted if yes then start downloading file
-                    checkStoragePermission()
-                }
-            }
-
-        private fun checkStoragePermission() {
-            // Check if the storage permission has been granted
-            if (ActivityCompat.checkSelfPermission(
-                    requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                // Permission is missing and must be requested.
-                resultForStoragePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                return
-            }
-
-            // start downloading
-            val downloadController = DownloadController(requireView())
-            downloadController.enqueueDownload()
-        }
-
-        private val resultForStoragePermission =
-            registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-                // returns boolean representing whether the
-                // permission is granted or not
-                if (!isGranted) {
-                    makeText(
-                        requireView(),
-                        requireContext().getString(R.string.app_dont_have_necessary_permissions),
-                        ERROR
-                    )
-                } else {
-                    // start downloading
-                    val downloadController = DownloadController(requireView())
-                    downloadController.enqueueDownload()
-                }
-            }
+        //private val resultForRequestPackageInstall =
+        //    registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        //        if (it?.resultCode == CommonStatusCodes.SUCCESS || it?.resultCode == CommonStatusCodes.SUCCESS_CACHE) {
+        //            // check storage permission granted if yes then start downloading file
+        //            checkStoragePermission()
+        //        }
+        //    }
+        //
+        //private fun checkStoragePermission() {
+        //    // Check if the storage permission has been granted
+        //    if (ActivityCompat.checkSelfPermission(
+        //            requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE
+        //        ) != PackageManager.PERMISSION_GRANTED
+        //    ) {
+        //        // Permission is missing and must be requested.
+        //        resultForStoragePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        //        return
+        //    }
+        //
+        //    // start downloading
+        //    val downloadController = DownloadController(requireView())
+        //    downloadController.enqueueDownload()
+        //}
+        //
+        //private val resultForStoragePermission =
+        //    registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        //        // returns boolean representing whether the
+        //        // permission is granted or not
+        //        if (!isGranted) {
+        //            makeText(
+        //                requireView(),
+        //                requireContext().getString(R.string.app_dont_have_necessary_permissions),
+        //                ERROR
+        //            )
+        //        } else {
+        //            // start downloading
+        //            val downloadController = DownloadController(requireView())
+        //            downloadController.enqueueDownload()
+        //        }
+        //    }
 
         private fun askForDownloadDbRequired2(
             email: String,

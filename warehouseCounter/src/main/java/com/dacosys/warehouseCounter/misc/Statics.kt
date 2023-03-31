@@ -1,25 +1,13 @@
 package com.dacosys.warehouseCounter.misc
 
-import android.Manifest
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
-import android.graphics.Typeface
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Environment
-import android.text.InputType
-import android.text.method.PasswordTransformationMethod
 import android.util.Log
 import android.view.*
-import android.widget.EditText
-import android.widget.LinearLayout
-import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
-import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.applicationName
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
@@ -30,16 +18,11 @@ import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.vh75.Vh75Bt
-import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
-import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
 import com.journeyapps.barcodescanner.ScanOptions
 import org.json.JSONObject
 import java.io.*
-import java.lang.ref.WeakReference
 import java.math.BigDecimal
 import java.net.NetworkInterface
 import java.nio.MappedByteBuffer
@@ -244,7 +227,7 @@ class Statics {
 
         fun getDeviceData(): JSONObject {
             val ip = getIPAddress()
-            val macAddress = getMACAddress()
+            val macAddress = "" // getMACAddress()
             val operatingSystem = "Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})"
 
             val pm = context.packageManager
@@ -302,23 +285,23 @@ class Statics {
             return ""
         }
 
-        private fun getMACAddress(interfaceName: String = "wlan0"): String {
-            try {
-                val interfaces = Collections.list(NetworkInterface.getNetworkInterfaces())
-                for (intF in interfaces) {
-                    if (!intF.name.equals(interfaceName, true)) continue
-                    val mac = intF.hardwareAddress ?: return ""
-                    val buf = StringBuilder()
-                    for (aMac in mac) buf.append(String.format("%02X:", aMac))
-                    if (buf.isNotEmpty()) buf.deleteCharAt(buf.length - 1)
-                    return buf.toString().replace(":", "")
-                }
-            } catch (ignored: Exception) {
-            }
-
-            // for now eat exceptions
-            return ""
-        }
+        //private fun getMACAddress(interfaceName: String = "wlan0"): String {
+        //    try {
+        //        val interfaces = Collections.list(NetworkInterface.getNetworkInterfaces())
+        //        for (intF in interfaces) {
+        //            if (!intF.name.equals(interfaceName, true)) continue
+        //            val mac = intF.hardwareAddress ?: return ""
+        //            val buf = StringBuilder()
+        //            for (aMac in mac) buf.append(String.format("%02X:", aMac))
+        //            if (buf.isNotEmpty()) buf.deleteCharAt(buf.length - 1)
+        //            return buf.toString().replace(":", "")
+        //        }
+        //    } catch (ignored: Exception) {
+        //    }
+        //
+        //    // for now eat exceptions
+        //    return ""
+        //}
 
         // region Operaciones de escritura en almacenamiento de Ordenes
 

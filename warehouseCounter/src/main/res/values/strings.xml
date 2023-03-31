@@ -628,4 +628,5 @@
     <string name="refresh_order_interval">Intervalo de refresco de órdenes (seg)</string>
     <string name="add_box">Agregar caja</string>
     <string name="completed_order">Orden completada</string>
+    <string name="no_available_option">Opción no disponible</string>
 </resources>
