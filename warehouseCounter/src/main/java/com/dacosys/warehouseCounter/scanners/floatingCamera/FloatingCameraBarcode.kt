@@ -48,7 +48,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
     var activityName: String = ""
 
     // Tag para EasyFloat
-    private val easyFloatTag = activityName
+    private fun getEasyFloatTag() = activityName
 
     // Controlador de sonido
     private var beepManager: BeepManager? = null
@@ -104,7 +104,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
         loadValues()
         if (v == null) v = getView()
 
-        EasyFloat.with(activity).setTag(easyFloatTag).setShowPattern(ShowPattern.FOREGROUND)
+        EasyFloat.with(activity).setTag(getEasyFloatTag()).setShowPattern(ShowPattern.FOREGROUND)
             .setLocation(
                 if (getOrientation == Configuration.ORIENTATION_PORTRAIT) flCameraPortraitLoc[0] else flCameraLandscapeLoc[0],
                 if (getOrientation == Configuration.ORIENTATION_PORTRAIT) flCameraPortraitLoc[1] else flCameraLandscapeLoc[1]
@@ -134,7 +134,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
                 }
             }.show()
 
-        floatWindowDisplayed = EasyFloat.isShow(easyFloatTag)
+        floatWindowDisplayed = EasyFloat.isShow(getEasyFloatTag())
     }
 
     fun onResume() {
@@ -152,7 +152,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
     fun onDestroy() {
         filterTimer?.cancel()
         saveValues()
-        EasyFloat.dismiss(easyFloatTag, true)
+        EasyFloat.dismiss(getEasyFloatTag(), true)
 
         _binding = null
         v = null
@@ -228,7 +228,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
                 // Actualice el tamaño de la ventana flotante para evitar la limitación
                 // de ancho cuando otras aplicaciones se proyectan horizontalmente
                 EasyFloat.updateFloat(
-                    easyFloatTag, width = params.width, height = params.height
+                    getEasyFloatTag(), width = params.width, height = params.height
                 )
             }
         }
@@ -296,7 +296,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
 
             // Actualice el tamaño de la ventana flotante para evitar la limitación
             // de ancho cuando otras aplicaciones se proyectan horizontalmente
-            EasyFloat.updateFloat(easyFloatTag, width = params.width, height = params.height)
+            EasyFloat.updateFloat(getEasyFloatTag(), width = params.width, height = params.height)
         }
 
         // Close Button
@@ -421,19 +421,23 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
         }
 
     private fun hideWindow() {
-        if (floatWindowCreated && EasyFloat.isShow(easyFloatTag)) EasyFloat.hide(easyFloatTag)
+        if (floatWindowCreated && EasyFloat.isShow(getEasyFloatTag())) EasyFloat.hide(
+            getEasyFloatTag()
+        )
     }
 
     private fun showWindow() {
-        if (floatWindowCreated && !EasyFloat.isShow(easyFloatTag)) EasyFloat.show(easyFloatTag)
+        if (floatWindowCreated && !EasyFloat.isShow(getEasyFloatTag())) EasyFloat.show(
+            getEasyFloatTag()
+        )
     }
 
     fun toggleWindowVisibility() {
         if (floatWindowCreated) {
-            if (EasyFloat.isShow(easyFloatTag)) EasyFloat.hide(easyFloatTag)
-            else EasyFloat.show(easyFloatTag)
+            if (EasyFloat.isShow(getEasyFloatTag())) EasyFloat.hide(getEasyFloatTag())
+            else EasyFloat.show(getEasyFloatTag())
 
-            floatWindowDisplayed = EasyFloat.isShow(easyFloatTag)
+            floatWindowDisplayed = EasyFloat.isShow(getEasyFloatTag())
             return
         }
 
