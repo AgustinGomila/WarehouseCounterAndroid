@@ -8,7 +8,6 @@ import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.retrofit.functions.GetNewOrder
-import com.dacosys.warehouseCounter.retrofit.functions.NewOrderListener
 import java.util.*
 import kotlin.concurrent.thread
 
@@ -30,104 +29,110 @@ import kotlin.concurrent.thread
  */
 class Sync {
     companion object {
-        private fun onNewOrderResult(itemArray: ArrayList<OrderRequest>) {
-            if (!itemArray.any()) return
-            mNewOrderCallback?.onNewOrderEvent(itemArray)
-        }
-
-        // Id de tareas internas de la clase
-        private var taskCodeParent: Int = 0
-
         // Thread status
-        private var syncNewOrderStatus: Int = 0
-        private var syncCompletedOrderStatus: Int = 0
+        @get:Synchronized
+        private var syncNewOrderStatus: DownloadStatus = DownloadStatus.NOT_RUNNING
 
-        private const val NOT_RUNNING = 0
-        private const val RUNNING = 1
+        @get:Synchronized
+        private var syncCompletedOrderStatus: DownloadStatus = DownloadStatus.NOT_RUNNING
+
+        enum class DownloadStatus(val id: Int) { NOT_RUNNING(1), RUNNING(2) }
 
         private var timer: Timer? = null
         private var timerTask: TimerTask? = null
         private val handler = Handler(Looper.getMainLooper())
 
-        // Callbacks
-        private var mNewOrderCallback: NewOrderListener? = null
-        private var mCompletedOrderCallback: CompletedOrderListener? = null
+        @get:Synchronized
+        private var ticks = 0
 
         //To stop timer
-        fun stopTimer() {
+        fun stopSync() {
             Log.d(this::class.java.simpleName, "Deteniendo sincronizador de órdenes")
             if (timer != null) {
-                timer!!.cancel()
-                timer!!.purge()
-
-                mNewOrderCallback = null
-                mCompletedOrderCallback = null
-                taskCodeParent = 0
+                timer?.cancel()
+                timer?.purge()
             }
         }
 
         //To start timer
-        fun startTimer(
-            newListener: NewOrderListener,
-            completedListener: CompletedOrderListener,
-            TASK_CODE: Int,
+        fun startSync(
+            onNewOrders: (ArrayList<OrderRequest>) -> Unit = {},
+            onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {},
+            onTimerTick: (Int) -> Unit = {},
         ) {
             Log.d(this::class.java.simpleName, "Iniciando sincronizador de órdenes...")
+
             timer = Timer()
+            val interval = settingViewModel.wcSyncInterval
 
-            mNewOrderCallback = newListener
-            mCompletedOrderCallback = completedListener
-            taskCodeParent = TASK_CODE
-
-            val t = settingViewModel.wcSyncInterval
             timerTask = object : TimerTask() {
                 override fun run() {
-                    handler.post {
-                        getNewOrderRequest()
-                        getCompletedOrderRequest()
-                    }
+                    ticks++
+                    onTimerTick(ticks)
+
+                    if (ticks < interval.toLong()) return
+                    goSync(onNewOrders, onCompletedOrders)
+                }
+
+                override fun cancel(): Boolean {
+                    stopSync()
+                    return super.cancel()
                 }
             }
-            timer!!.schedule(timerTask, 0, t.toLong() * 1000)
+
+            // Primera ejecución
+            if (ticks == 0) goSync(onNewOrders, onCompletedOrders)
+
+            timer?.scheduleAtFixedRate(
+                timerTask, 100, 1000
+            )
+        }
+
+        private fun goSync(
+            onNewOrders: (ArrayList<OrderRequest>) -> Unit = {},
+            onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {},
+        ) {
+            ticks = 0
+
+            handler.post {
+                getNewOrderRequest(onNewOrders)
+                getCompletedOrderRequest(onCompletedOrders)
+            }
         }
         // endregion
 
-        private fun getNewOrderRequest() {
-            if (syncNewOrderStatus != NOT_RUNNING) return
-            syncNewOrderStatus = RUNNING
+        private fun getNewOrderRequest(onNewOrders: (ArrayList<OrderRequest>) -> Unit = {}) {
+            if (syncNewOrderStatus != DownloadStatus.NOT_RUNNING) return
+            syncNewOrderStatus = DownloadStatus.RUNNING
 
             thread {
                 try {
-                    GetNewOrder(onEvent = { }, onFinish = { onNewOrderResult(it) }).execute()
+                    GetNewOrder(onEvent = { }, onFinish = {
+                        if (!it.any()) return@GetNewOrder
+                        onNewOrders.invoke(it)
+                    }).execute()
                 } catch (ex: Exception) {
-                    ErrorLog.writeLog(
-                        null,
-                        this::class.java.simpleName,
-                        "$taskCodeParent: ${ex.message.toString()}"
-                    )
-                    syncNewOrderStatus = NOT_RUNNING
+                    ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
+                    syncNewOrderStatus = DownloadStatus.NOT_RUNNING
                 }
             }
         }
 
-        private fun getCompletedOrderRequest() {
-            if (syncCompletedOrderStatus != NOT_RUNNING) return
-            syncCompletedOrderStatus = RUNNING
+        private fun getCompletedOrderRequest(
+            onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {},
+        ) {
+            if (syncCompletedOrderStatus != DownloadStatus.NOT_RUNNING) return
+            syncCompletedOrderStatus = DownloadStatus.RUNNING
 
             thread {
                 try {
-                    mCompletedOrderCallback?.onCompletedOrderResult(
-                        status = ProgressStatus.success,
-                        itemArray = getCompletedOrders(),
-                        taskCode = taskCodeParent,
-                        msg = "Ok"
-                    )
+                    onCompletedOrders.invoke(getCompletedOrders())
                 } catch (ex: java.lang.Exception) {
                     ErrorLog.writeLog(
                         null, this::class.java.simpleName, ex.message.toString()
                     )
                 } finally {
-                    syncCompletedOrderStatus = NOT_RUNNING
+                    syncCompletedOrderStatus = DownloadStatus.NOT_RUNNING
                 }
             }
         }

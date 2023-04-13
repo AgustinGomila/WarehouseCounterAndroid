@@ -131,6 +131,17 @@
             app:layout_constraintTop_toTopOf="parent">
 
             <TextView
+                android:id="@+id/syncPercentTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="@+id/progressBar"
+                app:layout_constraintEnd_toEndOf="@+id/progressBar"
+                app:layout_constraintStart_toStartOf="@+id/progressBar"
+                app:layout_constraintTop_toTopOf="@+id/progressBar" />
+
+            <TextView
                 android:id="@+id/syncStatusTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

@@ -26,6 +26,7 @@ import android.view.animation.Animation
 import android.view.animation.TranslateAnimation
 import android.widget.Button
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
@@ -35,22 +36,21 @@ import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.generateTaskCode
+import com.dacosys.warehouseCounter.misc.Statics.Companion.isDebuggable
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
-import com.dacosys.warehouseCounter.retrofit.functions.NewOrderListener
 import com.dacosys.warehouseCounter.retrofit.functions.SendOrder
 import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -82,51 +82,84 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.concurrent.thread
 
-class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListener,
-    CompletedOrderListener {
+class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
-    override fun onCompletedOrderResult(
-        status: ProgressStatus,
-        itemArray: ArrayList<OrderRequest>,
-        taskCode: Int,
-        msg: String,
-    ) {
-        if (taskCode == TASK_CODE_SYNC_ORDERS) {
-            if (status == ProgressStatus.finished || status == ProgressStatus.success || status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
-                Log.d(
-                    this::class.java.simpleName,
-                    getString(R.string.completed_orders_) + itemArray.count()
+    private fun onCompletedOrder(orders: ArrayList<OrderRequest>) {
+        Log.d(
+            this::class.java.simpleName,
+            getString(R.string.completed_orders_) + orders.count()
+        )
+
+        if (orders.isEmpty()) return
+
+        if (settingViewModel.autoSend) {
+            try {
+                thread { SendOrder(orders) { }.execute() }
+            } catch (ex: Exception) {
+                ErrorLog.writeLog(
+                    this, this::class.java.simpleName, ex.message.toString()
                 )
-
-                if (settingViewModel.autoSend) {
-                    val orArray = getCompletedOrders()
-                    if (orArray.isNotEmpty()) {
-                        try {
-                            thread {
-                                SendOrder(orArray) { }.execute()
-                            }
-                        } catch (ex: Exception) {
-                            ErrorLog.writeLog(
-                                this, this::class.java.simpleName, ex.message.toString()
-                            )
-                        }
-                    }
-                }
-
-                for (button in buttonCollection) {
-                    if (button.tag == MainButton.CompletedCounts.id) {
-                        runOnUiThread {
-                            button.text = String.format(
-                                "%s%s(%s)",
-                                MainButton.CompletedCounts.description,
-                                lineSeparator,
-                                itemArray.count()
-                            )
-                        }
-                    }
-                }
             }
         }
+
+        buttonCollection
+            .filter { it.tag == MainButton.CompletedCounts.id }
+            .forEach {
+                runOnUiThread {
+                    it.text = String.format(
+                        "%s%s(%s)",
+                        MainButton.CompletedCounts.description,
+                        lineSeparator,
+                        orders.count()
+                    )
+                }
+            }
+    }
+
+    private fun onNewOrder(itemArray: ArrayList<OrderRequest>) {
+        Log.d(
+            this::class.java.simpleName,
+            getString(R.string.new_orders_received_) + itemArray.count()
+        )
+
+        if (!Statics.isExternalStorageWritable) {
+            Log.e(
+                this::class.java.simpleName,
+                getString(R.string.error_external_storage_not_available_for_reading_or_writing)
+            )
+            return
+        }
+
+        if (itemArray.isEmpty()) return
+
+        if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
+                this, Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+        ) {
+            writeNewOrderRequest(itemArray)
+        } else {
+            newOrArray = itemArray
+            requestPermissions(
+                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE
+            )
+        }
+
+        buttonCollection
+            .filter { it.tag == MainButton.PendingCounts.id }
+            .forEach {
+                runOnUiThread {
+                    it.text = String.format(
+                        "%s%s(%s)",
+                        MainButton.PendingCounts.description,
+                        lineSeparator,
+                        countPending()
+                    )
+
+                    if (settingViewModel.shakeOnPendingOrders) shakeDevice()
+                    if (settingViewModel.soundOnPendingOrders) playNotification()
+                    shakeView(it, 20, 5)
+                }
+            }
     }
 
     private fun countPending(): Int {
@@ -190,7 +223,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
         }
 
         if (Statics.currentUserId > 0L) {
-            startInboxOutboxListener()
+            startSync()
         }
     }
 
@@ -294,7 +327,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
     }
 
     private fun pauseInboxOutboxListener() {
-        Sync.stopTimer()
+        Sync.stopSync()
     }
 
     private fun clickButton(clickedButton: Button) {
@@ -599,11 +632,24 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
 
     private lateinit var splashScreen: SplashScreen
     private lateinit var binding: ActivityHomeBinding
+    private val syncViewModel: SyncViewModel by viewModels()
 
     private fun createSplashScreen() {
         // Set up 'core-splashscreen' to handle the splash screen in a backward compatible manner.
         splashScreen = installSplashScreen()
         return
+    }
+
+    private fun onTimerTick(secs: Int) {
+        if (isDestroyed || isFinishing) return
+
+        runOnUiThread {
+            val restSec = settingViewModel.wcSyncInterval - secs
+            val restMin = restSec / 60
+            val rstSecsInMin = restSec % 60
+            val msg = "$restMin:${String.format("%02d", rstSecsInMin)}"
+            binding.timeTextView.text = msg
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -614,6 +660,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
         setContentView(binding.root)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        syncViewModel.syncCompletedOrders.observe(this) { if (it != null) onCompletedOrder(it) }
+        syncViewModel.syncNewOrders.observe(this) { if (it != null) onNewOrder(it) }
+        syncViewModel.syncTimer.observe(this) { if (it != null) onTimerTick(it) }
 
         var freshSessionReq = false
 
@@ -640,8 +690,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
             return
         }
 
-        // Set Listener for inbox and outbox orders
-        startInboxOutboxListener()
+        if (!isDebuggable() || !BuildConfig.DEBUG) {
+            // Mostramos el Timer sólo en DEBUG
+            binding.timeTextView.visibility = View.GONE
+        }
     }
 
     private fun setupInitConfig() {
@@ -842,11 +894,13 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
         }
     }
 
-    private fun startInboxOutboxListener() {
-        TASK_CODE_SYNC_ORDERS = generateTaskCode()
-
+    private fun startSync() {
         Thread {
-            Sync.startTimer(this, this, TASK_CODE_SYNC_ORDERS)
+            Sync.startSync(
+                onNewOrders = { syncViewModel.setSyncNew(it) },
+                onCompletedOrders = { syncViewModel.setSyncCompleted(it) },
+                onTimerTick = { syncViewModel.setSyncTimer(it) }
+            )
         }.start()
     }
 
@@ -972,65 +1026,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, NewOrderListe
     companion object {
         private const val REQUEST_EXTERNAL_STORAGE = 5001
 
-        var TASK_CODE_SYNC_ORDERS = -1
-
         fun equals(a: Any?, b: Any): Boolean {
             return a != null && a == b
         }
 
         private var newOrArray: ArrayList<OrderRequest> = ArrayList()
-    }
-
-    override fun onNewOrderEvent(itemArray: ArrayList<OrderRequest>) {
-        Log.d(
-            this::class.java.simpleName,
-            getString(R.string.new_orders_received_) + itemArray.count()
-        )
-
-        if (!Statics.isExternalStorageWritable) {
-            Log.e(
-                this::class.java.simpleName,
-                getString(R.string.error_external_storage_not_available_for_reading_or_writing)
-            )
-            return
-        }
-
-        if (itemArray.isNotEmpty()) {
-            if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
-            ) {
-                writeNewOrderRequest(itemArray)
-            } else {
-                newOrArray = itemArray
-                requestPermissions(
-                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE
-                )
-            }
-        }
-
-        for (button in buttonCollection) {
-            if (button.tag == MainButton.PendingCounts.id) {
-                runOnUiThread {
-                    button.text = String.format(
-                        "%s%s(%s)",
-                        MainButton.PendingCounts.description,
-                        lineSeparator,
-                        countPending()
-                    )
-
-                    if (itemArray.isNotEmpty()) {
-                        if (settingViewModel.shakeOnPendingOrders) {
-                            shakeDevice()
-                        }
-                        if (settingViewModel.soundOnPendingOrders) {
-                            playNotification()
-                        }
-                        shakeView(button, 20, 5)
-                    }
-                }
-                break
-            }
-        }
     }
 }

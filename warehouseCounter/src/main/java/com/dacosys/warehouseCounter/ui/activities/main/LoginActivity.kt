@@ -175,13 +175,16 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             -> {
                 // FINISHED = Ok
                 // CANCELED = Sin conexión
+                showProgressBar()
                 enableLogin()
             }
             DownloadDb.DownloadStatus.CRASHED -> {
                 setButton(ButtonStyle.REFRESH)
                 showProgressBar()
             }
-            DownloadDb.DownloadStatus.DOWNLOADING -> {
+            DownloadDb.DownloadStatus.DOWNLOADING,
+            DownloadDb.DownloadStatus.COPYING,
+            -> {
                 setButton(ButtonStyle.BUSY)
             }
             DownloadDb.DownloadStatus.INFO -> {
@@ -205,6 +208,9 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         downloadStatus: DownloadDb.DownloadStatus,
         progress: Int?,
     ) {
+        if (downloadStatus == DownloadDb.DownloadStatus.DOWNLOADING || downloadStatus == DownloadDb.DownloadStatus.COPYING) {
+            showProgressBar(msg, progress)
+        }
     }
 
     override fun onTaskSetupProxyEnded(
@@ -427,16 +433,20 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         Screen.setupUI(binding.login, this)
     }
 
-    private fun showProgressBar(msg: String = "") {
+    private fun showProgressBar(msg: String = "", progress: Int? = null) {
         runOnUiThread {
             if (msg.isNotEmpty()) {
+                val percent = if (progress == null) "" else "$progress%"
+
                 binding.syncStatusTextView.text = msg
+                binding.syncPercentTextView.text = percent
                 binding.progressBarLayout.visibility = VISIBLE
                 binding.progressBarLayout.bringToFront()
 
                 ViewCompat.setZ(binding.progressBarLayout, 0F)
             } else {
                 binding.progressBarLayout.visibility = GONE
+                binding.syncPercentTextView.text = ""
                 binding.syncStatusTextView.text = ""
             }
         }

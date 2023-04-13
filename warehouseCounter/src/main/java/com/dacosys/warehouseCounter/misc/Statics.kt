@@ -173,7 +173,7 @@ class Statics {
         }
         // endregion CURRENT USER
 
-        private fun isDebuggable(): Boolean {
+        fun isDebuggable(): Boolean {
             return 0 != context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE
         }
 

@@ -629,4 +629,5 @@
     <string name="add_box">Agregar caja</string>
     <string name="completed_order">Orden completada</string>
     <string name="no_available_option">Opción no disponible</string>
+    <string name="_00_00">00:00</string>
 </resources>

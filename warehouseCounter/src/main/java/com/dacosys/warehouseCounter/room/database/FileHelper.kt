@@ -15,6 +15,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.database.WcDatabase.Companion.DATABASE_NAME
+import com.dacosys.warehouseCounter.sync.DownloadDb
 import java.io.*
 import kotlin.math.min
 
@@ -449,7 +450,10 @@ class FileHelper {
             }
         }
 
-        fun copyDataBase(inputDbFile: File?): Boolean {
+        fun copyDataBase(
+            inputDbFile: File?,
+            mCallback: DownloadDb.DownloadDbTask? = null,
+        ): Boolean {
             if (inputDbFile == null) return false
 
             Log.d(
@@ -484,10 +488,20 @@ class FileHelper {
                 //transfer bytes from the inputfile to the outputfile
                 val buffer = ByteArray(1024)
                 var length: Int
+                val totalSize: Long = inputDbFile.length()
+                var total: Long = 0
                 while (run {
                         length = myInput.read(buffer)
                         length
                     } > 0) {
+                    total += length.toLong()
+                    // only if total length is known
+                    mCallback?.onDownloadFileTask(
+                        msg = context.getString(R.string.copying_database),
+                        fileType = DownloadDb.FileType.DBFILE,
+                        downloadStatus = DownloadDb.DownloadStatus.COPYING,
+                        progress = (total * 100 / totalSize).toInt()
+                    )
                     myOutput.write(buffer, 0, length)
                 }
 

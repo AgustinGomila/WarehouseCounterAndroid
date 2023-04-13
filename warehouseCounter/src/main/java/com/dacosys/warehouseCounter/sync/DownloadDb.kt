@@ -101,7 +101,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
      * Tiene los diferentes estados durante una descarga
      */
     enum class DownloadStatus(val id: Int) {
-        STARTING(1), DOWNLOADING(2), CANCELED(3), FINISHED(4), CRASHED(5), INFO(6)
+        STARTING(1), DOWNLOADING(2), CANCELED(3), FINISHED(4), CRASHED(5), INFO(6), COPYING(7)
     }
 
     /////////////////////
@@ -363,7 +363,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
             // Borrar la base de datos actual de Room del almacenamiento del dispositivo.
             // Copiar la nueva base de datos descargada desde la web a la ubicación de la base de datos anterior.
             // Se iniciará una nueva instancia de la base de datos de Room utilizando la base de datos actualizada la próxima vez que se la invoque.
-            FileHelper.copyDataBase(this.destDbFile)
+            FileHelper.copyDataBase(this.destDbFile, mCallback)
 
         } catch (ex: Exception) {
             errorMsg = context.getString(R.string.error_downloading_the_database)
