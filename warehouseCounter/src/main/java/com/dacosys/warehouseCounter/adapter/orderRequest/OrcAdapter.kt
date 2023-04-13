@@ -1047,15 +1047,18 @@ class OrcAdapter : ArrayAdapter<OrderRequestContent>, Filterable {
                         when {
                             qty.qtyCollected == qty.qtyRequested -> {
                                 backColor = collQtyEqualBackColor
-                                foreColor = if (isSelected) selectedForeColor else selectedForeColor
+                                foreColor =
+                                    if (isSelected) selectedForeColor else collQtyEqualForeColor
                             }
                             (qty.qtyCollected ?: 0.0) > (qty.qtyRequested ?: 0.0) -> {
                                 backColor = collQtyMoreBackColor
-                                foreColor = if (isSelected) selectedForeColor else selectedForeColor
+                                foreColor =
+                                    if (isSelected) selectedForeColor else collQtyMoreForeColor
                             }
                             (qty.qtyCollected ?: 0.0) < (qty.qtyRequested ?: 0.0) -> {
                                 backColor = collQtyLessBackColor
-                                foreColor = if (isSelected) selectedForeColor else selectedForeColor
+                                foreColor =
+                                    if (isSelected) selectedForeColor else collQtyLessForeColor
                             }
                         }
                     }

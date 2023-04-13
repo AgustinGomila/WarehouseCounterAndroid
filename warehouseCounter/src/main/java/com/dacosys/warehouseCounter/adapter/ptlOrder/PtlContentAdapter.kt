@@ -38,8 +38,8 @@ class PtlContentAdapter(
     val fullList: ArrayList<PtlContent>,
     var checkedIdArray: ArrayList<Long> = ArrayList(),
     var multiSelect: Boolean = false,
-    var allowEditQty: Boolean = false,
-    var showQtyPanel: Boolean = false,
+    private var allowEditQty: Boolean = false,
+    private var showQtyPanel: Boolean = false,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Filterable {
 
     private var currentIndex = RecyclerView.NO_POSITION
@@ -646,15 +646,15 @@ class PtlContentAdapter(
             when {
                 content.qtyCollected == content.qtyRequested -> {
                     backColor = collQtyEqualBackColor
-                    foreColor = selectedForeColor
+                    foreColor = collQtyEqualForeColor
                 }
                 content.qtyCollected > content.qtyRequested -> {
                     backColor = collQtyMoreBackColor
-                    foreColor = selectedForeColor
+                    foreColor = collQtyMoreForeColor
                 }
                 else -> {
                     backColor = collQtyLessBackColor
-                    foreColor = selectedForeColor
+                    foreColor = collQtyLessForeColor
                 }
             }
 
