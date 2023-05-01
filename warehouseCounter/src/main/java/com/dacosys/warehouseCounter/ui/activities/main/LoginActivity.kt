@@ -42,8 +42,8 @@ import com.dacosys.warehouseCounter.room.database.WcDatabase
 import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
-import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigApp
-import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigClientAccount
+import com.dacosys.warehouseCounter.settings.utils.QRConfigType.CREATOR.QRConfigApp
+import com.dacosys.warehouseCounter.settings.utils.QRConfigType.CREATOR.QRConfigClientAccount
 import com.dacosys.warehouseCounter.sync.ClientPackage
 import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.getConfigFromScannedCode
 import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.selectClientPackage
@@ -132,9 +132,11 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 setButton(ButtonStyle.REFRESH)
                 attemptSync = false
             }
+
             ProgressStatus.running -> {
                 setButton(ButtonStyle.BUSY)
             }
+
             ProgressStatus.canceled -> {
                 showSnackBar(SnackBarEventData(msg, ERROR))
                 showProgressBar()
@@ -143,6 +145,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 // Sin conexión
                 enableLogin()
             }
+
             ProgressStatus.finished -> {
                 thread {
                     val sync = DownloadDb()
@@ -170,6 +173,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 setButton(ButtonStyle.BUSY)
                 showProgressBar(getString(R.string.downloading_database))
             }
+
             DownloadDb.DownloadStatus.FINISHED,
             DownloadDb.DownloadStatus.CANCELED,
             -> {
@@ -178,15 +182,18 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 showProgressBar()
                 enableLogin()
             }
+
             DownloadDb.DownloadStatus.CRASHED -> {
                 setButton(ButtonStyle.REFRESH)
                 showProgressBar()
             }
+
             DownloadDb.DownloadStatus.DOWNLOADING,
             DownloadDb.DownloadStatus.COPYING,
             -> {
                 setButton(ButtonStyle.BUSY)
             }
+
             DownloadDb.DownloadStatus.INFO -> {
             }
         }
@@ -412,6 +419,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                     binding.loginImageView.performClick()
                     true
                 }
+
                 else -> false
             }
         }
@@ -654,6 +662,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         )
 
         JotterListener.lockScanner(this, true)
+        JotterListener.hideWindow(this)
 
         try {
             val mainJson = JSONObject(scanCode)
@@ -703,6 +712,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                         }
                     }
                 }
+
                 mainJson.has(appName) -> {
                     // APP CONFIGURATION
                     getConfigFromScannedCode(
@@ -711,6 +721,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                         mode = QRConfigApp
                     )
                 }
+
                 else -> {
                     showSnackBar(SnackBarEventData(getString(R.string.invalid_code), ERROR))
                 }
@@ -754,14 +765,17 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 onBackPressed()
                 return true
             }
+
             R.id.action_settings -> {
                 configApp()
                 true
             }
+
             R.id.action_rfid_connect -> {
                 JotterListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_trigger_scan -> {
                 ///* For Debug */
                 //scannerCompleted(
@@ -772,10 +786,12 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 JotterListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_read_barcode -> {
                 JotterListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
+
             else -> {
                 super.onOptionsItemSelected(item)
             }
@@ -788,10 +804,12 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 setButton(ButtonStyle.BUSY)
                 showProgressBar(getString(R.string.loading_users))
             }
+
             CANCELED, CRASHED -> {
                 setButton(ButtonStyle.REFRESH)
                 showProgressBar()
             }
+
             FINISHED -> {
                 showProgressBar()
                 if (userSpinnerFragment!!.count < 1) {
@@ -804,6 +822,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                     setButton(ButtonStyle.READY)
                 }
             }
+
             RUNNING -> {}
         }
     }

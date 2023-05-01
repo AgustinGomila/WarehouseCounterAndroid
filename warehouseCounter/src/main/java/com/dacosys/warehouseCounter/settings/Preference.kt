@@ -1,10 +1,9 @@
 package com.dacosys.warehouseCounter.settings
 
-import android.content.SharedPreferences
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
 
 @Suppress("UNCHECKED_CAST")
 class Preference(
-    private val prefs: SharedPreferences,
     val key: String,
     val default: Any,
     val description: String = "",
@@ -31,50 +30,50 @@ class Preference(
         }
 
     override fun updateInt(key: String, value: Int) {
-        prefs.edit().putInt(key, value).apply()
+        sharedPreferences.edit().putInt(key, value).apply()
     }
 
     override fun updateString(key: String, value: String) {
-        prefs.edit().putString(key, value).apply()
+        sharedPreferences.edit().putString(key, value).apply()
     }
 
     override fun updateFloat(key: String, value: Float) {
-        prefs.edit().putFloat(key, value).apply()
+        sharedPreferences.edit().putFloat(key, value).apply()
     }
 
     override fun updateLong(key: String, value: Long) {
-        prefs.edit().putLong(key, value).apply()
+        sharedPreferences.edit().putLong(key, value).apply()
     }
 
     override fun updateStringSet(key: String, value: Set<String>) {
-        prefs.edit().putStringSet(key, value).apply()
+        sharedPreferences.edit().putStringSet(key, value).apply()
     }
 
     override fun updateBoolean(key: String, value: Boolean) {
-        prefs.edit().putBoolean(key, value).apply()
+        sharedPreferences.edit().putBoolean(key, value).apply()
     }
 
     override fun getInt(key: String, defaultValue: Int): Int {
-        return prefs.getInt(key, defaultValue)
+        return sharedPreferences.getInt(key, defaultValue)
     }
 
     override fun getString(key: String, defaultValue: String): String {
-        return prefs.getString(key, defaultValue) ?: defaultValue
+        return sharedPreferences.getString(key, defaultValue) ?: defaultValue
     }
 
     override fun getFloat(key: String, defaultValue: Float): Float {
-        return prefs.getFloat(key, defaultValue)
+        return sharedPreferences.getFloat(key, defaultValue)
     }
 
     override fun getLong(key: String, defaultValue: Long): Long {
-        return prefs.getLong(key, defaultValue)
+        return sharedPreferences.getLong(key, defaultValue)
     }
 
     override fun getStringSet(key: String, defaultValue: Set<String>): Set<String> {
-        return prefs.getStringSet(key, defaultValue) ?: defaultValue
+        return sharedPreferences.getStringSet(key, defaultValue) ?: defaultValue
     }
 
     override fun getBoolean(key: String, defaultValue: Boolean): Boolean {
-        return prefs.getBoolean(key, defaultValue)
+        return sharedPreferences.getBoolean(key, defaultValue)
     }
 }

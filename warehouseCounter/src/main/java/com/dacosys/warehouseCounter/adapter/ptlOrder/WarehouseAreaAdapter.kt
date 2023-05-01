@@ -363,19 +363,19 @@ class WarehouseAreaAdapter : ArrayAdapter<WarehouseArea>, Filterable {
             }
 
             override fun compare(o1: WarehouseArea, o2: WarehouseArea): Int {
-                try {
+                return try {
                     val nameComp = o1.description.compareTo(o2.description, true)
                     val warehouseDescriptionComp = o1.warehouseDescription.compareTo(
                         o2.warehouseDescription, true
                     )
 
                     // Orden natural: name, warehouseDescription, contactName
-                    return when (nameComp) {
+                    when (nameComp) {
                         0 -> warehouseDescriptionComp
                         else -> nameComp
                     }
                 } catch (ex: Exception) {
-                    return 0
+                    0
                 }
             }
         }

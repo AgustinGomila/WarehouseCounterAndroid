@@ -172,6 +172,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
+        JotterListener.hideWindow(this)
 
         try {
             /*

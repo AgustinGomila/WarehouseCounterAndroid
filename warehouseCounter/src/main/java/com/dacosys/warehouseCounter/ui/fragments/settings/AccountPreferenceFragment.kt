@@ -1,0 +1,424 @@
+package com.dacosys.warehouseCounter.ui.fragments.settings
+
+import android.os.Bundle
+import androidx.appcompat.app.AlertDialog
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceManager
+import androidx.preference.PreferenceScreen
+import com.dacosys.warehouseCounter.BuildConfig
+import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.dto.clientPackage.Package
+import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages
+import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
+import com.dacosys.warehouseCounter.room.database.FileHelper
+import com.dacosys.warehouseCounter.settings.SettingsRepository
+import com.dacosys.warehouseCounter.settings.utils.QRConfigType
+import com.dacosys.warehouseCounter.sync.ClientPackage
+import com.dacosys.warehouseCounter.sync.ProgressStatus
+import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
+import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.sBindPreferenceSummaryToValueListener
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import java.lang.ref.WeakReference
+
+class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Companion.TaskConfigPanelEnded {
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        var key = rootKey
+        if (arguments != null) {
+            key = requireArguments().getString("rootKey")
+        }
+        setPreferencesFromResource(R.xml.pref_account, key)
+    }
+
+    override fun onNavigateToScreen(preferenceScreen: PreferenceScreen) {
+        val prefFragment = AccountPreferenceFragment()
+        val args = Bundle()
+        args.putString("rootKey", preferenceScreen.key)
+        prefFragment.arguments = args
+        parentFragmentManager.beginTransaction().replace(id, prefFragment).addToBackStack(null).commit()
+    }
+
+    private var alreadyAnsweredYes = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Bind the summaries of EditText/List/Dialog/Ringtone preferences
+        // to their values. When their values change, their summaries are
+        // updated to reflect the new value, per the Android Design
+        // guidelines.
+
+        if (BuildConfig.DEBUG) {
+            bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.clientEmail)
+            bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.clientPassword)
+        }
+
+        val emailEditText = findPreference<Preference>(WarehouseCounterApp.settingRepository.clientEmail.key)
+        emailEditText?.setOnPreferenceChangeListener { preference, newValue ->
+            if (alreadyAnsweredYes) {
+                preference.summary = newValue.toString()
+                Statics.downloadDbRequired = true
+                if (newValue is String) {
+                    SettingsRepository.getByKey(preference.key)?.value = newValue
+                }
+                true
+            } else {
+                val diaBox = askForDownloadDbRequired(preference = preference, newValue = newValue)
+                diaBox.show()
+                false
+            }
+        }
+
+        val passwordEditText = findPreference<Preference>(WarehouseCounterApp.settingRepository.clientPassword.key)
+        passwordEditText?.setOnPreferenceChangeListener { preference, newValue ->
+            if (alreadyAnsweredYes) {
+                preference.summary = newValue.toString()
+                Statics.downloadDbRequired = true
+                if (newValue is String) {
+                    SettingsRepository.getByKey(preference.key)?.value = newValue
+                }
+                true
+            } else {
+                val diaBox = askForDownloadDbRequired(preference = preference, newValue = newValue)
+                diaBox.show()
+                false
+            }
+        }
+
+        val selectPackageButton = findPreference<Preference>("select_package")
+        selectPackageButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            if (emailEditText != null && passwordEditText != null) {
+                val email = WarehouseCounterApp.settingViewModel.clientEmail
+                val password = WarehouseCounterApp.settingViewModel.clientPassword
+
+                if (alreadyAnsweredYes) {
+                    Statics.downloadDbRequired = true
+                    if (email.isNotEmpty() && password.isNotEmpty()) {
+                        GetClientPackages.getConfig(
+                            onEvent = { onGetPackagesEnded(it) },
+                            email = email,
+                            password = password,
+                            installationCode = ""
+                        )
+                    }
+                } else {
+                    val diaBox = askForDownloadDbRequired2(email = email, password = password)
+                    diaBox.show()
+                }
+            }
+            true
+        }
+
+        val scanConfigCode = findPreference<Preference>("scan_config_code")
+        scanConfigCode?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            try {
+                okDoShit(QRConfigType.QRConfigClientAccount)
+                true
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                if (view != null) MakeText.makeText(
+                    requireView(), "${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR
+                )
+                ErrorLog.writeLog(null, this::class.java.simpleName, ex)
+                false
+            }
+        }
+
+        val qrCodeButton = findPreference<Preference>("ac_qr_code")
+        qrCodeButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            val urlPanel = WarehouseCounterApp.settingViewModel.urlPanel
+            val installationCode = WarehouseCounterApp.settingViewModel.installationCode
+            val clientEmail = WarehouseCounterApp.settingViewModel.clientEmail
+            val clientPassword = WarehouseCounterApp.settingViewModel.clientPassword
+            val clientPackage = WarehouseCounterApp.settingViewModel.clientPackage
+
+            if (urlPanel.isEmpty() || installationCode.isEmpty() || clientPackage.isEmpty() || clientEmail.isEmpty() || clientPassword.isEmpty()) {
+                if (view != null) MakeText.makeText(
+                    requireView(),
+                    WarehouseCounterApp.context.getString(R.string.invalid_client_data),
+                    SnackBarType.ERROR
+                )
+                return@OnPreferenceClickListener false
+            }
+
+            ClientPackage.generateQrCode(
+                WeakReference(requireActivity()),
+                ClientPackage.getBarcodeForConfig(SettingsRepository.getClient(), "config")
+            )
+            true
+        }
+
+        // Actualizar el programa
+        val updateAppButton = findPreference<Preference>("update_app") as Preference
+        updateAppButton.isEnabled = false
+        updateAppButton.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            // if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !requireContext().packageManager.canRequestPackageInstalls()) {
+            //     val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).setData(
+            //         Uri.parse(
+            //             String.format(
+            //                 "package:%s", requireContext().packageName
+            //             )
+            //         )
+            //     )
+            //     resultForRequestPackageInstall.launch(intent)
+            // } else {
+            //     // check storage permission granted if yes then start downloading file
+            //     checkStoragePermission()
+            // }
+            MakeText.makeText(
+                requireView(), getString(R.string.no_available_option), SnackBarType.INFO
+            )
+            true
+        }
+
+        // Si ya está loggeado, deshabilitar estas opciones
+        if (Statics.isLogged) {
+            passwordEditText?.isEnabled = false
+            emailEditText?.isEnabled = false
+            selectPackageButton?.isEnabled = false
+            scanConfigCode?.isEnabled = false
+        }
+    }
+
+    //private val resultForRequestPackageInstall =
+    //    registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+    //        if (it?.resultCode == CommonStatusCodes.SUCCESS || it?.resultCode == CommonStatusCodes.SUCCESS_CACHE) {
+    //            // check storage permission granted if yes then start downloading file
+    //            checkStoragePermission()
+    //        }
+    //    }
+    //
+    //private fun checkStoragePermission() {
+    //    // Check if the storage permission has been granted
+    //    if (ActivityCompat.checkSelfPermission(
+    //            requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE
+    //        ) != PackageManager.PERMISSION_GRANTED
+    //    ) {
+    //        // Permission is missing and must be requested.
+    //        resultForStoragePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    //        return
+    //    }
+    //
+    //    // start downloading
+    //    val downloadController = DownloadController(requireView())
+    //    downloadController.enqueueDownload()
+    //}
+    //
+    //private val resultForStoragePermission =
+    //    registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+    //        // returns boolean representing whether the
+    //        // permission is granted or not
+    //        if (!isGranted) {
+    //            makeText(
+    //                requireView(),
+    //                requireContext().getString(R.string.app_dont_have_necessary_permissions),
+    //                ERROR
+    //            )
+    //        } else {
+    //            // start downloading
+    //            val downloadController = DownloadController(requireView())
+    //            downloadController.enqueueDownload()
+    //        }
+    //    }
+
+    private fun askForDownloadDbRequired2(
+        email: String,
+        password: String,
+    ): AlertDialog {
+        return AlertDialog.Builder(requireActivity())
+            //set message, title, and icon
+            .setTitle(getString(R.string.download_database_required))
+            .setMessage(getString(R.string.download_database_required_question))
+            .setPositiveButton(getString(R.string.yes)) { dialog, _ ->
+                //your deleting code
+                Statics.downloadDbRequired = true
+                alreadyAnsweredYes = true
+
+                if (email.isNotEmpty() && password.isNotEmpty()) {
+                    GetClientPackages.getConfig(
+                        onEvent = { onGetPackagesEnded(it) }, email = email, password = password, installationCode = ""
+                    )
+                }
+                dialog.dismiss()
+            }.setNegativeButton(R.string.no) { dialog, _ -> dialog.dismiss() }.create()
+    }
+
+    private fun askForDownloadDbRequired(
+        preference: Preference,
+        newValue: Any,
+    ): AlertDialog {
+        return AlertDialog.Builder(requireActivity())
+            //set message, title, and icon
+            .setTitle(getString(R.string.download_database_required))
+            .setMessage(getString(R.string.download_database_required_question))
+            .setPositiveButton(getString(R.string.yes)) { dialog, _ ->
+                //your deleting code
+                Statics.downloadDbRequired = true
+                preference.summary = newValue.toString()
+                alreadyAnsweredYes = true
+                if (newValue is String) {
+                    SettingsRepository.getByKey(preference.key)?.value = newValue
+                }
+                dialog.dismiss()
+            }.setNegativeButton(R.string.no) { dialog, _ -> dialog.dismiss() }.create()
+    }
+
+    companion object {
+        fun equals(a: Any?, b: Any?): Boolean {
+            return a != null && a == b
+        }
+
+        /**
+         * Binds a preference's summary to its value. More specifically, when the
+         * preference's value is changed, its summary (line of text below the
+         * preference title) is updated to reflect the value. The summary is also
+         * immediately updated upon calling this method. The exact display format is
+         * dependent on the type of preference.
+         *
+         * @see .sBindPreferenceSummaryToValueListener
+         */
+        private fun bindPreferenceSummaryToValue(
+            frag: PreferenceFragmentCompat,
+            pref: com.dacosys.warehouseCounter.settings.Preference,
+        ) {
+            val preference = frag.findPreference<Preference>(pref.key)
+            val all: Map<String, *> = PreferenceManager.getDefaultSharedPreferences(WarehouseCounterApp.context).all
+
+            // Set the listener to watch for value changes.
+            preference?.onPreferenceChangeListener = sBindPreferenceSummaryToValueListener
+
+            val defaultValue: Any = pref.value
+
+            when {
+                all[pref.key] is String && preference != null -> {
+                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                        preference,
+                        PreferenceManager.getDefaultSharedPreferences(preference.context)
+                            .getString(preference.key, defaultValue.toString())
+                    )
+                }
+
+                all[pref.key] is Boolean && preference != null -> {
+                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                        preference,
+                        PreferenceManager.getDefaultSharedPreferences(preference.context)
+                            .getBoolean(preference.key, defaultValue.toString().toBoolean())
+                    )
+                }
+
+                all[pref.key] is Float && preference != null -> {
+                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                        preference,
+                        PreferenceManager.getDefaultSharedPreferences(preference.context)
+                            .getFloat(preference.key, defaultValue.toString().toFloat())
+                    )
+                }
+
+                all[pref.key] is Int && preference != null -> {
+                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                        preference,
+                        PreferenceManager.getDefaultSharedPreferences(preference.context)
+                            .getInt(preference.key, defaultValue.toString().toInt())
+                    )
+                }
+
+                all[pref.key] is Long && preference != null -> {
+                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                        preference,
+                        PreferenceManager.getDefaultSharedPreferences(preference.context)
+                            .getLong(preference.key, defaultValue.toString().toLong())
+                    )
+                }
+
+                else -> {
+                    try {
+                        if (preference != null) when (defaultValue) {
+                            is String -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                                preference,
+                                PreferenceManager.getDefaultSharedPreferences(preference.context)
+                                    .getString(preference.key, defaultValue)
+                            )
+
+                            is Float -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                                preference,
+                                PreferenceManager.getDefaultSharedPreferences(preference.context)
+                                    .getFloat(preference.key, defaultValue)
+                            )
+
+                            is Int -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                                preference,
+                                PreferenceManager.getDefaultSharedPreferences(preference.context)
+                                    .getInt(preference.key, defaultValue)
+                            )
+
+                            is Long -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                                preference,
+                                PreferenceManager.getDefaultSharedPreferences(preference.context)
+                                    .getLong(preference.key, defaultValue)
+                            )
+
+                            is Boolean -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                                preference,
+                                PreferenceManager.getDefaultSharedPreferences(preference.context)
+                                    .getBoolean(preference.key, defaultValue)
+                            )
+                        }
+                    } catch (ex: Exception) {
+                        ex.printStackTrace()
+                        ErrorLog.writeLog(null, this::class.java.simpleName, ex)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun onGetPackagesEnded(packagesResult: PackagesResult) {
+        val status: ProgressStatus = packagesResult.status
+        val result: ArrayList<Package> = packagesResult.result
+        val clientEmail: String = packagesResult.clientEmail
+        val clientPassword: String = packagesResult.clientPassword
+        val msg: String = packagesResult.msg
+
+        if (status == ProgressStatus.finished) {
+            if (result.size > 0) {
+                requireActivity().runOnUiThread {
+                    ClientPackage.selectClientPackage(callback = this,
+                        weakAct = WeakReference(requireActivity()),
+                        allPackage = result,
+                        email = clientEmail,
+                        password = clientPassword,
+                        onEventData = { showSnackBar(it) })
+                }
+            } else {
+                if (view != null) MakeText.makeText(requireView(), msg, SnackBarType.INFO)
+            }
+        } else if (status == ProgressStatus.success) {
+            if (view != null) MakeText.makeText(requireView(), msg, SnackBarType.SUCCESS)
+        } else if (status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
+            if (view != null) MakeText.makeText(requireView(), msg, SnackBarType.ERROR)
+        }
+    }
+
+    override fun onTaskConfigPanelEnded(status: ProgressStatus) {
+        if (status == ProgressStatus.finished) {
+            if (view != null) MakeText.makeText(
+                requireView(), getString(R.string.configuration_applied), SnackBarType.INFO
+            )
+            FileHelper.removeDataBases()
+            requireActivity().finish()
+        } else if (status == ProgressStatus.crashed) {
+            if (view != null) MakeText.makeText(
+                requireView(), getString(R.string.error_setting_user_panel), SnackBarType.ERROR
+            )
+        }
+    }
+
+    private fun showSnackBar(it: SnackBarEventData) {
+        MakeText.makeText(requireView(), it.text, it.snackBarType)
+    }
+}

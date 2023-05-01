@@ -31,7 +31,7 @@ import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.room.database.FileHelper.Companion.removeDataBases
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
-import com.dacosys.warehouseCounter.settings.QRConfigType.CREATOR.QRConfigClientAccount
+import com.dacosys.warehouseCounter.settings.utils.QRConfigType.CREATOR.QRConfigClientAccount
 import com.dacosys.warehouseCounter.sync.ClientPackage
 import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.getConfigFromScannedCode
 import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.selectClientPackage
@@ -220,6 +220,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                     attemptToConfigure()
                     true
                 }
+
                 else -> false
             }
         }
@@ -244,6 +245,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                     binding.passwordEditText.requestFocus()
                     true
                 }
+
                 else -> false
             }
         }
@@ -373,6 +375,8 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
 
     override fun scannerCompleted(scanCode: String) {
         JotterListener.lockScanner(this, true)
+        JotterListener.hideWindow(this)
+
         try {
             getConfigFromScannedCode(
                 onEvent = { onGetPackagesEnded(it) },
@@ -414,14 +418,17 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                 onBackPressed()
                 return true
             }
+
             R.id.action_settings -> {
                 configApp()
                 true
             }
+
             R.id.action_rfid_connect -> {
                 JotterListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_trigger_scan -> {
                 ///* For Debug */
                 //scannerCompleted(
@@ -432,10 +439,12 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                 JotterListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_read_barcode -> {
                 JotterListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
+
             else -> {
                 super.onOptionsItemSelected(item)
             }

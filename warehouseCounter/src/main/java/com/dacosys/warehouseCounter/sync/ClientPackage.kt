@@ -23,8 +23,8 @@ import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages
 import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.settings.Preference
-import com.dacosys.warehouseCounter.settings.QRConfigType
 import com.dacosys.warehouseCounter.settings.SettingsRepository
+import com.dacosys.warehouseCounter.settings.utils.QRConfigType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
@@ -329,6 +329,7 @@ class ClientPackage {
                         )
                     }
                 }
+
                 QRConfigType.QRConfigWebservice, QRConfigType.QRConfigApp, QRConfigType.QRConfigImageControl -> {
                     tryToLoadConfig(confJson)
                     onEvent.invoke(
@@ -337,14 +338,17 @@ class ClientPackage {
                                 QRConfigType.QRConfigImageControl -> WarehouseCounterApp.context.getString(
                                     R.string.imagecontrol_configured
                                 )
+
                                 QRConfigType.QRConfigWebservice -> WarehouseCounterApp.context.getString(
                                     R.string.server_configured
                                 )
+
                                 else -> WarehouseCounterApp.context.getString(R.string.configuration_applied)
                             }
                         )
                     )
                 }
+
                 else -> {
                     onEvent.invoke(
                         PackagesResult(
@@ -409,27 +413,27 @@ class ClientPackage {
             for (p in ps) {
                 if (p.value is Int) {
                     val value = SettingsRepository.getByKey(p.key)?.value as Int
-                    if (value != p.value) {
+                    if (value != p.default) {
                         jsonObject.put(p.key, value)
                     }
                 } else if (p.value is Boolean) {
                     val value = SettingsRepository.getByKey(p.key)?.value as Boolean
-                    if (value != p.value) {
+                    if (value != p.default) {
                         jsonObject.put(p.key, value)
                     }
                 } else if (p.value is String) {
                     val value = SettingsRepository.getByKey(p.key)?.value as String
-                    if (value != p.value && value.isNotEmpty()) {
+                    if (value != p.default && value.isNotEmpty()) {
                         jsonObject.put(p.key, value)
                     }
                 } else if (p.value is Long) {
                     val value = SettingsRepository.getByKey(p.key)?.value as Long
-                    if (value != p.value) {
+                    if (value != p.default) {
                         jsonObject.put(p.key, value)
                     }
                 } else if (p.value is Float) {
                     val value = SettingsRepository.getByKey(p.key)?.value as Float
-                    if (value != p.value) {
+                    if (value != p.default) {
                         jsonObject.put(p.key, value)
                     }
                 }

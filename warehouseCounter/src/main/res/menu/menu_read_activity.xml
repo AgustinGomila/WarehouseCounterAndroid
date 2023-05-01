@@ -1,18 +1,18 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+      xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/action_trigger_scan"
-        android:icon="@drawable/ic_new_scan"
-        android:title="@string/trigger_scan"
-        app:showAsAction="ifRoom" />
+            android:id="@+id/action_trigger_scan"
+            android:icon="@drawable/ic_new_scan"
+            android:title="@string/trigger_scan"
+            app:showAsAction="ifRoom"/>
     <item
-        android:id="@+id/action_read_barcode"
-        android:icon="@drawable/ic_camera_scan"
-        android:title="@string/read_barcode"
-        app:showAsAction="ifRoom" />
+            android:id="@+id/action_read_barcode"
+            android:icon="@drawable/ic_camera_scan"
+            android:title="@string/read_barcode"
+            app:showAsAction="ifRoom"/>
     <item
-        android:id="@+id/action_rfid_connect"
-        android:icon="@drawable/ic_rfid"
-        android:title="@string/action_rfid_connect"
-        app:showAsAction="ifRoom" />
+            android:id="@+id/action_rfid_connect"
+            android:icon="@drawable/ic_rfid"
+            android:title="@string/action_rfid_connect"
+            app:showAsAction="ifRoom"/>
 </menu>

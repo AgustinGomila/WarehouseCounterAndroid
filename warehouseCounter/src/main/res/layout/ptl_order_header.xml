@@ -1,236 +1,236 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/ptl_order_header"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingStart="1dp"
-    android:paddingTop="1dp"
-    android:paddingEnd="1dp"
-    android:paddingBottom="1dp"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent">
+                                                   xmlns:app="http://schemas.android.com/apk/res-auto"
+                                                   android:id="@+id/ptl_order_header"
+                                                   android:layout_width="match_parent"
+                                                   android:layout_height="match_parent"
+                                                   android:paddingStart="1dp"
+                                                   android:paddingTop="1dp"
+                                                   android:paddingEnd="1dp"
+                                                   android:paddingBottom="1dp"
+                                                   app:layout_constraintEnd_toEndOf="parent"
+                                                   app:layout_constraintStart_toStartOf="parent"
+                                                   app:layout_constraintTop_toTopOf="parent">
 
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/orderPanel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <androidx.constraintlayout.widget.Guideline
-            android:id="@+id/guidelineLocation800"
-            android:layout_width="wrap_content"
+            android:id="@+id/orderPanel"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            app:layout_constraintGuide_percent="0.8" />
-
-        <TextView
-            android:id="@+id/orderTitleTextView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:background="@drawable/rounded_corner_button_808f87"
-            android:gravity="center_horizontal"
-            android:text="@string/order"
-            android:textColor="@color/whitesmoke"
-            android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/orderDataPanel"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintEnd_toStartOf="@+id/changeOrderPanel"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/orderTitleTextView">
-
-            <View
-                android:id="@+id/dividerVerLocation200"
-                android:layout_width="1dp"
-                android:layout_height="0dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="4dp"
-                android:background="?android:attr/listDivider"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/guidelineLocation200"
-                app:layout_constraintStart_toStartOf="@+id/guidelineLocation200"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <androidx.constraintlayout.widget.Guideline
-                android:id="@+id/guidelineLocation200"
+        <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/guidelineLocation800"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                app:layout_constraintGuide_percent="0.25" />
+                app:layout_constraintGuide_percent="0.8"/>
+
+        <TextView
+                android:id="@+id/orderTitleTextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_corner_button_808f87"
+                android:gravity="center_horizontal"
+                android:text="@string/order"
+                android:textColor="@color/whitesmoke"
+                android:textSize="12sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"/>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/orderDataPanel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toStartOf="@+id/changeOrderPanel"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/orderTitleTextView">
+
+            <View
+                    android:id="@+id/dividerVerLocation200"
+                    android:layout_width="1dp"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:background="?android:attr/listDivider"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/guidelineLocation200"
+                    app:layout_constraintStart_toStartOf="@+id/guidelineLocation200"
+                    app:layout_constraintTop_toTopOf="parent"/>
+
+            <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/guidelineLocation200"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintGuide_percent="0.25"/>
 
             <TextView
-                android:id="@+id/textView8"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginEnd="8dp"
-                android:ellipsize="end"
-                android:lines="1"
-                android:maxLines="1"
-                android:text="@string/order_nbr"
-                android:textAlignment="textEnd"
-                android:textSize="10sp"
-                app:layout_constraintEnd_toStartOf="@+id/guidelineLocation200"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                    android:id="@+id/textView8"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="8dp"
+                    android:ellipsize="end"
+                    android:lines="1"
+                    android:maxLines="1"
+                    android:text="@string/order_nbr"
+                    android:textAlignment="textEnd"
+                    android:textSize="10sp"
+                    app:layout_constraintEnd_toStartOf="@+id/guidelineLocation200"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
 
             <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
-                android:id="@+id/orderNbrTextView"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="2dp"
-                android:ellipsize="end"
-                android:lines="1"
-                android:maxLines="1"
-                android:minLines="1"
-                android:text="@string/order_nbr"
-                android:textSize="16sp"
-                app:autoSizeMaxTextSize="16sp"
-                app:autoSizeMinTextSize="12dp"
-                app:autoSizeStepGranularity="1sp"
-                app:autoSizeTextType="uniform"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/dividerVerLocation200"
-                app:layout_constraintTop_toTopOf="@+id/textView8" />
+                    android:id="@+id/orderNbrTextView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="2dp"
+                    android:ellipsize="end"
+                    android:lines="1"
+                    android:maxLines="1"
+                    android:minLines="1"
+                    android:text="@string/order_nbr"
+                    android:textSize="16sp"
+                    app:autoSizeMaxTextSize="16sp"
+                    app:autoSizeMinTextSize="12dp"
+                    app:autoSizeStepGranularity="1sp"
+                    app:autoSizeTextType="uniform"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/dividerVerLocation200"
+                    app:layout_constraintTop_toTopOf="@+id/textView8"/>
 
             <TextView
-                android:id="@+id/textView10"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="8dp"
-                android:ellipsize="end"
-                android:lines="1"
-                android:maxLines="1"
-                android:text="@string/client"
-                android:textAlignment="textEnd"
-                android:textSize="10sp"
-                app:layout_constraintEnd_toStartOf="@+id/guidelineLocation200"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/clientTextView" />
+                    android:id="@+id/textView10"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="8dp"
+                    android:ellipsize="end"
+                    android:lines="1"
+                    android:maxLines="1"
+                    android:text="@string/client"
+                    android:textAlignment="textEnd"
+                    android:textSize="10sp"
+                    app:layout_constraintEnd_toStartOf="@+id/guidelineLocation200"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/clientTextView"/>
 
             <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
-                android:id="@+id/clientTextView"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="2dp"
-                android:ellipsize="end"
-                android:lines="1"
-                android:maxLines="1"
-                android:minLines="1"
-                android:text="@string/client"
-                android:textSize="16sp"
-                app:autoSizeMaxTextSize="16sp"
-                app:autoSizeMinTextSize="12dp"
-                app:autoSizeStepGranularity="1sp"
-                app:autoSizeTextType="uniform"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/dividerVerLocation200"
-                app:layout_constraintTop_toBottomOf="@+id/orderNbrTextView" />
+                    android:id="@+id/clientTextView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="2dp"
+                    android:ellipsize="end"
+                    android:lines="1"
+                    android:maxLines="1"
+                    android:minLines="1"
+                    android:text="@string/client"
+                    android:textSize="16sp"
+                    app:autoSizeMaxTextSize="16sp"
+                    app:autoSizeMinTextSize="12dp"
+                    app:autoSizeStepGranularity="1sp"
+                    app:autoSizeTextType="uniform"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/dividerVerLocation200"
+                    app:layout_constraintTop_toBottomOf="@+id/orderNbrTextView"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/changeOrderPanel"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_marginStart="1dp"
-            android:layout_marginTop="1dp"
-            android:layout_marginEnd="1dp"
-            android:layout_marginBottom="1dp"
-            app:layout_constraintBottom_toBottomOf="@+id/orderDataPanel"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/guidelineLocation800"
-            app:layout_constraintTop_toBottomOf="@+id/orderTitleTextView">
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/changeOrderButton"
+                android:id="@+id/changeOrderPanel"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:layout_marginStart="1dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginEnd="1dp"
                 android:layout_marginBottom="1dp"
-                android:background="@drawable/rounded_corner_button_ffed65"
-                android:contentDescription="@string/set_order"
-                android:elevation="1dp"
-                android:gravity="center|center_horizontal|center_vertical"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintBottom_toBottomOf="@+id/orderDataPanel"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:srcCompat="@drawable/ic_order"
-                app:tint="@color/gray" />
+                app:layout_constraintStart_toStartOf="@+id/guidelineLocation800"
+                app:layout_constraintTop_toBottomOf="@+id/orderTitleTextView">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/changeOrderButton"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_marginStart="1dp"
+                    android:layout_marginTop="1dp"
+                    android:layout_marginEnd="1dp"
+                    android:layout_marginBottom="1dp"
+                    android:background="@drawable/rounded_corner_button_ffed65"
+                    android:contentDescription="@string/set_order"
+                    android:elevation="1dp"
+                    android:gravity="center|center_horizontal|center_vertical"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/ic_order"
+                    app:tint="@color/gray"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/locationPanel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/Theme.AppCompat.Light"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/orderPanel">
+            android:id="@+id/locationPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:theme="@style/Theme.AppCompat.Light"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/orderPanel">
 
         <TextView
-            android:id="@+id/locationTitleTextView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:background="@drawable/rounded_corner_button_808f87"
-            android:gravity="center_horizontal"
-            android:text="@string/location"
-            android:textColor="@color/whitesmoke"
-            android:textSize="12sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/locationDataPanel"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/locationTitleTextView">
-
-            <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
-                android:id="@+id/locationTextView"
+                android:id="@+id/locationTitleTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="2dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginEnd="2dp"
-                android:ellipsize="end"
-                android:lines="1"
-                android:maxLines="1"
-                android:minLines="1"
+                android:background="@drawable/rounded_corner_button_808f87"
+                android:gravity="center_horizontal"
                 android:text="@string/location"
-                android:textSize="16sp"
-                app:autoSizeMaxTextSize="16sp"
-                app:autoSizeMinTextSize="12dp"
-                app:autoSizeStepGranularity="1sp"
-                app:autoSizeTextType="uniform"
+                android:textColor="@color/whitesmoke"
+                android:textSize="12sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"/>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/locationDataPanel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/locationTitleTextView">
+
+            <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+                    android:id="@+id/locationTextView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="2dp"
+                    android:ellipsize="end"
+                    android:lines="1"
+                    android:maxLines="1"
+                    android:minLines="1"
+                    android:text="@string/location"
+                    android:textSize="16sp"
+                    app:autoSizeMaxTextSize="16sp"
+                    app:autoSizeMinTextSize="12dp"
+                    app:autoSizeStepGranularity="1sp"
+                    app:autoSizeTextType="uniform"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

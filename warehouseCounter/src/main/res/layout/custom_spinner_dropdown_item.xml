@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <CheckedTextView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/descriptionTextView"
-    style="?android:attr/spinnerDropDownItemStyle"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@drawable/custom_spinner_item"
-    android:ellipsize="marquee"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp"
-    android:singleLine="true"
-    android:textSize="16sp"
-    tools:layout_editor_absoluteX="1dp" />
+                 xmlns:tools="http://schemas.android.com/tools"
+                 android:id="@+id/descriptionTextView"
+                 style="?android:attr/spinnerDropDownItemStyle"
+                 android:layout_width="match_parent"
+                 android:layout_height="wrap_content"
+                 android:background="@drawable/custom_spinner_item"
+                 android:ellipsize="marquee"
+                 android:paddingTop="8dp"
+                 android:paddingBottom="8dp"
+                 android:singleLine="true"
+                 android:textSize="16sp"
+                 tools:layout_editor_absoluteX="1dp"/>

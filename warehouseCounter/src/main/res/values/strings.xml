@@ -369,11 +369,17 @@
     <string name="detail">Detalle</string>
     <string name="send_check_digit">Enviar dígito verificador de código de barra</string>
     <string name="check_digit">Dígito verificador</string>
-    <string name="change_the_screen_orientation_when_rotating_the_device">Cambia la orientación de la pantalla al rotar el dispositivo</string>
+    <string name="change_the_screen_orientation_when_rotating_the_device">Cambia la orientación de la pantalla al rotar
+        el dispositivo
+    </string>
     <string name="allow_screen_rotation">Permitir rotación de pantalla</string>
-    <string name="if_you_have_a_configuration_barcode_you_can_capture_it_here">Si dispone de un código de barras de configuración puede carpturarlo aquí</string>
+    <string name="if_you_have_a_configuration_barcode_you_can_capture_it_here">Si dispone de un código de barras de
+        configuración puede carpturarlo aquí
+    </string>
     <string name="capture_configuration_barcode">Capturar código de barras de configuración</string>
-    <string name="if_you_have_a_configuration_code_you_can_enter_it_here">Si dispone de un código de texto de configuración puede ingresarlo aquí</string>
+    <string name="if_you_have_a_configuration_code_you_can_enter_it_here">Si dispone de un código de texto de
+        configuración puede ingresarlo aquí
+    </string>
     <string name="enter_configuration_text_code">Ingresar código de texto de configuración</string>
     <string name="enter_the_configuration_code">Ingrese el código de configuración</string>
     <string name="retry_connection">Reintentar conexión</string>
@@ -386,8 +392,8 @@
     <string name="client_and_description">Cliente y descripción</string>
     <string name="quantity">Cantidad</string>
     <string name="device_connected">Dispositivo conectado</string>
-    <string name="new_orders_received_">Nuevas órdenes recibidas: </string>
-    <string name="completed_orders_">Órdenes completadas: </string>
+    <string name="new_orders_received_">Nuevas órdenes recibidas:</string>
+    <string name="completed_orders_">Órdenes completadas:</string>
     <string name="lot_code">Código del lote</string>
     <string name="enter_lot_code">Ingrese el código del lote</string>
     <string name="search_client">Buscar cliente…</string>
@@ -401,9 +407,15 @@
     <string name="action_rfid_connect">Reconectar lector RFID</string>
     <string name="invalid_user">Usuario inválido</string>
     <string name="download_database_required">Descarga de base de datos</string>
-    <string name="download_database_required_question">Cambios en esta configuración requieren la descarga de la base de datos. ¿Desea continuar?</string>
-    <string name="rfid_reader_use_is_disabled_or_not_configured">El uso del lector RFID está deshabilitado o no está configurado</string>
-    <string name="there_are_no_valid_products_for_the_selected_client">No hay productos válidos para el cliente seleccionado</string>
+    <string name="download_database_required_question">Cambios en esta configuración requieren la descarga de la base de
+        datos. ¿Desea continuar?
+    </string>
+    <string name="rfid_reader_use_is_disabled_or_not_configured">El uso del lector RFID está deshabilitado o no está
+        configurado
+    </string>
+    <string name="there_are_no_valid_products_for_the_selected_client">No hay productos válidos para el cliente
+        seleccionado
+    </string>
     <string name="print_labels">Imprimir etiquetas</string>
     <string name="you_must_select_at_least_one_item">Debe seleccionar al menos un ítem</string>
     <string name="invalid_client_data">Datos de cuenta inválidos</string>
@@ -491,10 +503,13 @@
     <string name="images_webservice_configuration">Configuración del Webservice de imágenes</string>
     <string name="select_printer_">Seleccionar impresora…</string>
     <string name="you_must_select_a_printer">Debe seleccionar una impresora</string>
-    <string name="you_must_select_the_amount_of_labels_to_print">Debe seleccionar la cantidad de etiquetas a imprimir</string>
+    <string name="you_must_select_the_amount_of_labels_to_print">Debe seleccionar la cantidad de etiquetas a imprimir
+    </string>
     <string name="camera_preview">Vista de cámara</string>
     <string name="close">Cerrar</string>
-    <string name="to_use_the_floating_window_function_you_must_authorize_the_floating_window_permission">Para utilizar la función de ventana flotante, debe autorizar el permiso para esta aplicación.</string>
+    <string name="to_use_the_floating_window_function_you_must_authorize_the_floating_window_permission">Para utilizar
+        la función de ventana flotante, debe autorizar el permiso para esta aplicación.
+    </string>
     <string name="continuous_mode">Modo continuo</string>
     <string name="single_mode">Modo simple</string>
     <string name="flash_off">Flash apagado</string>
@@ -504,13 +519,18 @@
     <string name="allow_repeated_reads">Permitir lecturas repetidas</string>
     <string name="connecting">Conectando…</string>
     <string name="restore_window">Restaurar ventana</string>
-    <string name="cancelled_scan_due_to_missing_camera_permission">Escaneo cancelado debido a la falta de permiso de la cámara</string>
+    <string name="cancelled_scan_due_to_missing_camera_permission">Escaneo cancelado debido a la falta de permiso de la
+        cámara
+    </string>
     <string name="cancelled">Cancelado</string>
     <string name="cancelled_scan">Escaneo cancelado</string>
     <string name="server_configured">Servidor configurado</string>
     <string name="imagecontrol_configured">ImageControl configurado</string>
-    <string name="device_configuration_summary">Configuración de dispositivos, tipo de lector, impresora, NFC, RFID.</string>
-    <string name="account_configuration_summary">Configuración de la cuenta y otras opciones de configuración automática de la aplicación</string>
+    <string name="device_configuration_summary">Configuración de dispositivos, tipo de lector, impresora, NFC, RFID.
+    </string>
+    <string name="account_configuration_summary">Configuración de la cuenta y otras opciones de configuración automática
+        de la aplicación
+    </string>
     <string name="application_summary">Opciones generales de la aplicación</string>
     <string name="devices_configuration">Configuración de dispositivos</string>
     <string name="pref_header_application">Aplicación</string>
@@ -526,7 +546,9 @@
     <string name="printer_power">Potencia</string>
     <string name="printer_speed">Velocidad</string>
     <string name="reset">Reiniciar</string>
-    <string name="you_want_to_reset_the_rfid_device_to_its_factory_settings">¿Desea reiniciar el dispositivo RFID a su configuración de fábrica?</string>
+    <string name="you_want_to_reset_the_rfid_device_to_its_factory_settings">¿Desea reiniciar el dispositivo RFID a su
+        configuración de fábrica?
+    </string>
     <string name="there_is_no_rfid_device_connected">No hay un dispositivo RFID conectado</string>
     <string name="failed_rfid_writing">Escritura RFID fallida</string>
     <string name="rfid_writing_ok">Escritura RFID OK</string>
@@ -542,7 +564,9 @@
     <string name="new_line_char_lf">LF</string>
     <string name="new_line_char_cr">CR</string>
     <string name="printer_preferences">Preferencias de impresión</string>
-    <string name="access_password_to_the_application_configuration">Contraseña de acceso a la configuración de la aplicación</string>
+    <string name="access_password_to_the_application_configuration">Contraseña de acceso a la configuración de la
+        aplicación
+    </string>
     <string name="configuration_password">Contraseña de configuración</string>
     <string name="save_occurred_errors_in_a_file">Registra en un archivo los errores ocurridos</string>
     <string name="general_configuration">Configuración general</string>
@@ -553,7 +577,9 @@
     <string name="file_not_found">No se puede encontrar el archivo</string>
     <string name="error_opening_the_file">Error al abrir el archivo"</string>
     <string name="download_last_version">Descargar la última versión</string>
-    <string name="this_android_version_not_support_auto_update">Esta versión de Android no soporta la actualización automática</string>
+    <string name="this_android_version_not_support_auto_update">Esta versión de Android no soporta la actualización
+        automática
+    </string>
     <string name="NFC_is_disabled">NFC está desactivado</string>
     <string name="NFC_is_enabled">NFC está activado</string>
     <string name="this_device_doesnt_support_NFC">Este dispositivo no es compatible con NFC</string>

@@ -420,7 +420,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
             }
         }
 
-    private fun hideWindow() {
+    fun hideWindow() {
         if (floatWindowCreated && EasyFloat.isShow(getEasyFloatTag())) EasyFloat.hide(
             getEasyFloatTag()
         )

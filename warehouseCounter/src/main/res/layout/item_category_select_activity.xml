@@ -1,104 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/category_select"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_gravity="center_horizontal|center_vertical"
-    android:layout_marginStart="8sp"
-    android:layout_marginTop="8sp"
-    android:layout_marginEnd="8sp"
-    android:layout_marginBottom="8sp"
-    android:excludeFromRecents="true"
-    android:focusable="true"
-    android:focusableInTouchMode="true">
+                                                   xmlns:app="http://schemas.android.com/apk/res-auto"
+                                                   xmlns:tools="http://schemas.android.com/tools"
+                                                   android:id="@+id/category_select"
+                                                   android:layout_width="match_parent"
+                                                   android:layout_height="match_parent"
+                                                   android:layout_gravity="center_horizontal|center_vertical"
+                                                   android:layout_marginStart="8sp"
+                                                   android:layout_marginTop="8sp"
+                                                   android:layout_marginEnd="8sp"
+                                                   android:layout_marginBottom="8sp"
+                                                   android:excludeFromRecents="true"
+                                                   android:focusable="true"
+                                                   android:focusableInTouchMode="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/gralLayout"
-        android:layout_width="320dp"
-        android:layout_height="wrap_content"
-        android:background="@drawable/layout_background_dialog"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/panelButton"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
-
-            <Button
-                android:id="@+id/selectButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="2dp"
-                android:layout_marginTop="2dp"
-                android:layout_marginEnd="2dp"
-                android:layout_marginBottom="2dp"
-                android:background="@drawable/rounded_corner_button_seagreen"
-                android:clickable="true"
-                android:elevation="1dp"
-                android:focusable="true"
-                android:stateListAnimator="@null"
-                android:text="@string/accept"
-                android:textColor="@color/text_light"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/panelTop"
-            android:layout_width="0dp"
+            android:id="@+id/gralLayout"
+            android:layout_width="320dp"
             android:layout_height="wrap_content"
-            app:layout_constraintBottom_toTopOf="@+id/panelButton"
+            android:background="@drawable/layout_background_dialog"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
-                android:id="@+id/category"
+        <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/panelButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+            <Button
+                    android:id="@+id/selectButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:layout_marginBottom="2dp"
+                    android:background="@drawable/rounded_corner_button_seagreen"
+                    android:clickable="true"
+                    android:elevation="1dp"
+                    android:focusable="true"
+                    android:stateListAnimator="@null"
+                    android:text="@string/accept"
+                    android:textColor="@color/text_light"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/panelTop"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="2dp"
-                android:layout_marginTop="2dp"
-                android:layout_marginEnd="2dp"
-                android:cursorVisible="true"
-                android:dropDownSelector="@drawable/rounded_corner_layout"
-                android:hint="@string/category"
-                android:imeOptions="actionDone|flagNoExtractUi"
-                android:inputType="textAutoCorrect|textCapSentences|textAutoComplete"
-                android:maxLines="2"
-                android:minLines="1"
-                android:text=""
-                android:textColor="@color/text_dark"
-                android:textColorHint="@color/colorHint"
-                app:autoSizeMaxTextSize="18sp"
-                app:autoSizeMinTextSize="12dp"
-                app:autoSizeStepGranularity="1sp"
-                app:autoSizeTextType="uniform"
+                app:layout_constraintBottom_toTopOf="@+id/panelButton"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:layout_constraintLeft_creator="1"
-                tools:layout_constraintRight_creator="1"
-                tools:layout_constraintTop_creator="1" />
+                app:layout_constraintTop_toTopOf="parent">
+
+            <com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
+                    android:id="@+id/category"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:cursorVisible="true"
+                    android:dropDownSelector="@drawable/rounded_corner_layout"
+                    android:hint="@string/category"
+                    android:imeOptions="actionDone|flagNoExtractUi"
+                    android:inputType="textAutoCorrect|textCapSentences|textAutoComplete"
+                    android:maxLines="2"
+                    android:minLines="1"
+                    android:text=""
+                    android:textColor="@color/text_dark"
+                    android:textColorHint="@color/colorHint"
+                    app:autoSizeMaxTextSize="18sp"
+                    app:autoSizeMinTextSize="12dp"
+                    app:autoSizeStepGranularity="1sp"
+                    app:autoSizeTextType="uniform"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:layout_constraintLeft_creator="1"
+                    tools:layout_constraintRight_creator="1"
+                    tools:layout_constraintTop_creator="1"/>
 
             <ProgressBar
-                android:id="@+id/categoryProgressBar"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="0dp"
-                android:layout_height="20dp"
-                android:indeterminate="true"
-                app:layout_constraintBottom_toBottomOf="@+id/category"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="@+id/category" />
+                    android:id="@+id/categoryProgressBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="0dp"
+                    android:layout_height="20dp"
+                    android:indeterminate="true"
+                    app:layout_constraintBottom_toBottomOf="@+id/category"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="@+id/category"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>

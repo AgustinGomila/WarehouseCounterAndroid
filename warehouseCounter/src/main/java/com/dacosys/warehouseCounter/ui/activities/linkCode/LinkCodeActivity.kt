@@ -80,7 +80,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         if (item != null) {
             ItemCodeCoroutines().getByItemId(item.itemId) {
                 var allItemCodes = ""
-                val breakLine = Statics.lineSeparator
+                val breakLine = lineSeparator
 
                 runOnUiThread {
                     if (it.isNotEmpty()) {
@@ -588,6 +588,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             when {
                 panelIsExpanded -> binding.expandButton?.text =
                     context.getString(R.string.collapse_panel)
+
                 else -> binding.expandButton?.text = context.getString(R.string.search_options)
             }
         }
@@ -633,6 +634,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             when {
                 panelIsExpanded -> binding.expandButton?.text =
                     context.getString(R.string.collapse_panel)
+
                 else -> binding.expandButton?.text = context.getString(R.string.search_options)
             }
         }
@@ -774,30 +776,36 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 onBackPressed()
                 return true
             }
+
             R.id.action_rfid_connect -> {
                 JotterListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_trigger_scan -> {
                 JotterListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_read_barcode -> {
                 JotterListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
+
             menuItemRandomOnListL -> {
                 val codes: ArrayList<String> = ArrayList()
                 (arrayAdapter?.getAll() ?: ArrayList()).mapTo(codes) { it.ean }
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
+
             menuItemRandomIt -> {
                 ItemCoroutines().getCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)
             }
+
             menuItemManualCode -> {
                 enterCode()
                 return super.onOptionsItemSelected(item)
@@ -810,9 +818,11 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             sp.selectItemSearchByItemEan.key.hashCode() -> {
                 itemSelectFilterFragment!!.setEanDescriptionVisibility(if (item.isChecked) VISIBLE else GONE)
             }
+
             sp.selectItemSearchByItemCategory.key.hashCode() -> {
                 itemSelectFilterFragment!!.setCategoryVisibility(if (item.isChecked) VISIBLE else GONE)
             }
+
             else -> return super.onOptionsItemSelected(item)
         }
         return true

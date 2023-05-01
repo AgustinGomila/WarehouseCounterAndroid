@@ -1,56 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/enter_code"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_marginStart="8sp"
-    android:layout_marginTop="8sp"
-    android:layout_marginEnd="8sp"
-    android:layout_marginBottom="8sp"
-    android:clickable="true"
-    android:excludeFromRecents="true"
-    android:focusable="true"
-    android:focusableInTouchMode="true">
+                                                   xmlns:app="http://schemas.android.com/apk/res-auto"
+                                                   android:id="@+id/enter_code"
+                                                   android:layout_width="match_parent"
+                                                   android:layout_height="match_parent"
+                                                   android:layout_marginStart="8sp"
+                                                   android:layout_marginTop="8sp"
+                                                   android:layout_marginEnd="8sp"
+                                                   android:layout_marginBottom="8sp"
+                                                   android:clickable="true"
+                                                   android:excludeFromRecents="true"
+                                                   android:focusable="true"
+                                                   android:focusableInTouchMode="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/gralLayout"
-        android:layout_width="320dp"
-        android:layout_height="wrap_content"
-        android:background="@drawable/layout_background_dialog"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <EditText
-            android:id="@+id/codeEditText"
-            android:layout_width="0dp"
+            android:id="@+id/gralLayout"
+            android:layout_width="320dp"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="2dp"
-            android:layout_marginTop="2dp"
-            android:layout_marginRight="2dp"
-            android:hint="@string/item_code"
-            android:importantForAutofill="no"
-            android:inputType="text"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <Button
-            android:id="@+id/okButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:layout_marginTop="2dp"
-            android:layout_marginEnd="2dp"
-            android:background="@drawable/rounded_corner_button_seagreen"
-            android:text="@string/ok"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
+            android:background="@drawable/layout_background_dialog"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/codeEditText" />
+            app:layout_constraintTop_toTopOf="parent">
+
+        <EditText
+                android:id="@+id/codeEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="2dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginRight="2dp"
+                android:hint="@string/item_code"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"/>
+
+        <Button
+                android:id="@+id/okButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="2dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginEnd="2dp"
+                android:background="@drawable/rounded_corner_button_seagreen"
+                android:text="@string/ok"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/codeEditText"/>
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

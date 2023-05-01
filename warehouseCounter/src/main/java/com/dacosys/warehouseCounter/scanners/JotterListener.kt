@@ -368,6 +368,11 @@ object JotterListener : Jotter.Listener {
             ?.lockScanner(lock)
     }
 
+    fun hideWindow(activity: AppCompatActivity) {
+        floatingWindowList.firstOrNull { it.activityName == activity.javaClass.simpleName }
+            ?.hideWindow()
+    }
+
     fun toggleCameraFloatingWindowVisibility(activity: AppCompatActivity) {
         floatingWindowList.firstOrNull { it.activityName == activity::class.java.simpleName }
             ?.toggleWindowVisibility()
