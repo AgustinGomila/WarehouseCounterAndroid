@@ -7,7 +7,7 @@ import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Environment
 import android.util.Log
-import android.view.*
+import android.view.View
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.applicationName
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
@@ -61,8 +61,14 @@ class Statics {
         const val downloadDbAlways = false
         const val testMode = false
 
-        const val APP_VERSION_ID: Int = 8
-        const val APP_VERSION_ID_IMAGECONTROL = 7
+        // Estos números se corresponden con package_id https://manager.dacosys.com/package/index
+        const val APP_VERSION_ID: Int = 8 // WarehouseCounter Milestone12
+        const val APP_VERSION_ID_IMAGECONTROL = 13 // ImageControl Milestone13
+
+        // Este es el valor de program_id (Ver archivo Program.cs en el proyecto Identification)
+        // Lo utiliza internamente ImageControl para identificar la aplicación que lo está usando.
+        // Ver: https://source.cloud.google.com/assetcontrol/libs_windows/+/master:Collector/Identification/Program.cs
+        const val INTERNAL_IMAGE_CONTROL_APP_ID: Int = 4
 
         const val WC_ROOT_PATH = "/warehouse_counter"
         private const val PENDING_COUNT_PATH = "/pending_counts"
@@ -87,10 +93,12 @@ class Statics {
                         Log.i("Internet", "NetworkCapabilities.TRANSPORT_CELLULAR")
                         return true
                     }
+
                     capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
                         Log.i("Internet", "NetworkCapabilities.TRANSPORT_WIFI")
                         return true
                     }
+
                     capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> {
                         Log.i("Internet", "NetworkCapabilities.TRANSPORT_ETHERNET")
                         return true

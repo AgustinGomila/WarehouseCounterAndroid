@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import com.dacosys.imageControl.ImageControl
+import com.dacosys.warehouseCounter.misc.Statics.Companion.INTERNAL_IMAGE_CONTROL_APP_ID
 import com.dacosys.warehouseCounter.misc.Statics.Companion.WC_ROOT_PATH
 import com.dacosys.warehouseCounter.retrofit.APIService
 import com.dacosys.warehouseCounter.retrofit.DacoService
@@ -57,8 +58,12 @@ class WarehouseCounterApp : Application(), KoinComponent {
             //.setFragmentEventFilter(listOf(FragmentEvent.VIEW_CREATE, FragmentEvent.PAUSE))
             .setJotterListener(JotterListener).build().startListening()
 
-        // ImageControl
-        ImageControl().create(applicationContext, WC_ROOT_PATH)
+        // Setup ImageControl context
+        ImageControl().create(
+            context = applicationContext,
+            appRothPath = WC_ROOT_PATH,
+            id = INTERNAL_IMAGE_CONTROL_APP_ID
+        )
     }
 
     private fun koinAppModule() = module {
