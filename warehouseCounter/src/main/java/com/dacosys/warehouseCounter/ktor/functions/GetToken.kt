@@ -1,23 +1,19 @@
-package com.dacosys.warehouseCounter.retrofit.functions
+package com.dacosys.warehouseCounter.ktor.functions
 
 import android.util.Log
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
-import com.dacosys.warehouseCounter.dto.error.ErrorObject
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiService
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.dto.token.TokenObject
 import com.dacosys.warehouseCounter.dto.user.AuthData
 import com.dacosys.warehouseCounter.dto.user.UserAuthData
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
-import com.dacosys.warehouseCounter.retrofit.result.RequestResult
-import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
+import com.dacosys.warehouseCounter.network.result.RequestResult
+import com.dacosys.warehouseCounter.network.result.ResultStatus
 import com.dacosys.warehouseCounter.room.entity.user.User
 import kotlinx.coroutines.*
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -61,7 +57,7 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
             }
         }
 
-        if (!DynamicRetrofit.prepare()) {
+        if (!validUrl()) {
             onEvent.invoke(
                 RequestResult(
                     ResultStatus.ERROR, context.getString(R.string.invalid_url)
@@ -87,6 +83,11 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
         }
     }
 
+    private fun validUrl(): Boolean {
+        val url = URL(settingRepository.urlPanel.value.toString())
+        return url.protocol.isNotEmpty() && url.host.isNotEmpty()
+    }
+
     private fun isTokenValid(): Boolean {
         val now = Calendar.getInstance().time
         val tokenDate = getTokenDate()
@@ -101,57 +102,15 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
         /** Limpiamos el token actual antes de solicitar uno nuevo. **/
         cleanToken()
 
-        val body = getBody()
-
-        val tokenInst = apiService.getToken(body = body)
-
-        Log.i(this::class.java.simpleName, moshi.adapter(UserAuthData::class.java).toJson(body))
-
-        tokenInst.enqueue(object : Callback<Any?> {
-            override fun onResponse(call: Call<Any?>, response: Response<Any?>) {
-                val resp = response.body()
-                if (resp == null) {
-                    Log.e(this.javaClass.simpleName, response.message())
-
-                    onEvent.invoke(RequestResult(ResultStatus.ERROR, response.message()))
-                    return
-                }
-
-                /**
-                 * Comprobamos si es una respuesta de Error predefinida
-                 */
-                if (ErrorObject.isError(resp)) {
-                    val errorObject = moshi.adapter(ErrorObject::class.java).fromJsonValue(resp)
-                    Log.e(this.javaClass.simpleName, errorObject?.error.toString())
-                    onEvent.invoke(RequestResult(ResultStatus.ERROR, errorObject?.error.toString()))
-                    return
-                }
-
-                /**
-                 * Comprobamos si es una respuesta del tipo Token
-                 */
-                if (TokenObject.isToken(resp)) {
-                    val tokenObject = moshi.adapter(TokenObject::class.java).fromJsonValue(resp)
-
-                    onEvent.invoke(
-                        RequestResult(
-                            ResultStatus.SUCCESS, context.getString(R.string.successful_connection)
-                        )
-                    )
-
-                    if (tokenObject != null) Token = tokenObject
-                    return
-                }
-
-                Log.e(this.javaClass.simpleName, resp.toString())
-                onEvent.invoke(RequestResult(ResultStatus.ERROR, resp.toString()))
+        ktorApiService.getToken(body = getBody(), callback = {
+            if (it == null) {
+                Log.e(this.javaClass.simpleName, "error")
+                onEvent.invoke(RequestResult(ResultStatus.ERROR, "error"))
+                return@getToken
             }
-
-            override fun onFailure(call: Call<Any?>, t: Throwable) {
-                Log.e(this.javaClass.simpleName, t.toString())
-
-                onEvent.invoke(RequestResult(ResultStatus.ERROR, t.toString()))
-            }
+            Token = it
+            Log.i(this.javaClass.simpleName, it.toString())
+            onEvent.invoke(RequestResult(ResultStatus.SUCCESS, it.toString()))
         })
     }
 

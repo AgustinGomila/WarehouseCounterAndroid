@@ -6,6 +6,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.ResponseBody.Companion.toResponseBody
 import java.net.MalformedURLException
 import java.net.URL
 
@@ -39,6 +40,6 @@ class HostInterceptor : Interceptor {
         .protocol(Protocol.HTTP_2)
         .code(404)
         .message(WarehouseCounterApp.context.getString(R.string.invalid_url))
-        .body(ResponseBody.create("application/json".toMediaTypeOrNull(), ""))
+        .body("".toResponseBody("application/json".toMediaTypeOrNull()))
         .build()
 }

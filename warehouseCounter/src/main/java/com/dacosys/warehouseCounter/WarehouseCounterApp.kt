@@ -4,14 +4,13 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import com.dacosys.imageControl.ImageControl
-import com.dacosys.warehouseCounter.ktor.KtorAPIService
-import com.dacosys.warehouseCounter.ktor.KtorAPIServiceImpl
+import com.dacosys.warehouseCounter.ktor.APIServiceImpl
 import com.dacosys.warehouseCounter.misc.Statics.Companion.INTERNAL_IMAGE_CONTROL_APP_ID
 import com.dacosys.warehouseCounter.misc.Statics.Companion.WC_ROOT_PATH
+import com.dacosys.warehouseCounter.network.common.HostInterceptor
 import com.dacosys.warehouseCounter.retrofit.APIService
 import com.dacosys.warehouseCounter.retrofit.DacoService
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
-import com.dacosys.warehouseCounter.retrofit.HostInterceptor
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.settings.SettingsViewModel
@@ -78,12 +77,9 @@ class WarehouseCounterApp : Application(), KoinComponent {
 
         single { Moshi.Builder().add(KotlinJsonAdapterFactory()).build() }
         single { MoshiConverterFactory.create(get()) }
-
-        factory {
+        single {
             val sv = settingViewModel
-
-            // Proxy
-            val proxy = if (sv.useProxy) {
+            if (sv.useProxy) {
                 val authenticator = object : Authenticator() {
                     override fun getPasswordAuthentication(): PasswordAuthentication =
                         PasswordAuthentication(sv.proxyUser, sv.proxyPass.toCharArray())
@@ -93,15 +89,34 @@ class WarehouseCounterApp : Application(), KoinComponent {
             } else {
                 NO_PROXY
             }
+        }
 
-            // Connection Timeouts
-            OkHttpClient.Builder().connectTimeout(sv.connectionTimeout.toLong(), TimeUnit.SECONDS)
-                .addInterceptor(HostInterceptor()).proxy(proxy).build()
+        // Retrofit
+        factory {
+            OkHttpClient.Builder()
+                .connectTimeout(settingViewModel.connectionTimeout.toLong(), TimeUnit.SECONDS)
+                .addInterceptor(HostInterceptor())
+                .proxy(currentProxy)
+                .build()
         }
 
         single { DynamicRetrofit() }
         single { retrofit.api.create(APIService::class.java) }
         single { retrofit.api.create(DacoService::class.java) }
+
+        // Ktor
+        single {
+            HttpClient(OkHttp) {
+                engine {
+                    config {
+                        followRedirects(true)
+                        connectTimeout(settingViewModel.connectionTimeout.toLong(), TimeUnit.SECONDS)
+                        proxy(currentProxy)
+                    }
+                }
+            }
+        }
+        single { APIServiceImpl() }
     }
 
     companion object {
@@ -130,6 +145,15 @@ class WarehouseCounterApp : Application(), KoinComponent {
             get() = get().get()
 
         val settingViewModel: SettingsViewModel
+            get() = get().get()
+
+        val httpClient: HttpClient
+            get() = get().get()
+
+        val ktorApiService: APIServiceImpl
+            get() = get().get()
+
+        val currentProxy: Proxy
             get() = get().get()
 
         fun applicationName(): String {

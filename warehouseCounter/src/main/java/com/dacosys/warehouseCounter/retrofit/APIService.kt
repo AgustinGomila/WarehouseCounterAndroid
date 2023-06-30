@@ -1,7 +1,6 @@
 package com.dacosys.warehouseCounter.retrofit
 
 import com.dacosys.warehouseCounter.dto.search.SearchObject
-import com.dacosys.warehouseCounter.dto.user.UserAuthData
 import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.http.Body
@@ -9,12 +8,6 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface APIService {
-    @POST("{api_url}api/collector-user/get-token")
-    fun getToken(
-        @Path(value = "api_url", encoded = true) apiUrl: String = DynamicRetrofit.apiUrl,
-        @Body body: UserAuthData,
-    ): Call<Any?>
-
     @POST("{api_url}api/item/get-prices")
     fun getPrices(
         @Path(value = "api_url", encoded = true) apiUrl: String = DynamicRetrofit.apiUrl,
@@ -46,12 +39,6 @@ interface APIService {
 
     @POST("{api_url}api/p-t-l/warehouses")
     fun getWarehouse(
-        @Path(value = "api_url", encoded = true) apiUrl: String = DynamicRetrofit.apiUrl,
-        @Body body: RequestBody,
-    ): Call<Any?>
-
-    @POST("{api_url}api/p-t-l/orders")
-    fun getPtlOrder(
         @Path(value = "api_url", encoded = true) apiUrl: String = DynamicRetrofit.apiUrl,
         @Body body: RequestBody,
     ): Call<Any?>
