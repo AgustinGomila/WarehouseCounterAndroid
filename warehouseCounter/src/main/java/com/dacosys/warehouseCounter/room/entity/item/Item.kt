@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.room.entity.item
 import android.os.Parcel
 import android.os.Parcelable
 import androidx.room.*
-import androidx.room.ColumnInfo.NOCASE
+import androidx.room.ColumnInfo.Companion.NOCASE
 import com.dacosys.warehouseCounter.room.entity.item.ItemEntry as Entry
 
 @Entity(

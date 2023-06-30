@@ -4,6 +4,8 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import com.dacosys.imageControl.ImageControl
+import com.dacosys.warehouseCounter.ktor.KtorAPIService
+import com.dacosys.warehouseCounter.ktor.KtorAPIServiceImpl
 import com.dacosys.warehouseCounter.misc.Statics.Companion.INTERNAL_IMAGE_CONTROL_APP_ID
 import com.dacosys.warehouseCounter.misc.Statics.Companion.WC_ROOT_PATH
 import com.dacosys.warehouseCounter.retrofit.APIService
@@ -17,6 +19,8 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import id.pahlevikun.jotter.Jotter
 import id.pahlevikun.jotter.event.ActivityEvent
+import io.ktor.client.*
+import io.ktor.client.engine.okhttp.*
 import okhttp3.OkHttpClient
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -94,6 +98,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
             OkHttpClient.Builder().connectTimeout(sv.connectionTimeout.toLong(), TimeUnit.SECONDS)
                 .addInterceptor(HostInterceptor()).proxy(proxy).build()
         }
+
         single { DynamicRetrofit() }
         single { retrofit.api.create(APIService::class.java) }
         single { retrofit.api.create(DacoService::class.java) }

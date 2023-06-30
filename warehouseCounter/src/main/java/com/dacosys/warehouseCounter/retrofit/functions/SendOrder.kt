@@ -18,6 +18,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
 import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody
 import org.json.JSONObject
 import retrofit2.Call
@@ -175,6 +176,6 @@ class SendOrder(
         jsonParam.put("orders", orArrayJson)
         // Fin Todos los Pedidos //////////////
 
-        return RequestBody.create(MediaType.parse("application/json"), jsonParam.toString())
+        return RequestBody.create("application/json".toMediaTypeOrNull(), jsonParam.toString())
     }
 }

@@ -2,8 +2,17 @@
 
 buildscript {
     ext {
-        ext.kotlin_version = '1.7.10'
-        ext.nav_version = '2.4.1'
+        roomVersion = '2.5.2'
+        moshiVersion = '1.14.0'
+        retrofitVersion = '2.9.0'
+        parcelerVersion = '1.1.13'
+        buildToolsVer = '30.0.3'
+        nav_version = '2.4.1'
+        kotlinVersion = '1.8.22'
+        androidTargetSdk = 34
+        androidMinSdk = 23
+        zxingCore = 'com.google.zxing:core:3.4.1'
+        kTorVersion = '2.3.2'
     }
 
     repositories {
@@ -11,10 +20,11 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
+
+        classpath 'com.android.tools.build:gradle:7.4.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
 
@@ -25,24 +35,14 @@ allprojects {
         maven { url 'https://jitpack.io' }
     }
 
-    ext {
-        // No actualizar a Room 2.5.0 porque requiere API 33
-        roomVersion = '2.4.3'
-
-        moshiVersion = '1.14.0'
-        retrofitVersion = '2.9.0'
-        parcelerVersion = '1.1.13'
-    }
-
-    ext.androidTargetSdk = 32
-    ext.zxingCore = 'com.google.zxing:core:3.4.1'
-
-    tasks.withType(JavaCompile) {
-        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+    tasks.withType(JavaCompile).tap {
+        configureEach {
+            options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        }
     }
 }
 
-task clean(type: Delete) {
+tasks.register('clean', Delete) {
     delete rootProject.buildDir
 }
 

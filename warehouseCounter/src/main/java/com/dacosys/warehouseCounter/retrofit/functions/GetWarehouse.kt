@@ -16,6 +16,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
 import kotlinx.coroutines.*
 import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody
 import org.json.JSONObject
 import retrofit2.Call
@@ -102,7 +103,7 @@ class GetWarehouse(
         val jsonParam = JSONObject()
         jsonParam.put("userToken", Token.token)
 
-        return RequestBody.create(MediaType.parse("application/json"), jsonParam.toString())
+        return RequestBody.create("application/json".toMediaTypeOrNull(), jsonParam.toString())
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {

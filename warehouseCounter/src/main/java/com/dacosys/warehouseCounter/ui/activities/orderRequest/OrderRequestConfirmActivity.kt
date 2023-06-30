@@ -268,8 +268,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
                 imageControlFragment = ImageControlButtonsFragment.newInstance(
                     tableId = Table.orderRequest.tableId.toLong(),
-                    objectId1 = orId,
-                    objectId2 = null
+                    objectId1 = orId
                 )
 
                 val fm = supportFragmentManager
