@@ -1,8 +1,9 @@
-package com.dacosys.warehouseCounter.retrofit
+package com.dacosys.warehouseCounter.network.common
 
 import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import java.net.MalformedURLException

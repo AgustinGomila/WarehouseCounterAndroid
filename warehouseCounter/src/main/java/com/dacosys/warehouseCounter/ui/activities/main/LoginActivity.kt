@@ -33,10 +33,10 @@ import com.dacosys.warehouseCounter.misc.Proxy
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.network.result.DbLocationResult
+import com.dacosys.warehouseCounter.network.result.PackagesResult
 import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages.Companion.getConfig
 import com.dacosys.warehouseCounter.retrofit.functions.GetDatabaseLocation
-import com.dacosys.warehouseCounter.retrofit.result.DbLocationResult
-import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.room.dao.user.UserCoroutines
 import com.dacosys.warehouseCounter.room.database.WcDatabase
 import com.dacosys.warehouseCounter.room.entity.user.User

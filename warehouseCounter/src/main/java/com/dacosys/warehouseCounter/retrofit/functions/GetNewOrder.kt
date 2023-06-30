@@ -7,9 +7,10 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.dto.error.ErrorObject
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.ktor.functions.GetToken
+import com.dacosys.warehouseCounter.network.result.RequestResult
+import com.dacosys.warehouseCounter.network.result.ResultStatus
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
-import com.dacosys.warehouseCounter.retrofit.result.RequestResult
-import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*

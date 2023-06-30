@@ -7,8 +7,8 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.dto.database.DatabaseData
 import com.dacosys.warehouseCounter.dto.error.ErrorObject
+import com.dacosys.warehouseCounter.network.result.DbLocationResult
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
-import com.dacosys.warehouseCounter.retrofit.result.DbLocationResult
 import com.dacosys.warehouseCounter.room.database.WcDatabase.Companion.DATABASE_VERSION
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import kotlinx.coroutines.*

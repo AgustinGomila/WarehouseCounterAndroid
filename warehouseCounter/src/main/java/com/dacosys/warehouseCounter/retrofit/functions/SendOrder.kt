@@ -9,17 +9,18 @@ import com.dacosys.warehouseCounter.dto.error.ErrorObject
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.dto.user.AuthData
 import com.dacosys.warehouseCounter.dto.user.UserAuthData.Companion.userAuthTag
+import com.dacosys.warehouseCounter.ktor.functions.GetToken
 import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.network.result.RequestResult
+import com.dacosys.warehouseCounter.network.result.ResultStatus
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
-import com.dacosys.warehouseCounter.retrofit.result.RequestResult
-import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
 import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
-import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
@@ -176,6 +177,6 @@ class SendOrder(
         jsonParam.put("orders", orArrayJson)
         // Fin Todos los Pedidos //////////////
 
-        return RequestBody.create("application/json".toMediaTypeOrNull(), jsonParam.toString())
+        return jsonParam.toString().toRequestBody("application/json".toMediaTypeOrNull())
     }
 }

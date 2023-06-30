@@ -24,8 +24,8 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter
 import com.dacosys.warehouseCounter.databinding.PtlSelectOrderActivityBinding
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlOrder
+import com.dacosys.warehouseCounter.ktor.functions.GetPtlOrder
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.retrofit.functions.GetPtlOrder
 import com.dacosys.warehouseCounter.retrofit.functions.GetPtlOrderByCode
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -406,30 +406,36 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                 onBackPressed()
                 return true
             }
+
             R.id.action_rfid_connect -> {
                 JotterListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_trigger_scan -> {
                 JotterListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_read_barcode -> {
                 JotterListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
+
             menuItemRandomOnListL -> {
                 val codes: ArrayList<String> = ArrayList()
                 (arrayAdapter?.getAll() ?: ArrayList()).mapTo(codes) { it.description }
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
+
             menuItemRandomIt -> {
                 ItemCoroutines().getCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)
             }
+
             menuItemManualCode -> {
                 enterCode()
                 return super.onOptionsItemSelected(item)

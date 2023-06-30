@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.retrofit.result
+package com.dacosys.warehouseCounter.network.result
 
 import com.dacosys.warehouseCounter.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.sync.ProgressStatus

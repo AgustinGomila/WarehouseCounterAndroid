@@ -26,8 +26,8 @@ import com.dacosys.warehouseCounter.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.misc.Proxy
 import com.dacosys.warehouseCounter.misc.Proxy.Companion.setupProxy
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.network.result.PackagesResult
 import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages.Companion.getConfig
-import com.dacosys.warehouseCounter.retrofit.result.PackagesResult
 import com.dacosys.warehouseCounter.room.database.FileHelper.Companion.removeDataBases
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner

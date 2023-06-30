@@ -7,17 +7,18 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlContent
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlContentResponse
+import com.dacosys.warehouseCounter.ktor.functions.GetToken
+import com.dacosys.warehouseCounter.ktor.functions.GetToken.Companion.Token
+import com.dacosys.warehouseCounter.network.result.RequestResult
+import com.dacosys.warehouseCounter.network.result.ResultStatus
 import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
-import com.dacosys.warehouseCounter.retrofit.functions.GetToken.Companion.Token
-import com.dacosys.warehouseCounter.retrofit.result.RequestResult
-import com.dacosys.warehouseCounter.retrofit.result.ResultStatus
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
 import kotlinx.coroutines.*
-import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
@@ -109,7 +110,7 @@ class GetPtlOrderContent(
         val jsonParam = JSONObject()
         jsonParam.put("userToken", Token.token).put("ptlQuery", ptlQuery)
 
-        return RequestBody.create("application/json".toMediaTypeOrNull(), jsonParam.toString())
+        return jsonParam.toString().toRequestBody("application/json".toMediaTypeOrNull())
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {
