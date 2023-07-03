@@ -402,8 +402,8 @@
                     app:layout_constraintVertical_bias="0.0"
                     app:srl_direction="bottom">
 
-                <ListView
-                        android:id="@+id/itemListView"
+                <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerView"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_marginLeft="2dp"

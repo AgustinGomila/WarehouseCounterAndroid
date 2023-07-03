@@ -16,12 +16,20 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsAnimationCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter
+import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
 import com.dacosys.warehouseCounter.databinding.PtlSelectOrderActivityBinding
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlOrder
 import com.dacosys.warehouseCounter.ktor.functions.GetPtlOrder
@@ -50,7 +58,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     }
 
     private fun destroyLocals() {
-        arrayAdapter?.refreshListeners(null, null)
+        adapter?.refreshListeners(null, null)
     }
 
     override fun onRefresh() {
@@ -66,8 +74,9 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     private var rejectNewInstances = false
 
     private var multiSelect = false
-    private var arrayAdapter: PtlOrderAdapter? = null
+    private var adapter: PtlOrderAdapter? = null
     private var lastSelected: PtlOrder? = null
+    private var currentScrollPosition: Int = 0
     private var firstVisiblePos: Int? = null
 
     private var searchText: String = ""
@@ -76,6 +85,14 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     private var completeList: ArrayList<PtlOrder> = ArrayList()
     private var checkedIdArray: ArrayList<Long> = ArrayList()
     // endregion
+
+    private var showCheckBoxes
+        get() =
+            if (!multiSelect) false
+            else settingViewModel.selectPtlOrderShowCheckBoxes
+        set(value) {
+            settingViewModel.selectPtlOrderShowCheckBoxes = value
+        }
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
@@ -86,13 +103,12 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         b.putString("title", title.toString())
         b.putBoolean("multiSelect", multiSelect)
 
-        if (arrayAdapter != null) {
-            b.putParcelable("lastSelected", (arrayAdapter ?: return).currentItem())
-            b.putInt("firstVisiblePos", (arrayAdapter ?: return).firstVisiblePos())
-            b.putParcelableArrayList("completeList", arrayAdapter?.getAll())
-            b.putLongArray(
-                "checkedIdArray", arrayAdapter?.getAllIdChecked()?.map { it }?.toLongArray()
-            )
+        if (adapter != null) {
+            b.putParcelable("lastSelected", (adapter ?: return).currentPtlOrder())
+            b.putInt("firstVisiblePos", (adapter ?: return).firstVisiblePos())
+            b.putParcelableArrayList("completeList", adapter?.fullList)
+            b.putLongArray("checkedIdArray", adapter?.getAllChecked()?.map { it.id }?.toLongArray())
+            b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
         b.putString("searchText", searchText)
@@ -108,11 +124,11 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         searchText = b.getString("searchText") ?: ""
 
         // Adapter
-        checkedIdArray =
-            (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
+        checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
         completeList = b.getParcelableArrayList<PtlOrder>("completeList") as ArrayList<PtlOrder>
         lastSelected = b.getParcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
+        currentScrollPosition = b.getInt("currentScrollPosition")
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
@@ -132,6 +148,13 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         setContentView(binding.root)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                currentScrollPosition =
+                    (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+            }
+        })
 
         if (savedInstanceState != null) {
             loadBundleValues(savedInstanceState)
@@ -168,7 +191,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                 before: Int, count: Int,
             ) {
                 searchText = s.toString()
-                arrayAdapter?.refreshFilter(searchText, true)
+                adapter?.refreshFilter(FilterOptions(searchText, true))
             }
         })
         binding.searchEditText.setText(searchText, TextView.BufferType.EDITABLE)
@@ -192,19 +215,94 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         Screen.setupUI(binding.root, this)
     }
 
+    // region Inset animation
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        setupWindowInsetsAnimation()
+    }
+
+    private var isKeyboardVisible: Boolean = false
+
+    /**
+     * Change panels state at Ime animation finish
+     *
+     * Estados que recuerdan está pendiente de ejecutar un cambio en estado (colapsado/expandido) de los paneles al
+     * terminar la animación de mostrado/ocultamiento del teclado en pantalla. Esto es para sincronizar los cambios,
+     * ejecutándolos de manera secuencial. A ojos del usuario la vista completa acompaña el desplazamiento de la
+     * animación. Si se ejecutara al mismo tiempo el cambio en los paneles y la animación del teclado la vista no
+     * acompaña correctamente al teclado, ya que cambia durante la animación.
+     */
+
+    private fun setupWindowInsetsAnimation() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val rootView = binding.root
+
+        // Adjust root layout to bottom navigation bar
+        val windowInsets = window.decorView.rootWindowInsets
+        @Suppress("DEPRECATION") rootView.setPadding(
+            windowInsets.systemWindowInsetLeft,
+            windowInsets.systemWindowInsetTop,
+            windowInsets.systemWindowInsetRight,
+            windowInsets.systemWindowInsetBottom
+        )
+
+        implWindowInsetsAnimation()
+    }
+
+    private fun implWindowInsetsAnimation() {
+        val rootView = binding.root
+
+        ViewCompat.setWindowInsetsAnimationCallback(
+            rootView,
+            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+                override fun onEnd(animation: WindowInsetsAnimationCompat) {
+                    val isIme = animation.typeMask and WindowInsetsCompat.Type.ime() != 0
+                    if (!isIme) return
+                    super.onEnd(animation)
+                }
+
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>
+                ): WindowInsetsCompat {
+                    paddingBottomView(rootView, insets)
+
+                    return insets
+                }
+            })
+    }
+
+    private fun paddingBottomView(rootView: ConstraintLayout, insets: WindowInsetsCompat) {
+        val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+        val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+        val paddingBottom = imeInsets.bottom.coerceAtLeast(systemBarInsets.bottom)
+
+        isKeyboardVisible = imeInsets.bottom > 0
+
+        rootView.setPadding(
+            rootView.paddingLeft,
+            rootView.paddingTop,
+            rootView.paddingRight,
+            paddingBottom
+        )
+
+        Log.d(javaClass.simpleName, "IME Size: ${imeInsets.bottom}")
+    }
+    // endregion
+
     private fun orderSelect() {
-        if (!multiSelect && arrayAdapter?.currentItem() != null) {
+        if (!multiSelect && adapter?.currentPtlOrder() != null) {
             Screen.closeKeyboard(this)
 
             val data = Intent()
-            data.putParcelableArrayListExtra("ptlOrder", arrayListOf(arrayAdapter!!.currentItem()))
+            data.putParcelableArrayListExtra("ptlOrder", arrayListOf(adapter!!.currentPtlOrder()))
             setResult(RESULT_OK, data)
             finish()
-        } else if (multiSelect && ((arrayAdapter?.countChecked()) ?: 0) > 0) {
+        } else if (multiSelect && ((adapter?.countChecked()) ?: 0) > 0) {
             Screen.closeKeyboard(this)
 
             val data = Intent()
-            data.putParcelableArrayListExtra("ptlOrder", arrayAdapter!!.getAllChecked())
+            data.putParcelableArrayListExtra("ptlOrder", adapter!!.getAllChecked())
             setResult(RESULT_OK, data)
             finish()
         }
@@ -249,36 +347,39 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
         runOnUiThread {
             try {
-                if (arrayAdapter != null) {
-                    lastSelected = arrayAdapter?.currentItem()
-                    firstVisiblePos = arrayAdapter?.firstVisiblePos()
+                if (adapter != null) {
+                    // Si el adapter es NULL es porque aún no fue creado.
+                    // Por lo tanto, puede ser que los valores de [lastSelected]
+                    // sean valores guardados de la instancia anterior y queremos preservarlos.
+                    lastSelected = adapter?.currentPtlOrder()
                 }
 
-                arrayAdapter = PtlOrderAdapter(
-                    activity = this,
-                    resource = R.layout.ptl_order_row,
-                    itemList = completeList,
-                    suggestedList = ArrayList(),
-                    listView = binding.itemListView,
+                adapter = PtlOrderAdapter(
+                    recyclerView = binding.recyclerView,
+                    fullList = completeList,
+                    checkedIdArray = checkedIdArray,
                     multiSelect = multiSelect,
-                    checkedIdArray = checkedIdArray
+                    showCheckBoxes = showCheckBoxes,
+                    showCheckBoxesChanged = { showCheckBoxes = it },
+                    filterOptions = FilterOptions(searchText, true)
                 )
 
-                arrayAdapter?.refreshListeners(
-                    checkedChangedListener = this, dataSetChangedListener = this
-                )
+                refreshAdapterListeners()
 
-                arrayAdapter?.refreshFilter(searchText, true)
+                binding.recyclerView.layoutManager = LinearLayoutManager(this)
+                binding.recyclerView.adapter = adapter
 
-                while (binding.itemListView.adapter == null) {
+                while (binding.recyclerView.adapter == null) {
                     // Horrible wait for full load
                 }
 
+                // Estas variables locales evitar posteriores cambios de estado.
+                val ls = lastSelected
+                val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
-                    run {
-                        arrayAdapter?.setSelectItemAndScrollPos(lastSelected, firstVisiblePos)
-                    }
-                }, 20)
+                    adapter?.selectItem(ls, false)
+                    adapter?.scrollToPos(cs, true)
+                }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex)
@@ -286,6 +387,18 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                 showProgressBar(false)
             }
         }
+    }
+
+    private fun refreshAdapterListeners() {
+        // IMPORTANTE:
+        // Se deben actualizar los listeners, si no
+        // las variables de esta actividad pueden
+        // tener valores antiguos en del adaptador.
+
+        adapter?.refreshListeners(
+            checkedChangedListener = this,
+            dataSetChangedListener = this
+        )
     }
 
     private fun fillSummaryRow() {
@@ -296,26 +409,26 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                 binding.qtyReqLabelTextView.text = context.getString(R.string.cant)
                 binding.selectedLabelTextView.text = context.getString(R.string.checked)
 
-                if (arrayAdapter != null) {
-                    binding.totalTextView.text = arrayAdapter?.count.toString()
+                if (adapter != null) {
+                    binding.totalTextView.text = adapter?.itemCount.toString()
                     binding.qtyReqTextView.text = "0"
-                    binding.selectedTextView.text = arrayAdapter?.countChecked().toString()
+                    binding.selectedTextView.text = adapter?.countChecked().toString()
                 }
             } else {
                 binding.totalLabelTextView.text = context.getString(R.string.total)
                 binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
                 binding.selectedLabelTextView.text = context.getString(R.string.orders)
 
-                if (arrayAdapter != null) {
+                if (adapter != null) {
                     val cont = 0
-                    val t = arrayAdapter?.count ?: 0
+                    val t = adapter?.itemCount ?: 0
                     binding.totalTextView.text = t.toString()
                     binding.qtyReqTextView.text = cont.toString()
                     binding.selectedTextView.text = (t - cont).toString()
                 }
             }
 
-            if (arrayAdapter == null) {
+            if (adapter == null) {
                 binding.totalTextView.text = 0.toString()
                 binding.qtyReqTextView.text = 0.toString()
                 binding.selectedTextView.text = 0.toString()
@@ -424,7 +537,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
             menuItemRandomOnListL -> {
                 val codes: ArrayList<String> = ArrayList()
-                (arrayAdapter?.getAll() ?: ArrayList()).mapTo(codes) { it.description }
+                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.description }
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
@@ -466,7 +579,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
     override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
         runOnUiThread {
-            binding.selectedTextView.text = arrayAdapter?.countChecked().toString()
+            binding.selectedTextView.text = adapter?.countChecked().toString()
         }
     }
 

@@ -4,28 +4,34 @@ import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
+import android.view.View.*
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.core.view.marginBottom
+import androidx.core.view.marginTop
+import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView.*
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
+import com.dacosys.warehouseCounter.databinding.PtlItemRowBinding
+import com.dacosys.warehouseCounter.databinding.PtlItemRowExpandedBinding
+import com.dacosys.warehouseCounter.dto.ptlOrder.ContentStatus
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlContent
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlItem
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
-import com.dacosys.warehouseCounter.ui.utils.Colors
+import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
-import com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
 import java.util.*
 
 
@@ -35,23 +41,34 @@ import java.util.*
 
 class PtlContentAdapter(
     private val recyclerView: RecyclerView,
-    val fullList: ArrayList<PtlContent>,
+    var fullList: ArrayList<PtlContent>,
     var checkedIdArray: ArrayList<Long> = ArrayList(),
     var multiSelect: Boolean = false,
     private var allowEditQty: Boolean = false,
     private var showQtyPanel: Boolean = false,
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Filterable {
+    var showCheckBoxes: Boolean = false,
+    private var showCheckBoxesChanged: (Boolean) -> Unit = { },
+    var visibleStatus: ArrayList<ContentStatus> = ArrayList(ContentStatus.values().toList()),
+    private var filterOptions: FilterOptions = FilterOptions("", true)
+) : ListAdapter<PtlContent, ViewHolder>(PtlContentDiffUtilCallback), Filterable {
 
-    private var currentIndex = RecyclerView.NO_POSITION
+    private var currentIndex = NO_POSITION
     private var dataSetChangedListener: DataSetChangedListener? = null
     private var checkedChangedListener: CheckedChangedListener? = null
     private var editQtyListener: EditQtyListener? = null
 
-    var filteredList: ArrayList<PtlContent> = fullList
-        @SuppressLint("NotifyDataSetChanged") set(value) {
-            field = value
-            notifyDataSetChanged()
-        }
+    // Clase para distinguir actualizaciones parciales
+    private enum class PAYLOADS {
+        CHECKBOX_STATE,
+        CHECKBOX_VISIBILITY
+    }
+
+    fun clear() {
+        checkedIdArray.clear()
+
+        fullList.clear()
+        submitList(fullList)
+    }
 
     fun refreshListeners(
         checkedChangedListener: CheckedChangedListener? = null,
@@ -85,61 +102,127 @@ class PtlContentAdapter(
         )
     }
 
+    private object PtlContentDiffUtilCallback : DiffUtil.ItemCallback<PtlContent>() {
+        override fun areItemsTheSame(oldItem: PtlContent, newItem: PtlContent): Boolean {
+            return oldItem.id == newItem.id
+        }
+
+        override fun areContentsTheSame(oldItem: PtlContent, newItem: PtlContent): Boolean {
+            if (oldItem.externalId != newItem.externalId) return false
+            if (oldItem.orderId != newItem.orderId) return false
+            if (oldItem.itemId != newItem.itemId) return false
+            if (oldItem.item != newItem.item) return false
+            if (oldItem.qtyRequested != newItem.qtyRequested) return false
+            if (oldItem.qtyCollected != newItem.qtyCollected) return false
+            return oldItem.lotId == newItem.lotId
+        }
+    }
+
     companion object {
         // Aquí definimos dos constantes para identificar los dos diseños diferentes
         const val SELECTED_VIEW_TYPE = 1
         const val UNSELECTED_VIEW_TYPE = 2
 
         // region COLORS
-        private var selectedForeColor: Int = 0
         private var collQtyEqualForeColor: Int = 0
         private var collQtyLessForeColor: Int = 0
         private var collQtyMoreForeColor: Int = 0
         private var defaultForeColor: Int = 0
 
-        private fun setupColors() {
-            selectedForeColor =
-                ResourcesCompat.getColor(context.resources, R.color.text_light, null)
+        private var collQtyEqualSelectedForeColor: Int = 0
+        private var collQtyLessSelectedForeColor: Int = 0
+        private var collQtyMoreSelectedForeColor: Int = 0
+        private var defaultSelectedForeColor: Int = 0
 
-            collQtyEqualForeColor = Colors.getBestContrastColor("#FF009688")
-            collQtyLessForeColor = Colors.getBestContrastColor("#FFE91E63")
-            collQtyMoreForeColor = Colors.getBestContrastColor("#FF2196F3")
-            defaultForeColor = Colors.getBestContrastColor("#FFDFDFDF")
+        private var darkslategray: Int = 0
+        private var lightgray: Int = 0
+
+        private fun setupColors() {
+            // Color de los diferentes estados
+            collQtyEqualForeColor = getBestContrastColor(R.color.qty_equal)
+            collQtyLessForeColor = getBestContrastColor(R.color.qty_less)
+            collQtyMoreForeColor = getBestContrastColor(R.color.qty_more)
+            defaultForeColor = getBestContrastColor(R.color.status_default)
+
+            // Mejor contraste para los ítems seleccionados
+            collQtyEqualSelectedForeColor = getBestContrastColor(manipulateColor(collQtyEqualForeColor, 0.5f))
+            collQtyLessSelectedForeColor = getBestContrastColor(manipulateColor(collQtyLessForeColor, 0.5f))
+            collQtyMoreSelectedForeColor = getBestContrastColor(manipulateColor(collQtyMoreForeColor, 0.5f))
+            defaultSelectedForeColor = getBestContrastColor(manipulateColor(defaultForeColor, 0.5f))
         }
         // endregion
     }
 
     // El método onCreateViewHolder infla los diseños para cada tipo de vista
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return when (viewType) {
             SELECTED_VIEW_TYPE -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.ptl_item_row_expanded, parent, false)
-                SelectedViewHolder(view)
+                SelectedViewHolder(
+                    PtlItemRowExpandedBinding.inflate(
+                        LayoutInflater.from(parent.context),
+                        parent,
+                        false
+                    )
+                )
             }
+
             else -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.ptl_item_row, parent, false)
-                UnselectedViewHolder(view)
+                UnselectedViewHolder(
+                    PtlItemRowBinding.inflate(
+                        LayoutInflater.from(parent.context),
+                        parent,
+                        false
+                    )
+                )
+            }
+        }
+    }
+
+    // Sobrecarga del método onBindViewHolder para actualización parcial de las vistas
+    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
+        if (payloads.isEmpty()) {
+            // No hay payload, realizar la vinculación completa
+            super.onBindViewHolder(holder, position, payloads)
+            return
+        }
+
+        // Hay payload, realizar la actualización parcial basada en el payload
+        for (payload in payloads) {
+            // Extraer el payload y utilizarlo para actualizar solo las vistas relevantes
+            when (payload) {
+                PAYLOADS.CHECKBOX_VISIBILITY -> {
+                    if (position == currentIndex)
+                        (holder as SelectedViewHolder).bindCheckBoxVisibility(if (showCheckBoxes) VISIBLE else GONE)
+                    else
+                        (holder as UnselectedViewHolder).bindCheckBoxVisibility(if (showCheckBoxes) VISIBLE else GONE)
+                }
+
+                PAYLOADS.CHECKBOX_STATE -> {
+                    val ptlOrder = getItem(position)
+                    if (position == currentIndex)
+                        (holder as SelectedViewHolder).bindCheckBoxState(checkedIdArray.contains(ptlOrder.id))
+                    else
+                        (holder as UnselectedViewHolder).bindCheckBoxState(checkedIdArray.contains(ptlOrder.id))
+                }
             }
         }
     }
 
     // El método onBindViewHolder establece los valores de las vistas en función de los datos
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         // Aquí puedes establecer los valores para cada elemento
         holder.itemView.setOnClickListener {
 
             // Si el elemento ya está seleccionado, deselecciónalo
             if (currentIndex == holder.bindingAdapterPosition) {
-                currentIndex = RecyclerView.NO_POSITION
+                currentIndex = NO_POSITION
                 notifyItemChanged(holder.bindingAdapterPosition)
             } else {
                 val previousSelectedItemPosition = currentIndex
                 currentIndex = holder.bindingAdapterPosition
                 notifyItemChanged(currentIndex)
 
-                if (previousSelectedItemPosition != RecyclerView.NO_POSITION) {
+                if (previousSelectedItemPosition != NO_POSITION) {
                     notifyItemChanged(previousSelectedItemPosition)
                 }
             }
@@ -162,58 +245,61 @@ class PtlContentAdapter(
     }
 
     private fun setSelectedHolder(holder: SelectedViewHolder, position: Int) {
-        val content = filteredList[position]
-        val v = holder.itemView
+        val ptlContent = getItem(position)
 
-        holder.bind(content)
+        // Lógica de clic largo sobre el ítem
+        setItemCheckBoxLogic(holder.itemView)
 
-        v.background.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-            getColorWithAlpha(colorId = R.color.lightslategray, alpha = 240),
-            BlendModeCompat.MODULATE
+        holder.bind(
+            content = ptlContent,
+            checkBoxVisibility = if (showCheckBoxes) VISIBLE else GONE
         )
 
-        if (multiSelect) {
-            setCheckBoxLogic(holder.checkBox, content, position)
-        } else {
-            holder.checkBox.visibility = View.GONE
-        }
+        holder.itemView.background.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
+            getColorWithAlpha(colorId = R.color.lightslategray, alpha = 220), BlendModeCompat.MODULATE
+        )
+
+        // Acciones del checkBox de marcado
+        setCheckBoxLogic(holder.binding.checkBox, ptlContent, position)
 
         if (allowEditQty) {
-            setQtyEditLogic(holder.editQty, content, position)
-            holder.editQty.visibility = View.VISIBLE
+            setQtyEditLogic(holder.binding.editQty, ptlContent, position)
+            holder.binding.editQty.visibility = View.VISIBLE
         } else {
-            holder.editQty.visibility = View.GONE
+            holder.binding.editQty.visibility = View.GONE
         }
 
         if (showQtyPanel) {
-            holder.qtyReqPanel.visibility = View.VISIBLE
-            holder.eanDivider.visibility = View.VISIBLE
+            holder.binding.qtyReqPanel.visibility = View.VISIBLE
+            holder.binding.eanDivider.visibility = View.VISIBLE
         } else {
-            holder.qtyReqPanel.visibility = View.GONE
-            holder.eanDivider.visibility = View.GONE
+            holder.binding.qtyReqPanel.visibility = View.GONE
+            holder.binding.eanDivider.visibility = View.GONE
         }
     }
 
     private fun setUnselectedHolder(holder: UnselectedViewHolder, position: Int) {
-        val content = filteredList[position]
-        val v = holder.itemView
+        val ptlContent = getItem(position)
 
-        holder.bind(content)
+        // Lógica de clic largo sobre el ítem
+        setItemCheckBoxLogic(holder.itemView)
 
-        v.background.colorFilter = null
+        // Perform a full update
+        holder.bind(
+            content = ptlContent,
+            checkBoxVisibility = if (showCheckBoxes) VISIBLE else GONE
+        )
 
-        if (multiSelect) {
-            setCheckBoxLogic(holder.checkBox, content, position)
-        } else {
-            holder.checkBox.visibility = View.GONE
-        }
+        holder.itemView.background.colorFilter = null
+
+        setCheckBoxLogic(holder.binding.checkBox, ptlContent, position)
 
         if (showQtyPanel) {
-            holder.qtyReqPanel.visibility = View.VISIBLE
-            holder.eanDivider.visibility = View.VISIBLE
+            holder.binding.qtyReqPanel.visibility = View.VISIBLE
+            holder.binding.eanDivider.visibility = View.VISIBLE
         } else {
-            holder.qtyReqPanel.visibility = View.GONE
-            holder.eanDivider.visibility = View.GONE
+            holder.binding.qtyReqPanel.visibility = View.GONE
+            holder.binding.eanDivider.visibility = View.GONE
         }
     }
 
@@ -232,55 +318,82 @@ class PtlContentAdapter(
         }
     }
 
+    /**
+     * Lógica del evento de clic sostenido sobre el ítem que cambia la visibilidad de los CheckBox
+     *
+     * @param itemView Vista general del ítem
+     */
     @SuppressLint("ClickableViewAccessibility")
-    private fun setCheckBoxLogic(checkBox: CheckBox, content: PtlContent, position: Int) {
-        checkBox.visibility = View.VISIBLE
-
-        var isSpeakButtonLongPressed = false
-
-        val checkChangeListener = CompoundButton.OnCheckedChangeListener { _, isChecked ->
-            setChecked(
-                content = content, isChecked = isChecked, suspendRefresh = true
-            )
+    private fun setItemCheckBoxLogic(itemView: View) {
+        if (!multiSelect) {
+            showCheckBoxes = false
+            return
         }
 
-        val pressHoldListener =
-            View.OnLongClickListener { // Do something when your hold starts here.
-                isSpeakButtonLongPressed = true
-                true
-            }
+        val longClickListener = OnLongClickListener { _ ->
+            showCheckBoxes = !showCheckBoxes
+            showCheckBoxesChanged.invoke(showCheckBoxes)
+            notifyItemRangeChanged(0, itemCount, PAYLOADS.CHECKBOX_VISIBILITY)
+            return@OnLongClickListener true
+        }
 
-        val pressTouchListener = View.OnTouchListener { pView, pEvent ->
-            pView.onTouchEvent(pEvent)
-            // We're only interested in when the button is released.
-            if (pEvent.action == MotionEvent.ACTION_UP) {
-                // We're only interested in anything if our speak button is currently pressed.
-                if (isSpeakButtonLongPressed) {
-                    // Do something when the button is released.
-                    if (!isFilling) {
-                        checkBox.setOnCheckedChangeListener(null)
-                        val newState = !checkBox.isChecked
-                        setChecked(filteredList, newState)
+        itemView.isLongClickable = true
+        itemView.setOnLongClickListener(longClickListener)
+    }
+
+    /**
+     * Lógica del comportamiento del CheckBox de marcado de ítems cuando [multiSelect] es verdadero
+     *
+     * @param checkBox Control CheckBox para marcado del ítem
+     * @param ptlContent Datos del ítem
+     * @param position Posición en el adaptador
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setCheckBoxLogic(checkBox: CheckBox, ptlContent: PtlContent, position: Int) {
+        val checkChangeListener = CompoundButton.OnCheckedChangeListener { _, isChecked ->
+            setChecked(content = ptlContent, isChecked = isChecked, suspendRefresh = true)
+        }
+
+        val longClickListener = OnLongClickListener { _ ->
+            checkBox.setOnCheckedChangeListener(null)
+
+            // Notificamos los cambios solo a los ítems que cambian de estado.
+            val newState = !checkBox.isChecked
+            if (newState) {
+                currentList.mapIndexed { pos, ptlOrder ->
+                    if (ptlOrder.id !in checkedIdArray) {
+                        checkedIdArray.add(ptlOrder.id)
+                        notifyItemChanged(pos, PAYLOADS.CHECKBOX_STATE)
                     }
-                    isSpeakButtonLongPressed = false
+                }
+            } else {
+                currentList.mapIndexed { pos, ptlOrder ->
+                    if (ptlOrder.id in checkedIdArray) {
+                        checkedIdArray.remove(ptlOrder.id)
+                        notifyItemChanged(pos, PAYLOADS.CHECKBOX_STATE)
+                    }
                 }
             }
-            return@OnTouchListener true
+
+            // Notificamos al Listener superior
+            dataSetChangedListener?.onDataSetChanged()
+            return@OnLongClickListener true
         }
 
-        //Important to remove previous checkedChangedListener before calling setChecked
+        // Important to remove previous checkedChangedListener before calling setChecked
         checkBox.setOnCheckedChangeListener(null)
-        checkBox.isChecked = checkedIdArray.contains(content.id)
 
+        checkBox.isChecked = checkedIdArray.contains(ptlContent.id)
+        checkBox.isLongClickable = true
         checkBox.tag = position
-        checkBox.setOnLongClickListener(pressHoldListener)
-        checkBox.setOnTouchListener(pressTouchListener)
+
+        checkBox.setOnLongClickListener(longClickListener)
         checkBox.setOnCheckedChangeListener(checkChangeListener)
     }
 
     // El método getItemCount devuelve el número de elementos en la lista
     override fun getItemCount(): Int {
-        return filteredList.size
+        return currentList.size
     }
 
     // El método getItemViewType devuelve el tipo de vista que se usará para el elemento en la posición dada
@@ -293,60 +406,119 @@ class PtlContentAdapter(
     }
 
     override fun getFilter(): Filter {
+        var selected: PtlContent? = null
+        var firstVisible: PtlContent? = null
+
         return object : Filter() {
             override fun performFiltering(constraint: CharSequence?): FilterResults {
-                val results = FilterResults()
-                val r: ArrayList<PtlContent> = ArrayList()
+                // Guardamos el item seleccionado y la posición del scroll
+                selected = currentItem()
+                var scrollPos =
+                    (recyclerView.layoutManager as LinearLayoutManager?)?.findFirstVisibleItemPosition()
+                        ?: NO_POSITION
 
-                if (constraint != null) {
-                    val filterString = constraint.toString().lowercase(Locale.ROOT)
-                    var filterableItem: PtlItem
+                if (scrollPos != NO_POSITION && itemCount > scrollPos) {
+                    var currentScrolled = getItem(scrollPos)
 
-                    for (i in 0 until fullList.size) {
-                        filterableItem = fullList[i].item.first()
-                        filterableItem.description.lowercase(Locale.ROOT)
-                            .contains(filterString) || filterableItem.ean.lowercase(
-                            Locale.ROOT
-                        ).contains(filterString)
+                    // Comprobamos si es visible el ítem del Scroll
+                    if (currentScrolled.contentStatus in visibleStatus)
+                        firstVisible = currentScrolled
+                    else {
+                        // Si no es visible, intentar encontrar el próximo visible.
+                        while (firstVisible == null) {
+                            scrollPos++
+                            if (itemCount > scrollPos) {
+                                currentScrolled = getItem(scrollPos)
+                                if (currentScrolled.contentStatus in visibleStatus)
+                                    firstVisible = currentScrolled
+                            } else break
+                        }
                     }
                 }
 
-                results.values = r.sortBy { it.item.first().description }
-                results.count = r.count()
+                // Filtramos los resultados
+                val results = FilterResults()
+                var r: ArrayList<PtlContent> = ArrayList()
+                if (constraint != null) {
+                    val filterString = constraint.toString().lowercase(Locale.getDefault())
+                    if (filterString.isNotEmpty()) {
+                        var filterableItem: PtlContent
+
+                        for (i in 0 until fullList.size) {
+                            filterableItem = fullList[i]
+
+                            // Descartamos aquellos que no debe ser visibles
+                            if (filterableItem.contentStatus !in visibleStatus) continue
+
+                            if (isFilterable(filterableItem.item.first(), filterString)) {
+                                r.add(filterableItem)
+                            }
+                        }
+                    } else if (filterOptions.showAllOnFilterEmpty) {
+                        r = ArrayList(fullList.map { it })
+                    }
+                }
+
+                results.values = r
+                results.count = r.size
                 return results
             }
 
-            @SuppressLint("NotifyDataSetChanged")
+            fun isFilterable(ptlItem: PtlItem, filterString: String): Boolean =
+                ptlItem.description.contains(filterString, true) ||
+                        ptlItem.ean.contains(filterString, true)
+
             @Suppress("UNCHECKED_CAST")
             override fun publishResults(
                 constraint: CharSequence?, results: FilterResults?,
             ) {
-                filteredList = results?.values as ArrayList<PtlContent>
-                notifyDataSetChanged()
+                submitList(results?.values as ArrayList<PtlContent>) {
+                    run {
+                        // Notificamos al Listener superior
+                        dataSetChangedListener?.onDataSetChanged()
 
-                // Notificamos al Listener superior
-                dataSetChangedListener?.onDataSetChanged()
+                        // Recuperamos el item seleccionado y la posición del scroll
+                        if (firstVisible != null)
+                            scrollToPos(getIndexById(firstVisible?.id ?: -1), true)
+                        if (selected != null)
+                            selectItem(selected, false)
+                    }
+                }
             }
         }
     }
 
-    private var showAllOnFilterEmpty = false
+    private fun sortItems(originalList: MutableList<PtlContent>): ArrayList<PtlContent> {
+        // Run the follow method on each of the roots
+        return ArrayList(
+            originalList.sortedWith(
+                compareBy(
+                    { it.id },
+                    { it.itemId },
+                )
+            ).toList()
+        )
+    }
 
-    @Suppress("unused")
-    fun refreshFilter(s: String, showAllOnFilterEmpty: Boolean) {
-        this.showAllOnFilterEmpty = showAllOnFilterEmpty
-        filter.filter(s)
+    fun refreshFilter(options: FilterOptions) {
+        filterOptions = options
+        filter.filter(filterOptions.filterString)
+    }
+
+    private fun refreshFilter() {
+        refreshFilter(filterOptions)
     }
 
     fun add(content: PtlContent, position: Int) {
         fullList.add(position, content)
+        submitList(fullList) {
+            run {
+                // Notificamos al Listener superior
+                dataSetChangedListener?.onDataSetChanged()
 
-        notifyItemInserted(position)
-
-        // Notificamos al Listener superior
-        dataSetChangedListener?.onDataSetChanged()
-
-        selectItem(position)
+                selectItem(position)
+            }
+        }
     }
 
     fun remove(position: Int) {
@@ -354,46 +526,120 @@ class PtlContentAdapter(
         checkedIdArray.remove(id)
 
         fullList.removeAt(position)
-
-        notifyItemRemoved(position)
-        notifyItemRangeChanged(position, itemCount)
-
-        // Notificamos al Listener superior
-        dataSetChangedListener?.onDataSetChanged()
+        submitList(fullList) {
+            run {
+                // Notificamos al Listener superior
+                dataSetChangedListener?.onDataSetChanged()
+            }
+        }
     }
 
-    fun updateQtyCollected(itemId: Long, qtyCollected: Double) {
-        val item = getContentByItemId(itemId) ?: return
+    /**
+     * Se utiliza cuando se edita un contenido y necesita actualizarse
+     */
+    fun updateQtyCollected(itemId: Long, qtyCollected: Double, scrollToPos: Boolean = false) {
+        val content = getContentByItemId(itemId) ?: return
         val index = getIndexByItemId(itemId)
 
+        val t = fullList.firstOrNull { it == content } ?: return
+
         // ¿La cantidad es mayor a la cantidad solicitada?
-        if (item.qtyRequested >= qtyCollected) {
-            item.qtyCollected = qtyCollected
-
-            notifyItemChanged(index)
-
+        if (t.qtyRequested < qtyCollected) {
             // Mostrar un cartelito, si jode sacarlo.
-            reportQtyCollectedChange(item)
-        } else {
-            // Mostrar un cartelito, si jode sacarlo.
-            reportQtyRequestedReached(item)
+            reportQtyRequestedReached(content)
+            return
         }
 
-        dataSetChangedListener?.onDataSetChanged()
+        t.qtyCollected = qtyCollected
 
-        selectItem(index)
+        submitList(fullList) {
+            run {
+                notifyItemChanged(index)
+
+                // Mostrar un cartelito, si jode sacarlo.
+                reportQtyCollectedChange(content)
+
+                // Notificamos al Listener superior
+                dataSetChangedListener?.onDataSetChanged()
+
+                // Seleccionamos el ítem y hacemos scroll hasta él.
+                selectItem(content, scrollToPos)
+            }
+        }
     }
 
-    fun setSelectItemAndScrollPos(a: PtlContent?) {
-        var pos = RecyclerView.NO_POSITION
+    fun selectItem(a: PtlContent?, scroll: Boolean = true) {
+        var pos = NO_POSITION
         if (a != null) pos = getIndex(a)
-        selectItem(pos)
+        selectItem(pos, scroll)
     }
 
-    private fun selectItem(pos: Int) {
-        if (currentIndex != pos) {
-            recyclerView.layoutManager?.scrollToPosition(pos)
-            currentIndex = pos
+    private fun selectItem(pos: Int, scroll: Boolean = true) {
+        // Si la posición está fuera del rango válido, reseteamos currentIndex a NO_POSITION.
+        currentIndex = if (pos < 0 || pos >= itemCount) NO_POSITION else pos
+        notifyItemChanged(currentIndex)
+        if (scroll) scrollToPos(currentIndex)
+    }
+
+    /**
+     * Scrolls to the given position, making sure the item can be fully displayed.
+     *
+     * @param position
+     * @param scrollToTop If it is activated the item will scroll until it is at the top of the view
+     */
+    fun scrollToPos(position: Int, scrollToTop: Boolean = false) {
+        val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+
+        if (position < 0 || position >= itemCount) {
+            // La posición está fuera del rango válido, no se puede realizar el scroll
+            return
+        }
+
+        val selectedView = layoutManager.findViewByPosition(position)
+
+        if (scrollToTop) {
+            // Hacemos scroll hasta que el ítem quede en la parte superior
+            layoutManager.scrollToPositionWithOffset(position, 0)
+        } else {
+            if (selectedView != null) {
+                // El ítem es visible, realizar scroll para asegurarse de que se vea completamente
+                scrollToVisibleItem(selectedView)
+            } else {
+                // El ítem no es visible, realizar scroll directo a la posición
+                recyclerView.scrollToPosition(position)
+                recyclerView.addOnScrollListener(object : OnScrollListener() {
+                    override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                        val selected = layoutManager.findViewByPosition(position)
+                        if (selected != null) {
+                            // El ítem se ha vuelto visible, realizar scroll para asegurarse de que se vea completamente
+                            scrollToVisibleItem(selected)
+                            recyclerView.removeOnScrollListener(this)
+                        }
+                    }
+                })
+            }
+        }
+    }
+
+    /**
+     * Scrolls to the given view, making sure the item can be fully displayed.
+     *
+     * @param selectedView
+     */
+    private fun scrollToVisibleItem(selectedView: View) {
+        val recyclerViewHeight = recyclerView.height - recyclerView.paddingTop - recyclerView.paddingBottom
+        val selectedViewHeight = selectedView.height + selectedView.marginTop + selectedView.marginBottom
+
+        val selectedViewTop = selectedView.top - selectedView.marginTop
+        val selectedViewBottom = selectedView.bottom + selectedView.marginBottom
+
+        if (selectedViewTop < 0) {
+            // El ítem está parcialmente oculto en la parte superior del RecyclerView
+            recyclerView.smoothScrollBy(0, selectedViewTop)
+        } else if (selectedViewBottom > recyclerViewHeight) {
+            // El ítem está parcialmente oculto en la parte inferior del RecyclerView
+            val visibleHeight = recyclerViewHeight - selectedViewTop
+            recyclerView.smoothScrollBy(0, selectedViewHeight - visibleHeight)
         }
     }
 
@@ -416,32 +662,32 @@ class PtlContentAdapter(
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
     fun getIndexById(id: Long): Int {
-        return filteredList.indexOfFirst { it.id == id }
+        return currentList.indexOfFirst { it.id == id }
     }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
     private fun getIndex(content: PtlContent): Int {
-        return filteredList.indexOf(content)
+        return currentList.indexOf(content)
     }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
     fun getIndexByItemId(itemId: Long): Int {
-        return filteredList.indexOfFirst { it.itemId == itemId }
+        return currentList.indexOfFirst { it.itemId == itemId }
     }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
     fun getContent(item: PtlItem): PtlContent? {
-        return filteredList.firstOrNull { it.itemId == item.id }
+        return currentList.firstOrNull { it.itemId == item.id }
     }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
     fun getContentByItemId(itemId: Long): PtlContent? {
-        return filteredList.firstOrNull { it.itemId == itemId }
+        return currentList.firstOrNull { it.itemId == itemId }
     }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
     fun getContentById(id: Long): PtlContent? {
-        return filteredList.firstOrNull { it.id == id }
+        return currentList.firstOrNull { it.id == id }
     }
 
     fun getAllChecked(): ArrayList<PtlContent> {
@@ -451,14 +697,14 @@ class PtlContentAdapter(
     }
 
     @Suppress("unused")
-    fun qtyRequestedTotal() = filteredList.sumOf { it.qtyRequested }
+    fun qtyRequestedTotal() = currentList.sumOf { it.qtyRequested }
 
     @Suppress("unused")
-    fun qtyCollectedTotal() = filteredList.sumOf { it.qtyCollected }
+    fun qtyCollectedTotal() = currentList.sumOf { it.qtyCollected }
 
-    fun currentContent(): PtlContent? {
-        if (currentIndex == RecyclerView.NO_POSITION) return null
-        return if (filteredList.any() && filteredList.count() > currentIndex) filteredList[currentIndex]
+    fun currentItem(): PtlContent? {
+        if (currentIndex == NO_POSITION) return null
+        return if (currentList.any() && itemCount > currentIndex) getItem(currentIndex)
         else null
     }
 
@@ -504,45 +750,50 @@ class PtlContentAdapter(
         dataSetChangedListener?.onDataSetChanged()
     }
 
+    fun addVisibleStatus(status: ContentStatus) {
+        if (visibleStatus.contains(status)) return
+        visibleStatus.add(status)
+
+        refreshFilter()
+    }
+
+    fun removeVisibleStatus(status: ContentStatus) {
+        if (!visibleStatus.contains(status)) return
+        visibleStatus.remove(status)
+
+        // Quitamos los ítems con el estado seleccionado de la lista marcados.
+        val uncheckedItems = ArrayList(fullList.mapNotNull { if (it.contentStatus == status) it.itemId else null })
+        checkedIdArray.removeAll(uncheckedItems.toSet())
+
+        refreshFilter()
+    }
+
     // Aquí creamos dos ViewHolder, uno para cada tipo de vista
     @Suppress("MemberVisibilityCanBePrivate", "unused")
-    class SelectedViewHolder(v: View) : RecyclerView.ViewHolder(v) {
-        val descriptionTextView: AutoResizeTextView = v.findViewById(R.id.descriptionTextView)
-        val eanTextView: AutoResizeTextView = v.findViewById(R.id.eanTextView)
-        val itemIdTextView: CheckedTextView = v.findViewById(R.id.itemIdCheckedTextView)
-        val extIdTextView: CheckedTextView = v.findViewById(R.id.extIdCheckedTextView)
-        val lotIdTextView: CheckedTextView = v.findViewById(R.id.lotIdCheckedTextView)
-        val itemIdLabelTextView: TextView = v.findViewById(R.id.itemIdLabelTextView)
-        val extIdLabelTextView: TextView = v.findViewById(R.id.extIdLabelTextView)
-        val lotIdLabelTextView: TextView = v.findViewById(R.id.lotIdLabelTextView)
-        val extId2LabelTextView: TextView = v.findViewById(R.id.extId2LabelTextView)
-        val priceLabelTextView: TextView = v.findViewById(R.id.priceLabelTextView)
-        val qtyPanel: ConstraintLayout = v.findViewById(R.id.qtyPanel)
-        val qtyReqPanel: ConstraintLayout = v.findViewById(R.id.qtyReqPanel)
-        val qtyReqTitle: TextView = v.findViewById(R.id.qtyReqTitleTextView)
-        val qtyTitle: TextView = v.findViewById(R.id.qtyTitleTextView)
-        val eanDivider: View = v.findViewById(R.id.eanDivider)
-        val qtyCollectedTextView: TextView = v.findViewById(R.id.qtyCollectedTextView)
-        val qtyRequestedTextView: TextView = v.findViewById(R.id.qtyRequestedTextView)
-        val extId2TextView: AutoResizeTextView = v.findViewById(R.id.extId2TextView)
-        val priceTextView: AutoResizeTextView = v.findViewById(R.id.priceTextView)
-        val checkBox: CheckBox = v.findViewById(R.id.checkBox)
-        val editQty: AppCompatImageView = v.findViewById(R.id.editQty)
-        val extId2ConstraintLayout: ConstraintLayout = v.findViewById(R.id.extId2ConstraintLayout)
+    class SelectedViewHolder(val binding: PtlItemRowExpandedBinding) : ViewHolder(binding.root) {
+        fun bindCheckBoxVisibility(checkBoxVisibility: Int = GONE) {
+            binding.checkBoxConstraintLayout.visibility = checkBoxVisibility
+        }
 
-        fun bind(content: PtlContent) {
+        fun bindCheckBoxState(checked: Boolean) {
+            binding.checkBox.isChecked = checked
+        }
+
+        fun bind(content: PtlContent, checkBoxVisibility: Int = GONE) {
+            bindCheckBoxVisibility(checkBoxVisibility)
+
             val item = content.item.first()
 
-            descriptionTextView.text = item.description
-            eanTextView.text = item.ean
-            qtyCollectedTextView.text = content.qtyCollected.toString()
-            qtyRequestedTextView.text = content.qtyRequested.toString()
-            itemIdTextView.text = item.id.toString()
-            extIdTextView.text = content.externalId ?: 0.toString()
-            lotIdTextView.text = content.lotId.toString()
-            extId2ConstraintLayout.visibility = View.VISIBLE
-            extId2TextView.text = item.externalId2.toString()
-            priceTextView.text = String.format("$ %s", Statics.roundToString(item.price, 2))
+            binding.descriptionTextView.text = item.description
+            binding.eanTextView.text = item.ean
+            binding.qtyCollectedTextView.text = content.qtyCollected.toString()
+            binding.qtyRequestedTextView.text = content.qtyRequested.toString()
+            binding.itemIdCheckedTextView.text = item.id.toString()
+            binding.extIdCheckedTextView.text = content.externalId ?: 0.toString()
+            binding.lotIdCheckedTextView.text = content.lotId?.toString()
+            binding.extId2ConstraintLayout.visibility = View.VISIBLE
+            binding.extId2TextView.text = item.externalId2
+            binding.priceTextView.text = String.format("$ %s", Statics.roundToString(item.price, 2))
 
             setStyle(content)
         }
@@ -551,78 +802,76 @@ class PtlContentAdapter(
             val v = itemView
 
             // Background layouts
-            val collQtyEqualBackColor = ResourcesCompat.getDrawable(
-                context.resources, R.drawable.layout_thin_border_green, null
-            )!!
-            val collQtyMoreBackColor = ResourcesCompat.getDrawable(
-                context.resources, R.drawable.layout_thin_border_blue, null
-            )!!
-            val collQtyLessBackColor = ResourcesCompat.getDrawable(
-                context.resources, R.drawable.layout_thin_border_red, null
-            )!!
+            val collQtyEqualBackColor =
+                ResourcesCompat.getDrawable(context.resources, R.drawable.layout_thin_border_green, null)!!
+            val collQtyMoreBackColor =
+                ResourcesCompat.getDrawable(context.resources, R.drawable.layout_thin_border_blue, null)!!
+            val collQtyLessBackColor =
+                ResourcesCompat.getDrawable(context.resources, R.drawable.layout_thin_border_red, null)!!
 
             val backColor: Drawable
             val foreColor: Int
-            when {
-                content.qtyCollected == content.qtyRequested -> {
+            when (content.contentStatus) {
+                ContentStatus.QTY_EQUAL -> {
                     backColor = collQtyEqualBackColor
-                    foreColor = selectedForeColor
+                    foreColor = collQtyEqualSelectedForeColor
                 }
-                content.qtyCollected > content.qtyRequested -> {
+
+                ContentStatus.QTY_MORE -> {
                     backColor = collQtyMoreBackColor
-                    foreColor = selectedForeColor
+                    foreColor = collQtyMoreSelectedForeColor
                 }
+
                 else -> {
                     backColor = collQtyLessBackColor
-                    foreColor = selectedForeColor
+                    foreColor = collQtyLessSelectedForeColor
                 }
             }
 
-            val titleForeColor: Int = Colors.manipulateColor(foreColor, 0.8f)
+            val titleForeColor: Int = manipulateColor(foreColor, 0.8f)
 
             v.background = backColor
-            descriptionTextView.setTextColor(foreColor)
-            eanTextView.setTextColor(foreColor)
-            extId2TextView.setTextColor(foreColor)
-            priceTextView.setTextColor(foreColor)
-            qtyCollectedTextView.setTextColor(foreColor)
-            qtyRequestedTextView.setTextColor(foreColor)
-            itemIdTextView.setTextColor(foreColor)
-            extIdTextView.setTextColor(foreColor)
-            lotIdTextView.setTextColor(foreColor)
-            checkBox.buttonTintList = ColorStateList.valueOf(titleForeColor)
+            binding.descriptionTextView.setTextColor(foreColor)
+            binding.eanTextView.setTextColor(foreColor)
+            binding.extId2TextView.setTextColor(foreColor)
+            binding.priceTextView.setTextColor(foreColor)
+            binding.qtyCollectedTextView.setTextColor(foreColor)
+            binding.qtyRequestedTextView.setTextColor(foreColor)
+            binding.itemIdCheckedTextView.setTextColor(foreColor)
+            binding.extIdCheckedTextView.setTextColor(foreColor)
+            binding.lotIdCheckedTextView.setTextColor(foreColor)
+            binding.checkBox.buttonTintList = ColorStateList.valueOf(titleForeColor)
 
-            qtyReqTitle.setTextColor(titleForeColor)
-            qtyTitle.setTextColor(titleForeColor)
-            itemIdLabelTextView.setTextColor(titleForeColor)
-            extIdLabelTextView.setTextColor(titleForeColor)
-            lotIdLabelTextView.setTextColor(titleForeColor)
-            extId2LabelTextView.setTextColor(titleForeColor)
-            priceLabelTextView.setTextColor(titleForeColor)
+            binding.qtyReqTitleTextView.setTextColor(titleForeColor)
+            binding.qtyTitleTextView.setTextColor(titleForeColor)
+            binding.itemIdLabelTextView.setTextColor(titleForeColor)
+            binding.extIdLabelTextView.setTextColor(titleForeColor)
+            binding.lotIdLabelTextView.setTextColor(titleForeColor)
+            binding.extId2LabelTextView.setTextColor(titleForeColor)
+            binding.priceLabelTextView.setTextColor(titleForeColor)
         }
     }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
-    internal class UnselectedViewHolder(v: View) : RecyclerView.ViewHolder(v) {
-        val descriptionTextView: AutoResizeTextView = v.findViewById(R.id.descriptionTextView)
-        val eanTextView: AutoResizeTextView = v.findViewById(R.id.eanTextView)
-        val qtyReqTitleTextView: TextView = v.findViewById(R.id.qtyReqTitleTextView)
-        val qtyTitleTextView: TextView = v.findViewById(R.id.qtyTitleTextView)
-        val qtyPanel: ConstraintLayout = v.findViewById(R.id.qtyPanel)
-        val qtyReqPanel: ConstraintLayout = v.findViewById(R.id.qtyReqPanel)
-        val eanDivider: View = v.findViewById(R.id.eanDivider)
-        val qtyCollectedTextView: AutoResizeTextView = v.findViewById(R.id.qtyCollectedTextView)
-        val qtyRequestedTextView: AutoResizeTextView = v.findViewById(R.id.qtyRequestedTextView)
-        val checkBox: CheckBox = v.findViewById(R.id.checkBox)
+    internal class UnselectedViewHolder(val binding: PtlItemRowBinding) : ViewHolder(binding.root) {
+        fun bindCheckBoxVisibility(checkBoxVisibility: Int = GONE) {
+            binding.checkBoxConstraintLayout.visibility = checkBoxVisibility
+        }
 
-        fun bind(content: PtlContent) {
+        fun bindCheckBoxState(checked: Boolean) {
+            binding.checkBox.isChecked = checked
+        }
+
+        fun bind(content: PtlContent, checkBoxVisibility: Int = GONE) {
+            bindCheckBoxVisibility(checkBoxVisibility)
+
             val item = content.item.first()
 
-            descriptionTextView.text = item.description
-            eanTextView.text = item.ean
-            qtyCollectedTextView.text = content.qtyCollected.toString()
-            qtyRequestedTextView.text = content.qtyRequested.toString()
-            checkBox.isChecked = false
+            binding.descriptionTextView.text = item.description
+            binding.eanTextView.text = item.ean
+            binding.qtyCollectedTextView.text = content.qtyCollected.toString()
+            binding.qtyRequestedTextView.text = content.qtyRequested.toString()
+            binding.checkBox.isChecked = false
 
             setStyle(content)
         }
@@ -631,43 +880,42 @@ class PtlContentAdapter(
             val v = itemView
 
             // region Background layouts
-            val collQtyEqualBackColor = ResourcesCompat.getDrawable(
-                context.resources, R.drawable.layout_thin_border_green, null
-            )!!
-            val collQtyMoreBackColor = ResourcesCompat.getDrawable(
-                context.resources, R.drawable.layout_thin_border_blue, null
-            )!!
-            val collQtyLessBackColor = ResourcesCompat.getDrawable(
-                context.resources, R.drawable.layout_thin_border_red, null
-            )!!
+            val collQtyEqualBackColor =
+                ResourcesCompat.getDrawable(context.resources, R.drawable.layout_thin_border_green, null)!!
+            val collQtyMoreBackColor =
+                ResourcesCompat.getDrawable(context.resources, R.drawable.layout_thin_border_blue, null)!!
+            val collQtyLessBackColor =
+                ResourcesCompat.getDrawable(context.resources, R.drawable.layout_thin_border_red, null)!!
 
             val backColor: Drawable
             val foreColor: Int
-            when {
-                content.qtyCollected == content.qtyRequested -> {
+            when (content.contentStatus) {
+                ContentStatus.QTY_EQUAL -> {
                     backColor = collQtyEqualBackColor
                     foreColor = collQtyEqualForeColor
                 }
-                content.qtyCollected > content.qtyRequested -> {
+
+                ContentStatus.QTY_MORE -> {
                     backColor = collQtyMoreBackColor
                     foreColor = collQtyMoreForeColor
                 }
+
                 else -> {
                     backColor = collQtyLessBackColor
                     foreColor = collQtyLessForeColor
                 }
             }
 
-            val titleForeColor: Int = Colors.manipulateColor(foreColor, 1.4f)
+            val titleForeColor: Int = manipulateColor(foreColor, 1.4f)
 
             v.background = backColor
-            descriptionTextView.setTextColor(foreColor)
-            eanTextView.setTextColor(foreColor)
-            qtyCollectedTextView.setTextColor(foreColor)
-            qtyRequestedTextView.setTextColor(foreColor)
-            checkBox.buttonTintList = ColorStateList.valueOf(titleForeColor)
-            qtyReqTitleTextView.setTextColor(titleForeColor)
-            qtyTitleTextView.setTextColor(titleForeColor)
+            binding.descriptionTextView.setTextColor(foreColor)
+            binding.eanTextView.setTextColor(foreColor)
+            binding.qtyCollectedTextView.setTextColor(foreColor)
+            binding.qtyRequestedTextView.setTextColor(foreColor)
+            binding.checkBox.buttonTintList = ColorStateList.valueOf(titleForeColor)
+            binding.qtyReqTitleTextView.setTextColor(titleForeColor)
+            binding.qtyTitleTextView.setTextColor(titleForeColor)
         }
     }
 
@@ -676,5 +924,41 @@ class PtlContentAdapter(
 
         // Por el momento no queremos animaciones, ni transiciones ante cambios en el DataSet
         recyclerView.itemAnimator = null
+
+        // Vamos a retener en el caché un [cacheFactor] por ciento de los ítems creados o un máximo de [maxCachedItems]
+        val maxCachedItems = 50
+        val cacheFactor = 0.10
+        var cacheSize = (fullList.size * cacheFactor).toInt()
+        if (cacheSize > maxCachedItems) cacheSize = maxCachedItems
+        recyclerView.setItemViewCacheSize(cacheSize)
+        recyclerView.recycledViewPool.setMaxRecycledViews(SELECTED_VIEW_TYPE, 0)
+        recyclerView.recycledViewPool.setMaxRecycledViews(UNSELECTED_VIEW_TYPE, 0)
+
+        // Ordenamiento natural de la lista completa para trabajar en adelante con una lista ordenada
+        val tList = sortItems(fullList)
+        fullList = tList
+
+        // Suministramos la lista a publicar refrescando el filtro que recorre la lista completa y devuelve los resultados filtrados y ordenados
+        refreshFilter(filterOptions)
+    }
+
+    /**
+     * Return a sorted list of visible state items
+     *
+     * @param list
+     * @return Lista ordenada con los estados visibles
+     */
+    private fun sortedVisibleList(list: MutableList<PtlContent>?): MutableList<PtlContent> {
+        val croppedList = (list ?: mutableListOf()).mapNotNull { if (it.contentStatus in visibleStatus) it else null }
+        return sortItems(croppedList.toMutableList())
+    }
+
+    // Sobrecargamos estos métodos para suministrar siempre una lista ordenada y filtrada por estado de visibilidad
+    override fun submitList(list: MutableList<PtlContent>?) {
+        super.submitList(sortedVisibleList(list))
+    }
+
+    override fun submitList(list: MutableList<PtlContent>?, commitCallback: Runnable?) {
+        super.submitList(sortedVisibleList(list), commitCallback)
     }
 }

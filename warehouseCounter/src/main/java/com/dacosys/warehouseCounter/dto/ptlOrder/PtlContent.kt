@@ -2,26 +2,30 @@ package com.dacosys.warehouseCounter.dto.ptlOrder
 
 import android.os.Parcel
 import android.os.Parcelable
+import androidx.room.Ignore
 import com.squareup.moshi.Json
 
 data class PtlContent(
-    @Json(name = ID_KEY) val id: Long,
-    @Json(name = EXTERNAL_ID_KEY) val externalId: String?,
-    @Json(name = ORDER_ID_KEY) val orderId: Long,
-    @Json(name = ITEM_ID_KEY) val itemId: Long,
-    @Json(name = ITEM_KEY) val item: List<PtlItem>,
+    @Json(name = ID_KEY) var id: Long,
+    @Json(name = EXTERNAL_ID_KEY) var externalId: String?,
+    @Json(name = ORDER_ID_KEY) var orderId: Long,
+    @Json(name = ITEM_ID_KEY) var itemId: Long,
+    @Json(name = ITEM_KEY) var item: List<PtlItem>,
     @Json(name = QTY_REQUESTED_KEY) var qtyRequested: Double,
     @Json(name = QTY_COLLECTED_KEY) var qtyCollected: Double,
-    @Json(name = LOT_ID_KEY) val lotId: Long?,
-    @Json(name = ROW_CREATION_DATE_KEY) val rowCreationDate: String,
-    @Json(name = ROW_MODIFICATION_DATE_KEY) val rowModificationDate: String,
+    @Json(name = LOT_ID_KEY) var lotId: Long?,
+    @Json(name = ROW_CREATION_DATE_KEY) var rowCreationDate: String,
+    @Json(name = ROW_MODIFICATION_DATE_KEY) var rowModificationDate: String,
+    @Ignore val contentStatus: ContentStatus =
+        if (qtyCollected == qtyRequested) ContentStatus.QTY_EQUAL
+        else if (qtyCollected > qtyRequested) ContentStatus.QTY_MORE
+        else ContentStatus.QTY_LESS
 ) : Parcelable {
     constructor(parcel: Parcel) : this(id = parcel.readLong(),
         externalId = parcel.readString() ?: "",
         orderId = parcel.readLong(),
         itemId = parcel.readLong(),
-        item = parcel.readParcelableArray(PtlItem::class.java.classLoader)?.map { it as PtlItem }
-            ?: emptyList(),
+        item = parcel.readParcelableArray(PtlItem::class.java.classLoader)?.map { it as PtlItem } ?: emptyList(),
         qtyRequested = parcel.readDouble(),
         qtyCollected = parcel.readDouble(),
         lotId = parcel.readValue(Long::class.java.classLoader) as? Long,
@@ -66,3 +70,4 @@ data class PtlContent(
         return 0
     }
 }
+

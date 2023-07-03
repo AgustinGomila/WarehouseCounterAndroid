@@ -40,5 +40,30 @@
     <color name="white">#ffffff</color>
     <color name="gray">#808080</color>
     <color name="whitesmoke">#F5F5F5</color>
-    <color name="draker_gray">#323232</color>
+    <color name="darker_gray">#323232</color>
+
+    <color name="status_layout_0">#FF009688</color>
+    <color name="status_layout_1">#FF2196F3</color>
+    <color name="status_layout_2">#FFFF5722</color>
+    <color name="status_layout_3">#FF4CAF50</color>
+    <color name="status_layout_4">#FFFFC107</color>
+
+    <color name="status_default">#FFDFDFDF</color>
+    <color name="status_lot_active">#FFDFDFDF</color>
+    <color name="status_not_lot_active">#FF6FB4BD</color>
+    <color name="status_lot_inactive">#FFC7C7C7</color>
+    <color name="status_not_lot_inactive">#FF9EB7BA</color>
+
+    <color name="qty_equal">#FF009688</color>
+    <color name="qty_less">#FFE91E63</color>
+    <color name="qty_more">#FF2196F3</color>
+
+    <color name="status_prepare_order">#FF009688</color>
+    <color name="status_stock_audit_from_device">#FFFFC107</color>
+    <color name="status_stock_audit">#FF2196F3</color>
+    <color name="status_reception_audit">#FFFF5722</color>
+    <color name="status_delivery_audit">#FF4CAF50</color>
+
+    <color name="status_some_qty">#FFF44336</color>
+    <color name="status_qty_zero">#FFDFDFDF</color>
 </resources>

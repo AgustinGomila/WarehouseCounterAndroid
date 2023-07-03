@@ -579,6 +579,54 @@ class SettingsViewModel : ViewModel() {
             settingRepository.flCameraFilterRepeatedReads.value = value
         }
 
+    var selectPtlOrderShowCheckBoxes: Boolean
+        get() = settingRepository.selectPtlOrderShowCheckBoxes.value as Boolean
+        set(value) {
+            settingRepository.selectPtlOrderShowCheckBoxes.value = value
+        }
+
+    var editItems: Boolean
+        get() = settingRepository.editItems.value as Boolean
+        set(value) {
+            settingRepository.editItems.value = value
+        }
+
+    var linkCodeShowImages: Boolean
+        get() = settingRepository.linkCodeShowImages.value as Boolean
+        set(value) {
+            settingRepository.linkCodeShowImages.value = value
+        }
+
+    var linkCodeShowCheckBoxes: Boolean
+        get() = settingRepository.linkCodeShowCheckBoxes.value as Boolean
+        set(value) {
+            settingRepository.linkCodeShowCheckBoxes.value = value
+        }
+
+    var itemSelectShowImages: Boolean
+        get() = settingRepository.itemSelectShowImages.value as Boolean
+        set(value) {
+            settingRepository.itemSelectShowImages.value = value
+        }
+
+    var itemSelectShowCheckBoxes: Boolean
+        get() = settingRepository.itemSelectShowCheckBoxes.value as Boolean
+        set(value) {
+            settingRepository.itemSelectShowCheckBoxes.value = value
+        }
+
+    var inboxShowCheckBoxes: Boolean
+        get() = settingRepository.inboxShowCheckBoxes.value as Boolean
+        set(value) {
+            settingRepository.inboxShowCheckBoxes.value = value
+        }
+
+    var outboxShowCheckBoxes: Boolean
+        get() = settingRepository.outboxShowCheckBoxes.value as Boolean
+        set(value) {
+            settingRepository.outboxShowCheckBoxes.value = value
+        }
+
     fun setupImageControl() {
         // Setup ImageControl
         com.dacosys.imageControl.Statics.appAllowScreenRotation = allowScreenRotation

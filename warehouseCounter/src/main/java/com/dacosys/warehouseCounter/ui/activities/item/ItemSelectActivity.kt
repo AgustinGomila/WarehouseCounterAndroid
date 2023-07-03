@@ -21,16 +21,26 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.BlendModeColorFilterCompat
+import androidx.core.graphics.BlendModeCompat
+import androidx.core.view.*
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.item.ItemAdapter
+import com.dacosys.warehouseCounter.adapter.item.ItemRecyclerAdapter
+import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
+import com.dacosys.warehouseCounter.misc.ParcelLong
+import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.entity.item.Item
@@ -47,23 +57,34 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import org.parceler.Parcels
 import java.util.*
 import kotlin.concurrent.thread
 
 class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
-    ItemSelectFilterFragment.OnFilterChangedListener, ItemAdapter.CheckedChangedListener,
-    PrintLabelFragment.FragmentListener, ItemAdapter.DataSetChangedListener {
+    ItemSelectFilterFragment.OnFilterChangedListener, ItemRecyclerAdapter.CheckedChangedListener,
+    PrintLabelFragment.FragmentListener, ItemRecyclerAdapter.DataSetChangedListener {
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
     }
 
     private fun destroyLocals() {
-        arrayAdapter?.refreshListeners()
-        itemSelectFilterFragment!!.onDestroy()
-        printLabelFragment!!.onDestroy()
+        /*
+        TODO:
+        Usar tabla temporal para guardar listas largas.
+        */
+        if (isFinishingByUser) {
+            // Borramos los Ids temporales que se usaron en la actividad.
+            // ItemDbHelper().deleteTemp()
+        }
+
+        adapter?.refreshListeners()
+        adapter?.refreshImageControlListeners()
+        itemSelectFilterFragment?.onDestroy()
+        printLabelFragment?.onDestroy()
     }
 
     override fun onRefresh() {
@@ -78,10 +99,19 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private var rejectNewInstances = false
 
+    private var isFinishingByUser = false
+
+    private var printQtyIsFocused = false
+    private var searchTextIsFocused = false
+
     private var multiSelect = false
-    private var arrayAdapter: ItemAdapter? = null
+    private var adapter: ItemRecyclerAdapter? = null
     private var lastSelected: Item? = null
     private var firstVisiblePos: Int? = null
+    private var currentScrollPosition: Int = 0
+
+    // Se usa para saber si estamos en onStart luego de onCreate
+    private var fillRequired = false
 
     private var panelBottomIsExpanded = true
     private var panelTopIsExpanded = false
@@ -90,10 +120,23 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private var searchText: String = ""
 
-    // region Variables para LoadOnDemand
     private var completeList: ArrayList<Item> = ArrayList()
     private var checkedIdArray: ArrayList<Long> = ArrayList()
-    // endregion
+
+    private val menuItemShowImages = 9999
+    private var showImages
+        get() = settingViewModel.itemSelectShowImages
+        set(value) {
+            settingViewModel.itemSelectShowImages = value
+        }
+
+    private var showCheckBoxes
+        get() =
+            if (!multiSelect) false
+            else settingViewModel.itemSelectShowCheckBoxes
+        set(value) {
+            settingViewModel.itemSelectShowCheckBoxes = value
+        }
 
     private var itemSelectFilterFragment: ItemSelectFilterFragment? = null
     private var printLabelFragment: PrintLabelFragment? = null
@@ -110,16 +153,16 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
         b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
 
-        if (arrayAdapter != null) {
-            b.putParcelable("lastSelected", (arrayAdapter ?: return).currentItem())
-            b.putInt("firstVisiblePos", (arrayAdapter ?: return).firstVisiblePos())
-            b.putParcelableArrayList("completeList", arrayAdapter?.getAll())
-            b.putLongArray("checkedIdArray", arrayAdapter?.getAllChecked()?.toLongArray())
+        if (adapter != null) {
+            b.putParcelable("lastSelected", (adapter ?: return).currentItem())
+            b.putInt("firstVisiblePos", (adapter ?: return).firstVisiblePos())
+            b.putParcelableArrayList("completeList", adapter?.fullList)
+            b.putLongArray("checkedIdArray", adapter?.getAllChecked()?.map { it.itemId }?.toLongArray())
+            b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
         b.putString("searchText", searchText)
     }
-
 
     private fun loadBundleValues(b: Bundle) {
         tempTitle = b.getString("title") ?: ""
@@ -133,11 +176,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         searchText = b.getString("searchText") ?: ""
 
         // Adapter
-        checkedIdArray =
-            (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
+        checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
         completeList = b.getParcelableArrayList<Item>("completeList") as ArrayList<Item>
         lastSelected = b.getParcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
+        currentScrollPosition = b.getInt("currentScrollPosition")
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
@@ -163,10 +206,19 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                currentScrollPosition =
+                    (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+            }
+        })
+
+        // Para el llenado en el onStart siguiente de onCreate
+        fillRequired = true
+
         itemSelectFilterFragment =
             supportFragmentManager.findFragmentById(R.id.filterFragment) as ItemSelectFilterFragment
-        printLabelFragment =
-            supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
+        printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
 
         if (savedInstanceState != null) {
             loadBundleValues(savedInstanceState)
@@ -178,8 +230,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         title = tempTitle
 
-        itemSelectFilterFragment!!.setListener(this)
-        printLabelFragment!!.setListener(this)
+        itemSelectFilterFragment?.setListener(this)
+        printLabelFragment?.setListener(this)
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
         binding.swipeRefreshItem.setColorSchemeResources(
@@ -195,6 +247,23 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         binding.okButton.setOnClickListener { itemSelect() }
 
+        binding.searchEditText.setOnFocusChangeListener { _, b ->
+            searchTextIsFocused = b
+            if (b) {
+                /*
+                TODO:
+                  Transición suave de teclado.
+                Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
+                Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
+                el teclado cambiará de tipo y puede tener una altura diferente.
+                Esto no dispara los eventos de animación del teclado.
+                Colapsar los paneles y reajustar el Layout al final es la solución temporal.
+                */
+                panelBottomIsExpanded = false
+                panelTopIsExpanded = false
+                runOnUiThread { setPanels(true) }
+            }
+        }
         binding.searchEditText.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable) {
             }
@@ -210,7 +279,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 before: Int, count: Int,
             ) {
                 searchText = s.toString()
-                arrayAdapter?.refreshFilter(searchText, true)
+                adapter?.refreshFilter(FilterOptions(searchText, true))
             }
         })
         binding.searchEditText.setText(searchText, TextView.BufferType.EDITABLE)
@@ -218,7 +287,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             if (event.action == KeyEvent.ACTION_DOWN) {
                 when (keyCode) {
                     KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        Screen.closeKeyboard(this)
+                        closeKeyboard(this)
                     }
                 }
             }
@@ -227,9 +296,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         binding.searchEditText.setRawInputType(InputType.TYPE_CLASS_TEXT)
 
         binding.searchTextImageView.setOnClickListener { binding.searchEditText.requestFocus() }
-        binding.searchTextClearImageView.setOnClickListener {
-            binding.searchEditText.setText("")
-        }
+        binding.searchTextClearImageView.setOnClickListener { binding.searchEditText.setText("") }
 
         // OCULTAR PANEL DE CONTROLES DE FILTRADO
         if (hideFilterPanel) {
@@ -249,21 +316,163 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         Screen.setupUI(binding.root, this)
     }
 
+    // region Inset animation
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        setupWindowInsetsAnimation()
+    }
+
+    private var isKeyboardVisible: Boolean = false
+
+    /**
+     * Change panels state at Ime animation finish
+     *
+     * Estados que recuerdan está pendiente de ejecutar un cambio en estado (colapsado/expandido) de los paneles al
+     * terminar la animación de mostrado/ocultamiento del teclado en pantalla. Esto es para sincronizar los cambios,
+     * ejecutándolos de manera secuencial. A ojos del usuario la vista completa acompaña el desplazamiento de la
+     * animación. Si se ejecutara al mismo tiempo el cambio en los paneles y la animación del teclado la vista no
+     * acompaña correctamente al teclado, ya que cambia durante la animación.
+     */
+    private var changePanelTopStateAtFinish: Boolean = false
+    private var changePanelBottomStateAtFinish: Boolean = false
+
+    private fun setupWindowInsetsAnimation() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        adjustRootLayout()
+
+        implWindowInsetsAnimation()
+    }
+
+    private fun adjustRootLayout() {
+        val rootView = binding.root
+
+        // Adjust root layout to bottom navigation bar
+        val windowInsets = window.decorView.rootWindowInsets
+        @Suppress("DEPRECATION") rootView.setPadding(
+            windowInsets.systemWindowInsetLeft,
+            windowInsets.systemWindowInsetTop,
+            windowInsets.systemWindowInsetRight,
+            windowInsets.systemWindowInsetBottom
+        )
+    }
+
+    private fun implWindowInsetsAnimation() {
+        val rootView = binding.root
+
+        ViewCompat.setWindowInsetsAnimationCallback(
+            rootView,
+            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+                override fun onEnd(animation: WindowInsetsAnimationCompat) {
+                    val isIme = animation.typeMask and WindowInsetsCompat.Type.ime() != 0
+                    if (!isIme) return
+
+                    postExecuteImeAnimation()
+                    super.onEnd(animation)
+                }
+
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>
+                ): WindowInsetsCompat {
+                    paddingBottomView(rootView, insets)
+
+                    return insets
+                }
+            })
+    }
+
+    private fun paddingBottomView(rootView: ConstraintLayout, insets: WindowInsetsCompat) {
+        val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+        val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+        val paddingBottom = imeInsets.bottom.coerceAtLeast(systemBarInsets.bottom)
+
+        isKeyboardVisible = imeInsets.bottom > 0
+
+        rootView.setPadding(
+            rootView.paddingLeft,
+            rootView.paddingTop,
+            rootView.paddingRight,
+            paddingBottom
+        )
+
+        Log.d(javaClass.simpleName, "IME Size: ${imeInsets.bottom}")
+    }
+
+    private fun postExecuteImeAnimation() {
+        // Si estamos mostrando el teclado, colapsamos los paneles.
+        if (isKeyboardVisible) {
+            when {
+                resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !printQtyIsFocused -> {
+                    panelBottomIsExpanded = false
+                    panelTopIsExpanded = false
+                    setPanels()
+                }
+
+                resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && printQtyIsFocused -> {
+                    collapseBottomPanel()
+                }
+
+                resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT && !printQtyIsFocused -> {
+                    collapseTopPanel()
+                }
+            }
+        }
+
+        // Si estamos esperando que termine la animación para ejecutar un cambio de vista
+        if (changePanelTopStateAtFinish) {
+            changePanelTopStateAtFinish = false
+            binding.expandTopPanelButton.performClick()
+        }
+        if (changePanelBottomStateAtFinish) {
+            changePanelBottomStateAtFinish = false
+            binding.expandBottomPanelButton?.performClick()
+        }
+    }
+
+    private fun collapseBottomPanel() {
+        if (panelBottomIsExpanded && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            runOnUiThread {
+                binding.expandBottomPanelButton?.performClick()
+            }
+        }
+    }
+
+    private fun collapseTopPanel() {
+        if (panelTopIsExpanded) {
+            runOnUiThread {
+                binding.expandTopPanelButton.performClick()
+            }
+        }
+    }
+    // endregion
+
     private fun itemSelect() {
-        Screen.closeKeyboard(this)
+        closeKeyboard(this)
 
-        val data = Intent()
+        if (adapter != null) {
+            val data = Intent()
 
-        if (arrayAdapter != null) {
-            val item = arrayAdapter?.currentItem()
-            val itemIdArray = arrayAdapter?.getAllCheckedAsInt()
+            val item = adapter?.currentItem()
+            val countChecked = adapter?.countChecked() ?: 0
+            var itemArray: ArrayList<Item> = ArrayList()
 
             if (!multiSelect && item != null) {
-                data.putIntegerArrayListExtra("ids", arrayListOf(item.itemId.toInt()))
+                data.putParcelableArrayListExtra("ids", arrayListOf(ParcelLong(item.itemId)))
                 setResult(RESULT_OK, data)
-            } else if (multiSelect && (itemIdArray?.count() ?: 0) > 0) {
-                data.putIntegerArrayListExtra("ids", itemIdArray)
-                setResult(RESULT_OK, data)
+            } else if (multiSelect) {
+                if (countChecked > 0 || item != null) {
+                    if (countChecked > 0) itemArray = adapter?.getAllChecked() ?: ArrayList()
+                    else if (adapter?.showCheckBoxes == false) {
+                        itemArray = arrayListOf(item!!)
+                    }
+                    data.putParcelableArrayListExtra(
+                        "ids",
+                        itemArray.map { ParcelLong(it.itemId) } as ArrayList<ParcelLong>)
+                    setResult(RESULT_OK, data)
+                } else {
+                    setResult(RESULT_CANCELED)
+                }
             } else {
                 setResult(RESULT_CANCELED)
             }
@@ -271,23 +480,18 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             setResult(RESULT_CANCELED)
         }
 
+        isFinishingByUser = true
         finish()
     }
 
-    private fun setPanels() {
+    private fun setPanels(adjustAtEnd: Boolean = false) {
         val currentLayout = ConstraintSet()
         if (panelBottomIsExpanded) {
-            if (panelTopIsExpanded) {
-                currentLayout.load(this, R.layout.item_print_label_activity)
-            } else {
-                currentLayout.load(this, R.layout.item_print_label_activity_top_panel_collapsed)
-            }
+            if (panelTopIsExpanded) currentLayout.load(this, R.layout.item_print_label_activity)
+            else currentLayout.load(this, R.layout.item_print_label_activity_top_panel_collapsed)
         } else {
-            if (panelTopIsExpanded) {
-                currentLayout.load(this, R.layout.item_print_label_activity_bottom_panel_collapsed)
-            } else {
-                currentLayout.load(this, R.layout.item_print_label_activity_both_panels_collapsed)
-            }
+            if (panelTopIsExpanded) currentLayout.load(this, R.layout.item_print_label_activity_bottom_panel_collapsed)
+            else currentLayout.load(this, R.layout.item_print_label_activity_both_panels_collapsed)
         }
 
         val transition = ChangeBounds()
@@ -298,6 +502,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             override fun onTransitionStart(transition: Transition?) {}
             override fun onTransitionEnd(transition: Transition?) {
                 refreshTextViews()
+                if (adjustAtEnd) adjustRootLayout()
             }
 
             override fun onTransitionCancel(transition: Transition?) {}
@@ -307,23 +512,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         currentLayout.applyTo(binding.itemPrintLabel)
 
-        when {
-            panelBottomIsExpanded -> {
-                binding.expandBottomPanelButton?.text = context.getString(R.string.collapse_panel)
-            }
-            else -> {
-                binding.expandBottomPanelButton?.text = context.getString(R.string.search_options)
-            }
-        }
+        if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text = context.getString(R.string.collapse_panel)
+        else binding.expandBottomPanelButton?.text = context.getString(R.string.search_options)
 
-        when {
-            panelTopIsExpanded -> {
-                binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
-            }
-            else -> {
-                binding.expandTopPanelButton.text = context.getString(R.string.print_labels)
-            }
-        }
+        if (panelTopIsExpanded) binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
+        else binding.expandTopPanelButton.text = context.getString(R.string.print_labels)
     }
 
     private fun setBottomPanelAnimation() {
@@ -332,19 +525,22 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
 
         binding.expandBottomPanelButton!!.setOnClickListener {
+            val bottomVisible = panelBottomIsExpanded
+            val imeVisible = isKeyboardVisible
+
+            if (!bottomVisible && imeVisible) {
+                // Esperar que se cierre el teclado luego de perder el foco el TextView para expandir el panel
+                changePanelBottomStateAtFinish = true
+                return@setOnClickListener
+            }
+
             val nextLayout = ConstraintSet()
             if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) {
-                    nextLayout.load(this, R.layout.item_print_label_activity_bottom_panel_collapsed)
-                } else {
-                    nextLayout.load(this, R.layout.item_print_label_activity_both_panels_collapsed)
-                }
+                if (panelTopIsExpanded) nextLayout.load(this, R.layout.item_print_label_activity_bottom_panel_collapsed)
+                else nextLayout.load(this, R.layout.item_print_label_activity_both_panels_collapsed)
             } else {
-                if (panelTopIsExpanded) {
-                    nextLayout.load(this, R.layout.item_print_label_activity)
-                } else {
-                    nextLayout.load(this, R.layout.item_print_label_activity_top_panel_collapsed)
-                }
+                if (panelTopIsExpanded) nextLayout.load(this, R.layout.item_print_label_activity)
+                else nextLayout.load(this, R.layout.item_print_label_activity_top_panel_collapsed)
             }
 
             panelBottomIsExpanded = !panelBottomIsExpanded
@@ -363,16 +559,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
             TransitionManager.beginDelayedTransition(binding.itemPrintLabel, transition)
 
-            when {
-                panelBottomIsExpanded -> {
-                    binding.expandBottomPanelButton?.text =
-                        context.getString(R.string.collapse_panel)
-                }
-                else -> {
-                    binding.expandBottomPanelButton?.text =
-                        context.getString(R.string.search_options)
-                }
-            }
+            if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text =
+                context.getString(R.string.collapse_panel)
+            else binding.expandBottomPanelButton?.text = context.getString(R.string.search_options)
 
             nextLayout.applyTo(binding.itemPrintLabel)
         }
@@ -380,19 +569,22 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private fun setTopPanelAnimation() {
         binding.expandTopPanelButton.setOnClickListener {
+            val topVisible = panelTopIsExpanded
+            val imeVisible = isKeyboardVisible
+
+            if (!topVisible && imeVisible) {
+                // Esperar que se cierre el teclado luego de perder el foco el TextView para expandir el panel
+                changePanelTopStateAtFinish = true
+                return@setOnClickListener
+            }
+
             val nextLayout = ConstraintSet()
             if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) {
-                    nextLayout.load(this, R.layout.item_print_label_activity_top_panel_collapsed)
-                } else {
-                    nextLayout.load(this, R.layout.item_print_label_activity)
-                }
+                if (panelTopIsExpanded) nextLayout.load(this, R.layout.item_print_label_activity_top_panel_collapsed)
+                else nextLayout.load(this, R.layout.item_print_label_activity)
             } else {
-                if (panelTopIsExpanded) {
-                    nextLayout.load(this, R.layout.item_print_label_activity_both_panels_collapsed)
-                } else {
-                    nextLayout.load(this, R.layout.item_print_label_activity_bottom_panel_collapsed)
-                }
+                if (panelTopIsExpanded) nextLayout.load(this, R.layout.item_print_label_activity_both_panels_collapsed)
+                else nextLayout.load(this, R.layout.item_print_label_activity_bottom_panel_collapsed)
             }
 
             panelTopIsExpanded = !panelTopIsExpanded
@@ -412,14 +604,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
             TransitionManager.beginDelayedTransition(binding.itemPrintLabel, transition)
 
-            when {
-                panelTopIsExpanded -> {
-                    binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
-                }
-                else -> {
-                    binding.expandTopPanelButton.text = context.getString(R.string.print_labels)
-                }
-            }
+            if (panelTopIsExpanded) binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
+            else binding.expandTopPanelButton.text = context.getString(R.string.print_labels)
 
             nextLayout.applyTo(binding.itemPrintLabel)
         }
@@ -428,11 +614,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private fun refreshTextViews() {
         runOnUiThread {
             if (panelTopIsExpanded) {
-                printLabelFragment!!.refreshViews()
+                printLabelFragment?.refreshViews()
             }
 
             if (panelBottomIsExpanded) {
-                itemSelectFilterFragment!!.refreshTextViews()
+                itemSelectFilterFragment?.refreshTextViews()
             }
         }
     }
@@ -484,38 +670,41 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         runOnUiThread {
             try {
-                if (arrayAdapter != null) {
-                    lastSelected = arrayAdapter?.currentItem()
-                    firstVisiblePos = arrayAdapter?.firstVisiblePos()
+                if (adapter != null) {
+                    // Si el adapter es NULL es porque aún no fue creado.
+                    // Por lo tanto, puede ser que los valores de [lastSelected]
+                    // sean valores guardados de la instancia anterior y queremos preservarlos.
+                    lastSelected = adapter?.currentItem()
                 }
 
-                arrayAdapter = ItemAdapter(
-                    activity = this,
-                    resource = R.layout.item_row,
-                    itemList = completeList,
-                    suggestedList = ArrayList(),
-                    listView = binding.itemListView,
+                adapter = ItemRecyclerAdapter(
+                    recyclerView = binding.recyclerView,
+                    fullList = completeList,
+                    checkedIdArray = checkedIdArray,
                     multiSelect = multiSelect,
-                    checkedIdArray = checkedIdArray
+                    showCheckBoxes = showCheckBoxes,
+                    showCheckBoxesChanged = { showCheckBoxes = it },
+                    showImages = showImages,
+                    showImagesChanged = { showImages = it },
+                    filterOptions = FilterOptions(searchText, true)
                 )
 
-                arrayAdapter?.refreshListeners(
-                    checkedChangedListener = this,
-                    dataSetChangedListener = this,
-                    selectedItemChangedListener = null
-                )
+                refreshAdapterListeners()
 
-                arrayAdapter?.refreshFilter(searchText, true)
+                binding.recyclerView.layoutManager = LinearLayoutManager(this)
+                binding.recyclerView.adapter = adapter
 
-                while (binding.itemListView.adapter == null) {
-                    // Horrible wait for full load
+                while (binding.recyclerView.adapter == null) {
+                    // Horrible wait for a full load
                 }
 
+                // Estas variables locales evitar posteriores cambios de estado.
+                val ls = lastSelected
+                val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
-                    run {
-                        arrayAdapter?.setSelectItemAndScrollPos(lastSelected, firstVisiblePos)
-                    }
-                }, 20)
+                    adapter?.selectItem(ls, false)
+                    adapter?.scrollToPos(cs, true)
+                }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex)
@@ -523,6 +712,15 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 showProgressBar(false)
             }
         }
+    }
+
+    private fun refreshAdapterListeners() {
+        adapter?.refreshListeners(
+            checkedChangedListener = this,
+            dataSetChangedListener = this,
+            selectedItemChangedListener = null,
+            editItemRequiredListener = null
+        )
     }
 
     private fun fillSummaryRow() {
@@ -533,26 +731,26 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 binding.qtyReqLabelTextView.text = context.getString(R.string.cant)
                 binding.selectedLabelTextView.text = context.getString(R.string.checked)
 
-                if (arrayAdapter != null) {
-                    binding.totalTextView.text = arrayAdapter?.count.toString()
+                if (adapter != null) {
+                    binding.totalTextView.text = adapter?.totalVisible().toString()
                     binding.qtyReqTextView.text = "0"
-                    binding.selectedTextView.text = arrayAdapter?.countChecked().toString()
+                    binding.selectedTextView.text = adapter?.countChecked().toString()
                 }
             } else {
                 binding.totalLabelTextView.text = context.getString(R.string.total)
                 binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
                 binding.selectedLabelTextView.text = context.getString(R.string.items)
 
-                if (arrayAdapter != null) {
+                if (adapter != null) {
                     val cont = 0
-                    val t = arrayAdapter?.count ?: 0
+                    val t = adapter?.totalVisible() ?: 0
                     binding.totalTextView.text = t.toString()
                     binding.qtyReqTextView.text = cont.toString()
                     binding.selectedTextView.text = (t - cont).toString()
                 }
             }
 
-            if (arrayAdapter == null) {
+            if (adapter == null) {
                 binding.totalTextView.text = 0.toString()
                 binding.qtyReqTextView.text = 0.toString()
                 binding.selectedTextView.text = 0.toString()
@@ -564,11 +762,12 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         super.onStart()
         rejectNewInstances = false
 
-        Screen.closeKeyboard(this)
+        closeKeyboard(this)
         JotterListener.resumeReaderDevices(this)
 
-        thread {
-            refreshTextViews()
+        refreshTextViews()
+        if (fillRequired) {
+            fillRequired = false
             fillAdapter(completeList)
         }
     }
@@ -599,7 +798,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         CheckItemCode(callback = { onCheckCodeEnded(it) },
             scannedCode = scanCode,
-            adapter = arrayAdapter!!,
+            list = adapter?.fullList ?: ArrayList(),
             onEventData = { showSnackBar(it) }).execute()
     }
 
@@ -608,8 +807,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun onBackPressed() {
-        Screen.closeKeyboard(this)
+        closeKeyboard(this)
 
+        isFinishingByUser = true
         setResult(RESULT_CANCELED)
         finish()
     }
@@ -623,12 +823,33 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (menu is MenuBuilder) {
-            menu.setOptionalIconsVisible(true)
-        }
-
         if (!settingViewModel.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
+        }
+
+        // Opción de visibilidad de Imágenes
+        if (settingViewModel.useImageControl) {
+            menu.add(Menu.NONE, menuItemShowImages, Menu.NONE, context.getString(R.string.show_images))
+                .setChecked(showImages).isCheckable = true
+            val item = menu.findItem(menuItemShowImages)
+            if (showImages)
+                item.icon = ContextCompat.getDrawable(context, R.drawable.ic_photo_library)
+            else
+                item.icon = ContextCompat.getDrawable(context, R.drawable.ic_hide_image)
+            item.icon?.mutate()?.colorFilter =
+                BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
+                    getColor(R.color.dimgray), BlendModeCompat.SRC_IN
+                )
+        }
+
+        if (BuildConfig.DEBUG || Statics.testMode) {
+            menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
+            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
+            menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
+        }
+
+        if (menu is MenuBuilder) {
+            menu.setOptionalIconsVisible(true)
         }
 
         val drawable = ContextCompat.getDrawable(context, R.drawable.ic_visibility)
@@ -637,10 +858,37 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         // Opciones de visibilidad del menú
         val allControls = SettingsRepository.getAllSelectItemVisibleControls()
+        val visibleFilters = itemSelectFilterFragment?.getVisibleFilters() ?: ArrayList()
         allControls.forEach { p ->
-            menu.add(0, p.key.hashCode(), menu.size(), p.description).setChecked(
-                itemSelectFilterFragment!!.getVisibleFilters().contains(p)
-            ).isCheckable = true
+            menu.add(0, p.key.hashCode(), menu.size(), p.description)
+                .setChecked(visibleFilters.contains(p)).isCheckable = true
+        }
+
+        for (y in allControls) {
+            var tempIndex = 0
+            for (i in visibleFilters) {
+                if (i != y) continue
+
+                val item = menu.getItem(tempIndex)
+                if (item?.itemId != i.key.hashCode()) {
+                    continue
+                }
+
+                // Keep the popup menu open
+                item.setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW)
+                item.actionView = View(this)
+                item.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
+                    override fun onMenuItemActionExpand(item: MenuItem): Boolean {
+                        return false
+                    }
+
+                    override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
+                        return false
+                    }
+                })
+
+                tempIndex++
+            }
         }
 
         return true
@@ -656,30 +904,36 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 onBackPressed()
                 return true
             }
+
             R.id.action_rfid_connect -> {
                 JotterListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_trigger_scan -> {
                 JotterListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_read_barcode -> {
                 JotterListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
+
             menuItemRandomOnListL -> {
                 val codes: ArrayList<String> = ArrayList()
-                (arrayAdapter?.getAll() ?: ArrayList()).mapTo(codes) { it.ean }
+                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.ean }
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
+
             menuItemRandomIt -> {
                 ItemCoroutines().getCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)
             }
+
             menuItemManualCode -> {
                 enterCode()
                 return super.onOptionsItemSelected(item)
@@ -688,12 +942,26 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         item.isChecked = !item.isChecked
         when (id) {
+            menuItemShowImages -> {
+                adapter?.showImages(item.isChecked)
+                if (item.isChecked)
+                    item.icon = ContextCompat.getDrawable(context, R.drawable.ic_photo_library)
+                else
+                    item.icon = ContextCompat.getDrawable(context, R.drawable.ic_hide_image)
+                item.icon?.mutate()?.colorFilter =
+                    BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
+                        getColor(R.color.dimgray), BlendModeCompat.SRC_IN
+                    )
+            }
+
             settingRepository.selectItemSearchByItemEan.key.hashCode() -> {
-                itemSelectFilterFragment!!.setEanDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                itemSelectFilterFragment?.setEanDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
+
             settingRepository.selectItemSearchByItemCategory.key.hashCode() -> {
-                itemSelectFilterFragment!!.setCategoryVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                itemSelectFilterFragment?.setCategoryVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
+
             else -> return super.onOptionsItemSelected(item)
         }
         return true
@@ -718,7 +986,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun onFilterChanged(code: String, itemCategory: ItemCategory?, onlyActive: Boolean) {
-        Screen.closeKeyboard(this)
+        closeKeyboard(this)
         thread {
             checkedIdArray.clear()
             getItems()
@@ -727,7 +995,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
         runOnUiThread {
-            binding.selectedTextView.text = arrayAdapter?.countChecked().toString()
+            binding.selectedTextView.text = adapter?.countChecked().toString()
         }
     }
 
@@ -736,10 +1004,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         val item: Item = it.item ?: return
 
-        if (arrayAdapter?.itemExists(item) == true) {
-            arrayAdapter?.selectItem(item)
+        if (adapter?.getIndexById(item.itemId) != RecyclerView.NO_POSITION) {
+            adapter?.selectItem(item)
         } else {
-            itemSelectFilterFragment!!.itemCode = item.ean
+            itemSelectFilterFragment?.itemCode = item.ean
             thread {
                 completeList = arrayListOf(item)
                 checkedIdArray.clear()
@@ -751,10 +1019,42 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     override fun onFilterChanged(printer: String, qty: Int?) {}
 
     override fun onPrintRequested(printer: String, qty: Int) {
-        printLabelFragment!!.printItemById(arrayAdapter?.getAllChecked() ?: ArrayList())
+        /** Acá seleccionamos siguiendo estos criterios:
+         *
+         * Si NO es multiSelect tomamos el ítem seleccionado de forma simple.
+         *
+         * Si es multiSelect nos fijamos que o bien estén marcados algunos ítems o
+         * bien tengamos un ítem seleccionado de forma simple.
+         *
+         * Si es así, vamos a devolver los ítems marcados si existen como prioridad.
+         *
+         * Si no, nos fijamos que NO sean visibles los CheckBoxes, esto quiere
+         * decir que el usuario está seleccionado el ítem de forma simple y
+         * devolvemos este ítem.
+         *
+         **/
+
+        val item = adapter?.currentItem()
+        val countChecked = adapter?.countChecked() ?: 0
+        var itemArray: ArrayList<Item> = ArrayList()
+
+        if (!multiSelect && item != null) {
+            itemArray = arrayListOf(item)
+        } else if (multiSelect) {
+            if (countChecked > 0 || item != null) {
+                if (countChecked > 0) itemArray = adapter?.getAllChecked() ?: ArrayList()
+                else if (adapter?.showCheckBoxes == false) {
+                    itemArray = arrayListOf(item!!)
+                }
+            }
+        }
+
+        if (itemArray.isNotEmpty()) printLabelFragment?.printItemById(ArrayList(itemArray.map { it.itemId }))
     }
 
-    override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {}
+    override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {
+        printQtyIsFocused = hasFocus
+    }
 
     override fun onDataSetChanged() {
         Handler(Looper.getMainLooper()).postDelayed({
@@ -768,11 +1068,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     override fun onNewIntent(intent: Intent) {
         /*
-          This method gets called, when a new Intent gets associated with the current activity instance.
-          Instead of creating a new activity, onNewIntent will be called. For more information have a look
-          at the documentation.
+          This method gets called when a new Intent gets associated with the current activity instance.
+          Instead of creating a new activity, onNewIntent will be called.
+          For more information, have a look at the documentation.
 
-          In our case this method gets called, when the user attaches a className to the device.
+          In our case, this method gets called when the user attaches a className to the device.
          */
         super.onNewIntent(intent)
         Nfc.nfcHandleIntent(intent, this)

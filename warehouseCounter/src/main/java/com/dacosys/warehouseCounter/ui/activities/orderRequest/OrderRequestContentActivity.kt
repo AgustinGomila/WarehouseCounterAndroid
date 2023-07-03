@@ -28,6 +28,8 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
@@ -40,6 +42,7 @@ import com.dacosys.warehouseCounter.dto.log.Log
 import com.dacosys.warehouseCounter.dto.log.LogContent
 import com.dacosys.warehouseCounter.dto.orderRequest.*
 import com.dacosys.warehouseCounter.dto.orderRequest.Item.CREATOR.fromItemRoom
+import com.dacosys.warehouseCounter.misc.ParcelLong
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
@@ -69,7 +72,8 @@ import java.util.*
 import kotlin.concurrent.thread
 
 class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChangedListener,
-    OrcAdapter.EditQtyListener, OrcAdapter.EditDescriptionListener, Scanner.ScannerListener,
+    OrcAdapter.EditQtyListener, OrcAdapter.EditDescriptionListener,
+    Scanner.ScannerListener,
     SwipeRefreshLayout.OnRefreshListener, Rfid.RfidDeviceListener {
     override fun onEditDescriptionRequired(position: Int, orc: OrderRequestContent) {
         showDialogForItemDescription(orc)
@@ -79,11 +83,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val orc = it.orc ?: return
         itemCode = it.itemCode
 
-        // El código fue chequeado, se agrega y se seleciona en la lista
-        orcAdapter?.add(arrayListOf(orc))
+        // El código fue chequeado, se agrega y se selecciona en la lista
+        runOnUiThread { adapter?.add(arrayListOf(orc)) }
 
         // Definir las cantidades según el modo de ingreso actual
-        if (binding.requiredDescCheckBox.isChecked && orc.item?.itemDescription == context.getString(
+        if (binding.requiredDescCheckBox.isChecked &&
+            orc.item?.itemDescription == context.getString(
                 R.string.unknown_item
             )
         ) {
@@ -138,46 +143,54 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 onBackPressed()
                 return true
             }
+
             R.id.action_rfid_connect -> {
                 JotterListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_trigger_scan -> {
-                //val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321"
-                //val s = Random().ints(10, 0, source.length)
-                //    .asSequence()
-                //    .map(source::get)
-                //    .joinToString("")
-                //scannerCompleted(s)
-                //return super.onOptionsItemSelected(item)
+                /*
+                val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321"
+                val s = Random().ints(10, 0, source.length)
+                    .asSequence()
+                    .map(source::get)
+                    .joinToString("")
+                scannerCompleted(s)
+                return super.onOptionsItemSelected(item)
+                */
                 JotterListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_read_barcode -> {
                 JotterListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
+
             menuItemRandomOnListL -> {
                 val codes: ArrayList<String> = ArrayList()
-                (orcAdapter?.getAll()
-                    ?: ArrayList<OrderRequestContent>().filter { it.item != null && !it.item?.codeRead.isNullOrEmpty() }).mapTo(
-                    codes
-                ) {
-                    it.item?.codeRead ?: ""
-                }
+
+                (adapter?.fullList ?: ArrayList<OrderRequestContent>()
+                    .filter { it.item != null && !it.item?.codeRead.isNullOrEmpty() })
+                    .mapTo(codes) { it.item?.codeRead ?: "" }
+
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
+
             menuItemRandomIt -> {
                 ItemCoroutines().getCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)
             }
+
             menuItemManualCode -> {
                 enterCode()
                 return super.onOptionsItemSelected(item)
             }
+
             menuRegexItem -> {
                 scannerCompleted("0SM20220721092826007792261002857001038858")
                 return super.onOptionsItemSelected(item)
@@ -247,14 +260,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     override fun onEditQtyRequired(
         position: Int,
-        orc: OrderRequestContent,
+        content: OrderRequestContent,
         initialQty: Double,
         minValue: Double,
         maxValue: Double,
         multiplier: Int,
     ) {
         qtySelectorDialog(
-            orc = orc,
+            orc = content,
             initialQty = initialQty,
             minValue = minValue,
             maxValue = maxValue,
@@ -271,7 +284,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }, 100)
     }
 
-// region Variables privadas de la actividad
+    // region Variables privadas de la actividad
 
     private var tempTitle = context.getString(R.string.count)
 
@@ -280,8 +293,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private var itemCode: ItemCode? = null
     private var orderRequest: OrderRequest? = null
-    private var orcArray: ArrayList<OrderRequestContent> = ArrayList()
-    private var checkedIdArray: ArrayList<Int> = ArrayList()
+    private var completeList: ArrayList<OrderRequestContent> = ArrayList()
+    private var checkedIdArray: ArrayList<Long> = ArrayList()
     private var isNew: Boolean = false
 
     private var partial = true
@@ -289,15 +302,20 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var divided = false
     private var dividedBlock = false
 
-    private var orcAdapter: OrcAdapter? = null
+    private var adapter: OrcAdapter? = null
     private var lastSelected: OrderRequestContent? = null
     private var firstVisiblePos: Int? = null
+    private var currentScrollPosition: Int = 0
+
     private var log: Log? = null
 
     private var allowClicks = true
     private var rejectNewInstances = false
 
-// endregion Variables privadas de la actividad
+    // Se usa para saber si estamos en onStart luego de onCreate
+    private var fillRequired = false
+
+    // endregion Variables privadas de la actividad
 
     override fun onDestroy() {
         saveSharedPreferences()
@@ -306,15 +324,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun destroyLocals() {
-        orcAdapter?.refreshListeners(null, null, null, null)
+        adapter?.refreshListeners()
     }
 
     private fun saveSharedPreferences() {
         settingViewModel.scanModeCount = when {
             !partialBlock && !partial -> 1 // Parcial auto
             partialBlock -> 2 // Parcial bloqueado
-            partial -> 0 // Manual
-            else -> 1
+            else -> 0 // Manual
         }
     }
 
@@ -324,11 +341,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun saveBundleValues(b: Bundle) {
-        if (orcAdapter != null) {
-            b.putParcelable("lastSelected", orcAdapter?.currentOrc())
-            b.putInt("firstVisiblePos", orcAdapter?.firstVisiblePos() ?: 0)
-            b.putParcelableArrayList("orcArray", orcAdapter?.getAll())
-            b.putIntegerArrayList("checkedIdArray", orcAdapter?.getAllCheckedAsInt() ?: ArrayList())
+        if (adapter != null) {
+            b.putParcelable("lastSelected", adapter?.currentItem())
+            b.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
+            b.putParcelableArrayList("completeList", adapter?.fullList)
+            b.putLongArray("checkedIdArray", adapter?.checkedIdArray?.map { it }?.toLongArray())
+            b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
         b.putParcelable("itemCode", itemCode)
@@ -354,16 +372,16 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun loadBundleValues(b: Bundle) {
         // region Recuperar el título de la ventana
         val t1 = b.getString("title")
-        if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+        if (!t1.isNullOrEmpty()) tempTitle = t1
         // endregion
 
         itemCode = b.getParcelable("itemCode")
         orderRequest = b.getParcelable("orderRequest")
-        orcArray =
-            b.getParcelableArrayList<OrderRequestContent>("orcArray") as ArrayList<OrderRequestContent>
-        checkedIdArray = b.getIntegerArrayList("checkedIdArray") ?: ArrayList()
+        completeList = b.getParcelableArrayList<OrderRequestContent>("completeList") as ArrayList<OrderRequestContent>
+        checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
         lastSelected = b.getParcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
+        currentScrollPosition = b.getInt("currentScrollPosition")
 
         isNew = b.getBoolean("isNew")
 
@@ -385,7 +403,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun loadExtraBundleValues(extras: Bundle) {
         val t1 = extras.getString("title")
-        if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+        if (!t1.isNullOrEmpty()) tempTitle = t1
 
         isNew = extras.getBoolean("isNew")
         orderRequest = Parcels.unwrap<OrderRequest>(extras.getParcelable("orderRequest"))
@@ -395,7 +413,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun loadDefaultValues() {
         val or = orderRequest ?: return
-        orcArray = ArrayList(orderRequest?.content ?: ArrayList())
+        completeList = ArrayList(orderRequest?.content ?: ArrayList())
 
         log = Log(
             or.clientId,
@@ -410,6 +428,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 partialBlock = false
                 partial = false // Parcial auto
             }
+
             2 -> partialBlock = true // Parcial bloqueado
             0 -> {
                 partialBlock = false
@@ -427,6 +446,16 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         setContentView(binding.root)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                currentScrollPosition =
+                    (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+            }
+        })
+
+        // Para el llenado en el onStart siguiente de onCreate
+        fillRequired = true
 
         if (savedInstanceState != null) {
             // Recuperar el estado previo de la actividad con los datos guardados
@@ -515,7 +544,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 partialBlock = false
             } else if (partial) {
                 partialBlock = true
-            } else if (!partial) {
+            } else {
                 partial = true
             }
             setupPartial()
@@ -527,7 +556,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 dividedBlock = false
             } else if (divided) {
                 dividedBlock = true
-            } else if (!divided) {
+            } else {
                 divided = true
             }
             setupDivided()
@@ -556,9 +585,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             if (panelTopIsExpanded) currentLayout.load(this, R.layout.order_request_activity)
             else currentLayout.load(this, R.layout.order_request_activity_top_panel_collapsed)
         } else {
-            if (panelTopIsExpanded) currentLayout.load(
-                this, R.layout.order_request_activity_bottom_panel_collapsed
-            )
+            if (panelTopIsExpanded) currentLayout.load(this, R.layout.order_request_activity_bottom_panel_collapsed)
             else currentLayout.load(this, R.layout.order_request_activity_both_panels_collapsed)
         }
 
@@ -575,17 +602,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         TransitionManager.beginDelayedTransition(binding.orderRequestContent, transition)
         currentLayout.applyTo(binding.orderRequestContent)
 
-        when {
-            panelBottomIsExpanded -> binding.expandBottomPanelButton?.text =
-                context.getString(R.string.collapse_panel)
-            else -> binding.expandBottomPanelButton?.text = context.getString(R.string.scan_options)
-        }
+        if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text = context.getString(R.string.collapse_panel)
+        else binding.expandBottomPanelButton?.text = context.getString(R.string.scan_options)
 
-        when {
-            panelTopIsExpanded -> binding.expandTopPanelButton?.text =
-                context.getString(R.string.collapse_panel)
-            else -> binding.expandTopPanelButton?.text = context.getString(R.string.item_operations)
-        }
+        if (panelTopIsExpanded) binding.expandTopPanelButton?.text = context.getString(R.string.collapse_panel)
+        else binding.expandTopPanelButton?.text = context.getString(R.string.item_operations)
     }
 
     private fun setBottomPanelAnimation() {
@@ -596,9 +617,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         binding.expandBottomPanelButton!!.setOnClickListener {
             val nextLayout = ConstraintSet()
             if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) nextLayout.load(
-                    this, R.layout.order_request_activity_bottom_panel_collapsed
-                )
+                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_activity_bottom_panel_collapsed)
                 else nextLayout.load(this, R.layout.order_request_activity_both_panels_collapsed)
             } else {
                 if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_activity)
@@ -621,12 +640,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
             TransitionManager.beginDelayedTransition(binding.orderRequestContent, transition)
 
-            when {
-                panelBottomIsExpanded -> binding.expandBottomPanelButton?.text =
-                    context.getString(R.string.collapse_panel)
-                else -> binding.expandBottomPanelButton?.text =
-                    context.getString(R.string.scan_options)
-            }
+            if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text =
+                context.getString(R.string.collapse_panel)
+            else binding.expandBottomPanelButton?.text = context.getString(R.string.scan_options)
 
             nextLayout.applyTo(binding.orderRequestContent)
         }
@@ -640,14 +656,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         binding.expandTopPanelButton!!.setOnClickListener {
             val nextLayout = ConstraintSet()
             if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) nextLayout.load(
-                    this, R.layout.order_request_activity_top_panel_collapsed
-                )
+                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_activity_top_panel_collapsed)
                 else nextLayout.load(this, R.layout.order_request_activity)
             } else {
-                if (panelTopIsExpanded) nextLayout.load(
-                    this, R.layout.order_request_activity_both_panels_collapsed
-                )
+                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_activity_both_panels_collapsed)
                 else nextLayout.load(this, R.layout.order_request_activity_bottom_panel_collapsed)
             }
 
@@ -668,12 +680,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
             TransitionManager.beginDelayedTransition(binding.orderRequestContent, transition)
 
-            when {
-                panelTopIsExpanded -> binding.expandTopPanelButton?.text =
-                    context.getString(R.string.collapse_panel)
-                else -> binding.expandTopPanelButton?.text =
-                    context.getString(R.string.item_operations)
-            }
+            if (panelTopIsExpanded) binding.expandTopPanelButton?.text = context.getString(R.string.collapse_panel)
+            else binding.expandTopPanelButton?.text = context.getString(R.string.item_operations)
 
             nextLayout.applyTo(binding.orderRequestContent)
         }
@@ -689,31 +697,28 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun setupPartial() {
         runOnUiThread {
-            var buttonText = ""
-            var buttonBackground: Drawable? = null
-            var buttonTextColor: Int? = null
+            val buttonText: String
+            val buttonBackground: Drawable?
+            val buttonTextColor: Int?
 
             if (!partialBlock && !partial) {
                 buttonText = context.getString(R.string.partial_auto)
-                buttonBackground = ResourcesCompat.getDrawable(
-                    this.resources, R.drawable.rounded_corner_button_ffed65, null
-                )
+                buttonBackground =
+                    ResourcesCompat.getDrawable(this.resources, R.drawable.rounded_corner_button_ffed65, null)
                 buttonTextColor = ResourcesCompat.getColor(this.resources, R.color.black, null)
             } else if (partialBlock) {
                 buttonText = context.getString(R.string.partial_locked)
-                buttonBackground = ResourcesCompat.getDrawable(
-                    this.resources, R.drawable.rounded_corner_button_6b2737, null
-                )
+                buttonBackground =
+                    ResourcesCompat.getDrawable(this.resources, R.drawable.rounded_corner_button_6b2737, null)
                 buttonTextColor = ResourcesCompat.getColor(this.resources, R.color.whitesmoke, null)
-            } else if (partial) {
+            } else {
                 buttonText = context.getString(R.string.partial_manual)
-                buttonBackground = ResourcesCompat.getDrawable(
-                    this.resources, R.drawable.rounded_corner_button_teal, null
-                )
+                buttonBackground =
+                    ResourcesCompat.getDrawable(this.resources, R.drawable.rounded_corner_button_teal, null)
                 buttonTextColor = ResourcesCompat.getColor(this.resources, R.color.whitesmoke, null)
             }
 
-            if (buttonText.isNotEmpty() && buttonTextColor != null && buttonBackground != null) {
+            if (buttonText.isNotEmpty() && buttonBackground != null) {
                 binding.partialButton.text = buttonText
                 binding.partialButton.setTextColor(buttonTextColor)
                 binding.partialButton.background = buttonBackground
@@ -723,31 +728,28 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun setupDivided() {
         runOnUiThread {
-            var buttonText = ""
-            var buttonBackground: Drawable? = null
-            var buttonTextColor: Int? = null
+            val buttonText: String
+            val buttonBackground: Drawable?
+            val buttonTextColor: Int?
 
             if (!dividedBlock && !divided) {
                 buttonText = context.getString(R.string.without_divider)
-                buttonBackground = ResourcesCompat.getDrawable(
-                    this.resources, R.drawable.rounded_corner_button_ffed65, null
-                )
+                buttonBackground =
+                    ResourcesCompat.getDrawable(this.resources, R.drawable.rounded_corner_button_ffed65, null)
                 buttonTextColor = ResourcesCompat.getColor(this.resources, R.color.black, null)
             } else if (dividedBlock) {
                 buttonText = context.getString(R.string.divider_locked)
-                buttonBackground = ResourcesCompat.getDrawable(
-                    this.resources, R.drawable.rounded_corner_button_6b2737, null
-                )
+                buttonBackground =
+                    ResourcesCompat.getDrawable(this.resources, R.drawable.rounded_corner_button_6b2737, null)
                 buttonTextColor = ResourcesCompat.getColor(this.resources, R.color.whitesmoke, null)
-            } else if (divided) {
+            } else {
                 buttonText = context.getString(R.string.divider)
-                buttonBackground = ResourcesCompat.getDrawable(
-                    this.resources, R.drawable.rounded_corner_button_teal, null
-                )
+                buttonBackground =
+                    ResourcesCompat.getDrawable(this.resources, R.drawable.rounded_corner_button_teal, null)
                 buttonTextColor = ResourcesCompat.getColor(this.resources, R.color.whitesmoke, null)
             }
 
-            if (buttonText.isNotEmpty() && buttonTextColor != null && buttonBackground != null) {
+            if (buttonText.isNotEmpty() && buttonBackground != null) {
                 binding.divisorButton.text = buttonText
                 binding.divisorButton.setTextColor(buttonTextColor)
                 binding.divisorButton.background = buttonBackground
@@ -756,7 +758,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun cancelCount() {
-        if ((orcAdapter?.count() ?: 0) <= 0) {
+        if ((adapter?.itemCount ?: 0) <= 0) {
             finish()
             return
         }
@@ -778,47 +780,46 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
     }
 
-    private fun fillOrcAdapter(t: ArrayList<OrderRequestContent>) {
-        orcArray = t
+    private fun fillAdapter(t: ArrayList<OrderRequestContent>) {
+        completeList = t
 
         showProgressBar(true)
 
         runOnUiThread {
             try {
-                if (orcAdapter != null) {
-                    lastSelected = orcAdapter?.currentOrc()
-                    firstVisiblePos = orcAdapter?.firstVisiblePos()
+                if (adapter != null) {
+                    // Si el adapter es NULL es porque aún no fue creado.
+                    // Por lo tanto, puede ser que los valores de [lastSelected]
+                    // sean valores guardados de la instancia anterior y queremos preservarlos.
+                    lastSelected = adapter?.currentItem()
                 }
 
-                orcAdapter = OrcAdapter(
-                    activity = this,
-                    resource = R.layout.orc_row,
-                    orcs = orcArray,
-                    listView = binding.orcListView,
-                    checkedIdArray = checkedIdArray,
-                    multiSelect = false,
+                adapter = OrcAdapter(
+                    recyclerView = binding.recyclerView,
+                    fullList = completeList,
                     allowEditQty = true,
+                    allowEditDescription = true,
+                    checkedIdArray = checkedIdArray,
                     orType = orderRequest?.orderRequestedType
                         ?: OrderRequestType.stockAuditFromDevice,
-                    setQtyOnCheckedChanged = false
                 )
 
-                orcAdapter?.refreshListeners(
-                    checkedChangedListener = null,
-                    dataSetChangedListener = this,
-                    editQtyListener = this,
-                    editDescriptionListener = this
-                )
+                refreshAdapterListeners()
 
-                while (binding.orcListView.adapter == null) {
-                    // Horrible wait for full load
+                binding.recyclerView.layoutManager = LinearLayoutManager(this)
+                binding.recyclerView.adapter = adapter
+
+                while (binding.recyclerView.adapter == null) {
+                    // Horrible wait for a full load
                 }
 
+                // Estas variables locales evitar posteriores cambios de estado.
+                val ls = lastSelected
+                val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
-                    run {
-                        orcAdapter?.setSelectItemAndScrollPos(lastSelected, firstVisiblePos)
-                    }
-                }, 20)
+                    adapter?.selectItem(ls, false)
+                    adapter?.scrollToPos(cs, true)
+                }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex)
@@ -826,6 +827,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 showProgressBar(false)
             }
         }
+    }
+
+    private fun refreshAdapterListeners() {
+        adapter?.refreshListeners(
+            checkedChangedListener = null,
+            dataSetChangedListener = this,
+            editQtyListener = this,
+            editDescriptionListener = this
+        )
     }
 
     private fun fillSummaryRow() {
@@ -836,27 +846,27 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 binding.selectedLabelTextView.visibility = VISIBLE
                 binding.selectedLabelTextView.text = context.getString(R.string.checked)
 
-                if (orcAdapter != null) {
-                    val cont = orcAdapter!!.qtyRequestedTotal()
-                    val t = orcAdapter!!.count
+                if (adapter != null) {
+                    val cont = adapter?.qtyRequestedTotal() ?: 0.0
+                    val t = adapter?.itemCount ?: 0
                     binding.totalTextView.text = t.toString()
                     binding.qtyReqTextView.text = Statics.roundToString(cont, 0)
-                    binding.selectedTextView.text = orcAdapter!!.countChecked().toString()
+                    binding.selectedTextView.text = adapter!!.countChecked().toString()
                 }
             } else {
                 binding.totalLabelTextView.text = context.getString(R.string.total)
                 binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
                 binding.selectedLabelTextView.visibility = GONE
 
-                if (orcAdapter != null) {
-                    val cont = orcAdapter!!.qtyCollectedTotal()
-                    val t = orcAdapter!!.count
+                if (adapter != null) {
+                    val cont = adapter?.qtyCollectedTotal() ?: 0.0
+                    val t = adapter?.itemCount ?: 0
                     binding.totalTextView.text = t.toString()
                     binding.qtyReqTextView.text = Statics.roundToString(cont, 0)
                 }
             }
 
-            if (orcAdapter == null) {
+            if (adapter == null) {
                 binding.totalTextView.text = 0.toString()
                 binding.qtyReqTextView.text = 0.toString()
                 binding.selectedTextView.text = 0.toString()
@@ -874,15 +884,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     @SuppressLint("SimpleDateFormat")
     private fun removeItem() {
-        if (orcAdapter?.currentOrc() == null && (orcAdapter?.countChecked() ?: 0) <= 0) {
+        if (adapter?.currentItem() == null && (adapter?.countChecked() ?: 0) <= 0) {
             allowClicks = true
             return
         }
 
         val orcsToRemove =
-            if ((orcAdapter?.countChecked() ?: 0) > 0) orcAdapter?.getAllChecked() else arrayListOf(
-                orcAdapter?.currentOrc()!!
-            )
+            if ((adapter?.countChecked() ?: 0) > 0)
+                adapter?.getAllChecked() else arrayListOf(adapter?.currentItem()!!)
 
         var allCodes = ""
         if (orcsToRemove!!.isNotEmpty()) {
@@ -896,7 +905,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 allCodes = allCodes.substring(0, allCodes.length - 2)
             }
 
-            allCodes = if (orcAdapter!!.countChecked() > 1) {
+            allCodes = if (adapter!!.countChecked() > 1) {
                 String.format(getString(R.string.do_you_want_to_remove_the_items), allCodes)
             } else {
                 String.format(getString(R.string.do_you_want_to_remove_the_item), allCodes)
@@ -945,7 +954,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
                     log?.content = logContent
 
-                    orcAdapter!!.remove(orcsToRemove)
+                    adapter!!.remove(orcsToRemove)
                 }
                 adb.show()
             } catch (ex: java.lang.Exception) {
@@ -975,12 +984,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val items: ArrayList<Int> =
-                        data.getIntegerArrayListExtra("ids") ?: return@registerForActivityResult
+                    val items: ArrayList<ParcelLong> =
+                        data.getParcelableArrayListExtra("ids") ?: return@registerForActivityResult
 
                     if (items.isEmpty()) return@registerForActivityResult
 
-                    ItemCoroutines().getById(items.first().toLong()) { it2 ->
+                    ItemCoroutines().getById(items.first().value) { it2 ->
                         if (it2 == null) return@getById
 
                         try {
@@ -1014,7 +1023,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val intent = Intent(this, OrderRequestConfirmActivity::class.java)
 
         intent.putExtra("orderRequest", Parcels.wrap<OrderRequest>(orderRequest))
-        intent.putParcelableArrayListExtra("orcArray", orcAdapter?.getAll() ?: ArrayList())
+        intent.putParcelableArrayListExtra("orcArray", adapter?.fullList ?: ArrayList())
         resultForFinishCount.launch(intent)
     }
 
@@ -1024,12 +1033,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     when (Parcels.unwrap<ConfirmStatus>(data.getParcelableExtra("confirmStatus"))) {
-                        modify -> {
-                            if (processCount(false)) finish()
-                        }
-                        confirm -> {
-                            if (processCount(true)) finish()
-                        }
+                        modify -> if (processCount(false)) finish()
+                        confirm -> if (processCount(true)) finish()
                     }
                 }
             } catch (ex: Exception) {
@@ -1041,8 +1046,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
     // Flag que guarda el estado "completed" en caso de que
-// se requiran permisos de escritura y se tenga que retomar la
-// actividad después de que el usuario los otorgue.
+    // se requerirán permisos de escritura y se tenga que retomar la
+    // actividad después de que el usuario los otorgue.
     private var tempCompleted = false
 
     private fun processCount(completed: Boolean): Boolean {
@@ -1051,7 +1056,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         var error = false
 
         // Preparar el conteo
-        tOrderRequest.content = orcAdapter!!.getAll()
+        tOrderRequest.content = adapter?.fullList ?: ArrayList()
         tOrderRequest.completed = tempCompleted
         tOrderRequest.finishDate = if (tempCompleted) DateFormat.format(
             "yyyy-MM-dd hh:mm:ss", System.currentTimeMillis()
@@ -1060,8 +1065,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         if (tOrderRequest.filename.isEmpty()) {
             val df = SimpleDateFormat("yyMMddHHmmssZ", Locale.getDefault())
-            tOrderRequest.filename =
-                String.format("%s.json", df.format(Calendar.getInstance().time))
+            tOrderRequest.filename = String.format("%s.json", df.format(Calendar.getInstance().time))
         }
         tOrderRequest.log = log ?: Log()
 
@@ -1202,8 +1206,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun addOrc(tempOrc: OrderRequestContent?): Boolean {
         try {
+            val count = adapter?.itemCount ?: 0
             if (Statics.demoMode) {
-                if ((orcAdapter?.count ?: 0) >= 5) {
+                if (count >= 5) {
                     val res =
                         context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     showSnackBar(SnackBarEventData(res, ERROR))
@@ -1218,9 +1223,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
 
             // Buscar primero en el adaptador de la lista
-            for (a in 0 until (orcAdapter?.count ?: 0)) {
-                val orc = orcAdapter?.getItem(a)
-                if (orc != null && orc.item?.itemId == tempOrc.item?.itemId) {
+            for (a in 0 until count) {
+                val orc = adapter?.currentList?.get(a) ?: continue
+                if (orc.item?.itemId == tempOrc.item?.itemId) {
                     setQtyCollected(
                         orc = orc, qty = tempOrc.qty?.qtyCollected ?: 0.toDouble(), manualAdd = true
                     )
@@ -1229,12 +1234,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
 
             // No está en la lista, agregar al adaptador con cantidades 0, después se actualiza y se agrega al Log
-            orcAdapter?.add(arrayListOf(tempOrc))
+            runOnUiThread {
+                adapter?.add(arrayListOf(tempOrc))
 
-            // Esta pausa permite que el Adapter se actualice a tiempo
-            Handler(mainLooper).postDelayed({
-                setQty(tempOrc)
-            }, 250)
+                // Esta pausa permite que el Adapter se actualice a tiempo
+                Handler(mainLooper).postDelayed({
+                    setQty(tempOrc)
+                }, 250)
+            }
 
             return true
         } catch (ex: Exception) {
@@ -1269,19 +1276,18 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     val item = orc.item ?: return@registerForActivityResult
 
                     if (it.resultCode == RESULT_OK) {
-                        if (description.trim()
-                                .isEmpty() && binding.requiredDescCheckBox.isChecked
-                        ) {
-                            orcAdapter?.remove(orc)
+                        if (description.trim().isEmpty() && binding.requiredDescCheckBox.isChecked) {
+                            adapter?.remove(orc)
                         } else {
                             setDescription(orc, description)
                         }
                     } else {
                         if ((item.itemDescription.isEmpty() || item.itemDescription == context.getString(
                                 R.string.unknown_item
-                            )) && binding.requiredDescCheckBox.isChecked
+                            )) &&
+                            binding.requiredDescCheckBox.isChecked
                         ) {
-                            orcAdapter?.remove(orc)
+                            adapter?.remove(orc)
                         }
                     }
                 }
@@ -1318,10 +1324,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     val item = orc.item ?: return@registerForActivityResult
 
                     if (it.resultCode == RESULT_OK) {
-                        if (description.trim()
-                                .isEmpty() && binding.requiredDescCheckBox.isChecked
-                        ) {
-                            orcAdapter?.remove(orc)
+                        if (description.trim().isEmpty() && binding.requiredDescCheckBox.isChecked) {
+                            adapter?.remove(orc)
                         } else {
                             setDescription(orc, description)
                             setQty(orc)
@@ -1329,9 +1333,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     } else {
                         if ((item.itemDescription.isEmpty() || item.itemDescription == context.getString(
                                 R.string.unknown_item
-                            )) && binding.requiredDescCheckBox.isChecked
+                            )) &&
+                            binding.requiredDescCheckBox.isChecked
                         ) {
-                            orcAdapter?.remove(orc)
+                            adapter?.remove(orc)
                         }
                     }
                 }
@@ -1378,11 +1383,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     override fun onNewIntent(intent: Intent) {
         /*
-          This method gets called, when a new Intent gets associated with the current activity instance.
-          Instead of creating a new activity, onNewIntent will be called. For more information have a look
+          This method gets called when a new Intent gets associated with the current activity instance.
+          Instead of creating a new activity, onNewIntent will be called. For more information, have a look
           at the documentation.
 
-          In our case this method gets called, when the user attaches a className to the device.
+          In our case, this method gets called when the user attaches a className to the device.
          */
         super.onNewIntent(intent)
         Nfc.nfcHandleIntent(intent, this)
@@ -1396,12 +1401,17 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         scannerCompleted(scanCode)
     }
 
-//endregion READERS Reception
+    //endregion READERS Reception
 
     public override fun onStart() {
         super.onStart()
 
-        thread { fillOrcAdapter(orcArray) }
+        thread {
+            if (fillRequired) {
+                fillRequired = false
+                fillAdapter(completeList)
+            }
+        }
         gentlyReturn()
     }
 
@@ -1445,10 +1455,17 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
                     // La descripción puede modificarse desde el selector de cantidades
                     setDescription(
-                        orc = orc, description = orc.item?.itemDescription ?: "", updateDb = false
+                        orc = orc,
+                        description = orc.item?.itemDescription ?: "",
+                        updateDb = false
                     )
 
-                    setQtyCollected(orc = orc, qty = qty, manualAdd = true, total = true)
+                    setQtyCollected(
+                        orc = orc,
+                        qty = qty,
+                        manualAdd = true,
+                        total = true
+                    )
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -1469,10 +1486,17 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
                     // La descripción puede modificarse desde el selector de cantidades
                     setDescription(
-                        orc = orc, description = orc.item?.itemDescription ?: "", updateDb = false
+                        orc = orc,
+                        description = orc.item?.itemDescription ?: "",
+                        updateDb = false
                     )
 
-                    setQtyCollected(orc = orc, qty = qty, manualAdd = true, total = false)
+                    setQtyCollected(
+                        orc = orc,
+                        qty = qty,
+                        manualAdd = true,
+                        total = false
+                    )
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -1523,8 +1547,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         if (longLotId < 0) return
 
-        for (i in 0 until (orcAdapter?.count ?: 0)) {
-            val t = orcAdapter?.getItem(i)
+        for (i in 0 until (adapter?.itemCount ?: 0)) {
+            val t = adapter?.fullList?.get(i)
             if (t?.lot != null) {
                 if (equals(t.lot?.lotId, longLotId)) {
                     // Encontrado, volver!
@@ -1535,8 +1559,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         val lot = Lot(longLotId, lotCode, true)
 
-        for (i in 0 until (orcAdapter?.count ?: 0)) {
-            val t = orcAdapter?.getItem(i)
+        for (i in 0 until (adapter?.itemCount ?: 0)) {
+            val t = adapter?.fullList?.get(i)
             if (t?.item != null) {
                 if (equals(t.item, orc.item)) {
                     t.lot = lot
@@ -1555,10 +1579,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         if (updateDb) {
             val itemId = item.itemId ?: return
             ItemCoroutines().updateDescription(itemId, description) {
-                orcAdapter?.updateDescription(itemId, description)
+                adapter?.updateDescription(itemId, description)
             }
         } else {
-            orcAdapter?.updateDescription(item, description)
+            adapter?.updateDescription(item, description)
         }
     }
 
@@ -1589,59 +1613,60 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val initialQty = orc.qty?.qtyCollected ?: 0.0
         val logContent: ArrayList<LogContent> = ArrayList(log?.content ?: ArrayList())
 
-        for (i in 0 until (orcAdapter?.count ?: 0)) {
-            val tempOrc = orcAdapter?.getItem(i)
-            if (tempOrc != null && tempOrc == orc) {
-                if (tempOrc.item != null && tempOrc.qty != null) {
-                    val itemObj = tempOrc.item ?: return
-                    val qtyObj = tempOrc.qty ?: return
-                    val lot = tempOrc.lot
+        for (i in 0 until (adapter?.itemCount ?: 0)) {
+            val tempOrc = adapter?.fullList?.get(i)
+            if (tempOrc == null ||
+                tempOrc != orc ||
+                !(tempOrc.item != null && tempOrc.qty != null)
+            ) continue
 
-                    val tempQty: Double = if (!total) {
-                        qty * multi + qtyObj.qtyCollected!!
-                    } else {
-                        qty * multi
-                    }
+            val itemObj = tempOrc.item ?: return
+            val qtyObj = tempOrc.qty ?: return
+            val lot = tempOrc.lot
 
-                    if (tempQty <= 0) {
-                        removeItem()
-                        lastRegexResult = null
-                        return
-                    }
-
-                    orcAdapter?.updateQtyCollected(tempOrc, tempQty)
-
-                    // Unless is blocked, unlock the partial
-                    if (!partialBlock) {
-                        partial = false
-                        partialBlock = false
-                        setupPartial()
-                    }
-
-                    val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
-                    val now = df.format(Calendar.getInstance().time)
-
-                    val variationQty = (qtyObj.qtyCollected ?: 0.0) - initialQty
-                    if (variationQty != 0.toDouble()) {
-                        logContent.add(
-                            LogContent(
-                                itemId = itemObj.itemId,
-                                itemStr = itemObj.itemDescription,
-                                itemCode = itemObj.ean,
-                                lotId = lot?.lotId,
-                                lotCode = lot?.code ?: "",
-                                scannedCode = itemObj.codeRead,
-                                variationQty = variationQty,
-                                finalQty = qtyObj.qtyCollected,
-                                date = now
-                            )
-                        )
-                    }
-
-                    checkLotEnabled(tempOrc)
-                    break
-                }
+            val tempQty: Double = if (!total) {
+                qty * multi + (qtyObj.qtyCollected ?: 0.toDouble())
+            } else {
+                qty * multi
             }
+
+            if (tempQty <= 0) {
+                removeItem()
+                lastRegexResult = null
+                return
+            }
+
+            adapter?.updateQtyCollected(tempOrc, tempQty)
+
+            // Unless is blocked, unlock the partial
+            if (!partialBlock) {
+                partial = false
+                partialBlock = false
+                setupPartial()
+            }
+
+            val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
+            val now = df.format(Calendar.getInstance().time)
+
+            val variationQty = (qtyObj.qtyCollected ?: 0.0) - initialQty
+            if (variationQty != 0.toDouble()) {
+                logContent.add(
+                    LogContent(
+                        itemId = itemObj.itemId,
+                        itemStr = itemObj.itemDescription,
+                        itemCode = itemObj.ean,
+                        lotId = lot?.lotId,
+                        lotCode = lot?.code ?: "",
+                        scannedCode = itemObj.codeRead,
+                        variationQty = variationQty,
+                        finalQty = qtyObj.qtyCollected,
+                        date = now
+                    )
+                )
+            }
+
+            checkLotEnabled(tempOrc)
+            break
         }
 
         log?.content = logContent
@@ -1659,7 +1684,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         else {
             when (requestCode) {
                 REQUEST_EXTERNAL_STORAGE -> {
-                    // If request is cancelled, the result arrays are empty.
+                    // If the request is canceled, the result arrays are empty.
                     if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                         makeText(
                             this, getString(R.string.cannot_write_images_to_external_storage), ERROR
@@ -1704,20 +1729,20 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     )
                 }
 
-                // Utilizamos la primer coincidencia
+                // Utilizamos la primera coincidencia
                 lastRegexResult = it.first()
 
-                // Si la cantidad no es NULL procesiguimos con el Regex
+                // Si la cantidad no es NULL proseguimos con el Regex
                 if (lastRegexResult!!.qty != null) {
                     CheckCode(callback = { onCheckCodeEnded(it) },
                         scannedCode = lastRegexResult!!.ean,
-                        adapter = orcAdapter!!,
+                        list = adapter?.fullList ?: ArrayList(),
                         onEventData = { showSnackBar(it) }).execute()
 
                     return@tryToRegex
                 }
 
-                // Qty NULL ->
+                // Qty NULL →
                 //    Actualizar scanned code y proseguir como
                 //    un código corriente pero advertir sobre el error.
 
@@ -1738,7 +1763,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
             CheckCode(callback = { onCheckCodeEnded(it) },
                 scannedCode = code,
-                adapter = orcAdapter!!,
+                list = adapter?.fullList ?: ArrayList(),
                 onEventData = { it2 -> showSnackBar(it2) }).execute()
 
             gentlyReturn()

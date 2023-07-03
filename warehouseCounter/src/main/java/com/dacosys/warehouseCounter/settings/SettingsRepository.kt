@@ -272,6 +272,52 @@ class SettingsRepository {
         description = context.getString(R.string.default_template),
         default = -1
     )
+    var selectPtlOrderShowCheckBoxes = Preference(
+        key = "select_ptl_order_show_checkboxes",
+        description = context.getString(R.string.show_checkboxes),
+        default = false
+    )
+    var editItems = Preference(
+        key = "edit_items",
+        description = context.getString(R.string.edit_items),
+        default = false
+    )
+
+    var linkCodeShowImages = Preference(
+        key = "link_code_show_images",
+        description = context.getString(R.string.show_images),
+        default = false
+    )
+
+    var linkCodeShowCheckBoxes = Preference(
+        key = "link_code_show_checkboxes",
+        description = context.getString(R.string.show_checkboxes),
+        default = false
+    )
+
+    var itemSelectShowImages = Preference(
+        key = "item_select_show_images",
+        description = context.getString(R.string.show_images),
+        default = false
+    )
+
+    var itemSelectShowCheckBoxes = Preference(
+        key = "item_select_show_checkboxes",
+        description = context.getString(R.string.show_checkboxes),
+        default = false
+    )
+
+    var inboxShowCheckBoxes = Preference(
+        key = "inbox_show_checkboxes",
+        description = context.getString(R.string.show_checkboxes),
+        default = false
+    )
+
+    var outboxShowCheckBoxes = Preference(
+        key = "outbox_show_checkboxes",
+        description = context.getString(R.string.show_checkboxes),
+        default = false
+    )
 
     // region FloatingCamera Position and Size
     var flCameraPortraitLocX = Preference(
@@ -531,6 +577,14 @@ class SettingsRepository {
                 sp.icWsUser,
 
                 sp.orderRequestVisibleStatus,
+                sp.selectPtlOrderShowCheckBoxes,
+                sp.editItems,
+                sp.linkCodeShowImages,
+                sp.linkCodeShowCheckBoxes,
+                sp.itemSelectShowImages,
+                sp.itemSelectShowCheckBoxes,
+                sp.inboxShowCheckBoxes,
+                sp.outboxShowCheckBoxes,
 
                 sp.printerBtAddress,
 

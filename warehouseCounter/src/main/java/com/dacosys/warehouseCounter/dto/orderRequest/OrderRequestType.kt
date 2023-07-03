@@ -41,9 +41,7 @@ class OrderRequestType() : Parcelable {
 
         other as OrderRequestType
 
-        if (id != other.id) return false
-
-        return true
+        return id == other.id
     }
 
     override fun hashCode(): Int {
@@ -71,6 +69,20 @@ class OrderRequestType() : Parcelable {
             Collections.addAll(
                 allSections,
                 prepareOrder,
+                stockAudit,
+                receptionAudit,
+                deliveryAudit,
+                stockAuditFromDevice
+            )
+
+            Collections.sort(allSections, CustomComparator())
+            return allSections
+        }
+
+        fun getUnlimited(): ArrayList<OrderRequestType> {
+            val allSections = ArrayList<OrderRequestType>()
+            Collections.addAll(
+                allSections,
                 stockAudit,
                 receptionAudit,
                 deliveryAudit,

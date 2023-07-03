@@ -2,6 +2,8 @@ package com.dacosys.warehouseCounter.dto.orderRequest
 
 import android.os.Parcel
 import android.os.Parcelable
+import androidx.room.Ignore
+import com.dacosys.warehouseCounter.dto.ptlOrder.ContentStatus
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
@@ -16,6 +18,13 @@ class OrderRequestContent() : Parcelable {
 
     @Json(name = "qty")
     var qty: Qty? = null
+
+    @Ignore
+    val contentStatus: ContentStatus =
+        if (qty?.qtyCollected == null || qty?.qtyRequested == null) ContentStatus.QTY_DEFAULT
+        else if ((qty?.qtyCollected ?: 0.0) == (qty?.qtyRequested ?: 0.0)) ContentStatus.QTY_EQUAL
+        else if ((qty?.qtyCollected ?: 0.0) > (qty?.qtyRequested ?: 0.0)) ContentStatus.QTY_MORE
+        else ContentStatus.QTY_LESS
 
     constructor(parcel: Parcel) : this() {
         item = parcel.readParcelable(Item::class.java.classLoader)

@@ -293,8 +293,8 @@
                     app:layout_constraintTop_toTopOf="parent"
                     app:srl_direction="bottom">
 
-                <ListView
-                        android:id="@+id/orcListView"
+                <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerView"
                         android:layout_width="0dp"
                         android:layout_height="0dp"
                         android:layout_marginLeft="2dp"

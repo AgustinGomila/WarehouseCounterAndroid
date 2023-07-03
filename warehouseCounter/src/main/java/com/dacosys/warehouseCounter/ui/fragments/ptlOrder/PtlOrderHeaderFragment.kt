@@ -102,7 +102,14 @@ class PtlOrderHeaderFragment : Fragment() {
         binding.orderTitleTextView.text = title
     }
 
-    fun setOrder(order: PtlOrder?, location: WarehouseArea?) {
+    /**
+     * Set order
+     *
+     * @param order PTL Order.
+     * @param location Warehouse area location.
+     * @param sendEvent Send the order change event on completion.
+     */
+    fun setOrder(order: PtlOrder?, location: WarehouseArea?, sendEvent: Boolean = true) {
         ptlOrder = order
         warehouseArea = location
 
@@ -122,7 +129,7 @@ class PtlOrderHeaderFragment : Fragment() {
         }
 
         // Evento de cambio de orden
-        orderChangedListener?.onOrderChanged(ptlOrder)
+        if (sendEvent) orderChangedListener?.onOrderChanged(ptlOrder)
     }
 
     // region DESTINATION CONTAINER
@@ -183,7 +190,7 @@ class PtlOrderHeaderFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setOrder(ptlOrder, warehouseArea)
+        setOrder(ptlOrder, warehouseArea, false)
     }
 
     private fun setButtonPanelVisibility() {

@@ -192,8 +192,8 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
 
             ItemCoroutines().get {
                 val adapter = ItemAdapter(
-                    activity = this,
                     resource = R.layout.item_row_simple,
+                    activity = this,
                     itemList = it,
                     suggestedList = ArrayList()
                 )
@@ -250,7 +250,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         topLayout()
 
         val adapter = (binding.autoCompleteTextView.adapter!! as ItemAdapter)
-        val viewHeight = ItemAdapter.viewHeightForDropDown
+        val viewHeight = ItemAdapter.viewHeight
         val maxNeeded = adapter.count() * viewHeight
         val availableHeight =
             calculateDropDownHeight() - (binding.autoCompleteTextView.y + binding.autoCompleteTextView.height).toInt()
@@ -305,6 +305,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
                 binding.autoCompleteTextView.isPopupShowing -> {
                     adjustAndShowDropDown()
                 }
+
                 else -> {
                     centerLayout()
                 }

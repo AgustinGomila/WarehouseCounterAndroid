@@ -16,6 +16,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.fragment.app.Fragment
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.imageControl.ui.fragments.ImageControlButtonsFragment
 import com.dacosys.warehouseCounter.R
@@ -49,10 +51,11 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     private var imageControlFragment: ImageControlButtonsFragment? = null
 
     // Adaptador, colección de ítems, fila seleccionada
-    private var orcAdapter: OrcAdapter? = null
+    private var adapter: OrcAdapter? = null
     private var lastSelected: OrderRequestContent? = null
     private var firstVisiblePos: Int? = null
-    private var checkedIdArray: ArrayList<Int> = ArrayList()
+    private var currentScrollPosition: Int = 0
+    private var checkedIdArray: ArrayList<Long> = ArrayList()
 
     // Cliente
     private var client: Client? = null
@@ -61,9 +64,12 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     private var orderRequest: OrderRequest? = null
 
     // Lista completa
-    private var orcArray: ArrayList<OrderRequestContent> = ArrayList()
+    private var completeList: ArrayList<OrderRequestContent> = ArrayList()
 
     private var rejectNewInstances = false
+
+    // Se usa para saber si estamos en onStart luego de onCreate
+    private var fillRequired = false
 
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
@@ -81,13 +87,12 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        if (orcAdapter != null) {
-            savedInstanceState.putParcelable("lastSelected", (orcAdapter ?: return).currentOrc())
-            savedInstanceState.putInt("firstVisiblePos", (orcAdapter ?: return).firstVisiblePos())
-            savedInstanceState.putParcelableArrayList("orcArray", orcAdapter?.getAll())
-            savedInstanceState.putIntegerArrayList(
-                "checkedIdArray", orcAdapter!!.getAllCheckedAsInt()
-            )
+        if (adapter != null) {
+            savedInstanceState.putParcelable("lastSelected", adapter?.currentItem())
+            savedInstanceState.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
+            savedInstanceState.putParcelableArrayList("completeList", adapter?.fullList)
+            savedInstanceState.putLongArray("checkedIdArray", adapter?.checkedIdArray?.map { it }?.toLongArray())
+            savedInstanceState.putInt("currentScrollPosition", currentScrollPosition)
         }
 
         savedInstanceState.putBoolean("finishOrder", finishOrder)
@@ -111,7 +116,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     private fun destroyLocals() {
-        orcAdapter?.refreshListeners(null, null, null, null)
+        adapter?.refreshListeners(null, null, null, null)
         imageControlFragment!!.onDestroy()
     }
 
@@ -126,6 +131,16 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                currentScrollPosition =
+                    (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+            }
+        })
+
+        // Para el llenado en el onStart siguiente de onCreate
+        fillRequired = true
+
         var tempTitle = getString(R.string.confirm_count)
 
         if (savedInstanceState != null) {
@@ -133,18 +148,20 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
             // region Recuperar el título de la ventana
             val t2 = savedInstanceState.getString("title")
-            if (t2 != null && t2.isNotEmpty()) tempTitle = t2
+            if (!t2.isNullOrEmpty()) tempTitle = t2
             // endregion
 
             client = savedInstanceState.getParcelable("client")
             orderRequest = savedInstanceState.getParcelable("orderRequest")
             panelTopIsExpanded = savedInstanceState.getBoolean("panelTopIsExpanded")
-            orcArray =
-                savedInstanceState.getParcelableArrayList<OrderRequestContent>("orcArray") as ArrayList<OrderRequestContent>
-            checkedIdArray = savedInstanceState.getIntegerArrayList("checkedIdArray") ?: ArrayList()
+            completeList =
+                savedInstanceState.getParcelableArrayList<OrderRequestContent>("completeList") as ArrayList<OrderRequestContent>
+            checkedIdArray =
+                (savedInstanceState.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
             lastSelected = savedInstanceState.getParcelable("lastSelected")
             firstVisiblePos =
                 if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos") else -1
+            currentScrollPosition = savedInstanceState.getInt("currentScrollPosition")
 
             //Restore the fragment's instance
             imageControlFragment = supportFragmentManager.getFragment(
@@ -156,13 +173,13 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             val extras = intent.extras
             if (extras != null) {
                 val t1 = extras.getString("title")
-                if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+                if (!t1.isNullOrEmpty()) tempTitle = t1
 
                 orderRequest = Parcels.unwrap<OrderRequest>(extras.getParcelable("orderRequest"))
                 client = Parcels.unwrap<Client>(extras.getParcelable("client"))
 
                 val t2 = extras.getParcelableArrayList<OrderRequestContent>("orcArray")
-                if (t2 != null) orcArray = t2
+                if (t2 != null) completeList = t2
             }
 
             finishOrder = settingViewModel.finishOrder
@@ -202,12 +219,19 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         setImageControlFragment()
         setPanels()
 
-        fillOrcAdapter(orcArray)
-
         // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
         Screen.setupUI(binding.orderRequestContentConfirm, this)
 
         showProgressBar(false)
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        if (fillRequired) {
+            fillRequired = false
+            fillAdapter(completeList)
+        }
     }
 
     /**
@@ -215,7 +239,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
      * dependiendo del tipo de conteo que se está haciendo.
      */
     private fun setHeaderFragment() {
-        if (orderRequest == null || orcAdapter == null) {
+        if (orderRequest == null || adapter == null) {
             return
         }
 
@@ -223,7 +247,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         val newFragment: Fragment =
             if (orType == OrderRequestType.deliveryAudit || orType == OrderRequestType.prepareOrder || orType == OrderRequestType.stockAudit || orType == OrderRequestType.receptionAudit || orType == OrderRequestType.stockAuditFromDevice) {
                 OrderRequestHeader.newInstance(
-                    orderRequest = orderRequest, orcArray = orcAdapter!!.getAll()
+                    orderRequest = orderRequest, orcArray = adapter?.fullList ?: ArrayList()
                 )
             } else {
                 return
@@ -323,6 +347,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             panelTopIsExpanded -> {
                 binding.expandTopPanelButton?.text = getString(R.string.collapse_panel)
             }
+
             else -> {
                 binding.expandTopPanelButton?.text = getString(R.string.client_and_description)
             }
@@ -360,6 +385,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 panelTopIsExpanded -> {
                     binding.expandTopPanelButton?.text = getString(R.string.collapse_panel)
                 }
+
                 else -> {
                     binding.expandTopPanelButton?.text = getString(R.string.client_and_description)
                 }
@@ -380,11 +406,8 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     override fun onBackPressed() {
         Screen.closeKeyboard(this)
 
-        ///////////////////////////////////////////
         ////////////// IMAGE CONTROL //////////////
-        if (imageControlFragment != null) {
-            imageControlFragment!!.saveImages(false)
-        }
+        imageControlFragment?.saveImages(false)
         ///////////////////////////////////////////
 
         val data = Intent()
@@ -402,27 +425,27 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 binding.selectedLabelTextView.visibility = View.VISIBLE
                 binding.selectedLabelTextView.text = getString(R.string.checked)
 
-                if (orcAdapter != null) {
-                    val cont = orcAdapter!!.qtyRequestedTotal()
-                    val t = orcAdapter!!.count
+                if (adapter != null) {
+                    val cont = adapter?.qtyRequestedTotal() ?: 0.0
+                    val t = adapter?.itemCount ?: 0
                     binding.totalTextView.text = t.toString()
                     binding.qtyReqTextView.text = Statics.roundToString(cont, 0)
-                    binding.selectedTextView.text = orcAdapter!!.countChecked().toString()
+                    binding.selectedTextView.text = adapter!!.countChecked().toString()
                 }
             } else {
                 binding.totalLabelTextView.text = getString(R.string.total)
                 binding.qtyReqLabelTextView.text = getString(R.string.cont_)
                 binding.selectedLabelTextView.visibility = View.GONE
 
-                if (orcAdapter != null) {
-                    val cont = orcAdapter!!.qtyCollectedTotal()
-                    val t = orcAdapter!!.count
+                if (adapter != null) {
+                    val cont = adapter?.qtyCollectedTotal() ?: 0.0
+                    val t = adapter?.itemCount ?: 0
                     binding.totalTextView.text = t.toString()
                     binding.qtyReqTextView.text = Statics.roundToString(cont, 0)
                 }
             }
 
-            if (orcAdapter == null) {
+            if (adapter == null) {
                 binding.totalTextView.text = 0.toString()
                 binding.qtyReqTextView.text = 0.toString()
                 binding.selectedTextView.text = 0.toString()
@@ -430,50 +453,52 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         }
     }
 
-    private fun fillOrcAdapter(t: ArrayList<OrderRequestContent>) {
-        orcArray = t
+    private fun fillAdapter(t: ArrayList<OrderRequestContent>) {
+        completeList = t
 
         showProgressBar(true)
 
         runOnUiThread {
             try {
-                if (orcAdapter != null) {
-                    lastSelected = (orcAdapter ?: return@runOnUiThread).currentOrc()
-                    firstVisiblePos = (orcAdapter ?: return@runOnUiThread).firstVisiblePos()
+                if (adapter != null) {
+                    // Si el adapter es NULL es porque aún no fue creado.
+                    // Por lo tanto, puede ser que los valores de [lastSelected]
+                    // sean valores guardados de la instancia anterior y queremos preservarlos.
+                    lastSelected = adapter?.currentItem()
                 }
 
-                val orcDiffArray = orcArray.indices.filter {
-                    orcArray[it].qty!!.qtyCollected!! < orcArray[it].qty!!.qtyRequested!! || orcArray[it].qty!!.qtyCollected!! > orcArray[it].qty!!.qtyRequested!!
-                }.map { orcArray[it] }
+                val filteredList = ArrayList(completeList.indices
+                    .filter {
+                        (completeList[it].qty?.qtyCollected ?: 0.0) < (completeList[it].qty?.qtyRequested ?: 0.0) ||
+                                (completeList[it].qty?.qtyCollected ?: 0.0) > (completeList[it].qty?.qtyRequested
+                            ?: 0.0)
+                    }
+                    .map { completeList[it] })
 
-                orcAdapter = OrcAdapter(
-                    activity = this,
-                    resource = R.layout.orc_row,
-                    orcs = orcDiffArray as ArrayList<OrderRequestContent>,
-                    listView = binding.orcListView,
+                adapter = OrcAdapter(
+                    recyclerView = binding.recyclerView,
+                    fullList = filteredList,
                     checkedIdArray = checkedIdArray,
-                    multiSelect = false,
-                    allowEditQty = false,
                     orType = orderRequest?.orderRequestedType
                         ?: OrderRequestType.stockAuditFromDevice,
-                    setQtyOnCheckedChanged = false
                 )
 
-                orcAdapter?.refreshListeners(
-                    checkedChangedListener = null,
-                    dataSetChangedListener = this,
-                    editQtyListener = null,
-                    editDescriptionListener = null
-                )
-                while (binding.orcListView.adapter == null) {
-                    // Horrible wait for full load
+                refreshAdapterListeners()
+
+                binding.recyclerView.layoutManager = LinearLayoutManager(this)
+                binding.recyclerView.adapter = adapter
+
+                while (binding.recyclerView.adapter == null) {
+                    // Horrible wait for a full load
                 }
 
+                // Estas variables locales evitar posteriores cambios de estado.
+                val ls = lastSelected
+                val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
-                    run {
-                        orcAdapter?.setSelectItemAndScrollPos(lastSelected, firstVisiblePos)
-                    }
-                }, 20)
+                    adapter?.selectItem(ls, false)
+                    adapter?.scrollToPos(cs, true)
+                }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex)
@@ -481,6 +506,15 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 showProgressBar(false)
             }
         }
+    }
+
+    private fun refreshAdapterListeners() {
+        adapter?.refreshListeners(
+            checkedChangedListener = null,
+            dataSetChangedListener = this,
+            editQtyListener = null,
+            editDescriptionListener = null
+        )
     }
 
     private fun confirm() {

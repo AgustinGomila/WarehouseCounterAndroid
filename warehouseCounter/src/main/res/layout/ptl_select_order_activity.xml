@@ -28,10 +28,11 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:srl_direction="bottom">
+                app:srl_direction="bottom" android:layout_marginTop="2dp" android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp" android:layout_marginBottom="2dp">
 
-            <ListView
-                    android:id="@+id/itemListView"
+            <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_marginLeft="2dp"

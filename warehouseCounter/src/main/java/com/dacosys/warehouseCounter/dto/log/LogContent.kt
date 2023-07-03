@@ -2,6 +2,7 @@ package com.dacosys.warehouseCounter.dto.log
 
 import android.os.Parcel
 import android.os.Parcelable
+import androidx.room.Ignore
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
@@ -33,6 +34,11 @@ class LogContent() : Parcelable {
 
     @Json(name = "date")
     var date: String? = null
+
+    @Ignore
+    val contentStatus: LogContentStatus =
+        if ((finalQty ?: 0.0) <= 0.0) LogContentStatus.SOME_QTY
+        else LogContentStatus.QTY_ZERO
 
     constructor(parcel: Parcel) : this() {
         itemId = parcel.readValue(Long::class.java.classLoader) as? Long

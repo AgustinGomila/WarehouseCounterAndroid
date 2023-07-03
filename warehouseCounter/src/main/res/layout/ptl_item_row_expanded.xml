@@ -11,7 +11,7 @@
                                                    tools:layout_editor_absoluteY="81dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/constraintLayout"
+            android:id="@+id/checkBoxConstraintLayout"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -36,7 +36,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toTopOf="@+id/dividerInternal1"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/constraintLayout"
+            app:layout_constraintStart_toEndOf="@+id/checkBoxConstraintLayout"
             app:layout_constraintTop_toTopOf="parent">
 
         <androidx.constraintlayout.widget.Guideline
@@ -399,7 +399,7 @@
             android:layout_height="wrap_content"
 
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/constraintLayout"
+            app:layout_constraintStart_toEndOf="@+id/checkBoxConstraintLayout"
             app:layout_constraintTop_toBottomOf="@+id/dividerInternal1">
 
         <TextView

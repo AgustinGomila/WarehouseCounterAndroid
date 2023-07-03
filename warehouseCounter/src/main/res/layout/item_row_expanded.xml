@@ -10,8 +10,18 @@
                                                    tools:layout_editor_absoluteX="0dp"
                                                    tools:layout_editor_absoluteY="81dp">
 
+    <View
+            android:id="@+id/dividerInternal1"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginStart="1dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintBottom_toTopOf="@+id/categoryConstraintLayout"
+            app:layout_constraintStart_toStartOf="@+id/generalDataConstraintLayout"
+            app:layout_constraintTop_toBottomOf="@+id/generalDataConstraintLayout"
+            app:layout_constraintEnd_toStartOf="@+id/imageConstraintLayout"/>
     <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/constraintLayout"
+            android:id="@+id/checkBoxConstraintLayout"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -35,9 +45,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toTopOf="@+id/dividerInternal1"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/constraintLayout"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintStart_toEndOf="@+id/checkBoxConstraintLayout"
+            app:layout_constraintTop_toTopOf="parent" app:layout_constraintEnd_toStartOf="@+id/imageConstraintLayout">
 
         <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/eanTextView"
@@ -199,26 +208,14 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <View
-            android:id="@+id/dividerInternal1"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_marginStart="1dp"
-            android:layout_marginEnd="1dp"
-            android:background="?android:attr/listDivider"
-            app:layout_constraintBottom_toTopOf="@+id/categoryConstraintLayout"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/generalDataConstraintLayout"
-            app:layout_constraintTop_toBottomOf="@+id/generalDataConstraintLayout"/>
-
     <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/categoryConstraintLayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
 
-            app:layout_constraintEnd_toEndOf="@+id/dividerInternal1"
-            app:layout_constraintStart_toEndOf="@+id/constraintLayout"
-            app:layout_constraintTop_toBottomOf="@+id/dividerInternal1">
+            app:layout_constraintStart_toEndOf="@+id/checkBoxConstraintLayout"
+            app:layout_constraintTop_toBottomOf="@+id/dividerInternal1"
+            app:layout_constraintEnd_toStartOf="@+id/imageConstraintLayout">
 
         <TextView
                 android:id="@+id/categoryLabelTextView"
@@ -272,6 +269,93 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 app:layout_constraintGuide_percent="0.75"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            app:layout_constraintEnd_toStartOf="@+id/imageControlConstraintLayout"
+            app:layout_constraintStart_toEndOf="@+id/checkBoxConstraintLayout"
+            app:layout_constraintTop_toBottomOf="@+id/categoryConstraintLayout"
+            android:id="@+id/editConstraintLayout">
+
+        <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/editImageView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/sign"
+                app:srcCompat="@drawable/ic_edit"
+                app:layout_constraintTop_toTopOf="parent" android:layout_marginEnd="16dp"
+                app:layout_constraintEnd_toEndOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="0dp" android:id="@+id/imageConstraintLayout"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:visibility="gone" app:layout_constraintEnd_toEndOf="parent"
+            android:background="@drawable/layout_semitransparent">
+
+        <ProgressBar
+                android:id="@+id/progressBar"
+                style="@android:style/Widget.DeviceDefault.ProgressBar"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_gravity="center"
+                app:layout_constraintBottom_toBottomOf="@+id/imageView"
+                app:layout_constraintEnd_toEndOf="@+id/imageView"
+                app:layout_constraintStart_toStartOf="@+id/imageView"
+                app:layout_constraintTop_toTopOf="@+id/imageView"
+                android:visibility="gone"
+        />
+        <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/imageView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/item_image"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:visibility="invisible" android:padding="4dp" app:srcCompat="@drawable/ic_show_image"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/imageControlConstraintLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toStartOf="@+id/imageConstraintLayout"
+            android:visibility="gone" app:layout_constraintTop_toBottomOf="@+id/categoryConstraintLayout">
+
+        <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/albumImageView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:contentDescription="@string/see_images"
+                app:layout_constraintEnd_toStartOf="@+id/addPhotoImageView"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_photo_library"/>
+
+        <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/addPhotoImageView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:contentDescription="@string/add_image"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_add_photo_alternate"/>
+
+        <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/signImageView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:contentDescription="@string/sign"
+                app:layout_constraintEnd_toStartOf="@+id/albumImageView"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_sign"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -9,7 +9,7 @@ import com.squareup.moshi.JsonClass
 data class PtlOrder(
     @Json(name = ID_KEY) val id: Long,
     @Json(name = ORDER_TYPE_ID_KEY) val orderTypeId: Long,
-    @Json(name = ORDER_TYPE_KEY) val orderType: String,
+    @Json(name = ORDER_TYPE_KEY) val orderTypeKey: String,
     @Json(name = EXTERNAL_ID_KEY) val externalId: String,
     @Json(name = CLIENT_ID_KEY) val clientId: Long,
     @Json(name = CLIENT_KEY) val client: List<Client>,
@@ -35,11 +35,10 @@ data class PtlOrder(
 ) : Parcelable {
     constructor(parcel: Parcel) : this(id = parcel.readLong(),
         orderTypeId = parcel.readLong(),
-        orderType = parcel.readString() ?: "",
+        orderTypeKey = parcel.readString() ?: "",
         externalId = parcel.readString() ?: "",
         clientId = parcel.readLong(),
-        client = parcel.readParcelableArray(Client::class.java.classLoader)?.map { it as Client }
-            ?: emptyList(),
+        client = parcel.readParcelableArray(Client::class.java.classLoader)?.map { it as Client } ?: emptyList(),
         collectorId = parcel.readValue(Long::class.java.classLoader) as? Long,
         collectorUserId = parcel.readValue(Long::class.java.classLoader) as? Long,
         description = parcel.readString() ?: "",
@@ -59,6 +58,10 @@ data class PtlOrder(
         statusId = parcel.readLong(),
         rowCreationDate = parcel.readString() ?: "",
         rowModificationDate = parcel.readString() ?: "")
+
+    val orderType by lazy {
+        PtlOrderType.values().firstOrNull { it.id == this.orderTypeId }
+    }
 
     companion object CREATOR : Parcelable.Creator<PtlOrder> {
         override fun createFromParcel(parcel: Parcel): PtlOrder {
@@ -99,7 +102,7 @@ data class PtlOrder(
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeLong(id)
         parcel.writeLong(orderTypeId)
-        parcel.writeString(orderType)
+        parcel.writeString(orderTypeKey)
         parcel.writeString(externalId)
         parcel.writeLong(clientId)
         parcel.writeParcelableArray(client.toTypedArray(), flags)
@@ -128,4 +131,3 @@ data class PtlOrder(
         return 0
     }
 }
-

@@ -6,6 +6,8 @@ import android.os.Handler
 import android.os.Looper
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.adapter.log.LogContentAdapter
@@ -26,12 +28,16 @@ class LogContentActivity :
         }, 100)
     }
 
-    private var logContAdapter: LogContentAdapter? = null
+    private var adapter: LogContentAdapter? = null
     private var lastSelected: LogContent? = null
     private var firstVisiblePos: Int? = null
+    private var currentScrollPosition: Int = 0
 
     private var log: Log? = null
-    private var logContent: ArrayList<LogContent> = ArrayList()
+    private var completeList: ArrayList<LogContent> = ArrayList()
+
+    // Se usa para saber si estamos en onStart luego de onCreate
+    private var fillRequired = false
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
@@ -39,16 +45,11 @@ class LogContentActivity :
         savedInstanceState.putString("title", title.toString())
         savedInstanceState.putParcelable("log", log)
 
-        if (logContAdapter != null) {
-            savedInstanceState.putParcelable(
-                "lastSelected",
-                (logContAdapter ?: return).currentLogCont()
-            )
-            savedInstanceState.putInt(
-                "firstVisiblePos",
-                (logContAdapter ?: return).firstVisiblePos()
-            )
-            savedInstanceState.putParcelableArrayList("logContent", logContAdapter?.getAll())
+        if (adapter != null) {
+            savedInstanceState.putParcelable("lastSelected", adapter?.currentItem())
+            savedInstanceState.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
+            savedInstanceState.putParcelableArrayList("completeList", adapter?.fullList)
+            savedInstanceState.putInt("currentScrollPosition", currentScrollPosition)
         }
     }
 
@@ -63,19 +64,30 @@ class LogContentActivity :
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                currentScrollPosition =
+                    (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+            }
+        })
+
+        // Para el llenado en el onStart siguiente de onCreate
+        fillRequired = true
+
         var tempTitle = getString(R.string.count_log)
 
         if (savedInstanceState != null) {
             // region Recuperar el título de la ventana
             val t1 = savedInstanceState.getString("title")
-            if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+            if (!t1.isNullOrEmpty()) tempTitle = t1
             // endregion
 
-            logContent =
-                savedInstanceState.getParcelableArrayList<LogContent>("logContent") as ArrayList<LogContent>
+            completeList =
+                savedInstanceState.getParcelableArrayList<LogContent>("completeList") as ArrayList<LogContent>
             lastSelected = savedInstanceState.getParcelable("lastSelected")
             firstVisiblePos =
                 if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos") else -1
+            currentScrollPosition = savedInstanceState.getInt("currentScrollPosition")
         } else {
             // Inicializar la actividad
 
@@ -83,11 +95,10 @@ class LogContentActivity :
             val extras = intent.extras
             if (extras != null) {
                 val t1 = extras.getString("title")
-                if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+                if (!t1.isNullOrEmpty()) tempTitle = t1
 
                 log = extras.getParcelable("log")
-                logContent =
-                    extras.getParcelableArrayList<LogContent>("logContent") as ArrayList<LogContent>
+                completeList = extras.getParcelableArrayList<LogContent>("logContent") as ArrayList<LogContent>
             }
         }
 
@@ -100,8 +111,15 @@ class LogContentActivity :
             android.R.color.holo_orange_light,
             android.R.color.holo_red_light
         )
+    }
 
-        fillAdapter(logContent)
+    override fun onStart() {
+        super.onStart()
+
+        if (fillRequired) {
+            fillRequired = false
+            fillAdapter(completeList)
+        }
     }
 
     private fun showProgressBar(show: Boolean) {
@@ -113,33 +131,38 @@ class LogContentActivity :
     }
 
     private fun fillAdapter(t: ArrayList<LogContent>) {
-        logContent = t
+        completeList = t
 
         showProgressBar(true)
 
         runOnUiThread {
             try {
-                if (logContAdapter != null) {
-                    lastSelected = (logContAdapter ?: return@runOnUiThread).currentLogCont()
-                    firstVisiblePos = (logContAdapter ?: return@runOnUiThread).firstVisiblePos()
+                if (adapter != null) {
+                    // Si el adapter es NULL es porque aún no fue creado.
+                    // Por lo tanto, puede ser que los valores de [lastSelected]
+                    // sean valores guardados de la instancia anterior y queremos preservarlos.
+                    lastSelected = adapter?.currentItem()
                 }
 
-                logContAdapter = LogContentAdapter(
-                    activity = this,
-                    resource = R.layout.log_content_row,
-                    logContArray = logContent,
-                    listView = binding.logContListView
+                adapter = LogContentAdapter(
+                    recyclerView = binding.recyclerView,
+                    fullList = completeList
                 )
 
-                while (binding.logContListView.adapter == null) {
-                    // Horrible wait for full load
+                binding.recyclerView.layoutManager = LinearLayoutManager(this)
+                binding.recyclerView.adapter = adapter
+
+                while (binding.recyclerView.adapter == null) {
+                    // Horrible wait for a full load
                 }
 
+                // Estas variables locales evitar posteriores cambios de estado.
+                val ls = lastSelected
+                val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
-                    run {
-                        logContAdapter?.setSelectItemAndScrollPos(lastSelected, firstVisiblePos)
-                    }
-                }, 20)
+                    adapter?.selectItem(ls, false)
+                    adapter?.scrollToPos(cs, true)
+                }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex)

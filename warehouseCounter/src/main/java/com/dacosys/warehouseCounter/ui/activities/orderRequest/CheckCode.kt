@@ -4,7 +4,6 @@ import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.orderRequest.OrcAdapter
 import com.dacosys.warehouseCounter.dto.orderRequest.Item
 import com.dacosys.warehouseCounter.dto.orderRequest.Item.CREATOR.fromItemRoom
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
@@ -20,7 +19,7 @@ import kotlinx.coroutines.*
 class CheckCode(
     private var callback: (CheckCodeEnded) -> Unit = {},
     private var scannedCode: String,
-    private var adapter: OrcAdapter,
+    private var list: ArrayList<OrderRequestContent>,
     private var onEventData: (SnackBarEventData) -> Unit = {},
 ) {
     data class CheckCodeEnded(var orc: OrderRequestContent?, var itemCode: ItemCode?)
@@ -43,10 +42,10 @@ class CheckCode(
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         try {
+            val count = list.count()
             if (Statics.demoMode) {
-                if (adapter.count >= 5) {
-                    val res =
-                        context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
+                if (count >= 5) {
+                    val res = context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
                     callback.invoke(CheckCodeEnded(null, itemCode))
                     Log.e(this::class.java.simpleName, res)
@@ -65,10 +64,10 @@ class CheckCode(
                 return@withContext
             }
 
-            if (adapter.count() > 0) {
+            if (count > 0) {
                 // Buscar primero en el adaptador de la lista
-                (0 until adapter.count).map { adapter.getItem(it) }
-                    .filter { it != null && it.item!!.ean == code }.forEach { it2 ->
+                (0 until count).map { list[it] }
+                    .filter { it.item?.ean == scannedCode }.forEach { it2 ->
                         callback.invoke(CheckCodeEnded(it2, itemCode))
                         return@withContext
                     }
@@ -103,9 +102,9 @@ class CheckCode(
                     }
 
                     // Buscar de nuevo dentro del adaptador del control
-                    for (x in 0 until adapter.count) {
-                        val item = adapter.getItem(x)
-                        if (item != null && item.item!!.itemId == itemId) {
+                    for (x in 0 until count) {
+                        val item = list[x]
+                        if (item.item!!.itemId == itemId) {
                             callback.invoke(CheckCodeEnded(item, itemCode))
                             return@getByCode
                         }

@@ -11,13 +11,19 @@ import android.text.InputType
 import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsAnimationCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -246,6 +252,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     private var adapter: PtlContentAdapter? = null
     private var lastSelected: PtlContent? = null
+    private var currentScrollPosition: Int = 0
     private var firstVisiblePos: Int? = null
 
     // Lista temporal que se utiliza entre threads al agregar wacs.
@@ -278,10 +285,11 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         b.putParcelableArrayList("tempWacArray", tempContArray)
         if (adapter != null) {
-            b.putParcelable("lastSelected", adapter?.currentContent())
+            b.putParcelable("lastSelected", adapter?.currentItem())
             b.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
             b.putParcelableArrayList("completeList", adapter?.fullList)
             b.putLongArray("checkedIdArray", adapter?.checkedIdArray?.map { it }?.toLongArray())
+            b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
@@ -295,7 +303,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     private fun loadBundleValues(b: Bundle) {
         val t1 = b.getString("title")
-        if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+        if (!t1.isNullOrEmpty()) tempTitle = t1
 
         warehouseArea = b.getParcelable("warehouseArea")
         currentPtlOrder = b.getParcelable("ptlOrder")
@@ -304,12 +312,10 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         tempContArray = b.getParcelableArrayList("tempWacArray") ?: ArrayList()
         completeList = b.getParcelableArrayList("completeList") ?: ArrayList()
-        checkedIdArray =
-            (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
+        checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
         lastSelected = b.getParcelable("lastSelected")
-        firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt(
-            "firstVisiblePos"
-        ) else -1
+        firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
+        currentScrollPosition = b.getInt("currentScrollPosition")
 
         panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
         panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
@@ -317,7 +323,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     private fun loadExtrasBundleValues(b: Bundle) {
         val t1 = b.getString("title")
-        if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+        if (!t1.isNullOrEmpty()) tempTitle = t1
 
         warehouseArea = Parcels.unwrap<WarehouseArea>(b.getParcelable("warehouseArea"))
         currentPtlOrder = Parcels.unwrap<PtlOrder>(b.getParcelable("ptlOrder"))
@@ -334,6 +340,13 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         setContentView(binding.root)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                currentScrollPosition =
+                    (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+            }
+        })
 
         tempTitle = getString(R.string.ptl_order)
 
@@ -375,6 +388,131 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         Screen.setupUI(binding.root, this)
     }
 
+    // region Inset animation
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        setupWindowInsetsAnimation()
+    }
+
+    private var isKeyboardVisible: Boolean = false
+
+    /**
+     * Change panels state at Ime animation finish
+     *
+     * Estados que recuerdan está pendiente de ejecutar un cambio en estado (colapsado/expandido) de los paneles al
+     * terminar la animación de mostrado/ocultamiento del teclado en pantalla. Esto es para sincronizar los cambios,
+     * ejecutándolos de manera secuencial. A ojos del usuario la vista completa acompaña el desplazamiento de la
+     * animación. Si se ejecutara al mismo tiempo el cambio en los paneles y la animación del teclado la vista no
+     * acompaña correctamente al teclado, ya que cambia durante la animación.
+     */
+    private var changePanelTopStateAtFinish: Boolean = false
+    private var changePanelBottomStateAtFinish: Boolean = false
+
+    private fun setupWindowInsetsAnimation() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val rootView = binding.root
+
+        // Adjust root layout to bottom navigation bar
+        val windowInsets = window.decorView.rootWindowInsets
+        @Suppress("DEPRECATION") rootView.setPadding(
+            windowInsets.systemWindowInsetLeft,
+            windowInsets.systemWindowInsetTop,
+            windowInsets.systemWindowInsetRight,
+            windowInsets.systemWindowInsetBottom
+        )
+
+        implWindowInsetsAnimation()
+    }
+
+    private fun implWindowInsetsAnimation() {
+        val rootView = binding.root
+
+        ViewCompat.setWindowInsetsAnimationCallback(
+            rootView,
+            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+                override fun onEnd(animation: WindowInsetsAnimationCompat) {
+                    val isIme = animation.typeMask and WindowInsetsCompat.Type.ime() != 0
+                    if (!isIme) return
+
+                    postExecuteImeAnimation()
+                    super.onEnd(animation)
+                }
+
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>
+                ): WindowInsetsCompat {
+                    paddingBottomView(rootView, insets)
+
+                    return insets
+                }
+            })
+    }
+
+    private fun paddingBottomView(rootView: ConstraintLayout, insets: WindowInsetsCompat) {
+        val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+        val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+        val paddingBottom = imeInsets.bottom.coerceAtLeast(systemBarInsets.bottom)
+
+        isKeyboardVisible = imeInsets.bottom > 0
+
+        rootView.setPadding(
+            rootView.paddingLeft,
+            rootView.paddingTop,
+            rootView.paddingRight,
+            paddingBottom
+        )
+
+        Log.d(javaClass.simpleName, "IME Size: ${imeInsets.bottom}")
+    }
+
+    private fun postExecuteImeAnimation() {
+        // Si estamos mostrando el teclado, colapsamos los paneles.
+        if (isKeyboardVisible) {
+            when {
+                resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !qtyPrinterIsFocused -> {
+                    collapseBottomPanel()
+                    collapseTopPanel()
+                }
+
+                resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && qtyPrinterIsFocused -> {
+                    collapseBottomPanel()
+                }
+
+                resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT && !qtyPrinterIsFocused -> {
+                    collapseTopPanel()
+                }
+            }
+        }
+
+        // Si estamos esperando que termine la animación para ejecutar un cambio de vista
+        if (changePanelTopStateAtFinish) {
+            changePanelTopStateAtFinish = false
+            binding.expandTopPanelButton.performClick()
+        }
+        if (changePanelBottomStateAtFinish) {
+            changePanelBottomStateAtFinish = false
+            binding.expandBottomPanelButton?.performClick()
+        }
+    }
+
+    private fun collapseBottomPanel() {
+        if (panelBottomIsExpanded && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            runOnUiThread {
+                binding.expandBottomPanelButton?.performClick()
+            }
+        }
+    }
+
+    private fun collapseTopPanel() {
+        if (panelTopIsExpanded) {
+            runOnUiThread {
+                binding.expandTopPanelButton.performClick()
+            }
+        }
+    }
+    // endregion
+
     private fun setSyncTimer() {
         val oId = currentPtlOrder?.id
         val waId = warehouseArea?.id
@@ -396,14 +534,14 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     }
 
     private fun setupHeader() {
-        if (orderHeaderFragment == null) orderHeaderFragment =
-            supportFragmentManager.findFragmentById(R.id.headerFragment) as PtlOrderHeaderFragment
+        if (orderHeaderFragment == null)
+            orderHeaderFragment = supportFragmentManager.findFragmentById(R.id.headerFragment) as PtlOrderHeaderFragment
 
+        orderHeaderFragment?.setOrder(currentPtlOrder, warehouseArea, false)
         orderHeaderFragment?.setChangeOrderListener(this)
-        orderHeaderFragment?.setOrder(currentPtlOrder, warehouseArea)
 
-        if (printLabelFragment == null) printLabelFragment =
-            supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
+        if (printLabelFragment == null)
+            printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
 
         printLabelFragment?.setListener(this)
     }
@@ -413,17 +551,11 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         val currentLayout = ConstraintSet()
         if (panelBottomIsExpanded) {
-            if (panelTopIsExpanded) {
-                currentLayout.load(this, R.layout.ptl_order_activity)
-            } else {
-                currentLayout.load(this, R.layout.ptl_order_activity_top_panel_collapsed)
-            }
+            if (panelTopIsExpanded) currentLayout.load(this, R.layout.ptl_order_activity)
+            else currentLayout.load(this, R.layout.ptl_order_activity_top_panel_collapsed)
         } else {
-            if (panelTopIsExpanded) {
-                currentLayout.load(this, R.layout.ptl_order_activity_bottom_panel_collapsed)
-            } else {
-                currentLayout.load(this, R.layout.ptl_order_activity_both_panels_collapsed)
-            }
+            if (panelTopIsExpanded) currentLayout.load(this, R.layout.ptl_order_activity_bottom_panel_collapsed)
+            else currentLayout.load(this, R.layout.ptl_order_activity_both_panels_collapsed)
         }
 
         val transition = ChangeBounds()
@@ -443,26 +575,13 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         currentLayout.applyTo(binding.ptlOrderContent)
 
-        when {
-            panelBottomIsExpanded -> {
-                binding.expandBottomPanelButton?.text = context.getString(R.string.collapse_panel)
-            }
-            else -> {
-                binding.expandBottomPanelButton?.text = context.getString(R.string.item_operations)
-            }
-        }
+        if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text = context.getString(R.string.collapse_panel)
+        else binding.expandBottomPanelButton?.text = context.getString(R.string.item_operations)
 
-        when {
-            panelTopIsExpanded -> {
-                binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
-            }
-            else -> {
-                binding.expandTopPanelButton.text =
-                    if (orientation == Configuration.ORIENTATION_PORTRAIT) context.getString(R.string.select_order) else context.getString(
-                        R.string.print_labels
-                    )
-            }
-        }
+        if (panelTopIsExpanded) binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
+        else binding.expandTopPanelButton.text =
+            if (orientation == Configuration.ORIENTATION_PORTRAIT) context.getString(R.string.select_order)
+            else context.getString(R.string.print_labels)
     }
 
     private fun setBottomPanelAnimation() {
@@ -471,49 +590,45 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         }
 
         binding.expandBottomPanelButton?.setOnClickListener {
+            val bottomVisible = panelBottomIsExpanded
+            val imeVisible = isKeyboardVisible
+
+            if (!bottomVisible && imeVisible) {
+                // Esperar que se cierre el teclado luego de perder el foco el TextView para expandir el panel
+                changePanelBottomStateAtFinish = true
+                return@setOnClickListener
+            }
+
             val nextLayout = ConstraintSet()
             if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) {
-                    nextLayout.load(this, R.layout.ptl_order_activity_bottom_panel_collapsed)
-                } else {
-                    nextLayout.load(this, R.layout.ptl_order_activity_both_panels_collapsed)
-                }
+                if (panelTopIsExpanded) nextLayout.load(this, R.layout.ptl_order_activity_bottom_panel_collapsed)
+                else nextLayout.load(this, R.layout.ptl_order_activity_both_panels_collapsed)
+            } else if (panelTopIsExpanded) {
+                nextLayout.load(this, R.layout.ptl_order_activity)
             } else {
-                if (panelTopIsExpanded) {
-                    nextLayout.load(this, R.layout.ptl_order_activity)
-                } else {
-                    nextLayout.load(this, R.layout.ptl_order_activity_top_panel_collapsed)
-                }
+                nextLayout.load(this, R.layout.ptl_order_activity_top_panel_collapsed)
             }
 
             panelBottomIsExpanded = !panelBottomIsExpanded
             val transition = ChangeBounds()
             transition.interpolator = FastOutSlowInInterpolator()
             transition.addListener(object : Transition.TransitionListener {
-                override fun onTransitionResume(transition: Transition?) {}
-                override fun onTransitionPause(transition: Transition?) {}
-                override fun onTransitionStart(transition: Transition?) {}
-                override fun onTransitionEnd(transition: Transition?) {
+                override fun onTransitionResume(transition: Transition) {}
+                override fun onTransitionPause(transition: Transition) {}
+                override fun onTransitionStart(transition: Transition) {}
+                override fun onTransitionEnd(transition: Transition) {
                     refreshTextViews()
                 }
 
-                override fun onTransitionCancel(transition: Transition?) {}
+                override fun onTransitionCancel(transition: Transition) {}
             })
 
             TransitionManager.beginDelayedTransition(binding.ptlOrderContent, transition)
-
-            when {
-                panelBottomIsExpanded -> {
-                    binding.expandBottomPanelButton?.text =
-                        context.getString(R.string.collapse_panel)
-                }
-                else -> {
-                    binding.expandBottomPanelButton?.text =
-                        context.getString(R.string.item_operations)
-                }
-            }
-
             nextLayout.applyTo(binding.ptlOrderContent)
+
+            if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text =
+                getString(R.string.collapse_panel)
+            else binding.expandBottomPanelButton?.text = getString(R.string.search_options)
         }
     }
 
@@ -521,19 +636,29 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         val orientation = resources.configuration.orientation
 
         binding.expandTopPanelButton.setOnClickListener {
+            val topVisible = panelTopIsExpanded
+            val imeVisible = isKeyboardVisible
+
+            if (!topVisible && imeVisible) {
+                // Esperar que se cierre el teclado luego de perder el foco el TextView para expandir el panel
+                changePanelTopStateAtFinish = true
+                return@setOnClickListener
+            }
+
             val nextLayout = ConstraintSet()
-            if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) {
-                    nextLayout.load(this, R.layout.ptl_order_activity_top_panel_collapsed)
-                } else {
-                    nextLayout.load(this, R.layout.ptl_order_activity)
-                }
-            } else {
-                if (panelTopIsExpanded) {
+            if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                if (panelBottomIsExpanded) {
+                    if (panelTopIsExpanded) nextLayout.load(this, R.layout.ptl_order_activity_top_panel_collapsed)
+                    else nextLayout.load(this, R.layout.ptl_order_activity)
+                } else if (panelTopIsExpanded) {
                     nextLayout.load(this, R.layout.ptl_order_activity_both_panels_collapsed)
                 } else {
                     nextLayout.load(this, R.layout.ptl_order_activity_bottom_panel_collapsed)
                 }
+            } else if (panelTopIsExpanded) {
+                nextLayout.load(this, R.layout.ptl_order_activity_top_panel_collapsed)
+            } else {
+                nextLayout.load(this, R.layout.ptl_order_activity)
             }
 
             panelTopIsExpanded = !panelTopIsExpanded
@@ -541,29 +666,25 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
             val transition = ChangeBounds()
             transition.interpolator = FastOutSlowInInterpolator()
             transition.addListener(object : Transition.TransitionListener {
-                override fun onTransitionResume(transition: Transition?) {}
-                override fun onTransitionPause(transition: Transition?) {}
-                override fun onTransitionStart(transition: Transition?) {}
-                override fun onTransitionEnd(transition: Transition?) {
+                override fun onTransitionResume(transition: Transition) {}
+                override fun onTransitionPause(transition: Transition) {}
+                override fun onTransitionStart(transition: Transition) {}
+                override fun onTransitionEnd(transition: Transition) {
                     refreshTextViews()
                 }
 
-                override fun onTransitionCancel(transition: Transition?) {}
+                override fun onTransitionCancel(transition: Transition) {}
             })
 
             TransitionManager.beginDelayedTransition(binding.ptlOrderContent, transition)
+            nextLayout.applyTo(binding.ptlOrderContent)
 
-            when {
-                panelTopIsExpanded -> {
-                    binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
-                }
-                else -> {
-                    binding.expandTopPanelButton.text =
-                        if (orientation == Configuration.ORIENTATION_PORTRAIT) context.getString(R.string.select_order) else context.getString(
-                            R.string.print_labels
-                        )
-                }
-            }
+            if (panelTopIsExpanded) binding.expandTopPanelButton.text =
+                getString(R.string.collapse_panel)
+            else binding.expandTopPanelButton.text =
+                if (orientation == Configuration.ORIENTATION_PORTRAIT) context.getString(R.string.select_order) else context.getString(
+                    R.string.print_labels
+                )
 
             nextLayout.applyTo(binding.ptlOrderContent)
         }
@@ -591,27 +712,35 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         runOnUiThread {
             try {
                 if (adapter != null) {
-                    lastSelected = adapter?.currentContent()
-                    firstVisiblePos = adapter?.firstVisiblePos()
+                    // Si el adapter es NULL es porque aún no fue creado.
+                    // Por lo tanto, puede ser que los valores de [lastSelected]
+                    // sean valores guardados de la instancia anterior y queremos preservarlos.
+                    lastSelected = adapter?.currentItem()
                 }
 
                 adapter = PtlContentAdapter(
-                    recyclerView = binding.itemListView,
+                    recyclerView = binding.recyclerView,
                     fullList = ptlContArray,
                     checkedIdArray = checkedIdArray,
                     showQtyPanel = true
                 )
 
-                binding.itemListView.layoutManager = LinearLayoutManager(this)
-                binding.itemListView.adapter = adapter
-
                 refreshAdapterListeners()
 
-                while (binding.itemListView.adapter == null) {
-                    // Horrible wait for full load
+                binding.recyclerView.layoutManager = LinearLayoutManager(this)
+                binding.recyclerView.adapter = adapter
+
+                while (binding.recyclerView.adapter == null) {
+                    // Horrible wait for a full load
                 }
 
-                adapter?.setSelectItemAndScrollPos(lastSelected)
+                // Estas variables locales evitar posteriores cambios de estado.
+                val ls = lastSelected
+                val cs = currentScrollPosition
+                Handler(Looper.getMainLooper()).postDelayed({
+                    adapter?.selectItem(ls, false)
+                    adapter?.scrollToPos(cs, true)
+                }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex)
@@ -758,14 +887,17 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                 onBackPressed()
                 return true
             }
+
             R.id.action_rfid_connect -> {
                 JotterListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_trigger_scan -> {
                 JotterListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_read_barcode -> {
                 JotterListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
@@ -824,7 +956,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         if (!allowClicks) return
         allowClicks = false
 
-        val cc = adapter?.currentContent()
+        val cc = adapter?.currentItem()
 
         if (cc != null) {
             thread {
@@ -866,7 +998,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     private fun manualPick() {
         val waId = warehouseArea?.id
         val orderId = currentPtlOrder?.id
-        val cc = adapter?.currentContent()
+        val cc = adapter?.currentItem()
 
         if (waId == null || orderId == null || cc == null) {
             gentlyReturn()
@@ -912,6 +1044,8 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         printSelected()
     }
 
+    private var qtyPrinterIsFocused = false
     override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {
+        qtyPrinterIsFocused = hasFocus
     }
 }

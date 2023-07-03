@@ -2,803 +2,936 @@ package com.dacosys.warehouseCounter.adapter.orderRequest
 
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
-import android.view.View.GONE
-import android.view.View.VISIBLE
+import android.view.View.*
 import android.view.ViewGroup
-import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
+import android.widget.CheckBox
+import android.widget.CompoundButton
+import android.widget.Filter
+import android.widget.Filterable
 import androidx.core.content.res.ResourcesCompat.getColor
 import androidx.core.content.res.ResourcesCompat.getDrawable
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
+import androidx.core.view.marginBottom
+import androidx.core.view.marginTop
+import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.RecyclerView.*
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
+import com.dacosys.warehouseCounter.databinding.OrderRequestRowBinding
+import com.dacosys.warehouseCounter.databinding.OrderRequestRowExpandedBinding
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
-import com.dacosys.warehouseCounter.ui.utils.Colors
+import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
-import com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
-import java.lang.ref.WeakReference
+import io.ktor.util.reflect.*
 import java.util.*
 
+class OrderRequestAdapter(
+    private val recyclerView: RecyclerView,
+    var fullList: ArrayList<OrderRequest> = ArrayList(),
+    var checkedIdArray: ArrayList<Long> = ArrayList(),
+    private var multiSelect: Boolean = false,
+    var showCheckBoxes: Boolean = false,
+    private var showCheckBoxesChanged: (Boolean) -> Unit = { },
+    var visibleStatus: ArrayList<OrderRequestType> = OrderRequestType.getAll(),
+    private var filterOptions: FilterOptions = FilterOptions("", true)
+) : ListAdapter<OrderRequest, ViewHolder>(OrderRequestDiffUtilCallback), Filterable {
 
-/**
- * Created by Agustin on 18/01/2017.
- */
+    // Posición del pedido seleccionado
+    private var currentIndex = NO_POSITION
 
-class OrderRequestAdapter : ArrayAdapter<OrderRequest>, Filterable {
-    private var activity: AppCompatActivity
-    private var resource: Int = 0
-    private var itemList: ArrayList<OrderRequest> = ArrayList()
-    private var suggestedList: ArrayList<OrderRequest> = ArrayList()
-    private var visibleStatus: ArrayList<OrderRequestType> = ArrayList()
-    private var checkedIdArray: ArrayList<Long> = ArrayList()
-
-    private var lastSelectedPos = -1
-    private var multiSelect: Boolean = false
-
+    // Este Listener debe usarse para los cambios de cantidad o de pedidos marcados de la lista,
+    // ya que se utiliza para actualizar los valores sumarios en la actividad.
     private var dataSetChangedListener: DataSetChangedListener? = null
+
+    private var selectedOrderRequestChangedListener: SelectedOrderRequestChangedListener? = null
     private var checkedChangedListener: CheckedChangedListener? = null
 
-    constructor(
-        activity: AppCompatActivity,
-        resource: Int,
-        itemList: ArrayList<OrderRequest>,
-        suggestedList: ArrayList<OrderRequest>,
-        checkedIdArray: ArrayList<Int>,
-        listView: ListView?,
-        multiSelect: Boolean,
-    ) : super(WarehouseCounterApp.context, resource, suggestedList) {
-        this.activity = activity
-        this.resource = resource
-        this.multiSelect = multiSelect
+    // Clase para distinguir actualizaciones parciales
+    private enum class PAYLOADS {
+        CHECKBOX_STATE,
+        CHECKBOX_VISIBILITY,
+        ITEM_SELECTED
+    }
 
-        this.suggestedList = suggestedList
-        this.itemList = itemList
+    fun clear() {
+        checkedIdArray.clear()
 
-        this.checkedIdArray.clear()
-        for (c in checkedIdArray) {
-            this.checkedIdArray.add(c.toLong())
-        }
-
-        this.listView = listView
-        this.visibleStatus = getPrefVisibleStatus()
-
-        setupColors()
+        fullList.clear()
+        submitList(fullList)
     }
 
     fun refreshListeners(
-        checkedChangedListener: CheckedChangedListener?,
-        dataSetChangedListener: DataSetChangedListener?,
+        checkedChangedListener: CheckedChangedListener? = null,
+        dataSetChangedListener: DataSetChangedListener? = null,
+        selectedOrderRequestChangedListener: SelectedOrderRequestChangedListener? = null,
     ) {
         this.checkedChangedListener = checkedChangedListener
         this.dataSetChangedListener = dataSetChangedListener
+        this.selectedOrderRequestChangedListener = selectedOrderRequestChangedListener
     }
 
     interface DataSetChangedListener {
-        // Define data you like to return from AysncTask
         fun onDataSetChanged()
     }
 
     interface CheckedChangedListener {
-        // Define data you like to return from AysncTask
-        fun onCheckedChanged(
-            isChecked: Boolean,
-            pos: Int,
-        )
+        fun onCheckedChanged(isChecked: Boolean, pos: Int)
     }
 
-    override fun add(item: OrderRequest?) {
-        if (item != null) {
-            if (!getAll().contains(item)) {
-                activity.runOnUiThread {
-                    super.add(item)
-                }
-            }
-        }
-        refresh()
+    interface SelectedOrderRequestChangedListener {
+        fun onSelectedOrderRequestChanged(orderRequest: OrderRequest?)
     }
 
-    override fun clear() {
-        activity.runOnUiThread {
-            super.clear()
-            clearChecked()
-        }
-    }
-
-    override fun remove(orderRequest: OrderRequest?) {
-        if (orderRequest != null) {
-            remove(arrayListOf(orderRequest))
-        }
-    }
-
-    fun remove(items: ArrayList<OrderRequest>) {
-        activity.runOnUiThread {
-            for (w in items) {
-                if (getAll().contains(w)) {
-                    checkedIdArray.remove(w.orderRequestId)
-                    super.remove(w)
-                }
-            }
-        }
-        refresh()
-    }
-
-    private fun getIndex(orderRequest: OrderRequest): Int {
-        for (i in 0 until count) {
-            val t = (getItem(i) as OrderRequest)
-            if (t == orderRequest) {
-                return i
-            }
-        }
-        return -1
-    }
-
-    fun count(): Int {
-        return count
-    }
-
-    fun getAll(): ArrayList<OrderRequest> {
-        val r: ArrayList<OrderRequest> = ArrayList()
-        for (i in 0 until count) {
-            r.add(getItem(i) as OrderRequest)
-        }
-        return r
-    }
-
-    fun getAllCheckedAsInt(): ArrayList<Int> {
-        val intArray: ArrayList<Int> = ArrayList()
-        for (c in checkedIdArray) {
-            intArray.add(c.toInt())
-        }
-        return intArray
-    }
-
-    fun countChecked(): Int {
-        return checkedIdArray.count()
-    }
-
-    fun getAllIdChecked(): ArrayList<Long> {
-        return checkedIdArray
-    }
-
-    fun getAllChecked(): ArrayList<OrderRequest> {
-        val r: ArrayList<OrderRequest> = ArrayList()
-        for (a in getAll()) {
-            if (checkedIdArray.contains(a.orderRequestId)) {
-                r.add(a)
-            }
-        }
-        return r
-    }
-
-    private var isFilling = false
-    fun setChecked(items: ArrayList<OrderRequest>, isChecked: Boolean) {
-        if (isFilling) return
-        isFilling = true
-
-        for (i in items) {
-            setChecked(i, isChecked)
-        }
-
-        isFilling = false
-        refresh()
-    }
-
-    fun setChecked(item: OrderRequest, isChecked: Boolean, suspendRefresh: Boolean = false) {
-        val position = getIndex(item)
-        if (isChecked) {
-            if (!checkedIdArray.contains(item.orderRequestId)) {
-                checkedIdArray.add(item.orderRequestId ?: 0)
-            }
-        } else {
-            checkedIdArray.remove(item.orderRequestId)
-        }
-
-        if (checkedChangedListener != null) {
-            checkedChangedListener!!.onCheckedChanged(isChecked, position)
-        }
-
-        if (!suspendRefresh) {
-            refresh()
-        }
-    }
-
-    fun setChecked(checkedItems: ArrayList<OrderRequest>) {
-        checkedItems.clear()
-        setChecked(checkedItems, true)
-    }
-
-    private fun clearChecked() {
-        checkedIdArray.clear()
-    }
-
-    private fun refresh() {
-        activity.runOnUiThread { notifyDataSetChanged() }
-        dataSetChangedListener?.onDataSetChanged()
-    }
-
-    fun setSelectItemAndScrollPos(a: OrderRequest?, tScrollPos: Int?) {
-        var pos = -1
-        if (a != null) pos = getPosition(a)
-        var scrollPos = -1
-        if (tScrollPos != null) scrollPos = tScrollPos
-        selectItem(pos, scrollPos, false)
-    }
-
-    fun selectItem(a: OrderRequest?) {
-        var pos = -1
-        if (a != null) pos = getPosition(a)
-        selectItem(pos)
-    }
-
-    private fun selectItem(pos: Int) {
-        selectItem(pos, pos, true)
-    }
-
-    private fun selectItem(pos: Int, scrollPos: Int, smoothScroll: Boolean) {
-        val listView = listView ?: return
-        listView.clearChoices()
-
-        // Deseleccionar cuando:
-        //   - Estaba previamente seleccionado
-        //   - La posición es negativa
-        //   - La cantidad de ítems es cero o menos
-
-        activity.runOnUiThread {
-            if (pos < 0 && lastSelectedPos < 0 && count > 0) {
-                listView.setItemChecked(0, true)
-                listView.setSelection(0)
-            } else if (pos == lastSelectedPos || pos < 0 || count <= 0) {
-                listView.setItemChecked(-1, true)
-                listView.setSelection(-1)
-            } else {
-                listView.setItemChecked(pos, true)
-                listView.setSelection(pos)
-            }
-        }
-
-        lastSelectedPos = currentPos()
-
-        activity.runOnUiThread {
-            if (smoothScroll) {
-                notifyDataSetChanged()
-                listView.smoothScrollToPosition(scrollPos)
-            } else {
-                refresh()
-                listView.setSelection(scrollPos)
-            }
-        }
-    }
-
-    fun currentItem(): OrderRequest? {
-        return (0 until count).firstOrNull { isSelected(it) }?.let { getItem(it) }
-    }
-
-    private fun currentPos(): Int {
-        return (0 until count).firstOrNull { isSelected(it) } ?: -1
-    }
-
-    fun firstVisiblePos(): Int {
-        val listView = listView ?: return -1
-        var pos = listView.firstVisiblePosition
-        if (listView.childCount > 1 && listView.getChildAt(0).top < 0) pos++
-        return pos
-    }
-
-    private fun isSelected(position: Int): Boolean {
-        return position >= 0 && (listView != null && listView!!.isItemChecked(position))
-    }
-
-    private var weakRefListView: WeakReference<ListView?>? = null
-        set(newValue) {
-            field = newValue
-            val l = listView
-            if (l != null) {
-                activity.runOnUiThread {
-                    l.adapter = this
-                }
-
-                l.setOnItemClickListener { _, _, position, _ ->
-                    selectItem(position)
-                }
-            }
-        }
-
-    var listView: ListView?
-        get() {
-            return if (weakRefListView == null) null else weakRefListView!!.get() ?: return null
-        }
-        set(newValue) {
-            weakRefListView = WeakReference(newValue)
-        }
-
-    fun addVisibleStatus(status: OrderRequestType) {
-        if (!visibleStatus.contains(status)) {
-            visibleStatus.add(status)
-            refresh()
-        }
-    }
-
-    fun removeVisibleStatus(status: OrderRequestType) {
-        if (visibleStatus.contains(status)) {
-            visibleStatus.remove(status)
-            refresh()
-        }
-    }
-
-    fun getVisibleStatus(): ArrayList<OrderRequestType> {
-        return visibleStatus
-    }
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-        var v = convertView
-        var alreadyExists = true
-
-        // Seleccionamos el layout dependiendo si es un row expandido o normal.
-        // Los rows expandidos son los que están seleccionados.
-        var currentLayout = resource
-        if (isSelected(position)) {
-            currentLayout = R.layout.order_request_row_expanded
-        }
-
-        if (v == null || v.tag == null) {
-            // El view todavía no fue creado, crearlo con el layout correspondiente.
-            val vi = LayoutInflater.from(context)
-            v = vi.inflate(currentLayout, parent, false)
-
-            alreadyExists = false
-        } else {
-            // El view ya existe, comprobar que no necesite cambiar de layout.
-            if (v.tag is ListViewHolder && currentLayout == R.layout.order_request_row_expanded || v.tag is ExpandedViewHolder && currentLayout == resource) {
-                // Ya fue creado, si es un row normal que está siendo seleccionada
-                // o un row expandido que está siendo deseleccionado
-                // debe cambiar de layout, por lo tanto volver a crearse.
-                val vi = LayoutInflater.from(context)
-                v = vi.inflate(currentLayout, parent, false)
-
-                alreadyExists = false
-            }
-        }
-
-        v = if (currentLayout == R.layout.order_request_row_expanded) {
-            fillSelectedItemView(position, v!!, alreadyExists)
-        } else {
-            fillListView(position, v!!, alreadyExists)
-        }
-        return v
-    }
-
-    //region COLORS
-
-    private var selectedForeColor: Int = 0
-
-    private var prepareOrderForeColor: Int = 0
-    private var stockAuditFromDeviceForeColor: Int = 0
-    private var stockAuditForeColor: Int = 0
-    private var receptionAuditForeColor: Int = 0
-    private var defaultForeColor: Int = 0
-
-    private fun setupColors() {
-        selectedForeColor = getColor(context.resources, R.color.text_light, null)
-
-        prepareOrderForeColor = Colors.getBestContrastColor("#FF009688")
-        stockAuditFromDeviceForeColor = Colors.getBestContrastColor("#FFC107")
-        stockAuditForeColor = Colors.getBestContrastColor("#2196F3")
-        receptionAuditForeColor = Colors.getBestContrastColor("#FF5722")
-        defaultForeColor = Colors.getBestContrastColor("#DFDFDF")
-    }
-
-    //endregion
-
-    @SuppressLint("ClickableViewAccessibility", "ObsoleteSdkInt")
-    private fun fillSelectedItemView(position: Int, v: View, alreadyExists: Boolean): View {
-        var holder = ExpandedViewHolder()
-        if (alreadyExists) {
-            if (v.tag is ListViewHolder) {
-                createExpandedViewHolder(v, holder)
-            } else {
-                holder = v.tag as ExpandedViewHolder
-            }
-        } else {
-            createExpandedViewHolder(v, holder)
-        }
-
-        if (position >= 0) {
-            val orderRequest = getItem(position)
-            val isSelected = isSelected(position)
-
-            if (orderRequest != null) {
-                holder.descriptionTextView?.text = orderRequest.description.ifEmpty {
-                    context.getString(R.string.without_description)
-                }
-                holder.creationDateTextView?.text = orderRequest.creationDate.toString()
-                holder.finishDateTextView?.text =
-                    orderRequest.finishDate ?: context.getString(R.string.uncompleted)
-                holder.filenameTextView?.text = orderRequest.filename.substringAfterLast('/')
-
-                if (holder.checkBox != null) {
-                    var isSpeakButtonLongPressed = false
-
-                    val checkChangeListener =
-                        CompoundButton.OnCheckedChangeListener { _, isChecked ->
-                            this.setChecked(orderRequest, isChecked, true)
-                        }
-
-                    val pressHoldListener =
-                        View.OnLongClickListener { // Do something when your hold starts here.
-                            isSpeakButtonLongPressed = true
-                            true
-                        }
-
-                    val pressTouchListener = View.OnTouchListener { pView, pEvent ->
-                        pView.onTouchEvent(pEvent)
-                        // We're only interested in when the button is released.
-                        if (pEvent.action == MotionEvent.ACTION_UP) {
-                            // We're only interested in anything if our speak button is currently pressed.
-                            if (isSpeakButtonLongPressed) {
-                                // Do something when the button is released.
-                                if (!isFilling) {
-                                    holder.checkBox?.setOnCheckedChangeListener(null)
-                                    val newState = !(holder.checkBox?.isChecked ?: false)
-                                    this.setChecked(getAll(), newState)
-                                }
-                                isSpeakButtonLongPressed = false
-                            }
-                        }
-                        return@OnTouchListener true
-                    }
-
-                    //Important to remove previous checkedChangedListener before calling setChecked
-                    holder.checkBox?.setOnCheckedChangeListener(null)
-                    holder.checkBox?.isChecked =
-                        checkedIdArray.contains(orderRequest.orderRequestId)
-
-                    holder.checkBox?.tag = position
-                    holder.checkBox?.setOnLongClickListener(pressHoldListener)
-                    holder.checkBox?.setOnTouchListener(pressTouchListener)
-                    holder.checkBox?.setOnCheckedChangeListener(checkChangeListener)
-                }
-
-                val colorDefault =
-                    getDrawable(context.resources, R.drawable.layout_thin_border, null)!!
-                val pepareOrderBackColor =
-                    getDrawable(context.resources, R.drawable.layout_thin_border_green, null)!!
-                val stockAuditFromDeviceBackColor =
-                    getDrawable(context.resources, R.drawable.layout_thin_border_yellow, null)!!
-                val stockAuditBackColor =
-                    getDrawable(context.resources, R.drawable.layout_thin_border_blue, null)!!
-                val receptionAuditBackColor =
-                    getDrawable(context.resources, R.drawable.layout_thin_border_orange, null)!!
-
-                var backColor = colorDefault
-                var foreColor = if (isSelected) selectedForeColor else defaultForeColor
-
-                val orType = orderRequest.orderRequestedType
-                when (orType) {
-                    OrderRequestType.prepareOrder -> {
-                        backColor = pepareOrderBackColor
-                        foreColor = if (isSelected) selectedForeColor else prepareOrderForeColor
-                    }
-                    OrderRequestType.stockAuditFromDevice -> {
-                        backColor = stockAuditFromDeviceBackColor
-                        foreColor =
-                            if (isSelected) selectedForeColor else stockAuditFromDeviceForeColor
-                    }
-                    OrderRequestType.stockAudit -> {
-                        backColor = stockAuditBackColor
-                        foreColor = if (isSelected) selectedForeColor else stockAuditForeColor
-                    }
-                    OrderRequestType.receptionAudit -> {
-                        backColor = receptionAuditBackColor
-                        foreColor = if (isSelected) selectedForeColor else receptionAuditForeColor
-                    }
-                }
-
-                val darkerColor = when {
-                    isSelected -> true
-                    foreColor == Colors.textLightColor() -> true
-                    else -> false
-                }
-
-                val titleForeColor: Int =
-                    manipulateColor(foreColor, if (darkerColor) 0.8f else 1.4f)
-
-                v.background = backColor
-                holder.filenameTextView?.setTextColor(foreColor)
-                holder.descriptionTextView?.setTextColor(foreColor)
-                holder.creationDateTextView?.setTextColor(foreColor)
-                holder.finishDateTextView?.setTextColor(foreColor)
-                holder.checkBox?.buttonTintList = ColorStateList.valueOf(titleForeColor)
-
-                // VISIBILIDAD DEL VIEW SEGÚN ESTADO
-                val parentLayout = v.findViewById<ConstraintLayout>(R.id.parentLayout)
-                if (!visibleStatus.contains(orType)) {
-                    parentLayout.visibility = GONE
-                    parentLayout.layoutParams = ConstraintLayout.LayoutParams(0, 0)
-                } else {
-                    parentLayout.visibility = VISIBLE
-                    parentLayout.layoutParams = ConstraintLayout.LayoutParams(
-                        ConstraintLayout.LayoutParams.MATCH_PARENT,
-                        ConstraintLayout.LayoutParams.WRAP_CONTENT
+    // El método onCreateViewHolder infla los diseños para cada tipo de vista
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return when (viewType) {
+            SELECTED_VIEW_TYPE -> {
+                SelectedViewHolder(
+                    OrderRequestRowExpandedBinding.inflate(
+                        LayoutInflater.from(parent.context),
+                        parent,
+                        false
                     )
-                }
+                )
             }
 
-            if (listView != null) {
-                if (isSelected(position)) {
-                    v.background.colorFilter =
-                        BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                            getColorWithAlpha(colorId = R.color.lightslategray, alpha = 240),
-                            BlendModeCompat.MODULATE
-                        )
-                } else {
-                    v.background.colorFilter = null
+            else -> {
+                UnselectedViewHolder(
+                    OrderRequestRowBinding.inflate(
+                        LayoutInflater.from(parent.context),
+                        parent,
+                        false
+                    )
+                )
+            }
+        }
+    }
+
+    // Sobrecarga del método onBindViewHolder para actualización parcial de las vistas
+    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
+        if (payloads.isEmpty()) {
+            // No hay payload, realizar la vinculación completa
+            super.onBindViewHolder(holder, position, payloads)
+            return
+        }
+
+        // Hay payload, realizar la actualización parcial basada en el payload
+        for (payload in payloads) {
+            // Extraer el payload y utilizarlo para actualizar solo las vistas relevantes
+            when (payload) {
+                PAYLOADS.CHECKBOX_VISIBILITY -> {
+                    if (position == currentIndex)
+                        (holder as SelectedViewHolder).bindCheckBoxVisibility(if (showCheckBoxes) VISIBLE else GONE)
+                    else
+                        (holder as UnselectedViewHolder).bindCheckBoxVisibility(if (showCheckBoxes) VISIBLE else GONE)
+                }
+
+                PAYLOADS.CHECKBOX_STATE -> {
+                    val orderRequest = getItem(position)
+                    if (position == currentIndex)
+                        (holder as SelectedViewHolder).bindCheckBoxState(checkedIdArray.contains(orderRequest.orderRequestId))
+                    else
+                        (holder as UnselectedViewHolder).bindCheckBoxState(checkedIdArray.contains(orderRequest.orderRequestId))
+                }
+
+                PAYLOADS.ITEM_SELECTED -> {
+                    // TODO:
+                    //  No regenerar la vista ante cambios de selección
+                    // No está funcionando.
+                    // La idea es usarlo para los cambios de selección.
+                    // Pero por algún motivo los Payloads vienen vacíos luego de notifyItemChanged
+                    super.onBindViewHolder(holder, position, payloads)
                 }
             }
         }
+    }
 
-        return v
+    // El método onBindViewHolder establece los valores de las vistas en función de los datos
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        // Evento de clic sobre el pedido que controla el estado de Selección para seleccionar el diseño adecuado
+        holder.itemView.setOnClickListener {
+
+            // Si el elemento ya está seleccionado quitar la selección
+            if (currentIndex == holder.bindingAdapterPosition) {
+                currentIndex = NO_POSITION
+                notifyItemSelectedChanged(holder.bindingAdapterPosition)
+            } else {
+                // Notificamos los cambios para los dos pedidos cuyo diseño necesita cambiar
+                val previousSelectedOrderRequestPosition = currentIndex
+                currentIndex = holder.bindingAdapterPosition
+                notifyItemSelectedChanged(currentIndex)
+
+                if (previousSelectedOrderRequestPosition != NO_POSITION) {
+                    notifyItemSelectedChanged(previousSelectedOrderRequestPosition)
+                }
+
+                // Scroll para asegurarnos que se vea completamente el pedido
+                holder.itemView.post { scrollToPos(currentIndex) }
+            }
+
+            // Seleccionamos el pedido
+            holder.itemView.isSelected = currentIndex == position
+
+            // Notificamos al Listener superior
+            dataSetChangedListener?.onDataSetChanged()
+        }
+
+        // Establecer los valores para cada elemento según su posición con el estilo correspondiente
+        if (currentIndex == position) {
+            // Establece el estado seleccionado
+            setSelectedHolder(holder as SelectedViewHolder, position)
+        } else {
+            // Establece el estado no seleccionado
+            setUnselectedHolder(holder as UnselectedViewHolder, position)
+        }
+    }
+
+    private fun setSelectedHolder(holder: SelectedViewHolder, position: Int) {
+        val orderRequest = getItem(position)
+
+        // Lógica de clic largo sobre el pedido
+        setItemCheckBoxLogic(holder.itemView)
+
+        holder.bind(
+            orderRequest = orderRequest,
+            checkBoxVisibility = if (showCheckBoxes) VISIBLE else GONE
+        )
+
+        holder.itemView.background.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
+            getColorWithAlpha(colorId = R.color.lightslategray, alpha = 220), BlendModeCompat.MODULATE
+        )
+
+        // Acciones del checkBox de marcado
+        setCheckBoxLogic(holder.binding.checkBox, orderRequest, position)
+    }
+
+    private fun setUnselectedHolder(holder: UnselectedViewHolder, position: Int) {
+        val orderRequest = getItem(position)
+
+        // Lógica de clic largo sobre el pedido
+        setItemCheckBoxLogic(holder.itemView)
+
+        // Perform a full update
+        holder.bind(
+            orderRequest = orderRequest,
+            checkBoxVisibility = if (showCheckBoxes) VISIBLE else GONE
+        )
+
+        holder.itemView.background.colorFilter = null
+
+        // Acciones del checkBox de marcado
+        setCheckBoxLogic(holder.binding.checkBox, orderRequest, position)
+    }
+
+    /**
+     * Lógica del evento de clic sostenido sobre el pedido que cambia la visibilidad de los CheckBox
+     *
+     * @param itemView Vista general del pedido
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setItemCheckBoxLogic(itemView: View) {
+        if (!multiSelect) {
+            showCheckBoxes = false
+            return
+        }
+
+        val longClickListener = OnLongClickListener { _ ->
+            showCheckBoxes = !showCheckBoxes
+            showCheckBoxesChanged.invoke(showCheckBoxes)
+            notifyItemRangeChanged(0, itemCount, PAYLOADS.CHECKBOX_VISIBILITY)
+            return@OnLongClickListener true
+        }
+
+        itemView.isLongClickable = true
+        itemView.setOnLongClickListener(longClickListener)
+    }
+
+    /**
+     * Lógica del comportamiento del CheckBox de marcado de pedidos cuando [multiSelect] es verdadero
+     *
+     * @param checkBox Control CheckBox para marcado del pedido
+     * @param orderRequest Datos del pedido
+     * @param position Posición en el adaptador
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setCheckBoxLogic(checkBox: CheckBox, orderRequest: OrderRequest, position: Int) {
+        val checkChangeListener = CompoundButton.OnCheckedChangeListener { _, isChecked ->
+            setChecked(orderRequest = orderRequest, isChecked = isChecked, suspendRefresh = true)
+        }
+
+        val longClickListener = OnLongClickListener { _ ->
+            checkBox.setOnCheckedChangeListener(null)
+
+            // Notificamos los cambios solo a los pedidos que cambian de estado.
+            val newState = !checkBox.isChecked
+            if (newState) {
+                currentList.mapIndexedNotNull { index, orderRequest ->
+                    val orId = orderRequest.orderRequestId ?: -1
+                    if (orId > 0 && orId !in checkedIdArray) {
+                        checkedIdArray.add(orId)
+                        notifyItemChanged(index, PAYLOADS.CHECKBOX_STATE)
+                    }
+                }
+            } else {
+                currentList.mapIndexed { pos, orderRequest ->
+                    if (orderRequest.orderRequestId in checkedIdArray) {
+                        checkedIdArray.remove(orderRequest.orderRequestId)
+                        notifyItemChanged(pos, PAYLOADS.CHECKBOX_STATE)
+                    }
+                }
+            }
+
+            // Notificamos al Listener superior
+            dataSetChangedListener?.onDataSetChanged()
+            return@OnLongClickListener true
+        }
+
+        // Important to remove previous checkedChangedListener before calling setChecked
+        checkBox.setOnCheckedChangeListener(null)
+
+        checkBox.isChecked = checkedIdArray.contains(orderRequest.orderRequestId)
+        checkBox.isLongClickable = true
+        checkBox.tag = position
+
+        checkBox.setOnLongClickListener(longClickListener)
+        checkBox.setOnCheckedChangeListener(checkChangeListener)
+    }
+
+    // El método getItemViewType devuelve el tipo de vista que se usará para el elemento en la posición dada
+    override fun getItemViewType(position: Int): Int {
+        return if (currentIndex == position) SELECTED_VIEW_TYPE
+        else UNSELECTED_VIEW_TYPE
     }
 
     override fun getFilter(): Filter {
         return object : Filter() {
+            var selected: OrderRequest? = null
+            var firstVisible: OrderRequest? = null
+
             override fun performFiltering(constraint: CharSequence?): FilterResults {
-                val results = FilterResults()
-                val r: ArrayList<OrderRequest> = ArrayList()
+                // Guardamos el orderRequest seleccionado y la posición del scroll
+                selected = currentItem()
+                var scrollPos =
+                    (recyclerView.layoutManager as LinearLayoutManager?)?.findFirstVisibleItemPosition()
+                        ?: NO_POSITION
 
-                if (constraint != null) {
-                    val filterString = constraint.toString().lowercase(Locale.ROOT)
-                    var filterableItem: OrderRequest
+                if (scrollPos != NO_POSITION && itemCount > scrollPos) {
+                    var currentScrolled = getItem(scrollPos)
 
-                    for (i in 0 until itemList.size) {
-                        filterableItem = itemList[i]
-                        if (filterableItem.description.lowercase(Locale.ROOT)
-                                .contains(filterString)
-                        ) {
-                            r.add(filterableItem)
+                    // Comprobamos si es visible el pedido del Scroll
+                    if (currentScrolled.orderRequestedType in visibleStatus)
+                        firstVisible = currentScrolled
+                    else {
+                        // Si no es visible, intentar encontrar el próximo visible.
+                        while (firstVisible == null) {
+                            scrollPos++
+                            if (itemCount > scrollPos) {
+                                currentScrolled = getItem(scrollPos)
+                                if (currentScrolled.orderRequestedType in visibleStatus)
+                                    firstVisible = currentScrolled
+                            } else break
                         }
                     }
                 }
 
+                // Filtramos los resultados
+                val results = FilterResults()
+                var r: ArrayList<OrderRequest> = ArrayList()
+                if (constraint != null) {
+                    val filterString = constraint.toString().lowercase(Locale.getDefault())
+                    if (filterString.isNotEmpty()) {
+                        var filterableOrderRequest: OrderRequest
+
+                        for (i in 0 until fullList.size) {
+                            filterableOrderRequest = fullList[i]
+
+                            // Descartamos aquellos que no debe ser visibles
+                            if (filterableOrderRequest.orderRequestedType !in visibleStatus) continue
+
+                            if (isFilterable(filterableOrderRequest, filterString)) {
+                                r.add(filterableOrderRequest)
+                            }
+                        }
+                    } else if (filterOptions.showAllOnFilterEmpty) {
+                        r = ArrayList(fullList.mapNotNull { if (it.orderRequestedType in visibleStatus) it else null })
+                    }
+                }
+
                 results.values = r
-                results.count = r.count()
+                results.count = r.size
                 return results
             }
+
+            fun isFilterable(filterableOrder: OrderRequest, filterString: String): Boolean =
+                (filterableOrder.description.contains(filterString, true) ||
+                        filterableOrder.externalId.contains(filterString, true))
 
             @Suppress("UNCHECKED_CAST")
             override fun publishResults(
                 constraint: CharSequence?, results: FilterResults?,
             ) {
-                suggestedList.clear()
-                suggestedList.addAll(results?.values as ArrayList<OrderRequest>)
-                if (results.count > 0) {
-                    notifyDataSetChanged()
-                } else {
-                    notifyDataSetInvalidated()
+                submitList(results?.values as ArrayList<OrderRequest>) {
+                    run {
+                        // Notificamos al Listener superior
+                        dataSetChangedListener?.onDataSetChanged()
+
+                        // Recuperamos el orderRequest seleccionado y la posición del scroll
+                        if (firstVisible != null)
+                            scrollToPos(getIndexById(firstVisible?.orderRequestId ?: -1), true)
+                        if (selected != null)
+                            selectItem(selected, false)
+                    }
                 }
             }
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility", "ObsoleteSdkInt")
-    private fun fillListView(position: Int, v: View, alreadyExists: Boolean): View {
-        var holder = ListViewHolder()
-        if (alreadyExists && v.tag is ListViewHolder) {
-            holder = v.tag as ListViewHolder
-        } else {
-            createListViewHolder(v, holder)
+    private fun sortOrderRequests(originalList: MutableList<OrderRequest>): ArrayList<OrderRequest> {
+        // Run the follow method on each of the roots
+        return ArrayList(
+            originalList.sortedWith(
+                compareBy({ it.description },
+                    { it.externalId })
+            ).toList()
+        )
+    }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    fun refreshFilter(options: FilterOptions) {
+        filterOptions = options
+        filter.filter(filterOptions.filterString)
+    }
+
+    private fun refreshFilter() {
+        refreshFilter(filterOptions)
+    }
+
+    fun add(orderRequest: OrderRequest, position: Int) {
+        fullList.add(position, orderRequest)
+        submitList(fullList) {
+            run {
+                // Notificamos al Listener superior
+                dataSetChangedListener?.onDataSetChanged()
+
+                selectItem(position)
+            }
+        }
+    }
+
+    fun remove(position: Int) {
+        val id = getItemId(position)
+        checkedIdArray.remove(id)
+
+        fullList.removeAt(position)
+        submitList(fullList) {
+            run {
+                // Notificamos al Listener superior
+                dataSetChangedListener?.onDataSetChanged()
+            }
+        }
+    }
+
+    /**
+     * Se utiliza cuando se edita un pedido y necesita actualizarse
+     */
+    fun updateOrderRequest(orderRequest: OrderRequest, scrollToPos: Boolean = false) {
+        val t = fullList.firstOrNull { it == orderRequest } ?: return
+
+        t.orderRequestId = orderRequest.orderRequestId
+        t.clientId = orderRequest.clientId
+        t.userId = orderRequest.userId
+        t.externalId = orderRequest.externalId
+        t.creationDate = orderRequest.creationDate
+        t.description = orderRequest.description
+        t.zone = orderRequest.zone
+        t.orderRequestedType = orderRequest.orderRequestedType
+        t.resultDiffQty = orderRequest.resultDiffQty
+        t.resultDiffProduct = orderRequest.resultDiffProduct
+        t.resultAllowDiff = orderRequest.resultAllowDiff
+        t.resultAllowMod = orderRequest.resultAllowMod
+        t.completed = orderRequest.completed
+        t.startDate = orderRequest.startDate
+        t.finishDate = orderRequest.finishDate
+        t.content = orderRequest.content
+        t.docArray = orderRequest.docArray
+        t.log = orderRequest.log
+
+        submitList(fullList) {
+            run {
+                // Notificamos al Listener superior
+                dataSetChangedListener?.onDataSetChanged()
+
+                // Seleccionamos el pedido y hacemos scroll hasta él.
+                selectItem(orderRequest, scrollToPos)
+            }
+        }
+    }
+
+    fun selectItem(a: OrderRequest?, scroll: Boolean = true) {
+        var pos = NO_POSITION
+        if (a != null) pos = getIndex(a)
+        selectItem(pos, scroll)
+    }
+
+    fun selectItem(pos: Int, scroll: Boolean = true) {
+        // Si la posición está fuera del rango válido, reseteamos currentIndex a NO_POSITION.
+        currentIndex = if (pos < 0 || pos >= itemCount) NO_POSITION else pos
+        notifyItemSelectedChanged(currentIndex)
+        if (scroll) scrollToPos(currentIndex)
+    }
+
+    private fun notifyItemSelectedChanged(pos: Int) {
+        notifyItemChanged(currentIndex)
+        var orderRequest: OrderRequest? = null
+        if (pos != NO_POSITION) orderRequest = getItem(pos)
+        selectedOrderRequestChangedListener?.onSelectedOrderRequestChanged(orderRequest)
+    }
+
+    /**
+     * Scrolls to the given position, making sure the orderRequest can be fully displayed.
+     *
+     * @param position
+     * @param scrollToTop If it is activated, the orderRequest will scroll until it is at the top of the view
+     */
+    fun scrollToPos(position: Int, scrollToTop: Boolean = false) {
+        val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+
+        if (position < 0 || position >= itemCount) {
+            // La posición está fuera del rango válido, no se puede realizar el scroll
+            return
         }
 
-        if (position >= 0) {
-            val orderRequest = getItem(position)
-            if (orderRequest != null) {
-                holder.descriptionTextView?.text = orderRequest.description.ifEmpty {
-                    context.getString(R.string.without_description)
-                }
-                holder.filenameTextView?.text = orderRequest.filename.substringAfterLast('/')
-                holder.creationDateTextView?.text = orderRequest.creationDate
+        val selectedView = layoutManager.findViewByPosition(position)
 
-                if (holder.checkBox != null) {
-                    var isSpeakButtonLongPressed = false
-
-                    val checkChangeListener =
-                        CompoundButton.OnCheckedChangeListener { _, isChecked ->
-                            this.setChecked(orderRequest, isChecked, true)
+        if (scrollToTop) {
+            // Hacemos scroll hasta que el pedido quede en la parte superior
+            layoutManager.scrollToPositionWithOffset(position, 0)
+        } else {
+            if (selectedView != null) {
+                // El pedido es visible, realizar scroll para asegurarse de que se vea completamente
+                scrollToVisibleOrderRequest(selectedView)
+            } else {
+                // El pedido no es visible, realizar scroll directo a la posición
+                recyclerView.scrollToPosition(position)
+                recyclerView.addOnScrollListener(object : OnScrollListener() {
+                    override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                        val selected = layoutManager.findViewByPosition(position)
+                        if (selected != null) {
+                            // El pedido se ha vuelto visible, realizar scroll para asegurarse de que se vea completamente
+                            scrollToVisibleOrderRequest(selected)
+                            recyclerView.removeOnScrollListener(this)
                         }
-
-                    val pressHoldListener =
-                        View.OnLongClickListener { // Do something when your hold starts here.
-                            isSpeakButtonLongPressed = true
-                            true
-                        }
-
-                    val pressTouchListener = View.OnTouchListener { pView, pEvent ->
-                        pView.onTouchEvent(pEvent)
-                        // We're only interested in when the button is released.
-                        if (pEvent.action == MotionEvent.ACTION_UP) {
-                            // We're only interested in anything if our speak button is currently pressed.
-                            if (isSpeakButtonLongPressed) {
-                                // Do something when the button is released.
-                                if (!isFilling) {
-                                    holder.checkBox?.setOnCheckedChangeListener(null)
-                                    val newState = !(holder.checkBox?.isChecked ?: false)
-                                    this.setChecked(getAll(), newState)
-                                }
-                                isSpeakButtonLongPressed = false
-                            }
-                        }
-                        return@OnTouchListener true
                     }
+                })
+            }
+        }
+    }
 
-                    //Important to remove previous checkedChangedListener before calling setChecked
-                    holder.checkBox?.setOnCheckedChangeListener(null)
-                    holder.checkBox?.isChecked =
-                        checkedIdArray.contains(orderRequest.orderRequestId)
+    /**
+     * Scrolls to the given view, making sure the orderRequest can be fully displayed.
+     *
+     * @param selectedView
+     */
+    private fun scrollToVisibleOrderRequest(selectedView: View) {
+        val recyclerViewHeight = recyclerView.height - recyclerView.paddingTop - recyclerView.paddingBottom
+        val selectedViewHeight = selectedView.height + selectedView.marginTop + selectedView.marginBottom
 
-                    holder.checkBox?.tag = position
-                    holder.checkBox?.setOnLongClickListener(pressHoldListener)
-                    holder.checkBox?.setOnTouchListener(pressTouchListener)
-                    holder.checkBox?.setOnCheckedChangeListener(checkChangeListener)
+        val selectedViewTop = selectedView.top - selectedView.marginTop
+        val selectedViewBottom = selectedView.bottom + selectedView.marginBottom
+
+        if (selectedViewTop < 0) {
+            // El pedido está parcialmente oculto en la parte superior del RecyclerView
+            recyclerView.smoothScrollBy(0, selectedViewTop)
+        } else if (selectedViewBottom > recyclerViewHeight) {
+            // El pedido está parcialmente oculto en la parte inferior del RecyclerView
+            val visibleHeight = recyclerViewHeight - selectedViewTop
+            recyclerView.smoothScrollBy(0, selectedViewHeight - visibleHeight)
+        }
+    }
+
+    fun getIndexById(id: Long): Int {
+        return currentList.indexOfFirst { it.orderRequestId == id }
+    }
+
+    private fun getIndex(orderRequest: OrderRequest): Int {
+        return currentList.indexOfFirst { it == orderRequest }
+    }
+
+    private fun getItemById(id: Long): OrderRequest? {
+        return fullList.firstOrNull { it.orderRequestId == id }
+    }
+
+    fun getAllChecked(): ArrayList<OrderRequest> {
+        val orderRequests = ArrayList<OrderRequest>()
+        checkedIdArray.mapNotNullTo(orderRequests) { getItemById(it) }
+        return orderRequests
+    }
+
+    fun currentItem(): OrderRequest? {
+        if (currentIndex == NO_POSITION) return null
+        return if (currentList.any() && itemCount > currentIndex) getItem(currentIndex)
+        else null
+    }
+
+    fun countChecked(): Int {
+        return checkedIdArray.size
+    }
+
+    fun totalVisible(): Int {
+        return itemCount
+    }
+
+    fun firstVisiblePos(): Int {
+        val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+        return layoutManager.findFirstVisibleItemPosition()
+    }
+
+    fun setChecked(orderRequest: OrderRequest, isChecked: Boolean, suspendRefresh: Boolean = false) {
+        val orId = orderRequest.orderRequestId ?: -1
+        val pos = getIndexById(orId)
+        if (isChecked) {
+            if (orId > 0 && !checkedIdArray.contains(orId)) {
+                checkedIdArray.add(orId)
+            }
+        } else {
+            checkedIdArray.remove(orderRequest.orderRequestId)
+        }
+
+        checkedChangedListener?.onCheckedChanged(isChecked, pos)
+
+        // Notificamos al Listener superior
+        if (!suspendRefresh) dataSetChangedListener?.onDataSetChanged()
+    }
+
+    private var isFilling = false
+    fun setChecked(orderRequests: ArrayList<OrderRequest>, isChecked: Boolean) {
+        if (isFilling) return
+
+        isFilling = true
+        for (i in orderRequests) {
+            setChecked(orderRequest = i, isChecked = isChecked, suspendRefresh = true)
+        }
+        isFilling = false
+
+        // Notificamos al Listener superior
+        dataSetChangedListener?.onDataSetChanged()
+    }
+
+    fun addVisibleStatus(status: OrderRequestType) {
+        if (visibleStatus.contains(status)) return
+        visibleStatus.add(status)
+
+        refreshFilter()
+    }
+
+    fun removeVisibleStatus(status: OrderRequestType) {
+        if (!visibleStatus.contains(status)) return
+        visibleStatus.remove(status)
+
+        // Quitamos los pedidos con el estado seleccionado de la lista marcados.
+        val uncheckedOrderRequests =
+            ArrayList(fullList.mapNotNull { if (it.orderRequestedType == status) it.orderRequestId else null })
+        checkedIdArray.removeAll(uncheckedOrderRequests.toSet())
+
+        refreshFilter()
+    }
+
+    internal class SelectedViewHolder(val binding: OrderRequestRowExpandedBinding) :
+        ViewHolder(binding.root) {
+        fun bindCheckBoxVisibility(checkBoxVisibility: Int = GONE) {
+            binding.checkBoxConstraintLayout.visibility = checkBoxVisibility
+        }
+
+        fun bindCheckBoxState(checked: Boolean) {
+            binding.checkBox.isChecked = checked
+        }
+
+        fun bind(orderRequest: OrderRequest, checkBoxVisibility: Int = GONE) {
+            bindCheckBoxVisibility(checkBoxVisibility)
+
+            binding.descriptionTextView.text =
+                orderRequest.description.ifEmpty { context.getString(R.string.without_description) }
+            binding.creationDateTextView.text = orderRequest.creationDate.toString()
+            binding.finishDateTextView.text = orderRequest.finishDate ?: context.getString(R.string.uncompleted)
+            binding.filenameTextView.text = orderRequest.filename.substringAfterLast('/')
+
+            setStyle(orderRequest)
+        }
+
+        private fun setStyle(orderRequest: OrderRequest) {
+            val v = itemView
+
+            // Background layouts
+            // Resalta por estado del pedido
+            val default = getDrawable(context.resources, R.drawable.layout_thin_border, null)!!
+            val prepareOrder = getDrawable(context.resources, R.drawable.layout_thin_border_green, null)!!
+            val stockAuditFromDevice = getDrawable(context.resources, R.drawable.layout_thin_border_yellow, null)!!
+            val stockAudit = getDrawable(context.resources, R.drawable.layout_thin_border_blue, null)!!
+            val receptionAudit = getDrawable(context.resources, R.drawable.layout_thin_border_orange, null)!!
+            val deliveryAudit = getDrawable(context.resources, R.drawable.layout_thin_border_green_2, null)!!
+
+            val backColor: Drawable
+            val foreColor: Int
+
+            when (orderRequest.orderRequestedType) {
+                OrderRequestType.prepareOrder -> {
+                    backColor = prepareOrder
+                    foreColor = prepareOrderSelectedForeColor
                 }
 
-                // Font colors
-                val black = getColor(context.resources, R.color.black, null)
-                val white = getColor(context.resources, R.color.white, null)
-
-                // CheckBox color
-                val darkslategray = getColor(context.resources, R.color.darkslategray, null)
-
-                var backColor =
-                    getDrawable(context.resources, R.drawable.layout_thin_border, null)!!
-                var foreColor = black
-
-                val orType = orderRequest.orderRequestedType
-                when (orType) {
-                    OrderRequestType.prepareOrder -> {
-                        backColor = getDrawable(
-                            context.resources, R.drawable.layout_thin_border_green, null
-                        )!!
-                        foreColor = white
-                    }
-                    OrderRequestType.stockAudit -> {
-                        backColor = getDrawable(
-                            context.resources, R.drawable.layout_thin_border_blue, null
-                        )!!
-                        foreColor = white
-                    }
-                    OrderRequestType.receptionAudit -> {
-                        backColor = getDrawable(
-                            context.resources, R.drawable.layout_thin_border_orange, null
-                        )!!
-                        foreColor = white
-                    }
-                    OrderRequestType.deliveryAudit -> {
-                        backColor = getDrawable(
-                            context.resources, R.drawable.layout_thin_border_green_2, null
-                        )!!
-                        foreColor = white
-                    }
-                    OrderRequestType.stockAuditFromDevice -> {
-                        backColor = getDrawable(
-                            context.resources, R.drawable.layout_thin_border_yellow, null
-                        )!!
-                        foreColor = black
-                    }
+                OrderRequestType.stockAuditFromDevice -> {
+                    backColor = stockAuditFromDevice
+                    foreColor = stockAuditFromDeviceSelectedForeColor
                 }
 
-                v.background = backColor
-                holder.filenameTextView?.setTextColor(foreColor)
-                holder.descriptionTextView?.setTextColor(foreColor)
-                holder.creationDateTextView?.setTextColor(foreColor)
-                holder.checkBox?.buttonTintList = ColorStateList.valueOf(darkslategray)
+                OrderRequestType.stockAudit -> {
+                    backColor = stockAudit
+                    foreColor = stockAuditSelectedForeColor
+                }
 
-                // VISIBILIDAD DEL VIEW SEGÚN ESTADO
-                val parentLayout = v.findViewById<ConstraintLayout>(R.id.parentLayout)
-                if (!visibleStatus.contains(orType)) {
-                    parentLayout.visibility = GONE
-                    parentLayout.layoutParams = ConstraintLayout.LayoutParams(0, 0)
-                } else {
-                    parentLayout.visibility = VISIBLE
-                    parentLayout.layoutParams = ConstraintLayout.LayoutParams(
-                        ConstraintLayout.LayoutParams.MATCH_PARENT,
-                        ConstraintLayout.LayoutParams.WRAP_CONTENT
-                    )
+                OrderRequestType.receptionAudit -> {
+                    backColor = receptionAudit
+                    foreColor = receptionAuditSelectedForeColor
+                }
+
+                OrderRequestType.deliveryAudit -> {
+                    backColor = deliveryAudit
+                    foreColor = deliveryAuditSelectedForeColor
+                }
+
+                else -> {
+                    backColor = default
+                    foreColor = defaultSelectedForeColor
                 }
             }
 
-            if (listView != null) {
-                if (isSelected(position)) {
-                    v.background.colorFilter =
-                        BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                            getColorWithAlpha(colorId = R.color.lightslategray, alpha = 240),
-                            BlendModeCompat.MODULATE
-                        )
-                } else {
-                    v.background.colorFilter = null
+            val titleForeColor: Int = manipulateColor(foreColor, 0.8f)
+
+            v.background = backColor
+            binding.filenameTextView.setTextColor(foreColor)
+            binding.descriptionTextView.setTextColor(foreColor)
+            binding.creationDateTextView.setTextColor(foreColor)
+            binding.finishDateTextView.setTextColor(foreColor)
+            binding.checkBox.buttonTintList = ColorStateList.valueOf(titleForeColor)
+
+            binding.creationDateLabelTextView.setTextColor(titleForeColor)
+            binding.finishDateLabelTextView.setTextColor(titleForeColor)
+        }
+    }
+
+    internal class UnselectedViewHolder(val binding: OrderRequestRowBinding) :
+        ViewHolder(binding.root) {
+        fun bindCheckBoxVisibility(checkBoxVisibility: Int = GONE) {
+            binding.checkBoxConstraintLayout.visibility = checkBoxVisibility
+        }
+
+        fun bindCheckBoxState(checked: Boolean) {
+            binding.checkBox.isChecked = checked
+        }
+
+        fun bind(orderRequest: OrderRequest, checkBoxVisibility: Int = GONE) {
+            bindCheckBoxVisibility(checkBoxVisibility)
+
+            binding.descriptionTextView.text =
+                orderRequest.description.ifEmpty { context.getString(R.string.without_description) }
+            binding.filenameTextView.text = orderRequest.filename.substringAfterLast('/')
+            binding.creationDateTextView.text = orderRequest.creationDate
+
+            setStyle(orderRequest)
+        }
+
+        private fun setStyle(orderRequest: OrderRequest) {
+            val v = itemView
+
+            // Background layouts
+            // Resalta por estado del pedido
+            val default = getDrawable(context.resources, R.drawable.layout_thin_border, null)!!
+            val prepareOrder = getDrawable(context.resources, R.drawable.layout_thin_border_green, null)!!
+            val stockAuditFromDevice = getDrawable(context.resources, R.drawable.layout_thin_border_yellow, null)!!
+            val stockAudit = getDrawable(context.resources, R.drawable.layout_thin_border_blue, null)!!
+            val receptionAudit = getDrawable(context.resources, R.drawable.layout_thin_border_orange, null)!!
+            val deliveryAudit = getDrawable(context.resources, R.drawable.layout_thin_border_green_2, null)!!
+
+            val backColor: Drawable
+            val foreColor: Int
+
+            when (orderRequest.orderRequestedType) {
+                OrderRequestType.prepareOrder -> {
+                    backColor = prepareOrder
+                    foreColor = prepareOrderForeColor
+                }
+
+                OrderRequestType.stockAuditFromDevice -> {
+                    backColor = stockAuditFromDevice
+                    foreColor = stockAuditFromDeviceForeColor
+                }
+
+                OrderRequestType.stockAudit -> {
+                    backColor = stockAudit
+                    foreColor = stockAuditForeColor
+                }
+
+                OrderRequestType.receptionAudit -> {
+                    backColor = receptionAudit
+                    foreColor = receptionAuditForeColor
+                }
+
+                OrderRequestType.deliveryAudit -> {
+                    backColor = deliveryAudit
+                    foreColor = deliveryAuditForeColor
+                }
+
+                else -> {
+                    backColor = default
+                    foreColor = defaultForeColor
                 }
             }
+
+            v.background = backColor
+            binding.filenameTextView.setTextColor(foreColor)
+            binding.descriptionTextView.setTextColor(foreColor)
+            binding.creationDateTextView.setTextColor(foreColor)
+            binding.checkBox.buttonTintList = ColorStateList.valueOf(darkslategray)
+        }
+    }
+
+    private object OrderRequestDiffUtilCallback : DiffUtil.ItemCallback<OrderRequest>() {
+        override fun areItemsTheSame(oldItem: OrderRequest, newItem: OrderRequest): Boolean {
+            return oldItem.orderRequestId == newItem.orderRequestId
         }
 
-        return v
-    }
-
-    private fun createExpandedViewHolder(v: View, holder: ExpandedViewHolder) {
-        // Holder para los rows expandidos
-        holder.descriptionTextView = v.findViewById(R.id.descriptionTextView)
-        holder.filenameTextView = v.findViewById(R.id.filenameTextView)
-
-        holder.creationDateTextView = v.findViewById(R.id.creationDateTextView)
-        holder.finishDateTextView = v.findViewById(R.id.finishDateTextView)
-
-        holder.checkBox = v.findViewById(R.id.checkBox)
-
-        if (multiSelect) {
-            holder.checkBox?.visibility = VISIBLE
-        } else {
-            holder.checkBox?.visibility = GONE
+        override fun areContentsTheSame(oldItem: OrderRequest, newItem: OrderRequest): Boolean {
+            if (oldItem.orderRequestId != newItem.orderRequestId) return false
+            if (oldItem.clientId != newItem.clientId) return false
+            if (oldItem.userId != newItem.userId) return false
+            if (oldItem.externalId != newItem.externalId) return false
+            if (oldItem.creationDate != newItem.creationDate) return false
+            if (oldItem.description != newItem.description) return false
+            if (oldItem.zone != newItem.zone) return false
+            if (oldItem.orderRequestedType != newItem.orderRequestedType) return false
+            if (oldItem.resultDiffQty != newItem.resultDiffQty) return false
+            if (oldItem.resultDiffProduct != newItem.resultDiffProduct) return false
+            if (oldItem.resultAllowDiff != newItem.resultAllowDiff) return false
+            if (oldItem.resultAllowMod != newItem.resultAllowMod) return false
+            if (oldItem.completed != newItem.completed) return false
+            if (oldItem.startDate != newItem.startDate) return false
+            if (oldItem.finishDate != newItem.finishDate) return false
+            if (oldItem.content != newItem.content) return false
+            if (oldItem.docArray != newItem.docArray) return false
+            return oldItem.log == newItem.log
         }
-
-        v.tag = holder
-    }
-
-    private fun createListViewHolder(v: View, holder: ListViewHolder) {
-        // Holder para los rows normales
-        holder.descriptionTextView = v.findViewById(R.id.descriptionTextView)
-        holder.creationDateTextView = v.findViewById(R.id.creationDateTextView)
-        holder.filenameTextView = v.findViewById(R.id.filenameTextView)
-
-        holder.checkBox = v.findViewById(R.id.checkBox)
-
-        if (multiSelect) {
-            holder.checkBox?.visibility = VISIBLE
-        } else {
-            holder.checkBox?.visibility = GONE
-        }
-
-        v.tag = holder
-    }
-
-    internal inner class ExpandedViewHolder {
-        var descriptionTextView: AutoResizeTextView? = null
-        var filenameTextView: AutoResizeTextView? = null
-
-        var creationDateTextView: AutoResizeTextView? = null
-        var finishDateTextView: CheckedTextView? = null
-
-        var checkBox: CheckBox? = null
-    }
-
-    internal inner class ListViewHolder {
-        var descriptionTextView: AutoResizeTextView? = null
-        var filenameTextView: AutoResizeTextView? = null
-
-        var creationDateTextView: AutoResizeTextView? = null
-
-        var checkBox: CheckBox? = null
     }
 
     companion object {
-        @Suppress("UNCHECKED_CAST")
-        fun getPrefVisibleStatus(): ArrayList<OrderRequestType> {
-            val visibleStatusArray: ArrayList<OrderRequestType> = ArrayList()
-            //Retrieve the values
-            val set = settingViewModel.orderRequestVisibleStatus
-            for (i in set) {
-                if (i.trim().isEmpty()) continue
-                val status = OrderRequestType.getById(i.toLong())
-                if (status != null) {
-                    visibleStatusArray.add(status)
-                }
-            }
+        // Aquí definimos dos constantes para identificar los dos diseños diferentes
+        const val SELECTED_VIEW_TYPE = 1
+        const val UNSELECTED_VIEW_TYPE = 2
 
-            return visibleStatusArray
+        // region COLORS
+        private var prepareOrderForeColor: Int = 0
+        private var stockAuditFromDeviceForeColor: Int = 0
+        private var stockAuditForeColor: Int = 0
+        private var receptionAuditForeColor: Int = 0
+        private var deliveryAuditForeColor: Int = 0
+        private var defaultForeColor: Int = 0
+
+        private var prepareOrderSelectedForeColor: Int = 0
+        private var stockAuditFromDeviceSelectedForeColor: Int = 0
+        private var stockAuditSelectedForeColor: Int = 0
+        private var receptionAuditSelectedForeColor: Int = 0
+        private var deliveryAuditSelectedForeColor: Int = 0
+        private var defaultSelectedForeColor: Int = 0
+
+        private var darkslategray: Int = 0
+        private var lightgray: Int = 0
+
+        /**
+         * Setup colors
+         * Simplemente inicializamos algunas variables con los colores que vamos a usar para cada estado.
+         */
+        private fun setupColors() {
+            // Color de los diferentes estados
+            val prepareOrder = getColor(context.resources, R.color.status_prepare_order, null)
+            val stockAuditFromDevice = getColor(context.resources, R.color.status_stock_audit_from_device, null)
+            val stockAudit = getColor(context.resources, R.color.status_stock_audit, null)
+            val receptionAudit = getColor(context.resources, R.color.status_reception_audit, null)
+            val deliveryAudit = getColor(context.resources, R.color.status_delivery_audit, null)
+            val default = getColor(context.resources, R.color.status_default, null)
+
+            // Mejor contraste para los pedidos seleccionados
+            prepareOrderSelectedForeColor = getBestContrastColor(manipulateColor(prepareOrder, 0.5f))
+            stockAuditFromDeviceSelectedForeColor = getBestContrastColor(manipulateColor(stockAuditFromDevice, 0.5f))
+            stockAuditSelectedForeColor = getBestContrastColor(manipulateColor(stockAudit, 0.5f))
+            receptionAuditSelectedForeColor = getBestContrastColor(manipulateColor(receptionAudit, 0.5f))
+            deliveryAuditSelectedForeColor = getBestContrastColor(manipulateColor(deliveryAudit, 0.5f))
+            defaultSelectedForeColor = getBestContrastColor(manipulateColor(default, 0.5f))
+
+            // Mejor contraste para los pedidos no seleccionados
+            prepareOrderForeColor = getBestContrastColor(prepareOrder)
+            stockAuditFromDeviceForeColor = getBestContrastColor(stockAuditFromDevice)
+            stockAuditForeColor = getBestContrastColor(stockAudit)
+            receptionAuditForeColor = getBestContrastColor(receptionAudit)
+            deliveryAuditForeColor = getBestContrastColor(deliveryAudit)
+            defaultForeColor = getBestContrastColor(default)
+
+            // CheckBox color
+            darkslategray = getColor(context.resources, R.color.darkslategray, null)
+
+            // Title color
+            lightgray = getColor(context.resources, R.color.lightgray, null)
         }
+        // endregion
+    }
+
+    init {
+        // Configuramos variables de estilo que se van a reutilizar.
+        setupColors()
+
+        // Por el momento no queremos animaciones, ni transiciones ante cambios en el DataSet
+        recyclerView.itemAnimator = null
+
+        // Vamos a retener en el caché un [cacheFactor] por ciento de los pedidos creados o un máximo de [maxCachedOrderRequests]
+        val maxCachedOrderRequests = 50
+        val cacheFactor = 0.10
+        var cacheSize = (fullList.size * cacheFactor).toInt()
+        if (cacheSize > maxCachedOrderRequests) cacheSize = maxCachedOrderRequests
+        recyclerView.setItemViewCacheSize(cacheSize)
+        recyclerView.recycledViewPool.setMaxRecycledViews(SELECTED_VIEW_TYPE, 0)
+        recyclerView.recycledViewPool.setMaxRecycledViews(UNSELECTED_VIEW_TYPE, 0)
+
+        // Ordenamiento natural de la lista completa para trabajar en adelante con una lista ordenada
+        val tList = sortOrderRequests(fullList)
+        fullList = tList
+
+        // Suministramos la lista a publicar refrescando el filtro que recorre la lista completa y devuelve los resultados filtrados y ordenados
+        refreshFilter(filterOptions)
+    }
+
+    /**
+     * Return a sorted list of visible state orderRequests
+     *
+     * @param list
+     * @return Lista ordenada con los estados visibles
+     */
+    private fun sortedVisibleList(list: MutableList<OrderRequest>?): MutableList<OrderRequest> {
+        val croppedList =
+            (list ?: mutableListOf()).mapNotNull { if (it.orderRequestedType in visibleStatus) it else null }
+        return sortOrderRequests(croppedList.toMutableList())
+    }
+
+    // Sobrecargamos estos métodos para suministrar siempre una lista ordenada y filtrada por estado de visibilidad
+    override fun submitList(list: MutableList<OrderRequest>?) {
+        super.submitList(sortedVisibleList(list))
+    }
+
+    override fun submitList(list: MutableList<OrderRequest>?, commitCallback: Runnable?) {
+        super.submitList(sortedVisibleList(list), commitCallback)
     }
 }

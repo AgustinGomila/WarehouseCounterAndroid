@@ -4,6 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import androidx.room.*
 import androidx.room.ColumnInfo.Companion.NOCASE
+import com.dacosys.warehouseCounter.adapter.item.ItemStatus
 import com.dacosys.warehouseCounter.room.entity.item.ItemEntry as Entry
 
 @Entity(
@@ -19,7 +20,8 @@ import com.dacosys.warehouseCounter.room.entity.item.ItemEntry as Entry
     ]
 )
 data class Item(
-    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = Entry.ITEM_ID) var itemId: Long = 0L,
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = Entry.ITEM_ID) var itemId: Long = 0L,
     @ColumnInfo(name = Entry.DESCRIPTION) var description: String = "",
     @ColumnInfo(name = Entry.ACTIVE) var active: Int = 1,
     @ColumnInfo(name = Entry.PRICE) var price: Float? = 0f,
@@ -27,7 +29,13 @@ data class Item(
     @ColumnInfo(name = Entry.ITEM_CATEGORY_ID) var itemCategoryId: Long = 1L,
     @ColumnInfo(name = Entry.EXTERNAL_ID) var externalId: String? = null,
     @ColumnInfo(name = Entry.LOT_ENABLED, defaultValue = "0") var lotEnabled: Int = 0,
-    @ColumnInfo(name = Entry.ITEM_CATEGORY_STR) @Ignore var itemCategoryStr: String = "",
+    @ColumnInfo(name = Entry.ITEM_CATEGORY_STR)
+    @Ignore var itemCategoryStr: String = "",
+    @Ignore val itemStatus: ItemStatus =
+        if (lotEnabled == 1 && active == 1) ItemStatus.ACTIVE_LOT_ENABLED
+        else if (lotEnabled != 1 && active == 1) ItemStatus.ACTIVE_LOT_DISABLED
+        else if (lotEnabled == 1) ItemStatus.INACTIVE_LOT_ENABLED
+        else ItemStatus.INACTIVE_LOT_DISABLED
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         itemId = parcel.readLong(),
@@ -71,9 +79,7 @@ data class Item(
 
         other as Item
 
-        if (itemId != other.itemId) return false
-
-        return true
+        return itemId == other.itemId
     }
 
     companion object CREATOR : Parcelable.Creator<Item> {

@@ -10,7 +10,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.ui.utils.Colors
+import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.google.android.material.snackbar.BaseTransientBottomBar.ANIMATION_MODE_FADE
 import com.google.android.material.snackbar.Snackbar
 import java.lang.ref.WeakReference
@@ -35,7 +35,7 @@ class MakeText : AppCompatActivity() {
             }
 
             val snackBar = Snackbar.make(v.get() ?: return, text, snackBarType.duration)
-            val snackBarView = snackBar.view
+            val sbView = snackBar.view
 
             val params = snackBar.view.layoutParams
             if (params is CoordinatorLayout.LayoutParams) {
@@ -45,16 +45,16 @@ class MakeText : AppCompatActivity() {
             }
             snackBar.view.layoutParams = params
 
-            snackBarView.background = ResourcesCompat.getDrawable(
-                context.resources, snackBarType.backColor, null
-            )
-            snackBarView.elevation = 6f
+            sbView.background = ResourcesCompat.getDrawable(context.resources, snackBarType.backColor, null)
+            sbView.elevation = 6f
 
             snackBar.animationMode = ANIMATION_MODE_FADE
-            snackBar.setTextColor(Colors.getBestContrastColorId(snackBarType.backColor))
 
-            val textView =
-                snackBarView.findViewById<View>(com.google.android.material.R.id.snackbar_text) as TextView
+            val fc = ResourcesCompat.getColor(context.resources, snackBarType.foreColor, null)
+
+            snackBar.setTextColor(getBestContrastColor("#" + Integer.toHexString(fc)))
+
+            val textView = sbView.findViewById<View>(com.google.android.material.R.id.snackbar_text) as TextView
             textView.maxLines = 4 // show multiple line
 
             snackBar.show()
