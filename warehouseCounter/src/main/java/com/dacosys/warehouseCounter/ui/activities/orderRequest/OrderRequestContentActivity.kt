@@ -377,7 +377,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         itemCode = b.getParcelable("itemCode")
         orderRequest = b.getParcelable("orderRequest")
-        completeList = b.getParcelableArrayList<OrderRequestContent>("completeList") as ArrayList<OrderRequestContent>
+        completeList = b.getParcelableArrayList("completeList") ?: ArrayList()
         checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
         lastSelected = b.getParcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1

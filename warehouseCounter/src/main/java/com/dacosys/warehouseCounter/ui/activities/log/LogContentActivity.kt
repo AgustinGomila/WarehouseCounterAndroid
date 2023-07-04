@@ -84,7 +84,7 @@ class LogContentActivity :
             // endregion
 
             completeList =
-                savedInstanceState.getParcelableArrayList<LogContent>("completeList") as ArrayList<LogContent>
+                savedInstanceState.getParcelableArrayList("completeList") ?: ArrayList()
             lastSelected = savedInstanceState.getParcelable("lastSelected")
             firstVisiblePos =
                 if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos") else -1

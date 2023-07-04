@@ -128,7 +128,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             client = savedInstanceState.getParcelable("client")
             orderRequest = savedInstanceState.getParcelable("orderRequest")
             completeList =
-                savedInstanceState.getParcelableArrayList<OrderRequestContent>("completeList") as ArrayList<OrderRequestContent>
+                savedInstanceState.getParcelableArrayList("completeList") ?: ArrayList()
             checkedIdArray =
                 (savedInstanceState.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
             lastSelected = savedInstanceState.getParcelable("lastSelected")

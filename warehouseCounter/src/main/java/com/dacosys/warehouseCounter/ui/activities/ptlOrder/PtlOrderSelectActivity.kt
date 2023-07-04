@@ -124,7 +124,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
         // Adapter
         checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
-        completeList = b.getParcelableArrayList<PtlOrder>("completeList") as ArrayList<PtlOrder>
+        completeList = b.getParcelableArrayList("completeList") ?: ArrayList()
         lastSelected = b.getParcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")

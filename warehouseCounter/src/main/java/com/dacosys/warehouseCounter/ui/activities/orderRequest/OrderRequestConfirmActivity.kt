@@ -156,7 +156,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             orderRequest = savedInstanceState.getParcelable("orderRequest")
             panelTopIsExpanded = savedInstanceState.getBoolean("panelTopIsExpanded")
             completeList =
-                savedInstanceState.getParcelableArrayList<OrderRequestContent>("completeList") as ArrayList<OrderRequestContent>
+                savedInstanceState.getParcelableArrayList("completeList") ?: ArrayList()
             checkedIdArray =
                 (savedInstanceState.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
             lastSelected = savedInstanceState.getParcelable("lastSelected")
