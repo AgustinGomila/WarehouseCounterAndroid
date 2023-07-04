@@ -29,6 +29,7 @@ import androidx.core.view.*
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
@@ -1002,8 +1003,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         JotterListener.lockScanner(this, false)
 
         val item: Item = it.item ?: return
+        val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION
 
-        if (adapter?.getIndexById(item.itemId) != RecyclerView.NO_POSITION) {
+        if (pos != NO_POSITION) {
             adapter?.selectItem(item)
         } else {
             itemSelectFilterFragment?.itemCode = item.ean

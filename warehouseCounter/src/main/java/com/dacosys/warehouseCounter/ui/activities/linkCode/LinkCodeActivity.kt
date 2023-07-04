@@ -1170,7 +1170,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         val scannedCode: String = it.scannedCode
 
         if (item != null) {
-            if (adapter?.getIndexById(item.itemId) != NO_POSITION) {
+            val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION
+            if (pos != NO_POSITION) {
                 adapter?.selectItem(item)
             } else {
                 itemSelectFilterFragment!!.itemCode = item.ean
