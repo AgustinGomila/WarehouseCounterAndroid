@@ -54,12 +54,10 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         if (savedInstanceState != null) {
             val t1 = savedInstanceState.getString("title")
-            if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+            if (!t1.isNullOrEmpty()) tempTitle = t1
 
             val t2 = savedInstanceState.getString("hint")
-            if (t2 != null && t2.isNotEmpty()) {
-                tempHint = t2
-            }
+            if (!t2.isNullOrEmpty()) tempHint = t2
 
             orc = savedInstanceState.getParcelable("orc")
 
@@ -68,17 +66,13 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             val extras = intent.extras
             if (extras != null) {
                 val t1 = extras.getString("title")
-                if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+                if (!t1.isNullOrEmpty()) tempTitle = t1
 
                 val t2 = extras.getString("hint")
-                if (t2 != null && t2.isNotEmpty()) {
-                    tempHint = t2
-                }
+                if (!t2.isNullOrEmpty()) tempHint = t2
 
                 val t3 = extras.getParcelable("orc") as OrderRequestContent?
-                if (t3 != null) {
-                    orc = t3
-                }
+                if (t3 != null) orc = t3
 
                 defaultValue = extras.getString("defaultValue") ?: ""
             }

@@ -263,10 +263,12 @@ class AutoResizeTextView : AppCompatTextView {
                         lastBest = lo
                         lo = mid + 1
                     }
+
                     midValCmp > 0 -> {
                         hi = mid - 1
                         lastBest = hi
                     }
+
                     else -> return mid
                 }
             }

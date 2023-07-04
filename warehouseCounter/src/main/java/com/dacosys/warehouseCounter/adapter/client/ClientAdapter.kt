@@ -388,6 +388,7 @@ class ClientAdapter : ArrayAdapter<Client>, Filterable {
                             0 -> contactNameComp
                             else -> taxNumberComp
                         }
+
                         else -> nameComp
                     }
                 } catch (ex: Exception) {

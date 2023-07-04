@@ -42,12 +42,6 @@
     <color name="whitesmoke">#F5F5F5</color>
     <color name="darker_gray">#323232</color>
 
-    <color name="status_layout_0">#FF009688</color>
-    <color name="status_layout_1">#FF2196F3</color>
-    <color name="status_layout_2">#FFFF5722</color>
-    <color name="status_layout_3">#FF4CAF50</color>
-    <color name="status_layout_4">#FFFFC107</color>
-
     <color name="status_default">#FFDFDFDF</color>
     <color name="status_lot_active">#FFDFDFDF</color>
     <color name="status_not_lot_active">#FF6FB4BD</color>

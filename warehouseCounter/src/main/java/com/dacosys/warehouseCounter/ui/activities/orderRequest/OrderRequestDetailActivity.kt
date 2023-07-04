@@ -35,7 +35,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
     private var panelTopIsExpanded = true
 
-    // Header que depende del tipo de countimiento
+    // Header que depende del tipo de arqueo
     private var headerFragment: androidx.fragment.app.Fragment? = null
 
     // Adaptador, colección de ítems, fila seleccionada
@@ -104,6 +104,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         binding = OrderRequestDetailActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {

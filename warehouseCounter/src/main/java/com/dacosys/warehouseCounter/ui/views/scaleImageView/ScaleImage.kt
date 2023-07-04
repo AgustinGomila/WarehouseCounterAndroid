@@ -36,6 +36,7 @@ class ScaleImage(context: Context, attrs: AttributeSet? = null) :
                 touchDownX = event.x
                 touchDownY = event.y
             }
+
             MotionEvent.ACTION_MOVE ->
                 onScaledListener?.onScaled(
                     event.x - touchDownX,

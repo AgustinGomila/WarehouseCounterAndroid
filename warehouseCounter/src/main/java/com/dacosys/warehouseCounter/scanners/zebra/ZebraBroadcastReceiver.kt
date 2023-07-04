@@ -99,6 +99,7 @@ class ZebraBroadcastReceiver : BroadcastReceiver {
                                 "Scanner status: $displayScannerStatusText"
                             )
                         }
+
                         EXTRA_KEY_VALUE_PROFILE_SWITCH -> {}
                         EXTRA_KEY_VALUE_CONFIGURATION_UPDATE -> {}
                     }

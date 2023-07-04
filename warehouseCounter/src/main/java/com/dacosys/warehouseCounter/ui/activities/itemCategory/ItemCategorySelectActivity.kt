@@ -74,7 +74,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
             val extras = intent.extras
             if (extras != null) {
                 val t1 = extras.getString("title")
-                if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+                if (!t1.isNullOrEmpty()) tempTitle = t1
 
                 itemCategory = extras.getParcelable("itemCategory")
             }
@@ -335,6 +335,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
                 binding.autoCompleteTextView.isPopupShowing -> {
                     adjustAndShowDropDown()
                 }
+
                 else -> {
                     centerLayout()
                 }

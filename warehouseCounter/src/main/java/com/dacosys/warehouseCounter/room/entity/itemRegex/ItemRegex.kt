@@ -133,11 +133,13 @@ data class ItemRegex(
                                         ean = gr.value
                                         isEanFounded = true
                                     }
+
                                     "lotid" -> {
                                         isFounded = true
                                         lot = gr.value
                                         isLotIdFounded = true
                                     }
+
                                     "qty" -> {
                                         isFounded = true
                                         try {

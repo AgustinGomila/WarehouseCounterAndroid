@@ -8,31 +8,44 @@
                                                    android:orientation="vertical"
                                                    tools:context="com.dacosys.warehouseCounter.ui.activities.main.InitConfigActivity"
                                                    tools:layout_editor_absoluteX="0dp"
-                                                   tools:layout_editor_absoluteY="81dp">
+                                                   tools:layout_editor_absoluteY="81dp" android:id="@+id/init">
 
-    <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/imageView"
-            android:layout_width="0dp"
-            android:layout_height="20dp"
-            android:background="#FFCC33"
-            android:contentDescription="@string/dacosys_logo"
-            app:layout_constraintHorizontal_bias="0.533"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/wc"/>
-
-    <TextView
-            android:id="@+id/versionTextView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="@string/version"
-            android:textSize="12sp"
+    <androidx.appcompat.widget.Toolbar
+            android:id="@+id/top_appbar"
+            style="@style/MyActionBar"
+            android:layout_width="match_parent"
+            android:layout_height="?android:attr/actionBarSize"
+            android:elevation="4dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/imageView"/>
+            app:layout_constraintTop_toTopOf="parent"
+            app:menu="@menu/menu_login"
+            app:title="@string/app_name"/>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:id="@+id/headerLayout"
+            app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/top_appbar">
+
+        <TextView
+                android:id="@+id/versionTextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/version"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@+id/imageView"
+                app:layout_constraintEnd_toEndOf="parent"/>
+        <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/imageView"
+                android:layout_width="0dp"
+                android:layout_height="20dp"
+                android:background="#FFCC33"
+                android:contentDescription="@string/dacosys_logo"
+                app:srcCompat="@drawable/wc" app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -40,7 +53,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/versionTextView">
+            app:layout_constraintTop_toBottomOf="@+id/headerLayout" android:id="@+id/mainLayout">
 
         <CheckBox
                 android:id="@+id/proxyCheckBox"

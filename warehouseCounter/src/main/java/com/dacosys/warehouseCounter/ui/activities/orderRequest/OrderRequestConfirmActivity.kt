@@ -129,6 +129,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         binding = OrderRequestConfirmActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {

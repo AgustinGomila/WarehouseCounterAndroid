@@ -70,7 +70,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     private fun loadBundleValues(b: Bundle) {
         val t1 = b.getString("title")
-        tempTitle = if (t1 != null && t1.isNotEmpty()) t1
+        tempTitle = if (!t1.isNullOrEmpty()) t1
         else context.getString(R.string.setup_new_count)
 
         tempDescription = b.getString("description") ?: ""
@@ -79,7 +79,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     private fun loadExtraBundleValues(b: Bundle) {
         val t1 = b.getString("title")
-        tempTitle = if (t1 != null && t1.isNotEmpty()) t1
+        tempTitle = if (!t1.isNullOrEmpty()) t1
         else context.getString(R.string.setup_new_count)
     }
 
@@ -92,6 +92,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         binding = NewCountActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         if (savedInstanceState != null) {
@@ -143,6 +144,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     binding.continueButton.performClick()
                     true
                 }
+
                 else -> false
             }
         }
@@ -254,13 +256,6 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     // region READERS Reception
 
     override fun onNewIntent(intent: Intent) {
-        /*
-          This method gets called, when a new Intent gets associated with the current activity instance.
-          Instead of creating a new activity, onNewIntent will be called. For more information have a look
-          at the documentation.
-
-          In our case this method gets called, when the user attaches a className to the device.
-         */
         super.onNewIntent(intent)
         Nfc.nfcHandleIntent(intent, this)
     }
@@ -301,14 +296,17 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 onBackPressed()
                 return true
             }
+
             R.id.action_rfid_connect -> {
                 JotterListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_trigger_scan -> {
                 JotterListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_read_barcode -> {
                 JotterListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)

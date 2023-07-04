@@ -52,6 +52,7 @@ class UserSpinnerFragment : Fragment() {
                         else -> r
                     }
                 }
+
                 else -> null
             }
         }
@@ -90,6 +91,7 @@ class UserSpinnerFragment : Fragment() {
                         else -> r.password ?: ""
                     }
                 }
+
                 else -> ""
             }
         }
@@ -107,6 +109,7 @@ class UserSpinnerFragment : Fragment() {
                         else -> r.userId.toInt()
                     }
                 }
+
                 else -> null
             }
         }
@@ -297,7 +300,7 @@ class UserSpinnerFragment : Fragment() {
         }
 
         while (binding.fragmentSpinner.adapter == null) {
-            // Horrible wait for full load
+            // Horrible wait for a full load
         }
 
         if (mListener != null) {

@@ -36,8 +36,10 @@ class Colors {
                 when (b.background) {
                     is StateListDrawable -> ((b.background as StateListDrawable).current as GradientDrawable).color?.defaultColor
                         ?: defaultColor
+
                     is GradientDrawable -> (b.background as GradientDrawable).color?.defaultColor
                         ?: defaultColor
+
                     else -> return defaultColor
                 }
             } else {

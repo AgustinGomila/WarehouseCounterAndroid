@@ -15,7 +15,6 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
-import androidx.appcompat.widget.Toolbar
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -147,6 +146,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         binding = PtlSelectOrderActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -370,7 +370,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                 binding.recyclerView.adapter = adapter
 
                 while (binding.recyclerView.adapter == null) {
-                    // Horrible wait for full load
+                    // Horrible wait for a full load
                 }
 
                 // Estas variables locales evitar posteriores cambios de estado.
@@ -503,9 +503,8 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
-        val drawable = ContextCompat.getDrawable(context, R.drawable.ic_visibility)
-        val toolbar = findViewById<Toolbar>(R.id.action_bar)
-        toolbar.overflowIcon = drawable
+        val drawable = ContextCompat.getDrawable(this, R.drawable.ic_visibility)
+        binding.topAppbar.overflowIcon = drawable
 
         return true
     }
@@ -594,13 +593,6 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     // region READERS Reception
 
     override fun onNewIntent(intent: Intent) {
-        /*
-          This method gets called, when a new Intent gets associated with the current activity instance.
-          Instead of creating a new activity, onNewIntent will be called. For more information have a look
-          at the documentation.
-
-          In our case this method gets called, when the user attaches a className to the device.
-         */
         super.onNewIntent(intent)
         Nfc.nfcHandleIntent(intent, this)
     }

@@ -262,22 +262,27 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 onBackPressed()
                 return true
             }
+
             R.id.action_settings -> {
                 configApp()
                 return true
             }
+
             R.id.action_rfid_connect -> {
                 JotterListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_trigger_scan -> {
                 JotterListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
+
             R.id.action_read_barcode -> {
                 JotterListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
+
             else -> {
                 return super.onOptionsItemSelected(item)
             }
@@ -341,6 +346,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 intent.putExtra("title", getString(R.string.new_count))
                 resultForNewCount.launch(intent)
             }
+
             MainButton.PendingCounts -> {
                 if (rejectNewInstances) return
                 rejectNewInstances = true
@@ -350,6 +356,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 intent.putExtra("title", getString(R.string.pending_counts))
                 resultForPendingCount.launch(intent)
             }
+
             MainButton.CompletedCounts -> {
                 if (rejectNewInstances) return
                 rejectNewInstances = true
@@ -358,6 +365,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 intent.putExtra("title", getString(R.string.completed_counts))
                 startActivity(intent)
             }
+
             MainButton.CodeRead -> {
                 if (rejectNewInstances) return
                 rejectNewInstances = true
@@ -367,6 +375,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                 startActivity(intent)
             }
+
             MainButton.LinkItemCodes -> {
                 if (rejectNewInstances) return
                 rejectNewInstances = true
@@ -379,12 +388,14 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                     makeText(binding.root, "Error:" + ex.message, ERROR)
                 }
             }
+
             MainButton.PtlOrder -> {
                 if (rejectNewInstances) return
                 rejectNewInstances = true
 
                 startNewPtlOrderActivity()
             }
+
             MainButton.PrintItemLabel -> {
                 if (rejectNewInstances) return
                 rejectNewInstances = true
@@ -399,6 +410,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                     makeText(binding.root, "Error:" + ex.message, ERROR)
                 }
             }
+
             MainButton.Configuration -> {
                 configApp()
             }
@@ -660,6 +672,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         syncViewModel.syncCompletedOrders.observe(this) { if (it != null) onCompletedOrder(it) }
@@ -691,7 +704,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             return
         }
 
-        if (!isDebuggable() || !BuildConfig.DEBUG) {
+        if (isDebuggable() || !BuildConfig.DEBUG) {
             // Mostramos el Timer sólo en DEBUG
             binding.timeTextView.visibility = View.GONE
         }
@@ -766,6 +779,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 button.isPressed = false
                 button.performClick()
             }
+
             MotionEvent.ACTION_DOWN -> {
                 button.isPressed = true
             }

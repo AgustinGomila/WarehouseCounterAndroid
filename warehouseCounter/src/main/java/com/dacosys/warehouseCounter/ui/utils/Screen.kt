@@ -50,26 +50,34 @@ class Screen {
                     Surface.ROTATION_90 -> when {
                         width > height -> activity.requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
                         else -> activity.requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
                     }
+
                     Surface.ROTATION_180 -> when {
                         height > width -> activity.requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+
                         else -> activity.requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
                     }
+
                     Surface.ROTATION_270 -> when {
                         width > height -> activity.requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+
                         else -> activity.requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                     }
+
                     Surface.ROTATION_0 -> activity.requestedOrientation =
                         ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
                     else -> when {
                         height > width -> activity.requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
                         else -> activity.requestedOrientation =
                             ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                     }
@@ -198,6 +206,7 @@ class Screen {
                     button.isPressed = false
                     button.performClick()
                 }
+
                 MotionEvent.ACTION_DOWN -> {
                     button.isPressed = true
                 }

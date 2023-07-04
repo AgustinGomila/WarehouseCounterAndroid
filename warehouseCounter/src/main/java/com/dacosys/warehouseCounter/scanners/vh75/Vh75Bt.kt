@@ -724,22 +724,26 @@ class Vh75Bt(
                         Utility.bytes2HexStringWithSperator(data)
                     }"
                 )
+
                 data[0] == Head.RECEIVE_FAIL.code -> Log.e(
                     tag,
                     "checkSuccess: $commandCode ${Head.RECEIVE_FAIL.name} ${
                         Utility.bytes2HexStringWithSperator(data)
                     }"
                 )
+
                 data[0] == Head.SEND.code -> Log.v(
                     tag,
                     "checkSuccess: $commandCode ${Head.SEND.name} ${
                         Utility.bytes2HexStringWithSperator(data)
                     }"
                 )
+
                 data[0] == 0x00.toByte() -> Log.v(
                     tag,
                     "checkSuccess: $commandCode OK ${Utility.bytes2HexStringWithSperator(data)}"
                 )
+
                 else -> Log.v(
                     tag, "checkSuccess: $commandCode Unknown Result ${
                         Utility.bytes2HexStringWithSperator(data)
@@ -805,6 +809,7 @@ class Vh75Bt(
                         // Escritura completa!
                         listener.onWriteCompleted(cSuc)
                     }
+
                     CommandCode.ReadHandsetParam.code -> {
                         // Lectura de parámetros de configuración!
                         if (cSuc) {

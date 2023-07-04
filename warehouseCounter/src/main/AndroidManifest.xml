@@ -193,7 +193,7 @@
                 android:theme="@style/Theme.AppCompat.DayNight.Dialog"
                 android:windowSoftInputMode="stateAlwaysVisible"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.common.ObservationsActivity"
+                android:name="com.dacosys.warehouseCounter.ui.activities.common.ObservationActivity"
                 android:windowSoftInputMode="stateHidden|adjustResize"/>
         <activity android:name=".ui.activities.orderRequest.OrderRequestDetailActivity"/>
         <activity

@@ -189,6 +189,7 @@ object JotterListener : Jotter.Listener {
                         || manufacturer.startsWith("Foxconn International Holdings Limited") -> {
                     collectorType = CollectorType.honeywellNative
                 }
+
                 manufacturer.contains("Motorola", true)
                         || manufacturer.contains("Zebra", true)
                         || manufacturer.contains("Symbol", true) -> {

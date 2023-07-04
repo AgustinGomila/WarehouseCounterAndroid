@@ -15,7 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity
-import com.dacosys.warehouseCounter.ui.activities.common.ObservationsActivity
+import com.dacosys.warehouseCounter.ui.activities.common.ObservationActivity
 import com.dacosys.warehouseCounter.ui.activities.common.QtySelectorActivity
 import com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity
@@ -69,16 +69,20 @@ object Nfc {
             when (targetActivity) {
                 is CodeCheckActivity -> (targetActivity as? CodeCheckActivity)?.scannerCompleted(id)
                     ?: (targetActivity as? CodeCheckActivity)?.scannerCompleted(id)
+
                 is LinkCodeActivity -> (targetActivity as? LinkCodeActivity)?.scannerCompleted(id)
                     ?: (targetActivity as? LinkCodeActivity)?.scannerCompleted(id)
+
                 is OrderRequestContentActivity -> (targetActivity as? OrderRequestContentActivity)?.scannerCompleted(
                     id
                 )
                     ?: (targetActivity as? OrderRequestContentActivity)?.scannerCompleted(id)
-                is ObservationsActivity -> (targetActivity as? ObservationsActivity)?.scannerCompleted(
+
+                is ObservationActivity -> (targetActivity as? ObservationActivity)?.scannerCompleted(
                     id
                 )
-                    ?: (targetActivity as? ObservationsActivity)?.scannerCompleted(id)
+                    ?: (targetActivity as? ObservationActivity)?.scannerCompleted(id)
+
                 is QtySelectorActivity -> (targetActivity as? QtySelectorActivity)?.scannerCompleted(
                     id
                 )

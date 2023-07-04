@@ -81,7 +81,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
             val extras = intent.extras
             if (extras != null) {
                 val t1 = extras.getString("title")
-                if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+                if (!t1.isNullOrEmpty()) tempTitle = t1
 
                 code = extras.getString("code") ?: ""
             }

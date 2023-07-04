@@ -40,14 +40,14 @@ class MultiplierSelectActivity : AppCompatActivity() {
 
         if (savedInstanceState != null) {
             val t1 = savedInstanceState.getString("title")
-            if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+            if (!t1.isNullOrEmpty()) tempTitle = t1
 
             tempMultiplier = savedInstanceState.getInt("tempMultiplier")
         } else {
             val extras = intent.extras
             if (extras != null) {
                 val t1 = extras.getString("title")
-                if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+                if (!t1.isNullOrEmpty()) tempTitle = t1
 
                 tempMultiplier = extras.getInt("multiplier")
             }

@@ -20,7 +20,6 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
-import androidx.appcompat.widget.Toolbar
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
@@ -204,6 +203,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         binding = ItemPrintLabelActivityTopPanelCollapsedBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -852,9 +852,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             menu.setOptionalIconsVisible(true)
         }
 
-        val drawable = ContextCompat.getDrawable(context, R.drawable.ic_visibility)
-        val toolbar = findViewById<Toolbar>(R.id.action_bar)
-        toolbar.overflowIcon = drawable
+        val drawable = ContextCompat.getDrawable(this, R.drawable.ic_visibility)
+        binding.topAppbar.overflowIcon = drawable
 
         // Opciones de visibilidad del menú
         val allControls = SettingsRepository.getAllSelectItemVisibleControls()
@@ -1067,13 +1066,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     // region READERS Reception
 
     override fun onNewIntent(intent: Intent) {
-        /*
-          This method gets called when a new Intent gets associated with the current activity instance.
-          Instead of creating a new activity, onNewIntent will be called.
-          For more information, have a look at the documentation.
-
-          In our case, this method gets called when the user attaches a className to the device.
-         */
         super.onNewIntent(intent)
         Nfc.nfcHandleIntent(intent, this)
     }

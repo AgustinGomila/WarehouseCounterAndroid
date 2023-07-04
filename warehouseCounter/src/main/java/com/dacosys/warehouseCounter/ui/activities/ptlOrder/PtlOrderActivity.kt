@@ -339,6 +339,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         binding = PtlOrderActivityBottomPanelCollapsedBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {

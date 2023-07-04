@@ -7,14 +7,24 @@
                                                    android:orientation="vertical"
                                                    android:weightSum="1"
                                                    tools:layout_editor_absoluteX="0dp"
-                                                   tools:layout_editor_absoluteY="81dp">
+                                                   tools:layout_editor_absoluteY="81dp" android:id="@+id/countLog">
+
+    <androidx.appcompat.widget.Toolbar
+            android:id="@+id/top_appbar"
+            style="@style/MyActionBar"
+            android:layout_width="match_parent"
+            android:layout_height="?android:attr/actionBarSize"
+            android:elevation="4dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:title="@string/count_log"/>
 
     <TextView
             android:id="@+id/titleTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="1dp"
-            android:layout_marginTop="1dp"
             android:layout_marginEnd="1dp"
             android:background="@drawable/rounded_corner_button_808f87"
             android:gravity="center_horizontal"
@@ -23,10 +33,10 @@
             android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            android:layout_marginTop="1dp" app:layout_constraintTop_toBottomOf="@+id/top_appbar"/>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/swipeRefreshLogContent"
+            android:id="@+id/swipeRefresh"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_marginStart="2dp"

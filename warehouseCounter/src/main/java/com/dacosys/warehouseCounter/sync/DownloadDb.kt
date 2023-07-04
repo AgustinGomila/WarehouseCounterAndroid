@@ -257,6 +257,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                         mCallback?.onDownloadDbTask(CANCELED)
                         return
                     }
+
                     FINISHED -> {
 
                         // Si estamos descargando el archivo de la fecha
@@ -276,6 +277,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                             downloadTask.execute()
                         }
                     }
+
                     CRASHED -> {
 
                         // Si no existe el archivo con la fecha en el servidor
@@ -294,6 +296,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                             return
                         }
                     }
+
                     else -> {}
                 }
                 // TODO: Poner un Timer que salga de acá
@@ -341,9 +344,11 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                             mCallback?.onDownloadDbTask(CRASHED)
                             return
                         }
+
                         FINISHED -> {
                             break
                         }
+
                         else -> {}
                     }
                 }

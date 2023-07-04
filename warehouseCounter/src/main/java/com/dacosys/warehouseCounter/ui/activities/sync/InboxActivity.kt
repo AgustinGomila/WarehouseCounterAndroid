@@ -38,7 +38,6 @@ import org.parceler.Parcels
 import java.io.File
 import kotlin.concurrent.thread
 
-@Suppress("UNUSED_ANONYMOUS_PARAMETER")
 class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener {
 
     private var isListViewFilling = false
@@ -96,6 +95,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         binding = InboxActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -414,7 +414,6 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
-
         if (menu is MenuBuilder) {
             menu.setOptionalIconsVisible(true)
         }

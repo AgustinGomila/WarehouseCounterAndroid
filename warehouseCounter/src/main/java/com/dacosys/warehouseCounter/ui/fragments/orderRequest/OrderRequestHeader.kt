@@ -80,6 +80,7 @@ class OrderRequestHeader : Fragment() {
                     binding.clientTextView.text = it.name
                     TooltipCompat.setTooltipText(binding.clientTextView, it.name)
                 }
+
                 else -> {
                     binding.clientTextView.text = getString(R.string.unknown_client)
                     TooltipCompat.setTooltipText(
@@ -97,6 +98,7 @@ class OrderRequestHeader : Fragment() {
                     binding.descriptionTextView, getString(R.string.count_without_description)
                 )
             }
+
             else -> {
                 binding.descriptionTextView.text = or.description
                 TooltipCompat.setTooltipText(

@@ -365,6 +365,9 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         binding = LoginActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
         //// INICIALIZAR CONTROLES
         userSpinnerFragment =
             supportFragmentManager.findFragmentById(R.id.userSpinnerFragment) as UserSpinnerFragment?

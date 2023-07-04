@@ -171,6 +171,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         binding = InitConfigActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         if (savedInstanceState != null) {

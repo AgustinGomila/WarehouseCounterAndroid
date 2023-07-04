@@ -23,7 +23,7 @@ class LogContentActivity :
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
             run {
-                binding.swipeRefreshLogContent.isRefreshing = false
+                binding.swipeRefresh.isRefreshing = false
             }
         }, 100)
     }
@@ -62,6 +62,7 @@ class LogContentActivity :
         binding = LogContentActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -104,8 +105,8 @@ class LogContentActivity :
 
         title = tempTitle
 
-        binding.swipeRefreshLogContent.setOnRefreshListener(this)
-        binding.swipeRefreshLogContent.setColorSchemeResources(
+        binding.swipeRefresh.setOnRefreshListener(this)
+        binding.swipeRefresh.setColorSchemeResources(
             android.R.color.holo_blue_bright,
             android.R.color.holo_green_light,
             android.R.color.holo_orange_light,
@@ -125,7 +126,7 @@ class LogContentActivity :
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
             run {
-                binding.swipeRefreshLogContent.isRefreshing = show
+                binding.swipeRefresh.isRefreshing = show
             }
         }, 20)
     }

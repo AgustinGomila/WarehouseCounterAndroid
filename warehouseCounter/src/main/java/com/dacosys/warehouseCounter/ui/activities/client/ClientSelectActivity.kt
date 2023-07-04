@@ -74,7 +74,7 @@ class ClientSelectActivity : AppCompatActivity(),
             val extras = intent.extras
             if (extras != null) {
                 val t1 = extras.getString("title")
-                if (t1 != null && t1.isNotEmpty()) tempTitle = t1
+                if (!t1.isNullOrEmpty()) tempTitle = t1
 
                 client = extras.getParcelable("client")
             }
@@ -89,7 +89,7 @@ class ClientSelectActivity : AppCompatActivity(),
         }
 
         // region Setup CATEGORY_CATEGORY ID AUTOCOMPLETE
-        // Set an client click checkedChangedListener for auto complete text view
+        // Set a client click checkedChangedListener for auto complete text view
         binding.autoCompleteTextView.threshold = 1
         binding.autoCompleteTextView.hint = tempTitle
         binding.autoCompleteTextView.onItemClickListener =
@@ -335,6 +335,7 @@ class ClientSelectActivity : AppCompatActivity(),
                 binding.autoCompleteTextView.isPopupShowing -> {
                     adjustAndShowDropDown()
                 }
+
                 else -> {
                     centerLayout()
                 }

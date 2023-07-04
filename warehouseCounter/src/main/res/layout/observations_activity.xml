@@ -5,42 +5,34 @@
                                                    android:layout_width="match_parent"
                                                    android:layout_height="match_parent">
 
-    <Button
-            android:id="@+id/cancelButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="1dp"
-            android:layout_marginEnd="2dp"
-            android:layout_marginBottom="2dp"
-            android:background="@drawable/rounded_corner_button_firebrick"
-            android:clickable="true"
-            android:elevation="1dp"
-            android:focusable="true"
-            android:stateListAnimator="@null"
-            android:text="@string/cancel"
-            android:textColor="@color/white"
-            app:layout_constraintBottom_toBottomOf="parent"
+    <androidx.appcompat.widget.Toolbar
+            android:id="@+id/top_appbar"
+            style="@style/MyActionBar"
+            android:layout_width="match_parent"
+            android:layout_height="?android:attr/actionBarSize"
+            android:elevation="4dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/guideline21"/>
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:title="@string/observations"/>
 
-    <Button
-            android:id="@+id/okButton"
+    <EditText
+            android:id="@+id/obsEditText"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:layout_marginEnd="1dp"
-            android:layout_marginBottom="2dp"
-            android:background="@drawable/rounded_corner_button_seagreen"
-            android:clickable="true"
-            android:elevation="1dp"
-            android:focusable="true"
-            android:stateListAnimator="@null"
-            android:text="@string/accept"
-            android:textColor="@color/white"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/guideline21"
-            app:layout_constraintStart_toStartOf="parent"/>
-
+            android:layout_height="0dp"
+            android:ems="10"
+            android:gravity="start|end"
+            android:hint="@string/observations"
+            android:importantForAutofill="no"
+            android:inputType="textMultiLine|textNoSuggestions"
+            android:lines="10"
+            android:minLines="5"
+            android:scrollbars="vertical"
+            android:singleLine="false"
+            app:layout_constraintBottom_toTopOf="@+id/codePasteLayout"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/top_appbar"/>
     <LinearLayout
             android:id="@+id/codePasteLayout"
             android:layout_width="0dp"
@@ -68,28 +60,46 @@
                 android:text="@string/paste_code_read"/>
     </LinearLayout>
 
-    <EditText
-            android:id="@+id/obsEditText"
+    <Button
+            android:id="@+id/okButton"
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:ems="10"
-            android:gravity="start|end"
-            android:hint="@string/observations"
-            android:importantForAutofill="no"
-            android:inputType="textMultiLine|textNoSuggestions"
-            android:lines="10"
-            android:minLines="5"
-            android:scrollbars="vertical"
-            android:singleLine="false"
-            app:layout_constraintBottom_toTopOf="@+id/codePasteLayout"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="1dp"
+            android:layout_marginBottom="2dp"
+            android:background="@drawable/rounded_corner_button_seagreen"
+            android:clickable="true"
+            android:elevation="1dp"
+            android:focusable="true"
+            android:stateListAnimator="@null"
+            android:text="@string/accept"
+            android:textColor="@color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/guideline21"
+            app:layout_constraintStart_toStartOf="parent"/>
 
+    <Button
+            android:id="@+id/cancelButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginBottom="2dp"
+            android:background="@drawable/rounded_corner_button_firebrick"
+            android:clickable="true"
+            android:elevation="1dp"
+            android:focusable="true"
+            android:stateListAnimator="@null"
+            android:text="@string/cancel"
+            android:textColor="@color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/guideline21"/>
     <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline21"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             app:layout_constraintGuide_percent="0.5"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

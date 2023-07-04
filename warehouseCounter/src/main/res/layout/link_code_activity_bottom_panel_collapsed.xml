@@ -10,6 +10,18 @@
                                                    android:orientation="vertical"
                                                    android:weightSum="1">
 
+    <androidx.appcompat.widget.Toolbar
+            android:id="@+id/top_appbar"
+            style="@style/MyActionBar"
+            android:layout_width="match_parent"
+            android:layout_height="?android:attr/actionBarSize"
+            android:elevation="4dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:menu="@menu/menu_read_activity"
+            app:title="@string/link_code"/>
+
     <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/panelBottom"
             android:layout_width="match_parent"
@@ -196,7 +208,7 @@
             app:layout_constraintBottom_toTopOf="@+id/panelButton"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            android:id="@+id/mainLayout" app:layout_constraintTop_toBottomOf="@+id/top_appbar">
 
         <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/fixedLayout"

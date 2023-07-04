@@ -115,6 +115,7 @@ class OutboxActivity : AppCompatActivity() {
         binding = OutboxActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -539,7 +540,6 @@ class OutboxActivity : AppCompatActivity() {
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
-
         if (menu is MenuBuilder) {
             menu.setOptionalIconsVisible(true)
         }

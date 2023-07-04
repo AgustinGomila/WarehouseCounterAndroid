@@ -19,7 +19,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 
-class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
+class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
     private var obs = ""
     private var autoText = ""
     private val newLine = "\n"
@@ -48,23 +48,20 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
         binding = ObservationsActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         title = getString(R.string.observations)
 
         if (savedInstanceState != null) {
             val t1 = savedInstanceState.getString("obs")
-            if (t1 != null) {
-                obs = t1
-            }
+            if (t1 != null) obs = t1
         }
 
         val extras = intent.extras
         if (extras != null) {
             val t1 = extras.getString("obs")
-            if (t1 != null) {
-                obs = t1
-            }
+            if (t1 != null) obs = t1
         }
 
         binding.okButton.setOnClickListener { confirmObs() }
@@ -72,7 +69,7 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         fillControls()
 
-        // Conectar el lectura NFC
+        // Conectar el lector NFC
         if (WarehouseCounterApp.settingViewModel.useNfc) {
             Nfc.setupNFCReader(this)
         }
@@ -167,13 +164,6 @@ class ObservationsActivity : AppCompatActivity(), Scanner.ScannerListener {
     }
 
     override fun onNewIntent(intent: Intent) {
-        /*
-          This method gets called, when a new Intent gets associated with the current activity instance.
-          Instead of creating a new activity, onNewIntent will be called. For more information have a look
-          at the documentation.
-
-          In our case this method gets called, when the user attaches a className to the device.
-         */
         super.onNewIntent(intent)
         Nfc.nfcHandleIntent(intent, this)
     }

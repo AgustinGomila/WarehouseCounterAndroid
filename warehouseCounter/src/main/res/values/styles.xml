@@ -1,25 +1,43 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
 
-    <style name="Base.Theme.App" parent="Theme.AppCompat.Light.DarkActionBar">
-        <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
+    <style name="Base.Theme.App" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- <item name="android:windowLightStatusBar">false</item> -->
     </style>
 
     <style name="WarehouseCounterTheme" parent="Base.Theme.App">
-        <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/warehouseCounterDark</item>
         <item name="colorPrimaryVariant">@color/warehouseCounter</item>
-        <item name="colorOnPrimary">@color/text_dark</item>
         <item name="colorSecondary">@color/triad3</item>
         <item name="colorSecondaryVariant">@color/triad2</item>
+        <item name="colorSurface">@color/warehouseCounter</item>
+        <item name="colorError">@color/warehouseCounter</item>
+        <item name="colorOnPrimary">@color/text_dark</item>
         <item name="colorOnSecondary">@color/text_dark</item>
+        <item name="colorOnBackground">@color/text_light</item>
+        <item name="colorOnSurface">@color/text_light</item>
+        <item name="colorOnError">@color/text_light</item>
+
+        <!-- ActionBar Styles -->
+        <item name="android:actionBarStyle">@style/MyActionBar</item>
+
         <!--To change the tint of checkboxes in options menu items</item>-->
         <item name="android:textColorSecondary">@color/triad4</item>
         <item name="android:statusBarColor">@color/triad3</item>
         <item name="android:navigationBarColor">@color/triad3</item>
         <item name="colorAccent">@color/colorAccent</item>
-        <!--To change the background of options menu-->
+
+        <!--To change the background of option menu-->
         <item name="android:itemBackground">@color/warehouseCounterDark</item>
     </style>
+
+    <!-- ActionBar styles --> -->
+
+    <style name="MyActionBar" parent="@style/Widget.AppCompat.ActionBar">
+        <item name="android:background">@color/warehouseCounter</item>
+        <item name="navigationIcon">@drawable/ic_arrow_back</item>
+    </style>
+
+    <!-- SplashScreen styles --> -->
 
     <style name="Theme.App.SplashScreen" parent="Theme.SplashScreen">
         <item name="postSplashScreenTheme">@style/WarehouseCounterTheme</item>
@@ -29,9 +47,13 @@
         <item name="windowSplashScreenAnimationDuration">3000</item>
     </style>
 
+    <!-- AlertDialog styles --> -->
+
     <style name="AlertDialogTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
         <item name="android:textSize">14sp</item>
     </style>
+
+    <!-- Floating Translucent styles --> -->
 
     <style name="Theme.AppCompat.Translucent" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowIsTranslucent">true</item>

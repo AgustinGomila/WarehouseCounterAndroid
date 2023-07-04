@@ -79,6 +79,8 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         setContentView(binding.root)
 
         createOptionsMenu()
+
+        setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         titleTag = getString(R.string.settings)

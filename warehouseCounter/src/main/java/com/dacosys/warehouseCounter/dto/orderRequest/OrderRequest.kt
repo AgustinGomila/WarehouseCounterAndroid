@@ -8,7 +8,6 @@ import com.dacosys.imageControl.moshi.Document
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.dto.log.Log
 import com.dacosys.warehouseCounter.misc.Statics
-import com.google.gson.*
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import java.io.File
