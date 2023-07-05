@@ -1,6 +1,7 @@
 package com.dacosys.warehouseCounter.ui.fragments.settings
 
 import android.os.Bundle
+import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -17,8 +18,8 @@ import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companio
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.io.File
-import java.lang.ref.WeakReference
 
 /**
  * This fragment shows general preferences only. It is used when the
@@ -85,9 +86,25 @@ class GeneralPreferenceFragment : PreferenceFragmentCompat() {
 
         val qrCodeButton = findPreference<Preference>("ac_qr_code")
         qrCodeButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+
+            if (requireActivity().isFinishing) return@OnPreferenceClickListener false
+
             ClientPackage.generateQrCode(
-                WeakReference(requireActivity()),
-                ClientPackage.getBarcodeForConfig(SettingsRepository.getAppConf(), Statics.appName)
+                screenSize = Screen.getScreenSize(requireActivity()),
+                data = ClientPackage.getBarcodeForConfig(SettingsRepository.getAppConf(), Statics.appName),
+                onFinish = {
+
+                    if (requireActivity().isFinishing) return@generateQrCode
+
+                    val imageView = ImageView(activity)
+                    imageView.setImageBitmap(it)
+                    val builder = AlertDialog.Builder(requireActivity()).setTitle(R.string.configuration_qr_code)
+                        .setMessage(R.string.scan_the_code_below_with_another_device_to_copy_the_configuration)
+                        .setPositiveButton(R.string.ok) { dialog, _ -> dialog.dismiss() }
+                        .setView(imageView)
+
+                    builder.create().show()
+                }
             )
             true
         }

@@ -5,10 +5,10 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.InsetDrawable
 import android.util.Log
+import android.util.Size
 import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.WindowManager
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.res.ResourcesCompat
@@ -27,7 +27,6 @@ import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.settings.utils.QRConfigType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
-import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.WriterException
 import com.google.zxing.qrcode.QRCodeWriter
@@ -38,7 +37,7 @@ class ClientPackage {
     companion object : DialogInterface.OnMultiChoiceClickListener {
 
         // region Selección automática de paquetes del cliente
-        private var allProductsArray: ArrayList<Package> = ArrayList()
+        private var allProductArray: ArrayList<Package> = ArrayList()
         private var validProductsArray: ArrayList<Package> = ArrayList()
         private var selected: BooleanArray? = null
 
@@ -79,15 +78,15 @@ class ClientPackage {
             val activity = weakAct.get() ?: return
             if (activity.isFinishing) return
 
-            allProductsArray.clear()
+            allProductArray.clear()
             for (pack in allPackage) {
                 val pvId = pack.productVersionId
-                if (validProducts.contains(pvId.toString()) && !allProductsArray.contains(pack)) {
-                    allProductsArray.add(pack)
+                if (validProducts.contains(pvId.toString()) && !allProductArray.contains(pack)) {
+                    allProductArray.add(pack)
                 }
             }
 
-            if (!allProductsArray.any()) {
+            if (!allProductArray.any()) {
                 onEventData(
                     SnackBarEventData(
                         WarehouseCounterApp.context.getString(R.string.there_are_no_valid_products_for_the_selected_client),
@@ -97,12 +96,12 @@ class ClientPackage {
                 return
             }
 
-            if (allProductsArray.size == 1) {
-                val productVersionId = allProductsArray[0].productVersionId
+            if (allProductArray.size == 1) {
+                val productVersionId = allProductArray[0].productVersionId
                 if (productVersionId == Statics.APP_VERSION_ID || productVersionId == Statics.APP_VERSION_ID_IMAGECONTROL) {
                     setConfigPanel(
                         callback = callback,
-                        packArray = arrayListOf(allProductsArray[0]),
+                        packArray = arrayListOf(allProductArray[0]),
                         email = email,
                         password = password,
                         onEventData = onEventData
@@ -121,13 +120,13 @@ class ClientPackage {
 
             var validProducts = false
             validProductsArray.clear()
-            val client = allProductsArray[0].client
+            val client = allProductArray[0].client
             val listItems: ArrayList<String> = ArrayList()
 
-            for (pack in allProductsArray) {
+            for (pack in allProductArray) {
                 val productVersionId = pack.productVersionId
 
-                // WarehouseCounter M12 o ImageControl M11
+                // WarehouseCounter M12 or ImageControl M11
                 if (productVersionId == Statics.APP_VERSION_ID || productVersionId == Statics.APP_VERSION_ID_IMAGECONTROL) {
                     validProducts = true
                     val clientPackage = pack.clientPackageContDesc
@@ -360,14 +359,11 @@ class ClientPackage {
             }
         }
 
-        fun generateQrCode(weakAct: WeakReference<FragmentActivity>, data: String) {
-            val activity = weakAct.get() ?: return
-            if (activity.isFinishing) return
-
+        fun generateQrCode(screenSize: Size, data: String, onFinish: ((Bitmap) -> Unit) = { }) {
             val writer = QRCodeWriter()
             try {
-                var w: Int = Screen.getScreenWidth(activity)
-                val h: Int = Screen.getScreenHeight(activity)
+                var w: Int = screenSize.width
+                val h: Int = screenSize.height
                 if (h < w) {
                     w = h
                 }
@@ -394,14 +390,7 @@ class ClientPackage {
                 val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                 bmp.setPixels(pixels, 0, width, 0, 0, width, height)
 
-                val imageView = ImageView(activity)
-                imageView.setImageBitmap(bmp)
-                val builder = AlertDialog.Builder(activity).setTitle(R.string.configuration_qr_code)
-                    .setMessage(R.string.scan_the_code_below_with_another_device_to_copy_the_configuration)
-                    .setPositiveButton(R.string.ok) { dialog, _ -> dialog.dismiss() }
-                    .setView(imageView)
-
-                builder.create().show()
+                onFinish.invoke(bmp)
             } catch (e: WriterException) {
                 e.printStackTrace()
             }
