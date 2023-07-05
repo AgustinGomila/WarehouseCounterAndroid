@@ -217,7 +217,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             // Permitir o no la rotación de pantalla
             Screen.setScreenRotation(this)
 
-            // Todavía no está loggeado
+            // Todavía no está autentificado
             if (Statics.currentUserId < 0L) {
                 login()
             }
@@ -681,6 +681,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         var freshSessionReq = false
 
+        if (!isDebuggable() && !BuildConfig.DEBUG) {
+            // Mostramos el Timer solo en DEBUG
+            binding.timeTextView.visibility = View.GONE
+        }
+
         if (savedInstanceState != null) {
             // Recuperar el estado previo de la actividad con los datos guardados.
             if (Statics.currentUserId < 0L) {
@@ -689,7 +694,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 initSetup()
             }
         } else {
-            // Primer inicialización
+            // Primera inicialización
             freshSessionReq = true
         }
 
@@ -702,11 +707,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 login()
             }
             return
-        }
-
-        if (isDebuggable() || !BuildConfig.DEBUG) {
-            // Mostramos el Timer sólo en DEBUG
-            binding.timeTextView.visibility = View.GONE
         }
     }
 
@@ -863,7 +863,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
     /**
      *
      * @param view      view that will be animated
-     * @param duration  for how long in ms will it shake
+     * @param duration  for how long in ms will it shake?
      * @param offset    start offset of the animation
      * @return          returns the same view with animation properties
      */
@@ -930,7 +930,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         else {
             when (requestCode) {
                 REQUEST_EXTERNAL_STORAGE -> {
-                    // If request is cancelled, the result arrays are empty.
+                    // If the request is canceled, the result arrays are empty.
                     if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                         makeText(
                             binding.root,
