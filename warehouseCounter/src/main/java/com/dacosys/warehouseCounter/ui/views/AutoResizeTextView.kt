@@ -174,9 +174,7 @@ class AutoResizeTextView : AppCompatTextView {
     }
 
     private fun adjustTextSize() {
-        if (!mInitializedDimens) {
-            return
-        }
+        if (!mInitializedDimens) return
         val startSize = mMinTextSize.toInt()
         val heightLimit = (measuredHeight - compoundPaddingBottom
                 - compoundPaddingTop)

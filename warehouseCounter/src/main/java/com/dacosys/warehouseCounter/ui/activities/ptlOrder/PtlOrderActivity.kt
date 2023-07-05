@@ -586,9 +586,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     }
 
     private fun setBottomPanelAnimation() {
-        if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) {
-            return
-        }
+        if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
         binding.expandBottomPanelButton?.setOnClickListener {
             val bottomVisible = panelBottomIsExpanded

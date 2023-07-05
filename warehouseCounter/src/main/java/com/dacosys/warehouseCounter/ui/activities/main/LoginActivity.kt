@@ -316,9 +316,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     private fun refreshUsers() {
-        if (Statics.downloadDbRequired) {
-            return
-        }
+        if (Statics.downloadDbRequired) return
 
         try {
             runOnUiThread { userSpinnerFragment!!.reFill() }
@@ -588,9 +586,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     private fun attemptLogin() {
-        if (attemptRunning) {
-            return
-        }
+        if (attemptRunning) return
         attemptRunning = true
 
         // Store values at the time of the login attempt.

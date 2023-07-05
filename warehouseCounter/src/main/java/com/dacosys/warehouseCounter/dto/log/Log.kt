@@ -78,9 +78,7 @@ class Log() : Parcelable {
 
         if (clientId != other.clientId) return false
         if (userId != other.userId) return false
-        if (creationDate != other.creationDate) return false
-
-        return true
+        return creationDate == other.creationDate
     }
 
     companion object CREATOR : Parcelable.Creator<Log> {

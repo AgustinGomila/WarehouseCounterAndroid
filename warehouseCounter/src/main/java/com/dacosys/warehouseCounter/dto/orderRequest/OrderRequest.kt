@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package com.dacosys.warehouseCounter.dto.orderRequest
 
 import android.os.Parcel
@@ -199,9 +197,7 @@ class OrderRequest() : Parcelable {
 
         other as OrderRequest
 
-        if (orderRequestId != other.orderRequestId) return false
-
-        return true
+        return orderRequestId == other.orderRequestId
     }
 
     override fun hashCode(): Int {
@@ -228,9 +224,9 @@ class OrderRequest() : Parcelable {
         private fun getOrders(path: File): ArrayList<OrderRequest> {
             val orArray: ArrayList<OrderRequest> = ArrayList()
             if (Statics.isExternalStorageReadable) {
-                // Get the directory for the user's public pictures directory.
+                // Get the directory for the user's public pictures' directory.
                 val filesInFolder = Statics.getFiles(path.absolutePath)
-                if (filesInFolder != null && filesInFolder.isNotEmpty()) {
+                if (!filesInFolder.isNullOrEmpty()) {
                     for (filename in filesInFolder) {
                         val filePath = path.absolutePath + File.separator + filename
                         val tempOr = OrderRequest(filePath)

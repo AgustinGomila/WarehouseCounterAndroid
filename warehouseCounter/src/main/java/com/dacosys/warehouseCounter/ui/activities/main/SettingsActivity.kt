@@ -342,9 +342,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
 
         try {
             // No capturar códigos que cambian el servidor cuando está autentificado.
-            if (currentQRConfigType == QRConfigClientAccount || currentQRConfigType == QRConfigWebservice) {
-                return
-            }
+            if (currentQRConfigType == QRConfigClientAccount || currentQRConfigType == QRConfigWebservice) return
 
             getConfigFromScannedCode(
                 onEvent = { onGetPackagesEnded(it) }, scanCode = scanCode, mode = currentQRConfigType

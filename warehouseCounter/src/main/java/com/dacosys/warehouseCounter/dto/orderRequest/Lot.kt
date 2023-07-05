@@ -48,9 +48,7 @@ class Lot() : Parcelable {
 
         other as Lot
 
-        if (lotId != other.lotId) return false
-
-        return true
+        return lotId == other.lotId
     }
 
     override fun hashCode(): Int {

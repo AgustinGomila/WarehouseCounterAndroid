@@ -111,9 +111,7 @@ class LogContent() : Parcelable {
         if (scannedCode != other.scannedCode) return false
         if (variationQty != other.variationQty) return false
         if (finalQty != other.finalQty) return false
-        if (date != other.date) return false
-
-        return true
+        return date == other.date
     }
 
     companion object CREATOR : Parcelable.Creator<LogContent> {

@@ -193,9 +193,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
      * dependiendo del tipo de conteo que se está haciendo.
      */
     private fun setHeaderFragment() {
-        if (orderRequest == null || adapter == null) {
-            return
-        }
+        if (orderRequest == null || adapter == null) return
 
         val orType = orderRequest?.orderRequestedType
         val newFragment: androidx.fragment.app.Fragment =
@@ -243,9 +241,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     }
 
     private fun setTopPanelAnimation() {
-        if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) {
-            return
-        }
+        if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
         binding.expandTopPanelButton.setOnClickListener {
             val nextLayout = ConstraintSet()

@@ -51,9 +51,7 @@ data class User(
 
         other as User
 
-        if (userId != other.userId) return false
-
-        return true
+        return userId == other.userId
     }
 
     companion object CREATOR : Parcelable.Creator<User> {

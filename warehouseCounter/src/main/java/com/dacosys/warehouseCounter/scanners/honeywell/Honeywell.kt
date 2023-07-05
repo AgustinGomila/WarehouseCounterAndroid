@@ -220,7 +220,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
     }
 
     fun setProperties(mapProperties: Map<String, Any>?) {
-        if (mapProperties == null || mapProperties.isEmpty()) return
+        if (mapProperties.isNullOrEmpty()) return
         loadProperties()
         for ((key, value1) in mapProperties) {
             if (value1 is String) properties!!.putString(key, value1.toString())

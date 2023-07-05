@@ -38,10 +38,7 @@ class Proxy {
         ) {
             val activity = weakAct.get() ?: return
             if (activity.isFinishing) return
-
-            if (avoidSetupProxyDialog) {
-                return
-            }
+            if (avoidSetupProxyDialog) return
 
             val sv = WarehouseCounterApp.settingViewModel
             avoidSetupProxyDialog = true
@@ -67,8 +64,7 @@ class Proxy {
             proxyUserEditText.isFocusableInTouchMode = true
 
             val proxyPassEditText = TextInputEditText(activity)
-            proxyPassEditText.inputType =
-                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            proxyPassEditText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             proxyPassEditText.hint = WarehouseCounterApp.context.getString(R.string.password)
             proxyPassEditText.isFocusable = true
             proxyPassEditText.isFocusableInTouchMode = true
@@ -114,7 +110,7 @@ class Proxy {
                     sv.proxyUser = user.toString()
                 }
 
-                if (pass != null && pass.isNotEmpty()) {
+                if (!pass.isNullOrEmpty()) {
                     sv.proxyPass = pass.toString()
                 }
             }
@@ -136,6 +132,5 @@ class Proxy {
             dialog.show()
             proxyEditText.requestFocus()
         }
-        // endregion PROXY THINGS
     }
 }

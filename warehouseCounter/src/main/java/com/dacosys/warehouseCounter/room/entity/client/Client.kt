@@ -77,9 +77,7 @@ data class Client(
 
         other as Client
 
-        if (clientId != other.clientId) return false
-
-        return true
+        return clientId == other.clientId
     }
 
     companion object CREATOR : Parcelable.Creator<Client> {

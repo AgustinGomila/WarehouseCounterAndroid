@@ -65,17 +65,13 @@ class Vh75Bt(
     private fun pairDevice() {
         val sv = settingViewModel
         val btAddress = sv.rfidBtAddress
-        if (btAddress.isEmpty()) {
-            return
-        }
+        if (btAddress.isEmpty()) return
 
         if (ActivityCompat.checkSelfPermission(
                 WarehouseCounterApp.context,
                 Manifest.permission.BLUETOOTH_CONNECT
             ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
+        ) return
 
         val pairedDevices = mAdapter.bondedDevices
         Log.v(this::class.java.simpleName, "pairDevice: Total devices: ${pairedDevices.size}")

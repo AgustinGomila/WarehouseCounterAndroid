@@ -329,9 +329,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
 
     private var isConfiguring = false
     private fun attemptToConfigure() {
-        if (isConfiguring) {
-            return
-        }
+        if (isConfiguring) return
         isConfiguring = true
 
         val email = binding.emailEditText.text.toString()

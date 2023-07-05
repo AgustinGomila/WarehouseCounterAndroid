@@ -294,9 +294,7 @@ class ClientSelectActivity : AppCompatActivity(),
 
     private var isTopping = false
     private fun topLayout() {
-        if (isTopping) {
-            return
-        }
+        if (isTopping) return
         isTopping = true
         val set = ConstraintSet()
 
@@ -309,9 +307,7 @@ class ClientSelectActivity : AppCompatActivity(),
 
     private var isCentring = false
     private fun centerLayout() {
-        if (isCentring) {
-            return
-        }
+        if (isCentring) return
 
         isCentring = true
         val set = ConstraintSet()

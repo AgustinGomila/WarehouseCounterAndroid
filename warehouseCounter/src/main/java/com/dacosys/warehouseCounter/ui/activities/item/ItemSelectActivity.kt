@@ -521,9 +521,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     private fun setBottomPanelAnimation() {
-        if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) {
-            return
-        }
+        if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
         binding.expandBottomPanelButton!!.setOnClickListener {
             val bottomVisible = panelBottomIsExpanded

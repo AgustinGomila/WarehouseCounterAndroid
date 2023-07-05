@@ -186,9 +186,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         val scannedCode = binding.codeEditText.text.toString()
 
-        if (scannedCode.trim().isEmpty()) {
-            return
-        }
+        if (scannedCode.trim().isEmpty()) return
 
         val buf = StringBuilder(200)
         for (ch in scannedCode.toCharArray()) {

@@ -39,9 +39,7 @@ class ConfirmStatus : Parcelable {
 
         other as ConfirmStatus
 
-        if (id != other.id) return false
-
-        return true
+        return id == other.id
     }
 
     override fun hashCode(): Int {

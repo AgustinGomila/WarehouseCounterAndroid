@@ -55,9 +55,7 @@ class OrderRequestContent() : Parcelable {
         other as OrderRequestContent
 
         if (item != other.item) return false
-        if (lot != other.lot) return false
-
-        return true
+        return lot == other.lot
     }
 
     companion object CREATOR : Parcelable.Creator<OrderRequestContent> {

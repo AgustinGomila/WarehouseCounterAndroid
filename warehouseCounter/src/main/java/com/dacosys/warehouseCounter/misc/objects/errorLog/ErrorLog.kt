@@ -74,9 +74,7 @@ class ErrorLog {
         }
 
         fun writeLog(activity: AppCompatActivity? = null, className: String, msg: String) {
-            if (activity == null) {
-                return
-            }
+            if (activity == null) return
 
             tMsg = msg
             tClassName = className
@@ -90,9 +88,7 @@ class ErrorLog {
         }
 
         fun writeLog(activity: AppCompatActivity? = null, className: String, ex: Exception) {
-            if (activity == null) {
-                return
-            }
+            if (activity == null) return
 
             val errors = StringWriter()
             ex.printStackTrace(PrintWriter(errors))

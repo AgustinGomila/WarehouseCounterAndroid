@@ -87,9 +87,7 @@ class Item() : Parcelable {
 
         other as Item
 
-        if (itemId != other.itemId) return false
-
-        return true
+        return itemId == other.itemId
     }
 
     override fun hashCode(): Int {

@@ -29,9 +29,7 @@ object Nfc {
     private var mNfcAdapter: NfcAdapter? = null
 
     fun setupNFCReader(targetActivity: AppCompatActivity?) {
-        if (targetActivity == null) {
-            return
-        }
+        if (targetActivity == null) return
 
         mNfcAdapter = NfcAdapter.getDefaultAdapter(targetActivity)
 
@@ -54,9 +52,7 @@ object Nfc {
     }
 
     fun nfcHandleIntent(intent: Intent, targetActivity: AppCompatActivity?) {
-        if (targetActivity == null) {
-            return
-        }
+        if (targetActivity == null) return
 
         val action = intent.action
         if (NfcAdapter.ACTION_TECH_DISCOVERED == action) {
@@ -232,9 +228,7 @@ object Nfc {
      * Enables the NFC foreground dispatch system for the given Activity.
      */
     fun enableNfcForegroundDispatch(targetActivity: AppCompatActivity?) {
-        if (targetActivity == null) {
-            return
-        }
+        if (targetActivity == null) return
 
         if (mNfcAdapter != null && mNfcAdapter!!.isEnabled) {
             val intent = Intent(
@@ -261,9 +255,7 @@ object Nfc {
      * Disable the NFC foreground dispatch system for the given Activity.
      */
     fun disableNfcForegroundDispatch(targetActivity: AppCompatActivity?) {
-        if (targetActivity == null) {
-            return
-        }
+        if (targetActivity == null) return
 
         if (mNfcAdapter != null && mNfcAdapter!!.isEnabled) {
             mNfcAdapter!!.disableForegroundDispatch(targetActivity)

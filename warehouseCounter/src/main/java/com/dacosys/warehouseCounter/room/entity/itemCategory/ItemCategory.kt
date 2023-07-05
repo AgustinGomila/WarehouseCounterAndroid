@@ -55,9 +55,7 @@ data class ItemCategory(
 
         other as ItemCategory
 
-        if (itemCategoryId != other.itemCategoryId) return false
-
-        return true
+        return itemCategoryId == other.itemCategoryId
     }
 
     companion object CREATOR : Parcelable.Creator<ItemCategory> {

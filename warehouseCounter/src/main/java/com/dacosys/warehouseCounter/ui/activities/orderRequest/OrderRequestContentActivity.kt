@@ -611,9 +611,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun setBottomPanelAnimation() {
-        if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) {
-            return
-        }
+        if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
         binding.expandBottomPanelButton!!.setOnClickListener {
             val nextLayout = ConstraintSet()
@@ -650,9 +648,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun setTopPanelAnimation() {
-        if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) {
-            return
-        }
+        if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
         binding.expandTopPanelButton!!.setOnClickListener {
             val nextLayout = ConstraintSet()

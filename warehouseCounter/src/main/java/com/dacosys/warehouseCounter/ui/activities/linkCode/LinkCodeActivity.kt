@@ -739,9 +739,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun addAnimationOperations() {
-        if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) {
-            return
-        }
+        if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
         binding.expandButton!!.setOnClickListener {
             val bottomVisible = panelIsExpanded
