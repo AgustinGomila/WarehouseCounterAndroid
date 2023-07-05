@@ -6,9 +6,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
+import androidx.preference.SwitchPreference
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.database.FileHelper
@@ -44,74 +47,26 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
         val args = Bundle()
         args.putString("rootKey", preferenceScreen.key)
         prefFragment.arguments = args
-        parentFragmentManager.beginTransaction().replace(id, prefFragment).addToBackStack(null)
+        parentFragmentManager.beginTransaction()
+            .replace(id, prefFragment)
+            .addToBackStack(null)
             .commit()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        bindPreferenceSummaryToValue(
-            this,
-            WarehouseCounterApp.settingRepository.icPhotoMaxHeightOrWidth
-        )
-        bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.icWsServer)
-        bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.icWsNamespace)
+        // region: Tamaño de la imagen
+        bindPreferenceSummaryToValue(this, settingRepository.icPhotoMaxHeightOrWidth)
+        // endregion
 
-        if (BuildConfig.DEBUG) {
-            bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.icWsUser)
-            bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.icWsPass)
-            bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.icUser)
-            bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.icPass)
-        }
-
-        val urlEditText = findPreference<Preference>(WarehouseCounterApp.settingRepository.icWsServer.key)
-        val namespaceEditText = findPreference<Preference>(WarehouseCounterApp.settingRepository.icWsNamespace.key)
-        /*
-        val userWsEditText = findPreference<Preference>(P.icWsUser.key)
-        val passWsEditText = findPreference<Preference>(P.icWsPass.key)
-        */
-        val userEditText = findPreference<Preference>(WarehouseCounterApp.settingRepository.icUser.key)
-        val passEditText = findPreference<Preference>(WarehouseCounterApp.settingRepository.icPass.key)
-
-        findPreference<Preference>(WarehouseCounterApp.settingRepository.icWsUseProxy.key)
-        bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.icWsProxy)
-        bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.icWsProxyPort)
-
-        /*
-        val proxyUrlEditText = findPreference<Preference>(P.icWsProxy.key)
-        val proxyPortEditText = findPreference<Preference>(P.icWsProxyPort.key)
-        val useProxyCheckBox = findPreference<Preference>(P.icWsUseProxy.key)
-        val proxyUserEditText = findPreference<Preference>(P.icWsProxyUser.key)
-        val proxyPassEditText = findPreference<Preference>(P.icWsProxyPass.key)
-        */
-
-        val button = findPreference<Preference>("ic_test")
-        button?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-
-            if (urlEditText != null && namespaceEditText != null && userEditText != null && passEditText != null) {
-                val url = WarehouseCounterApp.settingViewModel.icWsServer
-                val namespace = WarehouseCounterApp.settingViewModel.icWsNamespace
-
-                testImageControlConnection(url = url, namespace = namespace)
-            }
-            true
-        }
-
-        val removeImagesCache = findPreference<Preference>("remove_images_cache")
-        removeImagesCache?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            //code for what you want it to do
-            val diaBox = askForDelete()
-            diaBox.show()
-            true
-        }
-
+        // region: QR de configuración
         val qrCodeButton = findPreference<Preference>("ic_qr_code")
         qrCodeButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            val icUrl = WarehouseCounterApp.settingViewModel.icWsServer
-            val icNamespace = WarehouseCounterApp.settingViewModel.icWsNamespace
-            val icUserWs = WarehouseCounterApp.settingViewModel.icWsUser
-            val icPasswordWs = WarehouseCounterApp.settingViewModel.icWsPass
+            val icUrl = settingViewModel.icWsServer
+            val icNamespace = settingViewModel.icWsNamespace
+            val icUserWs = settingViewModel.icWsUser
+            val icPasswordWs = settingViewModel.icWsPass
 
             if (icUrl.isEmpty() || icNamespace.isEmpty() || icUserWs.isEmpty() || icPasswordWs.isEmpty()) {
                 if (view != null) MakeText.makeText(
@@ -143,6 +98,75 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
                 false
             }
         }
+
+        val inputConfCodePref = findPreference<Preference>("input_config_code")
+        inputConfCodePref?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            showSnackBar(SnackBarEventData(getString(R.string.no_available_option), SnackBarType.INFO))
+            true
+        }
+        // endregion
+
+        // region: Datos de conexión
+        bindPreferenceSummaryToValue(this, settingRepository.icWsServer)
+        val urlPref = findPreference<Preference>(settingRepository.icWsServer.key)
+
+        bindPreferenceSummaryToValue(this, settingRepository.icWsNamespace)
+        val namespacePref = findPreference<Preference>(settingRepository.icWsNamespace.key)
+
+        val userPref = findPreference<Preference>(settingRepository.icUser.key)
+        val passPref = findPreference<Preference>(settingRepository.icPass.key)
+
+        /*
+        val userWsPref = findPreference<Preference>(P.icWsUser.key)
+        val passWsPref = findPreference<Preference>(P.icWsPass.key)
+        */
+
+        val testButton = findPreference<Preference>("ic_test")
+        testButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            if (urlPref != null && namespacePref != null && userPref != null && passPref != null) {
+                val url = settingViewModel.icWsServer
+                val namespace = settingViewModel.icWsNamespace
+
+                testImageControlConnection(url = url, namespace = namespace)
+            }
+            true
+        }
+
+        if (BuildConfig.DEBUG) {
+            bindPreferenceSummaryToValue(this, settingRepository.icWsUser)
+            bindPreferenceSummaryToValue(this, settingRepository.icWsPass)
+            bindPreferenceSummaryToValue(this, settingRepository.icUser)
+            bindPreferenceSummaryToValue(this, settingRepository.icPass)
+        }
+        // endregion
+
+        // region: Proxy preferences
+        val useProxyPref = findPreference<Preference>(settingRepository.icWsUseProxy.key) as SwitchPreference
+        useProxyPref.setOnPreferenceChangeListener { _, newValue ->
+            settingViewModel.icWsUseProxy = newValue == true
+            true
+        }
+        bindPreferenceSummaryToValue(this, settingRepository.icWsProxy)
+        bindPreferenceSummaryToValue(this, settingRepository.icWsProxyPort)
+
+        /*
+        val proxyUrlPref = findPreference<Preference>(P.icWsProxy.key)
+        val proxyPortPref = findPreference<Preference>(P.icWsProxyPort.key)
+        val useProxyPref = findPreference<Preference>(P.icWsUseProxy.key)
+        val proxyUserPref = findPreference<Preference>(P.icWsProxyUser.key)
+        val proxyPassPref = findPreference<Preference>(P.icWsProxyPass.key)
+        */
+        // endregion
+
+        // region: Remove images cache
+        val removeImagesCache = findPreference<Preference>("remove_images_cache")
+        removeImagesCache?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            //code for what you want it to do
+            val diaBox = askForDelete()
+            diaBox.show()
+            true
+        }
+        // endregion
     }
 
     private fun askForDelete(): AlertDialog {

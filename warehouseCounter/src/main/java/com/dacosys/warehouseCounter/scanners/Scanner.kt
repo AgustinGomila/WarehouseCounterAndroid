@@ -3,6 +3,7 @@ package com.dacosys.warehouseCounter.scanners
 import android.os.Build
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.text.isDigitsOnly
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
 import com.dacosys.warehouseCounter.scanners.honeywell.Honeywell
@@ -36,7 +37,10 @@ open class Scanner {
         )
 
         try {
-            val collectorType = CollectorType.getById(settingViewModel.collectorType)
+            val idStr = settingViewModel.collectorType
+            var collectorType: CollectorType = CollectorType.none
+            if (idStr.isDigitsOnly()) collectorType = CollectorType.getById(idStr.toInt())
+
             scannerDevice = when (collectorType) {
                 CollectorType.honeywell -> Honeywell(activity)
                 CollectorType.honeywellNative -> HoneywellNative(WeakReference(activity))

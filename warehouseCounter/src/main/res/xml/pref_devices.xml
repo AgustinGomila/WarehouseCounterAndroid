@@ -76,20 +76,23 @@
             android:key="symbology_upc_ean_extension"
             android:title="@string/upc_ean_extension" />-->
     </androidx.preference.PreferenceScreen>
+
     <SwitchPreference
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:defaultValue="true"
             android:icon="@drawable/ic_check_digit"
-            android:key="conf_check_barcode_digit"
+            android:key="send_check_digit"
             android:summary="@string/send_check_digit"
             android:title="@string/check_digit"/>
+
     <com.dacosys.warehouseCounter.settings.custom.CollectorTypePreference
             android:defaultValue="0"
             android:icon="@drawable/ic_devices"
             android:key="collector_type"
             android:summary="%s"
             android:title="@string/collector_type"/>
+
     <androidx.preference.PreferenceScreen
             android:icon="@drawable/ic_printer"
             android:key="printer"
@@ -117,7 +120,7 @@
                 android:key="printer_net_ip"
                 android:summary="%s"
                 android:title="@string/printer_ip_net"/>
-        <EditTextPreference
+        <com.dacosys.warehouseCounter.settings.custom.IntEditTextPreference
                 android:defaultValue="9100"
                 android:dependency="conf_printer_use_net_default"
                 android:inputType="number"
@@ -127,13 +130,13 @@
         <PreferenceCategory
                 android:textColor="@color/triad4"
                 android:title="@string/printer_preferences">
-            <EditTextPreference
+            <com.dacosys.warehouseCounter.settings.custom.IntEditTextPreference
                     android:defaultValue="5"
                     android:inputType="number"
                     android:key="printer_power"
                     android:summary="%s"
                     android:title="@string/printer_power"/>
-            <EditTextPreference
+            <com.dacosys.warehouseCounter.settings.custom.IntEditTextPreference
                     android:defaultValue="1"
                     android:inputType="number"
                     android:key="printer_speed"
@@ -153,6 +156,7 @@
                     android:title="@string/new_line_char_cr"/>
         </PreferenceCategory>
     </androidx.preference.PreferenceScreen>
+
     <androidx.preference.PreferenceScreen
             android:icon="@drawable/ic_rfid"
             android:key="rfid"
@@ -205,9 +209,11 @@
                 android:key="skip_same_on_rfid_read"
                 android:title="@string/skip_repeated_readings"/>
     </androidx.preference.PreferenceScreen>
+
     <SwitchPreference
             android:defaultValue="false"
             android:icon="@drawable/ic_nfc"
             android:key="conf_nfc_use_default"
             android:title="@string/use_nfc"/>
+
 </androidx.preference.PreferenceScreen>

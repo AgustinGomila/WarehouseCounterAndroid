@@ -80,7 +80,7 @@ class SettingsViewModel : ViewModel() {
             settingRepository.rowOffset.value = value
         }
 
-    // Printer Template Id
+    // Printer Template ID
     var barcodeLabelTemplateId: Int
         get() = settingRepository.barcodeLabelTemplateId.value as Int
         set(value) {
@@ -132,8 +132,8 @@ class SettingsViewModel : ViewModel() {
             settingRepository.allowScreenRotation.value = value
         }
 
-    var collectorType: Int
-        get() = settingRepository.collectorType.value as Int
+    var collectorType: String
+        get() = settingRepository.collectorType.value as String
         set(value) {
             settingRepository.collectorType.value = value
         }

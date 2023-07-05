@@ -3,6 +3,7 @@ package com.dacosys.warehouseCounter
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.preference.PreferenceManager
 import com.dacosys.imageControl.ImageControl
 import com.dacosys.warehouseCounter.ktor.APIServiceImpl
 import com.dacosys.warehouseCounter.misc.Statics.Companion.INTERNAL_IMAGE_CONTROL_APP_ID
@@ -164,6 +165,6 @@ class WarehouseCounterApp : Application(), KoinComponent {
         }
 
         val sharedPreferences: SharedPreferences
-            get() = context.getSharedPreferences("${applicationName()}_prefs", MODE_PRIVATE)
+            get() = PreferenceManager.getDefaultSharedPreferences(context)
     }
 }

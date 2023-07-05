@@ -14,7 +14,7 @@
         <item name="colorOnPrimary">@color/text_dark</item>
         <item name="colorOnSecondary">@color/text_dark</item>
         <item name="colorOnBackground">@color/text_light</item>
-        <item name="colorOnSurface">@color/text_light</item>
+        <item name="colorOnSurface">@color/text_dark</item>
         <item name="colorOnError">@color/text_light</item>
 
         <!-- ActionBar Styles -->

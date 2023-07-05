@@ -19,6 +19,8 @@ import androidx.core.app.ActivityCompat
 import androidx.preference.*
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -93,7 +95,7 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
 
     private fun setupRfidReader() {
         try {
-            if (WarehouseCounterApp.settingViewModel.useBtRfid) {
+            if (settingViewModel.useBtRfid) {
                 Rfid.setListener(this, RfidType.vh75)
             }
         } catch (ex: Exception) {
@@ -111,11 +113,11 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
 
     private fun setCollectorPref() {
         ////////////////// COLECTOR //////////////////
-        SettingsActivity.bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.collectorType)
+        SettingsActivity.bindPreferenceSummaryToValue(this, settingRepository.collectorType)
 
         // PERMITE ACTUALIZAR EN PANTALLA EL ITEM SELECCIONADO EN EL SUMMARY DEL CONTROL
         val collectorTypeListPreference =
-            findPreference<Preference>(WarehouseCounterApp.settingRepository.collectorType.key) as CollectorTypePreference
+            findPreference<Preference>(settingRepository.collectorType.key) as CollectorTypePreference
         if (collectorTypeListPreference.value == null) {
             // to ensure we don't selectByItemId a null value
             // set first value by default
@@ -183,7 +185,7 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
 
         //region //// DEVICE LIST
         val deviceListPreference =
-            findPreference<Preference>(WarehouseCounterApp.settingRepository.printerBtAddress.key) as DevicePreference
+            findPreference<Preference>(settingRepository.printerBtAddress.key) as DevicePreference
         if (deviceListPreference.value == null) {
             // to ensure we don't selectByItemId a null value
             // set first value by default
@@ -205,11 +207,11 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
 
         //region //// PRINTER IP / PORT
         val portNetPrinterPref =
-            findPreference<Preference>(WarehouseCounterApp.settingRepository.portNetPrinter.key) as EditTextPreference
+            findPreference<Preference>(settingRepository.portNetPrinter.key) as EditTextPreference
         portNetPrinterPref.summary = portNetPrinterPref.text
 
         val ipNetPrinterPref =
-            findPreference<Preference>(WarehouseCounterApp.settingRepository.ipNetPrinter.key) as EditTextPreference
+            findPreference<Preference>(settingRepository.ipNetPrinter.key) as EditTextPreference
         ipNetPrinterPref.summary = ipNetPrinterPref.text
 
         ipNetPrinterPref.setOnBindEditTextListener {
@@ -240,11 +242,11 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
 
         //region //// USE BLUETOOTH / NET PRINTER
         val swPrefBtPrinter =
-            findPreference<Preference>(WarehouseCounterApp.settingRepository.useBtPrinter.key) as SwitchPreference
+            findPreference<Preference>(settingRepository.useBtPrinter.key) as SwitchPreference
         useBtPrinter = swPrefBtPrinter.isChecked
 
         val swPrefNetPrinter =
-            findPreference<Preference>(WarehouseCounterApp.settingRepository.useNetPrinter.key) as SwitchPreference
+            findPreference<Preference>(settingRepository.useNetPrinter.key) as SwitchPreference
         useNetPrinter = swPrefNetPrinter.isChecked
 
         swPrefBtPrinter.setOnPreferenceChangeListener { _, newValue ->
@@ -268,7 +270,7 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
         //region //// POTENCIA Y VELOCIDAD
         val maxPower = 23
         val printerPowerPref =
-            findPreference<Preference>(WarehouseCounterApp.settingRepository.printerPower.key) as EditTextPreference
+            findPreference<Preference>(settingRepository.printerPower.key) as EditTextPreference
         printerPowerPref.summary = printerPowerPref.text
         printerPowerPref.setOnBindEditTextListener {
             val filters = arrayOf(InputFilter { source, _, _, dest, _, _ ->
@@ -283,13 +285,13 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
         }
         printerPowerPref.setOnPreferenceChangeListener { preference, newValue ->
             preference.summary = newValue.toString()
-            WarehouseCounterApp.settingRepository.printerPower.value = newValue
+            settingRepository.printerPower.value = newValue
             true
         }
 
         val maxSpeed = 10
         val printerSpeedPref =
-            findPreference<Preference>(WarehouseCounterApp.settingRepository.printerSpeed.key) as EditTextPreference
+            findPreference<Preference>(settingRepository.printerSpeed.key) as EditTextPreference
         printerSpeedPref.summary = printerSpeedPref.text
         printerSpeedPref.setOnBindEditTextListener {
             val filters = arrayOf(InputFilter { source, _, _, dest, _, _ ->
@@ -304,7 +306,7 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
         }
         printerSpeedPref.setOnPreferenceChangeListener { preference, newValue ->
             preference.summary = newValue.toString()
-            WarehouseCounterApp.settingRepository.printerSpeed.value = newValue
+            settingRepository.printerSpeed.value = newValue
             true
         }
         //endregion //// POTENCIA Y VELOCIDAD
@@ -315,13 +317,13 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
         val swPrefCharCR =
             findPreference<Preference>("conf_printer_new_line_char_cr") as SwitchPreference
 
-        val lineSeparator = WarehouseCounterApp.settingViewModel.lineSeparator
+        val lineSeparator = settingViewModel.lineSeparator
         if (lineSeparator == Char(10).toString()) swPrefCharLF.isChecked
         else if (lineSeparator == Char(13).toString()) swPrefCharCR.isChecked
 
         swPrefCharLF.setOnPreferenceChangeListener { _, newValue ->
             if (newValue == true) {
-                WarehouseCounterApp.settingViewModel.lineSeparator = Char(10).toString()
+                settingViewModel.lineSeparator = Char(10).toString()
                 swPrefCharCR.isChecked = false
             }
             true
@@ -329,7 +331,7 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
 
         swPrefCharCR.setOnPreferenceChangeListener { _, newValue ->
             if (newValue == true) {
-                WarehouseCounterApp.settingViewModel.lineSeparator = Char(13).toString()
+                settingViewModel.lineSeparator = Char(13).toString()
                 swPrefCharLF.isChecked = false
             }
             true
@@ -380,7 +382,7 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
 
         //region //// USE RFID
         val swPrefBtRfid =
-            findPreference<Preference>(WarehouseCounterApp.settingRepository.useBtRfid.key) as SwitchPreference
+            findPreference<Preference>(settingRepository.useBtRfid.key) as SwitchPreference
         useRfid = swPrefBtRfid.isChecked
 
         swPrefBtRfid.setOnPreferenceChangeListener { _, newValue ->
@@ -418,7 +420,7 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
 
         //region //// DEVICE LIST PREFERENCE
         val deviceListPreference =
-            findPreference<Preference>(WarehouseCounterApp.settingRepository.rfidBtAddress.key) as DevicePreference
+            findPreference<Preference>(settingRepository.rfidBtAddress.key) as DevicePreference
         if (deviceListPreference.value == null) {
             // to ensure we don't selectByItemId a null value
             // set first value by default
@@ -445,12 +447,12 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
 
         //region //// RFID POWER
         val rfidReadPower =
-            findPreference<Preference>(WarehouseCounterApp.settingRepository.rfidReadPower.key) as SeekBarPreference
+            findPreference<Preference>(settingRepository.rfidReadPower.key) as SeekBarPreference
         rfidReadPower.setOnPreferenceChangeListener { _, newValue ->
             rfidReadPower.summary = "$newValue dB"
             true
         }
-        rfidReadPower.summary = "${WarehouseCounterApp.settingViewModel.rfidReadPower} dB"
+        rfidReadPower.summary = "${settingViewModel.rfidReadPower} dB"
         //endregion //// RFID POWER
 
         //region //// RESET TO FACTORY

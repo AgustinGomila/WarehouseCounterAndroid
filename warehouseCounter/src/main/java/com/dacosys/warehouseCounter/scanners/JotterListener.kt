@@ -13,6 +13,7 @@ import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.text.isDigitsOnly
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
@@ -176,10 +177,12 @@ object JotterListener : Jotter.Listener {
     }
 
     fun autodetectDeviceModel(activity: AppCompatActivity) {
-        var collectorType: CollectorType? = CollectorType.getById(settingViewModel.collectorType)
+        val idStr = settingViewModel.collectorType
+        var collectorType: CollectorType = CollectorType.none
+        if (idStr.isDigitsOnly()) collectorType = CollectorType.getById(idStr.toInt())
 
-        // Sólo si no fue configurado o cambió la configuración
-        if (collectorType == null || collectorType == CollectorType.none) {
+        // Solo si no fue configurado o cambió la configuración
+        if (collectorType == CollectorType.none) {
             val manufacturer = Build.MANUFACTURER
             val model = Build.MODEL
 
@@ -206,15 +209,13 @@ object JotterListener : Jotter.Listener {
 
             Log.v(this::class.java.simpleName, "Manufacturer: $manufacturer, Model: $model")
 
-            if (collectorType != null) {
-                settingViewModel.collectorType = collectorType.id
-                makeText(
-                    activity.window.decorView,
-                    "${context.getString(R.string.device)}: $manufacturer $model",
-                    SnackBarType.INFO
-                )
-                Statics.collectorTypeChanged = true
-            }
+            settingViewModel.collectorType = collectorType.id.toString()
+            makeText(
+                activity.window.decorView,
+                "${context.getString(R.string.device)}: $manufacturer $model",
+                SnackBarType.INFO
+            )
+            Statics.collectorTypeChanged = true
         }
 
         if (Statics.collectorTypeChanged) {

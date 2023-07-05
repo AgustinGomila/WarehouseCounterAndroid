@@ -12,9 +12,8 @@ import androidx.fragment.app.Fragment
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceManager
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
 import com.dacosys.warehouseCounter.databinding.SettingsActivityBinding
 import com.dacosys.warehouseCounter.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -205,7 +204,8 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
          * A preference value change checkedChangedListener that updates the preference's summary
          * to reflect its new value.
          */
-        val sBindPreferenceSummaryToValueListener = Preference.OnPreferenceChangeListener { preference, value ->
+        private val commonPreferenceChangeListener = Preference.OnPreferenceChangeListener { preference, value ->
+            // Fill summary
             val stringValue = value.toString()
 
             if (preference is ListPreference) {
@@ -248,83 +248,73 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
             preference: Preference,
             defaultValue: Any?,
         ) {
-            val all: Map<String, *> = PreferenceManager.getDefaultSharedPreferences(context).all
+            val all: Map<String, *> = sharedPreferences.all
 
             // Set the listener to watch for value changes.
-            preference.onPreferenceChangeListener = sBindPreferenceSummaryToValueListener
+            preference.onPreferenceChangeListener = commonPreferenceChangeListener
 
             when {
                 all[preference.key] is String -> {
-                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                    commonPreferenceChangeListener.onPreferenceChange(
                         preference,
-                        PreferenceManager.getDefaultSharedPreferences(preference.context)
-                            .getString(preference.key, defaultValue.toString())
+                        sharedPreferences.getString(preference.key, defaultValue.toString())
                     )
                 }
 
                 all[preference.key] is Boolean -> {
-                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                    commonPreferenceChangeListener.onPreferenceChange(
                         preference,
-                        PreferenceManager.getDefaultSharedPreferences(preference.context)
-                            .getBoolean(preference.key, defaultValue.toString().toBoolean())
+                        sharedPreferences.getBoolean(preference.key, defaultValue.toString().toBoolean())
                     )
                 }
 
                 all[preference.key] is Float -> {
-                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                    commonPreferenceChangeListener.onPreferenceChange(
                         preference,
-                        PreferenceManager.getDefaultSharedPreferences(preference.context)
-                            .getFloat(preference.key, defaultValue.toString().toFloat())
+                        sharedPreferences.getFloat(preference.key, defaultValue.toString().toFloat())
                     )
                 }
 
                 all[preference.key] is Int -> {
-                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                    commonPreferenceChangeListener.onPreferenceChange(
                         preference,
-                        PreferenceManager.getDefaultSharedPreferences(preference.context)
-                            .getInt(preference.key, defaultValue.toString().toInt())
+                        sharedPreferences.getInt(preference.key, defaultValue.toString().toInt())
                     )
                 }
 
                 all[preference.key] is Long -> {
-                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                    commonPreferenceChangeListener.onPreferenceChange(
                         preference,
-                        PreferenceManager.getDefaultSharedPreferences(preference.context)
-                            .getLong(preference.key, defaultValue.toString().toLong())
+                        sharedPreferences.getLong(preference.key, defaultValue.toString().toLong())
                     )
                 }
 
                 else -> {
                     try {
                         when (defaultValue) {
-                            is String -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                            is String -> commonPreferenceChangeListener.onPreferenceChange(
                                 preference,
-                                PreferenceManager.getDefaultSharedPreferences(preference.context)
-                                    .getString(preference.key, defaultValue)
+                                sharedPreferences.getString(preference.key, defaultValue)
                             )
 
-                            is Float -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                            is Float -> commonPreferenceChangeListener.onPreferenceChange(
                                 preference,
-                                PreferenceManager.getDefaultSharedPreferences(preference.context)
-                                    .getFloat(preference.key, defaultValue)
+                                sharedPreferences.getFloat(preference.key, defaultValue)
                             )
 
-                            is Int -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                            is Int -> commonPreferenceChangeListener.onPreferenceChange(
                                 preference,
-                                PreferenceManager.getDefaultSharedPreferences(preference.context)
-                                    .getInt(preference.key, defaultValue)
+                                sharedPreferences.getInt(preference.key, defaultValue)
                             )
 
-                            is Long -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                            is Long -> commonPreferenceChangeListener.onPreferenceChange(
                                 preference,
-                                PreferenceManager.getDefaultSharedPreferences(preference.context)
-                                    .getLong(preference.key, defaultValue)
+                                sharedPreferences.getLong(preference.key, defaultValue)
                             )
 
-                            is Boolean -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
+                            is Boolean -> commonPreferenceChangeListener.onPreferenceChange(
                                 preference,
-                                PreferenceManager.getDefaultSharedPreferences(preference.context)
-                                    .getBoolean(preference.key, defaultValue)
+                                sharedPreferences.getBoolean(preference.key, defaultValue)
                             )
                         }
                     } catch (ex: Exception) {
@@ -351,7 +341,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         JotterListener.lockScanner(this, true)
 
         try {
-            // No capturar códigos que cambian el servidor cuando está logeado.
+            // No capturar códigos que cambian el servidor cuando está autentificado.
             if (currentQRConfigType == QRConfigClientAccount || currentQRConfigType == QRConfigWebservice) {
                 return
             }

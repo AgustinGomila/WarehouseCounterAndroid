@@ -7,7 +7,7 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.settings.SettingsRepository
@@ -50,14 +50,14 @@ class GeneralPreferenceFragment : PreferenceFragmentCompat() {
         // to their values. When their values change, their summaries are
         // updated to reflect the new value, per the Android Design
         // guidelines.
-        bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.divisionChar)
-        bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.wcSyncInterval)
-        bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.wcSyncRefreshOrder)
+        bindPreferenceSummaryToValue(this, settingRepository.divisionChar)
+        bindPreferenceSummaryToValue(this, settingRepository.wcSyncInterval)
+        bindPreferenceSummaryToValue(this, settingRepository.wcSyncRefreshOrder)
 
-        findPreference<Preference>(WarehouseCounterApp.settingRepository.registryError.key) as Preference
-        findPreference<Preference>(WarehouseCounterApp.settingRepository.showConfButton.key) as Preference
+        findPreference<Preference>(settingRepository.registryError.key) as Preference
+        findPreference<Preference>(settingRepository.showConfButton.key) as Preference
         if (BuildConfig.DEBUG) {
-            bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.confPassword)
+            bindPreferenceSummaryToValue(this, settingRepository.confPassword)
         }
 
         val removeLogFiles = findPreference<Preference>("remove_log_files")

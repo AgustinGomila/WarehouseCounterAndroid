@@ -1,6 +1,7 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
                   android:key="pref_image_control"
                   android:title="@string/pref_header_image_control_conf">
+
     <SwitchPreference
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -9,8 +10,9 @@
             android:key="use_image_control"
             android:summary="@string/use_image_control_summary"
             android:title="@string/use_image_control"/>
+
     <PreferenceCategory android:title="@string/images_size">
-        <EditTextPreference
+        <com.dacosys.warehouseCounter.settings.custom.IntEditTextPreference
                 android:icon="@drawable/ic_photo_size"
                 android:inputType="number"
                 android:key="ic_photo_max_height_or_width"
@@ -18,6 +20,7 @@
                 android:singleLine="true"
                 android:title="@string/max_height_or_width"/>
     </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/auto_configuration">
         <Preference
                 android:layout_width="wrap_content"
@@ -40,6 +43,7 @@
                 android:summary="@string/if_you_have_a_configuration_code_you_can_enter_it_here"
                 android:title="@string/enter_configuration_text_code"/>
     </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/connection">
         <Preference
                 android:layout_width="wrap_content"
@@ -48,6 +52,7 @@
                 android:key="ic_test"
                 android:title="@string/test"/>
     </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/local_cache">
         <Preference
                 android:layout_width="wrap_content"
@@ -56,6 +61,7 @@
                 android:key="remove_images_cache"
                 android:title="@string/remove_images_cache"/>
     </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/imagecontrol_webservice">
         <EditTextPreference
                 android:layout_width="wrap_content"
@@ -115,6 +121,7 @@
                 android:singleLine="true"
                 android:title="Contraseña IC"/>
     </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/proxy">
         <SwitchPreference
                 android:defaultValue="false"
@@ -128,7 +135,7 @@
                 android:selectAllOnFocus="true"
                 android:singleLine="true"
                 android:title="@string/proxy"/>
-        <EditTextPreference
+        <com.dacosys.warehouseCounter.settings.custom.IntEditTextPreference
                 android:icon="@drawable/ic_port"
                 android:inputType="number"
                 android:key="ic_ws_proxy_port"
@@ -150,4 +157,5 @@
                 android:singleLine="true"
                 android:title="@string/password"/>
     </PreferenceCategory>
+
 </PreferenceScreen>

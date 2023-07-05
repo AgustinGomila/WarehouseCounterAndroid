@@ -4,11 +4,12 @@ import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceManager
 import androidx.preference.PreferenceScreen
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -19,8 +20,8 @@ import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.settings.utils.QRConfigType
 import com.dacosys.warehouseCounter.sync.ClientPackage
 import com.dacosys.warehouseCounter.sync.ProgressStatus
+import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.bindPreferenceSummaryToValue
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
-import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.sBindPreferenceSummaryToValueListener
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -54,11 +55,11 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
         // guidelines.
 
         if (BuildConfig.DEBUG) {
-            bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.clientEmail)
-            bindPreferenceSummaryToValue(this, WarehouseCounterApp.settingRepository.clientPassword)
+            bindPreferenceSummaryToValue(this, settingRepository.clientEmail)
+            bindPreferenceSummaryToValue(this, settingRepository.clientPassword)
         }
 
-        val emailEditText = findPreference<Preference>(WarehouseCounterApp.settingRepository.clientEmail.key)
+        val emailEditText = findPreference<Preference>(settingRepository.clientEmail.key)
         emailEditText?.setOnPreferenceChangeListener { preference, newValue ->
             if (alreadyAnsweredYes) {
                 preference.summary = newValue.toString()
@@ -74,7 +75,7 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
             }
         }
 
-        val passwordEditText = findPreference<Preference>(WarehouseCounterApp.settingRepository.clientPassword.key)
+        val passwordEditText = findPreference<Preference>(settingRepository.clientPassword.key)
         passwordEditText?.setOnPreferenceChangeListener { preference, newValue ->
             if (alreadyAnsweredYes) {
                 preference.summary = newValue.toString()
@@ -93,8 +94,8 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
         val selectPackageButton = findPreference<Preference>("select_package")
         selectPackageButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
             if (emailEditText != null && passwordEditText != null) {
-                val email = WarehouseCounterApp.settingViewModel.clientEmail
-                val password = WarehouseCounterApp.settingViewModel.clientPassword
+                val email = settingViewModel.clientEmail
+                val password = settingViewModel.clientPassword
 
                 if (alreadyAnsweredYes) {
                     Statics.downloadDbRequired = true
@@ -131,11 +132,11 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
 
         val qrCodeButton = findPreference<Preference>("ac_qr_code")
         qrCodeButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            val urlPanel = WarehouseCounterApp.settingViewModel.urlPanel
-            val installationCode = WarehouseCounterApp.settingViewModel.installationCode
-            val clientEmail = WarehouseCounterApp.settingViewModel.clientEmail
-            val clientPassword = WarehouseCounterApp.settingViewModel.clientPassword
-            val clientPackage = WarehouseCounterApp.settingViewModel.clientPackage
+            val urlPanel = settingViewModel.urlPanel
+            val installationCode = settingViewModel.installationCode
+            val clientEmail = settingViewModel.clientEmail
+            val clientPassword = settingViewModel.clientPassword
+            val clientPackage = settingViewModel.clientPackage
 
             if (urlPanel.isEmpty() || installationCode.isEmpty() || clientPackage.isEmpty() || clientEmail.isEmpty() || clientPassword.isEmpty()) {
                 if (view != null) MakeText.makeText(
@@ -271,109 +272,6 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
     companion object {
         fun equals(a: Any?, b: Any?): Boolean {
             return a != null && a == b
-        }
-
-        /**
-         * Binds a preference's summary to its value. More specifically, when the
-         * preference's value is changed, its summary (line of text below the
-         * preference title) is updated to reflect the value. The summary is also
-         * immediately updated upon calling this method. The exact display format is
-         * dependent on the type of preference.
-         *
-         * @see .sBindPreferenceSummaryToValueListener
-         */
-        private fun bindPreferenceSummaryToValue(
-            frag: PreferenceFragmentCompat,
-            pref: com.dacosys.warehouseCounter.settings.Preference,
-        ) {
-            val preference = frag.findPreference<Preference>(pref.key)
-            val all: Map<String, *> = PreferenceManager.getDefaultSharedPreferences(WarehouseCounterApp.context).all
-
-            // Set the listener to watch for value changes.
-            preference?.onPreferenceChangeListener = sBindPreferenceSummaryToValueListener
-
-            val defaultValue: Any = pref.value
-
-            when {
-                all[pref.key] is String && preference != null -> {
-                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
-                        preference,
-                        PreferenceManager.getDefaultSharedPreferences(preference.context)
-                            .getString(preference.key, defaultValue.toString())
-                    )
-                }
-
-                all[pref.key] is Boolean && preference != null -> {
-                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
-                        preference,
-                        PreferenceManager.getDefaultSharedPreferences(preference.context)
-                            .getBoolean(preference.key, defaultValue.toString().toBoolean())
-                    )
-                }
-
-                all[pref.key] is Float && preference != null -> {
-                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
-                        preference,
-                        PreferenceManager.getDefaultSharedPreferences(preference.context)
-                            .getFloat(preference.key, defaultValue.toString().toFloat())
-                    )
-                }
-
-                all[pref.key] is Int && preference != null -> {
-                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
-                        preference,
-                        PreferenceManager.getDefaultSharedPreferences(preference.context)
-                            .getInt(preference.key, defaultValue.toString().toInt())
-                    )
-                }
-
-                all[pref.key] is Long && preference != null -> {
-                    sBindPreferenceSummaryToValueListener.onPreferenceChange(
-                        preference,
-                        PreferenceManager.getDefaultSharedPreferences(preference.context)
-                            .getLong(preference.key, defaultValue.toString().toLong())
-                    )
-                }
-
-                else -> {
-                    try {
-                        if (preference != null) when (defaultValue) {
-                            is String -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
-                                preference,
-                                PreferenceManager.getDefaultSharedPreferences(preference.context)
-                                    .getString(preference.key, defaultValue)
-                            )
-
-                            is Float -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
-                                preference,
-                                PreferenceManager.getDefaultSharedPreferences(preference.context)
-                                    .getFloat(preference.key, defaultValue)
-                            )
-
-                            is Int -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
-                                preference,
-                                PreferenceManager.getDefaultSharedPreferences(preference.context)
-                                    .getInt(preference.key, defaultValue)
-                            )
-
-                            is Long -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
-                                preference,
-                                PreferenceManager.getDefaultSharedPreferences(preference.context)
-                                    .getLong(preference.key, defaultValue)
-                            )
-
-                            is Boolean -> sBindPreferenceSummaryToValueListener.onPreferenceChange(
-                                preference,
-                                PreferenceManager.getDefaultSharedPreferences(preference.context)
-                                    .getBoolean(preference.key, defaultValue)
-                            )
-                        }
-                    } catch (ex: Exception) {
-                        ex.printStackTrace()
-                        ErrorLog.writeLog(null, this::class.java.simpleName, ex)
-                    }
-                }
-            }
         }
     }
 

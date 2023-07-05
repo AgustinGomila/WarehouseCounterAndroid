@@ -21,7 +21,7 @@ class SettingsRepository {
     var collectorType = Preference(
         key = "collector_type",
         description = context.getString(R.string.collector_type),
-        default = 0
+        default = "0"
     )
     var useBtPrinter = Preference(
         key = "conf_printer_use_bt_default",
@@ -235,7 +235,7 @@ class SettingsRepository {
     var portNetPrinter = Preference(
         key = "printer_net_port",
         description = context.getString(R.string.printer_port),
-        default = "9100"
+        default = 9100
     )
     var lineSeparator = Preference(
         key = "line_separator",
@@ -245,12 +245,12 @@ class SettingsRepository {
     var printerPower = Preference(
         key = "printer_power",
         description = context.getString(R.string.printer_power),
-        default = "5"
+        default = 5
     )
     var printerSpeed = Preference(
         key = "printer_speed",
         description = context.getString(R.string.printer_speed),
-        default = "1"
+        default = 1
     )
     var connectionTimeout = Preference(
         key = "connection_timeout",
