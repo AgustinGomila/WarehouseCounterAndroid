@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.content.res.ResourcesCompat.getColor
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import androidx.core.view.marginBottom
@@ -149,10 +150,10 @@ class OrcAdapter(
 
         private fun setupColors() {
             // Color de los diferentes estados
-            collQtyEqualForeColor = getBestContrastColor(R.color.qty_equal)
-            collQtyLessForeColor = getBestContrastColor(R.color.qty_less)
-            collQtyMoreForeColor = getBestContrastColor(R.color.qty_more)
-            defaultForeColor = getBestContrastColor(R.color.status_default)
+            collQtyEqualForeColor = getBestContrastColor(getColor(context.resources, R.color.qty_equal, null))
+            collQtyLessForeColor = getBestContrastColor(getColor(context.resources, R.color.qty_less, null))
+            collQtyMoreForeColor = getBestContrastColor(getColor(context.resources, R.color.qty_more, null))
+            defaultForeColor = getBestContrastColor(getColor(context.resources, R.color.status_default, null))
 
             // Mejor contraste para los ítems seleccionados
             collQtyEqualSelectedForeColor = getBestContrastColor(manipulateColor(collQtyEqualForeColor, 0.5f))

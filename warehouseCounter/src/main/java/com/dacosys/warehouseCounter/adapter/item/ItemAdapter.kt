@@ -14,7 +14,7 @@ import androidx.core.content.res.ResourcesCompat.getColor
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.room.entity.item.Item
-import com.dacosys.warehouseCounter.ui.utils.Colors
+import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
 
@@ -215,14 +215,14 @@ class ItemAdapter(
         when (item.active) {
             1 -> {
                 v.setBackgroundColor(whitesmoke)
-                holder.descriptionTextView!!.setTextColor(defaultForeColor)
-                holder.eanTextView!!.setTextColor(defaultForeColor)
+                holder.descriptionTextView?.setTextColor(defaultForeColor)
+                holder.eanTextView?.setTextColor(defaultForeColor)
             }
 
             else -> {
                 v.setBackgroundColor(lightgray)
-                holder.descriptionTextView!!.setTextColor(inactiveForeColor)
-                holder.eanTextView!!.setTextColor(inactiveForeColor)
+                holder.descriptionTextView?.setTextColor(inactiveForeColor)
+                holder.eanTextView?.setTextColor(inactiveForeColor)
             }
         }
     }
@@ -235,8 +235,8 @@ class ItemAdapter(
 
     private fun setupColors() {
         selectedForeColor = getColor(context.resources, R.color.text_light, null)
-        inactiveForeColor = Colors.getBestContrastColor(R.color.status_lot_inactive)
-        defaultForeColor = Colors.getBestContrastColor(R.color.status_default)
+        inactiveForeColor = getBestContrastColor(getColor(context.resources, R.color.status_lot_inactive, null))
+        defaultForeColor = getBestContrastColor(getColor(context.resources, R.color.status_default, null))
     }
 
     //endregion
