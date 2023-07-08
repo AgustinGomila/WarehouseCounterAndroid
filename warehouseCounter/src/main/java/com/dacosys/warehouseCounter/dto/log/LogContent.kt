@@ -3,36 +3,36 @@ package com.dacosys.warehouseCounter.dto.log
 import android.os.Parcel
 import android.os.Parcelable
 import androidx.room.Ignore
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
+@Serializable
 class LogContent() : Parcelable {
-    @Json(name = "itemId")
+    @SerialName("itemId")
     var itemId: Long? = null
 
-    @Json(name = "lotId")
+    @SerialName("lotId")
     var lotId: Long? = null
 
-    @Json(name = "itemStr")
+    @SerialName("itemStr")
     var itemStr: String = ""
 
-    @Json(name = "itemCode")
+    @SerialName("itemCode")
     var itemCode: String = ""
 
-    @Json(name = "lotCode")
+    @SerialName("lotCode")
     var lotCode: String = ""
 
-    @Json(name = "scannedCode")
+    @SerialName("scannedCode")
     var scannedCode: String = ""
 
-    @Json(name = "variationQty")
+    @SerialName("variationQty")
     var variationQty: Double? = null
 
-    @Json(name = "finalQty")
+    @SerialName("finalQty")
     var finalQty: Double? = null
 
-    @Json(name = "date")
+    @SerialName("date")
     var date: String? = null
 
     @Ignore

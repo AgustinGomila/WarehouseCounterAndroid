@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -34,7 +35,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrcAdapter
 import com.dacosys.warehouseCounter.databinding.OrderRequestActivityBothPanelsCollapsedBinding
@@ -65,6 +65,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import kotlinx.serialization.json.Json
 import org.parceler.Parcels
 import java.io.UnsupportedEncodingException
 import java.text.SimpleDateFormat
@@ -1069,11 +1070,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         setImagesJson()
 
         try {
-            orJson = moshi.adapter(OrderRequest::class.java).toJson(tOrderRequest)
+            orJson = Json.encodeToString(OrderRequest.serializer(), tOrderRequest)
             android.util.Log.i(this::class.java.simpleName, orJson)
             orFileName = tOrderRequest.filename.substringAfterLast('/')
 
-            if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
+                PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
                     this, Manifest.permission.WRITE_EXTERNAL_STORAGE
                 )
             ) {
@@ -1376,16 +1378,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
         }
 
-// region READERS Reception
-
+    // region READERS Reception
     override fun onNewIntent(intent: Intent) {
-        /*
-          This method gets called when a new Intent gets associated with the current activity instance.
-          Instead of creating a new activity, onNewIntent will be called. For more information, have a look
-          at the documentation.
-
-          In our case, this method gets called when the user attaches a className to the device.
-         */
         super.onNewIntent(intent)
         Nfc.nfcHandleIntent(intent, this)
     }
@@ -1397,7 +1391,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     override fun onReadCompleted(scanCode: String) {
         scannerCompleted(scanCode)
     }
-
     //endregion READERS Reception
 
     public override fun onStart() {

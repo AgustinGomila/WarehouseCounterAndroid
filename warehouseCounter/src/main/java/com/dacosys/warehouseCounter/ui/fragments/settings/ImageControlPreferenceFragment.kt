@@ -1,13 +1,13 @@
 package com.dacosys.warehouseCounter.ui.fragments.settings
 
 import android.os.Bundle
-import android.os.Environment
 import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
 import androidx.preference.SwitchPreference
+import com.dacosys.imageControl.Statics.Companion.albumFolder
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
@@ -27,7 +27,6 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import java.io.File
 
 /**
  * This fragment shows notification preferences only. It is used when the
@@ -191,14 +190,9 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
             .setTitle(getString(R.string.delete))
             .setMessage(getString(R.string.do_you_want_to_delete_the_image_cache_question))
             .setPositiveButton(getString(R.string.delete)) { dialog, _ ->
-                //your deleting code
-                val albumFolder = File(
-                    WarehouseCounterApp.context.getExternalFilesDir(Environment.DIRECTORY_PICTURES),
-                    "ImageControl"
-                )
-
-                if (albumFolder.isDirectory) {
-                    val files = albumFolder.listFiles()
+                val album = albumFolder
+                if (album.isDirectory) {
+                    val files = album.listFiles()
                     if (files != null && files.any()) {
                         for (file in files) {
                             if (file.isFile) {

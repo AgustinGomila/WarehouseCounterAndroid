@@ -2,6 +2,7 @@ plugins {
     id 'com.android.application'
     id 'kotlin-android'
     id 'kotlin-kapt'
+    id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlinVersion"
 }
 
 android {
@@ -193,21 +194,8 @@ dependencies {
     // Honeywell native driver
     implementation files('libs/honeywell/DataCollection.aar')
 
-    // Moshi
-    implementation("com.squareup.moshi:moshi:$moshiVersion")
-    implementation("com.squareup.moshi:moshi-adapters:$moshiVersion")
-    implementation("com.squareup.moshi:moshi-kotlin:$moshiVersion")
-    kapt("com.squareup.moshi:moshi-kotlin-codegen:$moshiVersion")
-
-    // Retrofit
-    implementation("com.squareup.retrofit2:retrofit:$retrofitVersion")
-    implementation("com.squareup.retrofit2:converter-moshi:$retrofitVersion")
-
     // Koin
-    implementation "io.insert-koin:koin-android:3.3.1"
-
-    // JSON Library
-    implementation 'com.google.code.gson:gson:2.10'
+    implementation "io.insert-koin:koin-android:3.3.3"
 
     // Room
     api("androidx.room:room-runtime:$roomVersion")
@@ -219,13 +207,17 @@ dependencies {
     // KTor
     implementation "io.ktor:ktor-client-okhttp-jvm:$kTorVersion"
     implementation "io.ktor:ktor-client-core:$kTorVersion"
+    implementation "io.ktor:ktor-client-content-negotiation:$kTorVersion"
+    implementation "io.ktor:ktor-serialization-kotlinx-json:$kTorVersion"
     implementation "io.ktor:ktor-client-json:$kTorVersion"
-    implementation "io.ktor:ktor-client-serialization:$kTorVersion"
-    runtimeOnly group: 'io.ktor', name: 'ktor-client-json', version: { kTorVersion }
 
     // RecyclerView
     implementation 'androidx.recyclerview:recyclerview:1.3.0'
+
+    // KotlinX Serialization
+    runtimeOnly 'org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.5.1'
 }
+
 repositories {
     mavenCentral()
     maven { url 'https://oss.sonatype.org/content/repositories/ksoap2-android-releases/' }

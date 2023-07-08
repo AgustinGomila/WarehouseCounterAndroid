@@ -20,8 +20,8 @@ import com.dacosys.warehouseCounter.adapter.ptlOrder.WarehouseAreaAdapter
 import com.dacosys.warehouseCounter.databinding.WarehouseAreaSelectActivityBinding
 import com.dacosys.warehouseCounter.dto.warehouse.Warehouse
 import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
+import com.dacosys.warehouseCounter.ktor.functions.GetWarehouse
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.retrofit.functions.GetWarehouse
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.utils.Screen

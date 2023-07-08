@@ -1,11 +1,7 @@
 package com.dacosys.warehouseCounter.dto.error
 
-import android.util.Log
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
-import com.squareup.moshi.JsonDataException
-import com.squareup.moshi.JsonEncodingException
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * Esta clase serializa y deserializa un Json con la
@@ -20,10 +16,10 @@ import com.squareup.moshi.JsonEncodingException
  *  }
  * }
  */
-@JsonClass(generateAdapter = true)
+@Serializable
 class ErrorObject {
 
-    @Json(name = errorTag)
+    @SerialName(errorTag)
     var error: ErrorData = ErrorData()
 
     companion object {
@@ -31,27 +27,5 @@ class ErrorObject {
          * Nombre de campos para el Json de este objeto.
          */
         const val errorTag = "error"
-
-        /**
-         * Determina si un JObject es un objeto de error
-         */
-        fun isError(jsonObj: Any): Boolean {
-            try {
-                val jsonError = moshi.adapter(ErrorObject::class.java).fromJsonValue(jsonObj)
-
-                if (jsonError?.error != null && jsonError.error.code != "") {
-                    val errorData = jsonError.error
-                    println("JSON Error: ${errorData.code}, ${errorData.name}, ${errorData.description}")
-                    return true
-                }
-            } catch (ignored: JsonDataException) {// No pasa nada...
-            } catch (ignored: JsonEncodingException) {// No pasa nada...
-            } catch (ex: Exception) {
-                Log.e(this::class.java.simpleName, ex.toString())
-                ex.printStackTrace()
-            }
-
-            return false
-        }
     }
 }

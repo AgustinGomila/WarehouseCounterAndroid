@@ -16,12 +16,11 @@ import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.dto.clientPackage.Package
+import com.dacosys.warehouseCounter.ktor.functions.GetClientPackages
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.result.PackagesResult
-import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
-import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages
+import com.dacosys.warehouseCounter.network.PackagesResult
 import com.dacosys.warehouseCounter.settings.Preference
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.settings.utils.QRConfigType
@@ -30,6 +29,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.WriterException
 import com.google.zxing.qrcode.QRCodeWriter
+import kotlinx.serialization.json.JsonPrimitive
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 
@@ -244,9 +244,18 @@ class ClientPackage {
                 var icPass = ""
 
                 val customOptJsonObj = pack.customOptions
-                if (customOptJsonObj.isNotEmpty()) {
-                    icUser = customOptJsonObj[Package.icUserTag] ?: ""
-                    icPass = customOptJsonObj[Package.icPasswordTag] ?: ""
+                for ((key, value) in customOptJsonObj) {
+                    if (key == Package.icUserTag) {
+                        icUser = when (value) {
+                            is JsonPrimitive -> value.content
+                            else -> value.toString()
+                        }
+                    } else if (key == Package.icPasswordTag) {
+                        icPass = when (value) {
+                            is JsonPrimitive -> value.content
+                            else -> value.toString()
+                        }
+                    }
                 }
 
                 val sv = WarehouseCounterApp.settingViewModel
@@ -256,9 +265,6 @@ class ClientPackage {
                     sv.clientPackage = clientPackage
                     sv.clientEmail = email
                     sv.clientPassword = password
-
-                    // Configuración y refresco de la conexión
-                    DynamicRetrofit.reset()
                 } else if (productId == Statics.APP_VERSION_ID_IMAGECONTROL) {
                     sv.useImageControl = true
                     sv.icWsServer = url

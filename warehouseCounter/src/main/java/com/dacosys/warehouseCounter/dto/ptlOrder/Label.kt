@@ -2,20 +2,20 @@ package com.dacosys.warehouseCounter.dto.ptlOrder
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
+@Serializable
 data class Label(
-    @Json(name = BARCODE_KEY) val barcode: String,
-    @Json(name = SEARCH_STRING_KEY) val searchString: Long,
-    @Json(name = TYPE_KEY) val type: String,
-    @Json(name = ID_KEY) val id: Long,
-    @Json(name = EXT_ID_KEY) val extId: String,
-    @Json(name = DESCRIPTION_KEY) val description: String,
-    @Json(name = BARCODE_LABEL_TEMPLATE_ID_KEY) val barcodeLabelTemplateId: String,
-    @Json(name = BARCODE_LABEL_TEMPLATE_DESCRIPTION_KEY) val barcodeLabelTemplateDescription: String,
-    @Json(name = BODY_KEY) val body: String,
+    @SerialName(BARCODE_KEY) val barcode: String,
+    @SerialName(SEARCH_STRING_KEY) val searchString: Long,
+    @SerialName(TYPE_KEY) val type: String,
+    @SerialName(ID_KEY) val id: Long,
+    @SerialName(EXT_ID_KEY) val extId: String,
+    @SerialName(DESCRIPTION_KEY) val description: String,
+    @SerialName(BARCODE_LABEL_TEMPLATE_ID_KEY) val barcodeLabelTemplateId: String,
+    @SerialName(BARCODE_LABEL_TEMPLATE_DESCRIPTION_KEY) val barcodeLabelTemplateDescription: String,
+    @SerialName(BODY_KEY) val body: String,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         barcode = parcel.readString() ?: "",

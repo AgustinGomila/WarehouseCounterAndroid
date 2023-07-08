@@ -16,8 +16,8 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.databinding.NewPtlOrdersBinding
 import com.dacosys.warehouseCounter.dto.warehouse.Warehouse
 import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
+import com.dacosys.warehouseCounter.ktor.functions.GetWarehouse
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.retrofit.functions.GetWarehouse
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc

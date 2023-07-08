@@ -4,16 +4,15 @@ import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiService
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.dto.token.TokenObject
 import com.dacosys.warehouseCounter.dto.user.AuthData
 import com.dacosys.warehouseCounter.dto.user.UserAuthData
+import com.dacosys.warehouseCounter.ktor.APIServiceImpl.Companion.validUrl
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.network.result.RequestResult
-import com.dacosys.warehouseCounter.network.result.ResultStatus
+import com.dacosys.warehouseCounter.network.RequestResult
+import com.dacosys.warehouseCounter.network.ResultStatus
 import com.dacosys.warehouseCounter.room.entity.user.User
 import kotlinx.coroutines.*
-import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -49,20 +48,12 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
                     }
                 }
             } else {
-                onEvent(
-                    RequestResult(
-                        ResultStatus.SUCCESS, msg = context.getString(R.string.ok)
-                    )
-                )
+                onEvent(RequestResult(ResultStatus.SUCCESS, msg = context.getString(R.string.ok)))
             }
         }
 
         if (!validUrl()) {
-            onEvent.invoke(
-                RequestResult(
-                    ResultStatus.ERROR, context.getString(R.string.invalid_url)
-                )
-            )
+            onEvent.invoke(RequestResult(ResultStatus.ERROR, context.getString(R.string.invalid_url)))
             return
         }
 
@@ -74,18 +65,9 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
                 onEvent()
             } else {
                 // Usuario inválido.
-                onEvent.invoke(
-                    RequestResult(
-                        ResultStatus.ERROR, context.getString(R.string.invalid_user)
-                    )
-                )
+                onEvent.invoke(RequestResult(ResultStatus.ERROR, context.getString(R.string.invalid_user)))
             }
         }
-    }
-
-    private fun validUrl(): Boolean {
-        val url = URL(settingRepository.urlPanel.value.toString())
-        return url.protocol.isNotEmpty() && url.host.isNotEmpty()
     }
 
     private fun isTokenValid(): Boolean {

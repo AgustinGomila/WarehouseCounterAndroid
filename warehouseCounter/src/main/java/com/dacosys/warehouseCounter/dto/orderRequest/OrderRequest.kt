@@ -2,71 +2,71 @@ package com.dacosys.warehouseCounter.dto.orderRequest
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.dacosys.imageControl.moshi.Document
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
+import com.dacosys.imageControl.dto.Document
 import com.dacosys.warehouseCounter.dto.log.Log
 import com.dacosys.warehouseCounter.misc.Statics
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import java.io.File
 
 
-@JsonClass(generateAdapter = true)
+@Serializable
 class OrderRequest() : Parcelable {
     var filename: String = ""
 
-    @Json(name = "orderRequestId")
+    @SerialName("orderRequestId")
     var orderRequestId: Long? = null
 
-    @Json(name = "externalId")
+    @SerialName("externalId")
     var externalId: String = ""
 
-    @Json(name = "creationDate")
+    @SerialName("creationDate")
     var creationDate: String? = null
 
-    @Json(name = "description")
+    @SerialName("description")
     var description: String = ""
 
-    @Json(name = "zone")
+    @SerialName("zone")
     var zone: String = ""
 
-    @Json(name = "orderRequestedType")
+    @SerialName("orderRequestedType")
     var orderRequestedType: OrderRequestType? = null
 
-    @Json(name = "resultDiffQty")
+    @SerialName("resultDiffQty")
     var resultDiffQty: Boolean? = null
 
-    @Json(name = "resultDiffProduct")
+    @SerialName("resultDiffProduct")
     var resultDiffProduct: Boolean? = null
 
-    @Json(name = "resultAllowDiff")
+    @SerialName("resultAllowDiff")
     var resultAllowDiff: Boolean? = null
 
-    @Json(name = "resultAllowMod")
+    @SerialName("resultAllowMod")
     var resultAllowMod: Boolean? = null
 
-    @Json(name = "completed")
+    @SerialName("completed")
     var completed: Boolean? = null
 
-    @Json(name = "startDate")
+    @SerialName("startDate")
     var startDate: String? = null
 
-    @Json(name = "finishDate")
+    @SerialName("finishDate")
     var finishDate: String? = null
 
-    @Json(name = "clientId")
+    @SerialName("clientId")
     var clientId: Long? = null
 
-    @Json(name = "userId")
+    @SerialName("userId")
     var userId: Long? = null
 
-    @Json(name = "content")
+    @SerialName("content")
     var content: List<OrderRequestContent> = ArrayList<OrderRequestContent>().toList()
 
-    @Json(name = "log")
+    @SerialName("log")
     var log: Log = Log()
 
-    @Json(name = "document")
+    @SerialName("document")
     var docArray: List<Document> = ArrayList<Document>().toList()
 
     constructor(parcel: Parcel) : this() {
@@ -86,7 +86,12 @@ class OrderRequest() : Parcelable {
         finishDate = parcel.readString()
         clientId = parcel.readValue(Long::class.java.classLoader) as? Long
         userId = parcel.readValue(Long::class.java.classLoader) as? Long
+
         log = parcel.readParcelable(Log::class.java.classLoader) ?: Log()
+        content =
+            parcel.readParcelableArray(OrderRequestContent::class.java.classLoader)?.map { it as OrderRequestContent }
+                ?: emptyList()
+        docArray = parcel.readParcelableArray(Document::class.java.classLoader)?.map { it as Document } ?: emptyList()
     }
 
     constructor(
@@ -125,16 +130,16 @@ class OrderRequest() : Parcelable {
         this.startDate = startDate
         this.finishDate = finishDate
 
+        this.log = log
         this.content = content
         this.docArray = documents
-        this.log = log
     }
 
     constructor(filename: String) : this() {
-        val completeJson = Statics.getJsonFromFile(filename)
+        val jsonString = Statics.getJsonFromFile(filename)
 
         try {
-            val or = moshi.adapter(OrderRequest::class.java).fromJson(completeJson) ?: return
+            val or = Json.decodeFromString<OrderRequest>(jsonString)
             if (or.orderRequestId == null || or.orderRequestId!! <= 0L) return
 
             this.orderRequestId = or.orderRequestId
@@ -153,8 +158,8 @@ class OrderRequest() : Parcelable {
             this.clientId = or.clientId
             this.userId = or.userId
 
-            this.content = or.content
             this.log = or.log
+            this.content = or.content
             this.docArray = or.docArray
 
             this.filename = filename.substringAfterLast('/')
@@ -184,7 +189,10 @@ class OrderRequest() : Parcelable {
         parcel.writeString(finishDate)
         parcel.writeValue(clientId)
         parcel.writeValue(userId)
+
         parcel.writeParcelable(log, flags)
+        parcel.writeParcelableArray(content.toTypedArray(), flags)
+        parcel.writeParcelableArray(docArray.toTypedArray(), flags)
     }
 
     override fun describeContents(): Int {

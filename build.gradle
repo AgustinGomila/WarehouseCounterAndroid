@@ -3,8 +3,6 @@
 buildscript {
     ext {
         roomVersion = '2.5.2'
-        moshiVersion = '1.14.0'
-        retrofitVersion = '2.9.0'
         parcelerVersion = '1.1.13'
         buildToolsVer = '30.0.3'
         nav_version = '2.4.1'

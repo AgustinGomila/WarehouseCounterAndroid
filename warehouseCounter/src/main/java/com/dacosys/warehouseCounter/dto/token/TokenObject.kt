@@ -1,11 +1,7 @@
 package com.dacosys.warehouseCounter.dto.token
 
-import android.util.Log
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
-import com.squareup.moshi.JsonDataException
-import com.squareup.moshi.JsonEncodingException
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * Esta clase serializa y deserializa un Json con la siguiente estructura:
@@ -14,13 +10,13 @@ import com.squareup.moshi.JsonEncodingException
  *      'expiration': {'type': 'string'}
  * }
  */
-@JsonClass(generateAdapter = true)
+@Serializable
 class TokenObject() {
 
-    @Json(name = tokenTag)
+    @SerialName(tokenTag)
     var token: String = ""
 
-    @Json(name = expirationTag)
+    @SerialName(expirationTag)
     var expiration: String = ""
 
     constructor(
@@ -36,29 +32,5 @@ class TokenObject() {
          */
         const val tokenTag = "token"
         const val expirationTag = "expiration"
-
-        /**
-         * Determina si un JObject es un objeto de token
-         */
-        fun isToken(jsonObj: Any): Boolean {
-            try {
-                val jsonToken = moshi.adapter(TokenObject::class.java).fromJsonValue(jsonObj)
-
-                if (jsonToken?.token != null &&
-                    jsonToken.token != "" &&
-                    jsonToken.expiration != ""
-                ) {
-                    println("JSON Token: ${jsonToken.token}, ${jsonToken.expiration}")
-                    return true
-                }
-            } catch (ignored: JsonDataException) {// No pasa nada...
-            } catch (ignored: JsonEncodingException) {// No pasa nada...
-            } catch (ex: Exception) {
-                Log.e(this::class.java.simpleName, ex.toString())
-                ex.printStackTrace()
-            }
-
-            return false
-        }
     }
 }

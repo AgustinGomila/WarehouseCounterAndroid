@@ -11,8 +11,8 @@ import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.databinding.ItemDetailBinding
 import com.dacosys.warehouseCounter.dto.price.Price
 import com.dacosys.warehouseCounter.dto.search.SearchObject
+import com.dacosys.warehouseCounter.ktor.functions.GetPrice
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.retrofit.functions.GetPrice
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode

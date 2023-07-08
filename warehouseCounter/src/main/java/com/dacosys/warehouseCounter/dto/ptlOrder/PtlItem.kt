@@ -2,18 +2,20 @@ package com.dacosys.warehouseCounter.dto.ptlOrder
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.squareup.moshi.Json
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class PtlItem(
-    @Json(name = ID_KEY) val id: Long,
-    @Json(name = EXTERNAL_ID_KEY) val externalId: Long,
-    @Json(name = DESCRIPTION_KEY) val description: String,
-    @Json(name = EAN_KEY) val ean: String,
-    @Json(name = PRICE_KEY) val price: Double,
-    @Json(name = ITEM_CATEGORY_ID_KEY) val itemCategoryId: Long?,
-    @Json(name = EXTERNAL_ID2_KEY) val externalId2: String?,
-    @Json(name = ROW_CREATION_DATE_KEY) val rowCreationDate: String,
-    @Json(name = ROW_MODIFICATION_DATE_KEY) val rowModificationDate: String,
+    @SerialName(ID_KEY) val id: Long,
+    @SerialName(EXTERNAL_ID_KEY) val externalId: Long,
+    @SerialName(DESCRIPTION_KEY) val description: String,
+    @SerialName(EAN_KEY) val ean: String,
+    @SerialName(PRICE_KEY) val price: Double,
+    @SerialName(ITEM_CATEGORY_ID_KEY) val itemCategoryId: Long?,
+    @SerialName(EXTERNAL_ID2_KEY) val externalId2: String?,
+    @SerialName(ROW_CREATION_DATE_KEY) val rowCreationDate: String,
+    @SerialName(ROW_MODIFICATION_DATE_KEY) val rowModificationDate: String,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         id = parcel.readLong(),

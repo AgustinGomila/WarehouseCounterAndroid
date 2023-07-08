@@ -2,15 +2,15 @@ package com.dacosys.warehouseCounter.dto.orderRequest
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
+@Serializable
 class Qty() : Parcelable {
-    @Json(name = "qtyRequested")
+    @SerialName("qtyRequested")
     var qtyRequested: Double? = null
 
-    @Json(name = "qtyCollected")
+    @SerialName("qtyCollected")
     var qtyCollected: Double? = null
 
     constructor(parcel: Parcel) : this() {

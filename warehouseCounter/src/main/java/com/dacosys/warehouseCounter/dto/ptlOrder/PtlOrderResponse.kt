@@ -1,13 +1,14 @@
 package com.dacosys.warehouseCounter.dto.ptlOrder
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
+@Serializable
 data class PtlOrderResponse(
-    @Json(name = ORDERS_KEY) val orders: List<PtlOrder>,
+    @SerialName(ORDERS_KEY) val orders: List<PtlOrder>,
 ) {
     companion object {
         const val ORDERS_KEY = "orders"
     }
 }
+

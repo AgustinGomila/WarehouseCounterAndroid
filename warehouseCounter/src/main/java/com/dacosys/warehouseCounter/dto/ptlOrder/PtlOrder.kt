@@ -2,36 +2,36 @@ package com.dacosys.warehouseCounter.dto.ptlOrder
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
+@Serializable
 data class PtlOrder(
-    @Json(name = ID_KEY) val id: Long,
-    @Json(name = ORDER_TYPE_ID_KEY) val orderTypeId: Long,
-    @Json(name = ORDER_TYPE_KEY) val orderTypeKey: String,
-    @Json(name = EXTERNAL_ID_KEY) val externalId: String,
-    @Json(name = CLIENT_ID_KEY) val clientId: Long,
-    @Json(name = CLIENT_KEY) val client: List<Client>,
-    @Json(name = COLLECTOR_ID_KEY) val collectorId: Long?,
-    @Json(name = COLLECTOR_USER_ID_KEY) val collectorUserId: Long?,
-    @Json(name = DESCRIPTION_KEY) val description: String,
-    @Json(name = ZONE_KEY) val zone: String,
-    @Json(name = RESULT_DIFF_QTY_KEY) val resultDiffQty: Boolean,
-    @Json(name = RESULT_DIFF_PRODUCT_KEY) val resultDiffProduct: Boolean,
-    @Json(name = RESULT_ALLOW_DIFF_KEY) val resultAllowDiff: Boolean,
-    @Json(name = RESULT_ALLOW_MOD_KEY) val resultAllowMod: Boolean,
-    @Json(name = COMPLETED_KEY) val completed: Boolean,
-    @Json(name = START_DATE_KEY) val startDate: String?,
-    @Json(name = FINISH_DATE_KEY) val finishDate: String?,
-    @Json(name = RECEIVED_DATE_KEY) val receivedDate: String?,
-    @Json(name = PROCESSED_KEY) val processed: Boolean,
-    @Json(name = DATA_RECEPTION_ID_KEY) val dataReceptionId: Long?,
-    @Json(name = DATA_RECEIVED_KEY) val dataReceived: String?,
-    @Json(name = PROCESSED_DATE_KEY) val processedDate: String?,
-    @Json(name = STATUS_ID_KEY) val statusId: Long,
-    @Json(name = ROW_CREATION_DATE_KEY) val rowCreationDate: String,
-    @Json(name = ROW_MODIFICATION_DATE_KEY) val rowModificationDate: String,
+    @SerialName(ID_KEY) val id: Long,
+    @SerialName(ORDER_TYPE_ID_KEY) val orderTypeId: Long,
+    @SerialName(ORDER_TYPE_KEY) val orderTypeKey: String,
+    @SerialName(EXTERNAL_ID_KEY) val externalId: String,
+    @SerialName(CLIENT_ID_KEY) val clientId: Long,
+    @SerialName(CLIENT_KEY) val client: List<Client>,
+    @SerialName(COLLECTOR_ID_KEY) val collectorId: Long?,
+    @SerialName(COLLECTOR_USER_ID_KEY) val collectorUserId: Long?,
+    @SerialName(DESCRIPTION_KEY) val description: String,
+    @SerialName(ZONE_KEY) val zone: String,
+    @SerialName(RESULT_DIFF_QTY_KEY) val resultDiffQty: Boolean,
+    @SerialName(RESULT_DIFF_PRODUCT_KEY) val resultDiffProduct: Boolean,
+    @SerialName(RESULT_ALLOW_DIFF_KEY) val resultAllowDiff: Boolean,
+    @SerialName(RESULT_ALLOW_MOD_KEY) val resultAllowMod: Boolean,
+    @SerialName(COMPLETED_KEY) val completed: Boolean,
+    @SerialName(START_DATE_KEY) val startDate: String?,
+    @SerialName(FINISH_DATE_KEY) val finishDate: String?,
+    @SerialName(RECEIVED_DATE_KEY) val receivedDate: String?,
+    @SerialName(PROCESSED_KEY) val processed: Boolean,
+    @SerialName(DATA_RECEPTION_ID_KEY) val dataReceptionId: Long?,
+    @SerialName(DATA_RECEIVED_KEY) val dataReceived: String?,
+    @SerialName(PROCESSED_DATE_KEY) val processedDate: String?,
+    @SerialName(STATUS_ID_KEY) val statusId: Long,
+    @SerialName(ROW_CREATION_DATE_KEY) val rowCreationDate: String,
+    @SerialName(ROW_MODIFICATION_DATE_KEY) val rowModificationDate: String,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(id = parcel.readLong(),
         orderTypeId = parcel.readLong(),

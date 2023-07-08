@@ -6,8 +6,8 @@ import android.util.Log
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest.CREATOR.getCompletedOrders
+import com.dacosys.warehouseCounter.ktor.functions.GetNewOrder
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.retrofit.functions.GetNewOrder
 import java.util.*
 import kotlin.concurrent.thread
 

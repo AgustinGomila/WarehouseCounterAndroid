@@ -4,16 +4,16 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import java.util.*
 
-@JsonClass(generateAdapter = true)
+@Serializable
 class OrderRequestType() : Parcelable {
-    @Json(name = "orderRequestTypeId")
+    @SerialName("orderRequestTypeId")
     var id: Long = 0
 
-    @Json(name = "description")
+    @SerialName("description")
     var description: String = ""
 
     constructor(parcel: Parcel) : this() {

@@ -1,33 +1,34 @@
 package com.dacosys.warehouseCounter.dto.clientPackage
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
-@JsonClass(generateAdapter = true)
+@Serializable
 class Package {
 
-    @Json(name = installationCodeTag)
+    @SerialName(installationCodeTag)
     var installationCode: String = ""
 
-    @Json(name = productVersionIdTag)
+    @SerialName(productVersionIdTag)
     var productVersionId: Int = -1
 
-    @Json(name = activeTag)
+    @SerialName(activeTag)
     var active: Int = 0
 
-    @Json(name = panelTag)
+    @SerialName(panelTag)
     var panel: Panel = Panel()
 
-    @Json(name = clientPackageContDescTag)
+    @SerialName(clientPackageContDescTag)
     var clientPackageContDesc: String = ""
 
-    @Json(name = wsTag)
+    @SerialName(wsTag)
     var ws: Ws = Ws()
 
-    @Json(name = customOptionsTag)
-    var customOptions: Map<String, String> = mapOf()
+    @SerialName(customOptionsTag)
+    var customOptions: Map<String, JsonElement> = mapOf()
 
-    @Json(name = clientTag)
+    @SerialName(clientTag)
     var client: String = ""
 
     companion object {
@@ -43,38 +44,6 @@ class Package {
         // Custom options keys
         const val icUserTag = "ic_user"
         const val icPasswordTag = "ic_password"
-    }
-}
-
-@JsonClass(generateAdapter = true)
-class Panel {
-    @Json(name = urlTag)
-    var url: String = ""
-
-    companion object {
-        const val urlTag = "url"
-    }
-}
-
-@JsonClass(generateAdapter = true)
-class Ws {
-    @Json(name = urlTag)
-    var url: String = ""
-
-    @Json(name = namespaceTag)
-    var namespace: String = ""
-
-    @Json(name = userTag)
-    var user: String = ""
-
-    @Json(name = passwordTag)
-    var password: String = ""
-
-    companion object {
-        const val urlTag = "url"
-        const val namespaceTag = "namespace"
-        const val userTag = "ws_user"
-        const val passwordTag = "ws_password"
     }
 }
 

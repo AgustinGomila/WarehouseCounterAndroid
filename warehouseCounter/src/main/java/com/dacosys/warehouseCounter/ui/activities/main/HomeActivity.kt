@@ -39,19 +39,18 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
+import com.dacosys.warehouseCounter.ktor.functions.SendOrder
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.isDebuggable
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
-import com.dacosys.warehouseCounter.retrofit.functions.SendOrder
 import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
@@ -74,6 +73,7 @@ import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
+import kotlinx.serialization.json.Json
 import org.parceler.Parcels
 import java.io.File
 import java.io.UnsupportedEncodingException
@@ -132,7 +132,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         if (itemArray.isEmpty()) return
 
-        if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
+            PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
                 this, Manifest.permission.WRITE_EXTERNAL_STORAGE
             )
         ) {
@@ -952,7 +953,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         var isOk = true
         for (newOrder in newOrArray) {
-            val orJson = moshi.adapter(OrderRequest::class.java).toJson(newOrder)
+            val orJson = Json.encodeToString(OrderRequest.serializer(), newOrder)
 
             // Acá se comprueba si el ID ya existe y actualizamos la orden.
             // Si no se agrega una orden nueva.
@@ -1009,11 +1010,12 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         var error = false
 
         try {
-            val orJson = moshi.adapter(OrderRequest::class.java).toJson(newOrder)
+            val orJson = Json.encodeToString(OrderRequest.serializer(), newOrder)
             Log.i(this::class.java.simpleName, orJson)
             val orFileName = origOrder.filename.substringAfterLast('/')
 
-            if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
+                PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
                     this, Manifest.permission.WRITE_EXTERNAL_STORAGE
                 )
             ) {

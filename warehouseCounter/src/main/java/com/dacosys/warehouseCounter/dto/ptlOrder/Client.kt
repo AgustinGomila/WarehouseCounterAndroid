@@ -2,26 +2,26 @@ package com.dacosys.warehouseCounter.dto.ptlOrder
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
+@Serializable
 data class Client(
-    @Json(name = ID_KEY) val id: Long,
-    @Json(name = NAME_KEY) val name: String,
-    @Json(name = TAX_NUMBER_KEY) val taxNumber: String,
-    @Json(name = CONTACT_NAME_KEY) val contactName: String?,
-    @Json(name = PHONE_KEY) val phone: String?,
-    @Json(name = ADDRESS_KEY) val address: String?,
-    @Json(name = CITY_KEY) val city: String,
-    @Json(name = ZIP_CODE_KEY) val zipCode: String?,
-    @Json(name = COUNTRY_ID_KEY) val countryId: String,
-    @Json(name = ACTIVE_KEY) val active: Int,
-    @Json(name = LATITUDE_KEY) val latitude: String?,
-    @Json(name = LONGITUDE_KEY) val longitude: String?,
-    @Json(name = COLLECTOR_USER_ID_KEY) val collectorUserId: Long?,
-    @Json(name = ROW_CREATION_DATE_KEY) val rowCreationDate: String,
-    @Json(name = ROW_MODIFICATION_DATE_KEY) val rowModificationDate: String,
+    @SerialName(ID_KEY) val id: Long,
+    @SerialName(NAME_KEY) val name: String,
+    @SerialName(TAX_NUMBER_KEY) val taxNumber: String,
+    @SerialName(CONTACT_NAME_KEY) val contactName: String?,
+    @SerialName(PHONE_KEY) val phone: String?,
+    @SerialName(ADDRESS_KEY) val address: String?,
+    @SerialName(CITY_KEY) val city: String,
+    @SerialName(ZIP_CODE_KEY) val zipCode: String?,
+    @SerialName(COUNTRY_ID_KEY) val countryId: String,
+    @SerialName(ACTIVE_KEY) val active: Int,
+    @SerialName(LATITUDE_KEY) val latitude: String?,
+    @SerialName(LONGITUDE_KEY) val longitude: String?,
+    @SerialName(COLLECTOR_USER_ID_KEY) val collectorUserId: Long?,
+    @SerialName(ROW_CREATION_DATE_KEY) val rowCreationDate: String,
+    @SerialName(ROW_MODIFICATION_DATE_KEY) val rowModificationDate: String,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         id = parcel.readLong(),

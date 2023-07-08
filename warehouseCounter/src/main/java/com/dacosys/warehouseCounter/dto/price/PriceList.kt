@@ -1,7 +1,7 @@
 package com.dacosys.warehouseCounter.dto.price
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * Esta clase serializa y deserializa un Json con la siguiente estructura:
@@ -25,10 +25,10 @@ import com.squareup.moshi.JsonClass
  * }
  */
 
-@JsonClass(generateAdapter = true)
+@Serializable
 class PriceList {
 
-    @Json(name = pricesTag)
+    @SerialName(pricesTag)
     var prices: List<Price> = ArrayList<Price>().toList()
 
     companion object {

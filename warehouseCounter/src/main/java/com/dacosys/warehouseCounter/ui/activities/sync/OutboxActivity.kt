@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -24,7 +25,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.moshi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.databinding.OutboxActivityBinding
@@ -33,16 +33,17 @@ import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.ktor.functions.SendOrder
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.retrofit.functions.SendOrder
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import kotlinx.serialization.json.Json
 import org.parceler.Parcels
 import java.io.File
 import java.io.UnsupportedEncodingException
@@ -394,10 +395,11 @@ class OutboxActivity : AppCompatActivity() {
             orderRequest.log = Log()
 
             try {
-                orJson = moshi.adapter(OrderRequest::class.java).toJson(orderRequest)
+                orJson = Json.encodeToString(OrderRequest.serializer(), orderRequest)
                 orderRequest.filename.substringAfterLast('/')
 
-                if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
+                    PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
                         this, Manifest.permission.WRITE_EXTERNAL_STORAGE
                     )
                 ) {

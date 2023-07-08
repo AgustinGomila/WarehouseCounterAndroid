@@ -4,19 +4,19 @@ import android.os.Parcel
 import android.os.Parcelable
 import androidx.room.Ignore
 import com.dacosys.warehouseCounter.dto.ptlOrder.ContentStatus
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
+@Serializable
 class OrderRequestContent() : Parcelable {
     // region Variables de la clase
-    @Json(name = "item")
+    @SerialName("item")
     var item: Item? = null
 
-    @Json(name = "lot")
+    @SerialName("lot")
     var lot: Lot? = null
 
-    @Json(name = "qty")
+    @SerialName("qty")
     var qty: Qty? = null
 
     @Ignore

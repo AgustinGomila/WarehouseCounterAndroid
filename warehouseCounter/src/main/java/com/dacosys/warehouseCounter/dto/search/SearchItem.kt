@@ -1,15 +1,15 @@
 package com.dacosys.warehouseCounter.dto.search
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
+@Serializable
 class SearchItem() {
 
-    @Json(name = idTag)
+    @SerialName(idTag)
     var id: Long? = null
 
-    @Json(name = extIdTag)
+    @SerialName(extIdTag)
     var extId: Long? = null
 
     constructor(id: Long?, extId: Long?) : this() {

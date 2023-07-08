@@ -2,8 +2,8 @@ package com.dacosys.warehouseCounter.dto.price
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * Esta clase serializa y deserializa un Json con la
@@ -25,40 +25,40 @@ import com.squareup.moshi.JsonClass
  * },
  */
 
-@JsonClass(generateAdapter = true)
+@Serializable
 class Price() : Parcelable {
 
-    @Json(name = idTag)
+    @SerialName(idTag)
     var id: Long = -1
 
-    @Json(name = extIdTag)
+    @SerialName(extIdTag)
     var extId: Long? = null
 
-    @Json(name = itemPriceListIdTag)
+    @SerialName(itemPriceListIdTag)
     var itemPriceListId: Long = -1
 
-    @Json(name = itemPriceListDescriptionTag)
+    @SerialName(itemPriceListDescriptionTag)
     var itemPriceListDescription: String = ""
 
-    @Json(name = itemPriceListListOrderTag)
+    @SerialName(itemPriceListListOrderTag)
     var itemPriceListListOrder: Int = 0
 
-    @Json(name = itemIdTag)
+    @SerialName(itemIdTag)
     var itemId: Long = -1
 
-    @Json(name = itemDescriptionTag)
+    @SerialName(itemDescriptionTag)
     var itemDescription: String = ""
 
-    @Json(name = priceTag)
+    @SerialName(priceTag)
     var price: String = ""
 
-    @Json(name = activeTag)
+    @SerialName(activeTag)
     var active: Int = 1
 
-    @Json(name = rowCreationDateTag)
+    @SerialName(rowCreationDateTag)
     var rowCreationDate: String = ""
 
-    @Json(name = rowModificationDateTag)
+    @SerialName(rowModificationDateTag)
     var rowModificationDate: String = ""
 
     constructor(parcel: Parcel) : this() {

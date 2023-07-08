@@ -192,12 +192,12 @@ class FileHelper {
             var fullPath: String
 
             // on my Sony devices (4.4.4 & 5.1.1), `type` is a dynamic string
-            // something like "71F8-2C0A", some kind of unique id per storage
+            // something like "71F8-2C0A" some kind of unique id per storage
             // don't know any API that can get the root path of that storage based on its id.
             //
             // so no "primary" type, but let the check here for other devices
             if ("primary".equals(type, ignoreCase = true)) {
-                fullPath = Environment.getExternalStorageDirectory().toString() + relativePath
+                fullPath = "${Environment.getExternalStorageDirectory()}$relativePath"
                 if (fileExists(fullPath)) {
                     return fullPath
                 }
@@ -376,8 +376,7 @@ class FileHelper {
                 val myInput = FileInputStream(dbFile)
 
                 // Path to the just created empty db
-                val outDir =
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+                val outDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
                 if (!outDir.exists()) {
                     outDir.mkdir()
                 }

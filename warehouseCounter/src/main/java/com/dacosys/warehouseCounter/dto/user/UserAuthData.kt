@@ -1,7 +1,7 @@
 package com.dacosys.warehouseCounter.dto.user
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * Esta clase serializa y deserializa un Json con la estructura requerida por
@@ -9,10 +9,10 @@ import com.squareup.moshi.JsonClass
  * [com.dacosys.warehouseCounter.retrofit.APIService.getToken]
  */
 
-@JsonClass(generateAdapter = true)
+@Serializable
 class UserAuthData {
 
-    @Json(name = userAuthTag)
+    @SerialName(userAuthTag)
     var authData: AuthData = AuthData()
 
     companion object {

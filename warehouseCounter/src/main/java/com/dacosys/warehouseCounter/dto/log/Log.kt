@@ -2,25 +2,25 @@ package com.dacosys.warehouseCounter.dto.log
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 
-@JsonClass(generateAdapter = true)
+@Serializable
 class Log() : Parcelable {
-    @Json(name = "clientId")
+    @SerialName("clientId")
     var clientId: Long? = null
 
-    @Json(name = "userId")
+    @SerialName("userId")
     var userId: Long? = null
 
-    @Json(name = "description")
+    @SerialName("description")
     var description: String = ""
 
-    @Json(name = "content")
+    @SerialName("content")
     var content: List<LogContent> = ArrayList<LogContent>().toList()
 
-    @Json(name = "creationDate")
+    @SerialName("creationDate")
     var creationDate: String? = null
 
     var filename: String = ""

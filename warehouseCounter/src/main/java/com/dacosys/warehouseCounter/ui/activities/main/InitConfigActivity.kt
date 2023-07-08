@@ -23,11 +23,11 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
 import com.dacosys.warehouseCounter.databinding.InitConfigActivityBinding
 import com.dacosys.warehouseCounter.dto.clientPackage.Package
+import com.dacosys.warehouseCounter.ktor.functions.GetClientPackages.Companion.getConfig
 import com.dacosys.warehouseCounter.misc.Proxy
 import com.dacosys.warehouseCounter.misc.Proxy.Companion.setupProxy
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.result.PackagesResult
-import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages.Companion.getConfig
+import com.dacosys.warehouseCounter.network.PackagesResult
 import com.dacosys.warehouseCounter.room.database.FileHelper.Companion.removeDataBases
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner

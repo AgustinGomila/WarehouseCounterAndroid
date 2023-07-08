@@ -4,12 +4,13 @@
                                                    xmlns:tools="http://schemas.android.com/tools"
                                                    android:layout_width="fill_parent"
                                                    android:layout_height="wrap_content"
-                                                   android:layout_marginTop="2dp"
+                                                   android:layout_marginTop="1dp"
                                                    android:background="@drawable/layout_thin_border"
                                                    android:minHeight="0dp"
                                                    android:theme="@style/Theme.AppCompat.Light"
                                                    tools:layout_editor_absoluteX="0dp"
-                                                   tools:layout_editor_absoluteY="81dp">
+                                                   tools:layout_editor_absoluteY="81dp"
+                                                   android:layout_marginBottom="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/checkBoxConstraintLayout"

@@ -2,12 +2,14 @@ package com.dacosys.warehouseCounter.misc.objects.errorLog
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Environment
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.UTCDataTime
@@ -21,7 +23,7 @@ class ErrorLog {
 
         val errorLogPath: File
             get() {
-                return File("${WarehouseCounterApp.context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}${Statics.WC_ROOT_PATH}/${settingViewModel.installationCode}${ERROR_LOG_PATH}/")
+                return File("${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}${Statics.WC_ROOT_PATH}/${settingViewModel.installationCode}${ERROR_LOG_PATH}/")
             }
 
         override fun onRequestPermissionsResult(
@@ -42,15 +44,17 @@ class ErrorLog {
         private val PERMISSIONS_STORAGE = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
         private fun verifyPermissions(activity: AppCompatActivity) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) return
+
             // Check if we have write permission
             val storagePermission = ActivityCompat.checkSelfPermission(
                 activity, Manifest.permission.WRITE_EXTERNAL_STORAGE
             )
 
-            if (storagePermission != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                    activity, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE
-                )
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R &&
+                storagePermission != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE)
             } else {
                 reallyWriteLog()
             }
@@ -79,7 +83,7 @@ class ErrorLog {
             tMsg = msg
             tClassName = className
 
-            // Ver si la aplicación tiene permiso de escritura, sino pedir permiso.
+            // Ver si la aplicación tiene permiso de escritura, si no pedir permiso.
             verifyPermissions(activity)
         }
 
@@ -95,7 +99,7 @@ class ErrorLog {
             tMsg = errors.toString()
             tClassName = className
 
-            // Ver si la aplicación tiene permiso de escritura, sino pedir permiso.
+            // Ver si la aplicación tiene permiso de escritura, si no pedir permiso.
             verifyPermissions(activity)
         }
 

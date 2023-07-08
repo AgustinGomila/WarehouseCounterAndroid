@@ -38,9 +38,9 @@ import com.dacosys.warehouseCounter.dto.ptlOrder.PickItem
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlContent
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlOrder
 import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
+import com.dacosys.warehouseCounter.ktor.functions.*
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.retrofit.functions.*
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc

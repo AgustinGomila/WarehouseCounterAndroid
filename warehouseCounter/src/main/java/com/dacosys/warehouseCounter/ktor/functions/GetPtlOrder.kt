@@ -3,17 +3,16 @@ package com.dacosys.warehouseCounter.ktor.functions
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiService
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlOrder
+import com.dacosys.warehouseCounter.dto.token.UserToken
+import com.dacosys.warehouseCounter.ktor.APIServiceImpl.Companion.validUrl
 import com.dacosys.warehouseCounter.ktor.functions.GetToken.Companion.Token
-import com.dacosys.warehouseCounter.network.result.RequestResult
-import com.dacosys.warehouseCounter.network.result.ResultStatus
+import com.dacosys.warehouseCounter.network.RequestResult
+import com.dacosys.warehouseCounter.network.ResultStatus
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
 import kotlinx.coroutines.*
-import org.json.JSONObject
-import java.net.URL
 import kotlin.concurrent.thread
 
 class GetPtlOrder(
@@ -51,24 +50,14 @@ class GetPtlOrder(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiService.getPtlOrder(body = getBody(), callback = {
-            r = it
-            if (it.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
+        ktorApiService.getPtlOrder(body = body, callback = {
+            r = ArrayList(it.orders)
+            if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
             else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
         })
     }
 
-    private fun validUrl(): Boolean {
-        val url = URL(settingRepository.urlPanel.value.toString())
-        return url.protocol.isNotEmpty() && url.host.isNotEmpty()
-    }
-
-    private fun getBody(): JSONObject {
-        // Token DATA //////////////////
-        val jsonParam = JSONObject()
-        jsonParam.put("userToken", Token.token)
-        return jsonParam
-    }
+    private val body: UserToken by lazy { UserToken(Token.token) }
 
     private fun sendEvent(msg: String, type: SnackBarType) {
         val event = SnackBarEventData(msg, type)

@@ -1,7 +1,7 @@
 package com.dacosys.warehouseCounter.settings.utils
 
 import com.dacosys.imageControl.ImageControl.Companion.webservice
-import com.dacosys.imageControl.moshi.UserAuthResult
+import com.dacosys.imageControl.dto.UserAuthResult
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel

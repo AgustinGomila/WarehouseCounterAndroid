@@ -10,7 +10,8 @@
                                                    android:theme="@style/Theme.AppCompat.Light"
                                                    tools:layout_editor_absoluteX="0dp"
                                                    tools:layout_editor_absoluteY="81dp"
-                                                   tools:visibility="visible">
+                                                   tools:visibility="visible" android:layout_marginBottom="1dp"
+                                                   android:layout_marginTop="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/checkBoxConstraintLayout"

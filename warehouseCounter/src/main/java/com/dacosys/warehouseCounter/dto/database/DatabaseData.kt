@@ -1,26 +1,15 @@
 package com.dacosys.warehouseCounter.dto.database
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
-class DatabaseDataCont {
-
-    @Json(name = databaseTag)
-    var databaseData: DatabaseData = DatabaseData()
-
-    companion object {
-        const val databaseTag = "database"
-    }
-}
-
-@JsonClass(generateAdapter = true)
+@Serializable
 class DatabaseData {
 
-    @Json(name = dbFileTag)
+    @SerialName(dbFileTag)
     var dbFile: String = ""
 
-    @Json(name = dbDataTag)
+    @SerialName(dbDataTag)
     var dbDate: String = ""
 
     companion object {

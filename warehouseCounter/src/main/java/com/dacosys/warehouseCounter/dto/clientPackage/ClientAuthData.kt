@@ -1,29 +1,18 @@
 package com.dacosys.warehouseCounter.dto.clientPackage
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
-class AuthDataCont {
-
-    @Json(name = userAuthTag)
-    var authData: ClientAuthData = ClientAuthData()
-
-    companion object {
-        const val userAuthTag = "authdata"
-    }
-}
-
-@JsonClass(generateAdapter = true)
+@Serializable
 class ClientAuthData {
 
-    @Json(name = emailTag)
+    @SerialName(emailTag)
     var email: String = ""
 
-    @Json(name = passTag)
+    @SerialName(passTag)
     var password: String = ""
 
-    @Json(name = versionTag)
+    @SerialName(versionTag)
     var version: String = "1"
 
     companion object {

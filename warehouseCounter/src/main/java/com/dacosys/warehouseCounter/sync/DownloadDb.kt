@@ -3,9 +3,9 @@ package com.dacosys.warehouseCounter.sync
 import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.ktor.functions.SendItemCode
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.retrofit.functions.SendItemCode
 import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.room.database.FileHelper
 import com.dacosys.warehouseCounter.room.database.WcDatabase

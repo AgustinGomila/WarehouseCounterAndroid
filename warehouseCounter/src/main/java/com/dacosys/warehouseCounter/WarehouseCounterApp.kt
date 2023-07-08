@@ -6,29 +6,24 @@ import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 import com.dacosys.imageControl.ImageControl
 import com.dacosys.warehouseCounter.ktor.APIServiceImpl
+import com.dacosys.warehouseCounter.ktor.DacoServiceImpl
 import com.dacosys.warehouseCounter.misc.Statics.Companion.INTERNAL_IMAGE_CONTROL_APP_ID
-import com.dacosys.warehouseCounter.misc.Statics.Companion.WC_ROOT_PATH
-import com.dacosys.warehouseCounter.network.common.HostInterceptor
-import com.dacosys.warehouseCounter.retrofit.APIService
-import com.dacosys.warehouseCounter.retrofit.DacoService
-import com.dacosys.warehouseCounter.retrofit.DynamicRetrofit
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.settings.SettingsViewModel
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import id.pahlevikun.jotter.Jotter
 import id.pahlevikun.jotter.event.ActivityEvent
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
-import okhttp3.OkHttpClient
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.json.Json
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.component.KoinComponent
 import org.koin.core.context.GlobalContext.get
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.module
-import retrofit2.converter.moshi.MoshiConverterFactory
 import java.net.Authenticator
 import java.net.InetSocketAddress
 import java.net.PasswordAuthentication
@@ -65,7 +60,6 @@ class WarehouseCounterApp : Application(), KoinComponent {
         // Setup ImageControl context
         ImageControl().create(
             context = applicationContext,
-            appRothPath = WC_ROOT_PATH,
             id = INTERNAL_IMAGE_CONTROL_APP_ID
         )
     }
@@ -76,8 +70,6 @@ class WarehouseCounterApp : Application(), KoinComponent {
 
         viewModel { SettingsViewModel() }
 
-        single { Moshi.Builder().add(KotlinJsonAdapterFactory()).build() }
-        single { MoshiConverterFactory.create(get()) }
         single {
             val sv = settingViewModel
             if (sv.useProxy) {
@@ -92,19 +84,6 @@ class WarehouseCounterApp : Application(), KoinComponent {
             }
         }
 
-        // Retrofit
-        factory {
-            OkHttpClient.Builder()
-                .connectTimeout(settingViewModel.connectionTimeout.toLong(), TimeUnit.SECONDS)
-                .addInterceptor(HostInterceptor())
-                .proxy(currentProxy)
-                .build()
-        }
-
-        single { DynamicRetrofit() }
-        single { retrofit.api.create(APIService::class.java) }
-        single { retrofit.api.create(DacoService::class.java) }
-
         // Ktor
         single {
             HttpClient(OkHttp) {
@@ -115,34 +94,25 @@ class WarehouseCounterApp : Application(), KoinComponent {
                         proxy(currentProxy)
                     }
                 }
+                install(ContentNegotiation) {
+                    json(Json {
+                        prettyPrint = true
+                        isLenient = true
+                        encodeDefaults = true
+                        ignoreUnknownKeys = true
+                    })
+                }
             }
         }
         single { APIServiceImpl() }
+        single { DacoServiceImpl() }
     }
 
     companion object {
         val context: Context
             get() = get().get()
 
-        val moshi: Moshi
-            get() = get().get()
-
-        val okHttp: OkHttpClient
-            get() = get().get()
-
-        val moshiConverterFactory: MoshiConverterFactory
-            get() = get().get()
-
         val settingRepository: SettingsRepository
-            get() = get().get()
-
-        val retrofit: DynamicRetrofit
-            get() = get().get()
-
-        val apiService: APIService
-            get() = get().get()
-
-        val dacoService: DacoService
             get() = get().get()
 
         val settingViewModel: SettingsViewModel
@@ -152,6 +122,9 @@ class WarehouseCounterApp : Application(), KoinComponent {
             get() = get().get()
 
         val ktorApiService: APIServiceImpl
+            get() = get().get()
+
+        val ktorDacoService: DacoServiceImpl
             get() = get().get()
 
         val currentProxy: Proxy

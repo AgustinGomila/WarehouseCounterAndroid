@@ -12,10 +12,10 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.dto.clientPackage.Package
+import com.dacosys.warehouseCounter.ktor.functions.GetClientPackages
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.result.PackagesResult
-import com.dacosys.warehouseCounter.retrofit.functions.GetClientPackages
+import com.dacosys.warehouseCounter.network.PackagesResult
 import com.dacosys.warehouseCounter.room.database.FileHelper
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.settings.utils.QRConfigType
@@ -175,19 +175,6 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
         val updateAppButton = findPreference<Preference>("update_app") as Preference
         updateAppButton.isEnabled = false
         updateAppButton.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            // if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !requireContext().packageManager.canRequestPackageInstalls()) {
-            //     val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).setData(
-            //         Uri.parse(
-            //             String.format(
-            //                 "package:%s", requireContext().packageName
-            //             )
-            //         )
-            //     )
-            //     resultForRequestPackageInstall.launch(intent)
-            // } else {
-            //     // check storage permission granted if yes then start downloading file
-            //     checkStoragePermission()
-            // }
             MakeText.makeText(
                 requireView(), getString(R.string.no_available_option), SnackBarType.INFO
             )
@@ -202,47 +189,6 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
             scanConfigCode?.isEnabled = false
         }
     }
-
-    //private val resultForRequestPackageInstall =
-    //    registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-    //        if (it?.resultCode == CommonStatusCodes.SUCCESS || it?.resultCode == CommonStatusCodes.SUCCESS_CACHE) {
-    //            // check storage permission granted if yes then start downloading file
-    //            checkStoragePermission()
-    //        }
-    //    }
-    //
-    //private fun checkStoragePermission() {
-    //    // Check if the storage permission has been granted
-    //    if (ActivityCompat.checkSelfPermission(
-    //            requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE
-    //        ) != PackageManager.PERMISSION_GRANTED
-    //    ) {
-    //        // Permission is missing and must be requested.
-    //        resultForStoragePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-    //        return
-    //    }
-    //
-    //    // start downloading
-    //    val downloadController = DownloadController(requireView())
-    //    downloadController.enqueueDownload()
-    //}
-    //
-    //private val resultForStoragePermission =
-    //    registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-    //        // returns boolean representing whether the
-    //        // permission is granted or not
-    //        if (!isGranted) {
-    //            makeText(
-    //                requireView(),
-    //                requireContext().getString(R.string.app_dont_have_necessary_permissions),
-    //                ERROR
-    //            )
-    //        } else {
-    //            // start downloading
-    //            val downloadController = DownloadController(requireView())
-    //            downloadController.enqueueDownload()
-    //        }
-    //    }
 
     private fun askForDownloadDbRequired2(
         email: String,

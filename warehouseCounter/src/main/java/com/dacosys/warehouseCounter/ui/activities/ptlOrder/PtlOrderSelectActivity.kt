@@ -32,8 +32,8 @@ import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter.Companion.F
 import com.dacosys.warehouseCounter.databinding.PtlSelectOrderActivityBinding
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlOrder
 import com.dacosys.warehouseCounter.ktor.functions.GetPtlOrder
+import com.dacosys.warehouseCounter.ktor.functions.GetPtlOrderByCode
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.retrofit.functions.GetPtlOrderByCode
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner

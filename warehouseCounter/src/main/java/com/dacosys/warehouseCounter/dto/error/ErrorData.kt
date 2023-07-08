@@ -1,18 +1,18 @@
 package com.dacosys.warehouseCounter.dto.error
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
+@Serializable
 class ErrorData {
 
-    @Json(name = codeTag)
+    @SerialName(codeTag)
     var code: String = ""
 
-    @Json(name = nameTag)
+    @SerialName(nameTag)
     var name: String = ""
 
-    @Json(name = descriptionTag)
+    @SerialName(descriptionTag)
     var description: String = ""
 
     companion object {
