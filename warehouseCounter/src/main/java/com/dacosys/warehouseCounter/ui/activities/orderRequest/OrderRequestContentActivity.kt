@@ -770,7 +770,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
             builder.setNegativeButton(R.string.no) { _, _ -> finish() }
             builder.setPositiveButton(R.string.yes) { _, _ ->
-                if (processCount(false)) finish() // Salir si no hay error al guardar
+                processCount(completed = false, finishAtEnd = true)
             }
 
             val alertDialog: AlertDialog = builder.create()
@@ -1031,8 +1031,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     when (Parcels.unwrap<ConfirmStatus>(data.getParcelableExtra("confirmStatus"))) {
-                        modify -> if (processCount(false)) finish()
-                        confirm -> if (processCount(true)) finish()
+                        modify -> processCount(completed = false, finishAtEnd = true)
+                        confirm -> processCount(completed = true, finishAtEnd = true)
                     }
                 }
             } catch (ex: Exception) {
@@ -1047,10 +1047,13 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     // se requerirán permisos de escritura y se tenga que retomar la
     // actividad después de que el usuario los otorgue.
     private var tempCompleted = false
+    private var tempFinishAtEnd = false
 
-    private fun processCount(completed: Boolean): Boolean {
+    private fun processCount(completed: Boolean, finishAtEnd: Boolean = false) {
+        val tOrderRequest = orderRequest ?: return
+
         tempCompleted = completed
-        val tOrderRequest = orderRequest ?: return false
+        tempFinishAtEnd = finishAtEnd
         var error = false
 
         // Preparar el conteo
@@ -1085,7 +1088,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     value = orJson,
                     completed = tempCompleted
                 )
-                if (!error) finish()
+                if (!error && tempFinishAtEnd) finish()
             } else {
                 requestPermissions(
                     arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE
@@ -1094,10 +1097,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         } catch (e: UnsupportedEncodingException) {
             e.printStackTrace()
             android.util.Log.e(this::class.java.simpleName, e.message ?: "")
-            error = true
         }
-
-        return !error
     }
 
     private fun setImagesJson() {
@@ -1686,7 +1686,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                             value = orJson,
                             completed = tempCompleted
                         )
-                        if (!error) finish()
+                        if (!error && tempFinishAtEnd) finish()
                     }
                 }
             }

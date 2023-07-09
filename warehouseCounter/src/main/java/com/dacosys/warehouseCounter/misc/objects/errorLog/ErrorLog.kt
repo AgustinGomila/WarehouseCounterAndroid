@@ -8,7 +8,6 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.FragmentActivity
-import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.misc.Statics
@@ -44,7 +43,10 @@ class ErrorLog {
         private val PERMISSIONS_STORAGE = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
         private fun verifyPermissions(activity: AppCompatActivity) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) return
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                reallyWriteLog()
+                return
+            }
 
             // Check if we have write permission
             val storagePermission = ActivityCompat.checkSelfPermission(

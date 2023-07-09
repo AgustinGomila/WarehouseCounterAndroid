@@ -107,10 +107,10 @@ class Sync {
 
             thread {
                 try {
-                    GetNewOrder(onEvent = { }, onFinish = {
-                        if (!it.any()) return@GetNewOrder
-                        onNewOrders.invoke(it)
-                    }).execute()
+                    GetNewOrder(
+                        onEvent = { },
+                        onFinish = { onNewOrders.invoke(it) }
+                    ).execute()
                 } catch (ex: Exception) {
                     ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
                     syncNewOrderStatus = DownloadStatus.NOT_RUNNING

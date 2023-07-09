@@ -117,32 +117,30 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
     }
 
     private fun onNewOrder(itemArray: ArrayList<OrderRequest>) {
-        Log.d(
-            this::class.java.simpleName,
-            getString(R.string.new_orders_received_) + itemArray.count()
-        )
+        if (itemArray.isNotEmpty()) {
+            Log.d(this::class.java.simpleName, "${getString(R.string.new_orders_received_)}${itemArray.count()}")
 
-        if (!Statics.isExternalStorageWritable) {
-            Log.e(
-                this::class.java.simpleName,
-                getString(R.string.error_external_storage_not_available_for_reading_or_writing)
-            )
-            return
-        }
+            if (!Statics.isExternalStorageWritable) {
+                Log.e(
+                    this::class.java.simpleName,
+                    getString(R.string.error_external_storage_not_available_for_reading_or_writing)
+                )
+                return
+            }
 
-        if (itemArray.isEmpty()) return
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R &&
+                PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.WRITE_EXTERNAL_STORAGE
+                )
+            ) {
+                newOrArray = itemArray
+                requestPermissions(
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE
+                )
+                return
+            }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
-            PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
-                this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
-        ) {
             writeNewOrderRequest(itemArray)
-        } else {
-            newOrArray = itemArray
-            requestPermissions(
-                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE
-            )
         }
 
         buttonCollection
@@ -925,22 +923,22 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         permissions: Array<String>, grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
-        else {
-            when (requestCode) {
-                REQUEST_EXTERNAL_STORAGE -> {
-                    // If the request is canceled, the result arrays are empty.
-                    if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                        makeText(
-                            binding.root,
-                            getString(R.string.cannot_write_to_external_storage),
-                            ERROR
-                        )
-                    } else {
-                        writeNewOrderRequest(newOrArray)
-                    }
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) {
+            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+            return
+        }
+
+        when (requestCode) {
+            REQUEST_EXTERNAL_STORAGE -> {
+                // If the request is canceled, the result arrays are empty.
+                if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    makeText(
+                        binding.root,
+                        getString(R.string.cannot_write_to_external_storage),
+                        ERROR
+                    )
+                } else {
+                    writeNewOrderRequest(newOrArray)
                 }
             }
         }
@@ -1007,36 +1005,23 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
     }
 
     private fun updateOrder(origOrder: OrderRequest, newOrder: OrderRequest): Boolean {
-        var error = false
-
+        var error: Boolean
         try {
             val orJson = Json.encodeToString(OrderRequest.serializer(), newOrder)
             Log.i(this::class.java.simpleName, orJson)
             val orFileName = origOrder.filename.substringAfterLast('/')
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
-                PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
-            ) {
-                error = !Statics.writeJsonToFile(
-                    v = binding.root,
-                    filename = orFileName,
-                    value = orJson,
-                    completed = newOrder.completed ?: false
-                )
-                finish()
-            } else {
-                requestPermissions(
-                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE
-                )
-            }
+            error = !Statics.writeJsonToFile(
+                v = binding.root,
+                filename = orFileName,
+                value = orJson,
+                completed = newOrder.completed ?: false
+            )
         } catch (e: UnsupportedEncodingException) {
             e.printStackTrace()
             Log.e(this::class.java.simpleName, e.message ?: "")
             error = true
         }
-
         return !error
     }
 
