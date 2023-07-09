@@ -214,13 +214,13 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
             findPreference<Preference>(settingRepository.ipNetPrinter.key) as EditTextPreference
         ipNetPrinterPref.summary = ipNetPrinterPref.text
 
-        ipNetPrinterPref.setOnBindEditTextListener {
-            val filters = arrayOfNulls<InputFilter>(1)
-            filters[0] = InputFilter { source, start, end, dest, dStart, dEnd ->
-                filter(source, start, end, dest, dStart, dEnd)
-            }
-            it.filters = filters
-        }
+        // ipNetPrinterPref.setOnBindEditTextListener {
+        //     val filters = arrayOfNulls<InputFilter>(1)
+        //     filters[0] = InputFilter { source, start, end, dest, dStart, dEnd ->
+        //         filter(source, start, end, dest, dStart, dEnd)
+        //     }
+        //     it.filters = filters
+        // }
         ipNetPrinterPref.setOnPreferenceChangeListener { _, newValue ->
             if (useNetPrinter && newValue != null) {
                 ipNetPrinterPref.summary = newValue.toString()
@@ -359,7 +359,7 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
 
     private val resultForRfidPermissionConnect =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            // returns boolean representind whether the
+            // returns boolean representing whether the
             // permission is granted or not
             if (!isGranted) {
                 MakeText.makeText(
@@ -522,7 +522,7 @@ class DevicesPreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceLis
 
     private val resultForBtPermissionConnect =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            // returns boolean representind whether the
+            // returns boolean representing whether the
             // permission is granted or not
             if (!isGranted) {
                 MakeText.makeText(

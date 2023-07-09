@@ -371,12 +371,12 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         }
     }
 
-    // region Filtro para aceptar sólo números entre ciertos parámetros
+    // region Filtro para aceptar solo números entre ciertos parámetros
 
     /**
      * Devuelve una cadena de texto formateada que se ajusta a los parámetros.
      * Devuelve una cadena vacía en caso de Exception.
-     * Devuelve null si no es necesario cambiar la cadena ingresada porque ya se ajusta a los parámatros
+     * Devuelve null si no es necesario cambiar la cadena ingresada porque ya se ajusta a los parámetros
      *          o porque es igual que la cadena original.
      */
     private fun getValidValue(
@@ -421,8 +421,8 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
                 integerPart = validText
             }
 
-            // Si la parte entera es más larga que el máximo de digitos permitidos
-            // retorna un caracter vacío.
+            // Si la parte entera es más larga que el máximo de dígitos permitidos
+            // retorna un carácter vacío.
             if (integerPart.length > maxIntegerPlaces) {
                 return ""
             }
@@ -437,7 +437,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
                 if (decimalPart.length > maxDecimalPlaces) maxDecimalPlaces else decimalPart.length
             )
 
-            // Devolver sólo si son valores positivos diferentes a los de originales.
+            // Devolver solo si son valores positivos diferentes a los de originales.
             // NULL si no hay que hacer cambios sobre el texto original.
             return if (result != source) {
                 result

@@ -1048,7 +1048,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             }
         }
 
-        if (itemArray.isNotEmpty()) printLabelFragment?.printItemById(ArrayList(itemArray.map { it.itemId }))
+        printLabelFragment?.printItemById(ArrayList(itemArray.map { it.itemId }))
     }
 
     override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {

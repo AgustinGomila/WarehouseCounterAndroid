@@ -42,6 +42,9 @@ import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.io.IOException
+import java.net.ConnectException
+import java.net.Socket
+import java.net.UnknownHostException
 import java.util.*
 
 /**
@@ -89,6 +92,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             isReturnedFromSettings = false
 
             loadPrinterPreferences()
+
             refreshViews()
         }
     }
@@ -143,6 +147,20 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     private fun loadPrinterPreferences() {
         // Cantidad inicial 1
         if (qty <= 0) qty = 1
+
+        // Impresora guardada en preferencias
+        val useBtPrinter = settingViewModel.useBtPrinter
+        val useNetPrinter = settingViewModel.useNetPrinter
+
+        val pBt = settingViewModel.printerBtAddress
+        val pIp = settingViewModel.ipNetPrinter
+        val port = settingViewModel.portNetPrinter
+
+        printer = when {
+            useBtPrinter -> pBt
+            useNetPrinter -> "$pIp (${port})"
+            else -> ""
+        }
     }
 
     // region PRINTER
@@ -160,7 +178,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                     WarehouseCounterApp.context, Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                // here to request the missing permissions, and then overriding
+                // Here to request the missing permissions, and then overriding
                 //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
                 //                                          int[] grantResults)
                 // to handle the case where the user grants the permission. See the documentation
@@ -189,10 +207,10 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
     private val requestConnectPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            // returns boolean representind whether the
+            // returns boolean representing whether the
             // permission is granted or not
             if (isGranted) {
-                // permission granted continue the normal workflow of app
+                // permission granted continues the normal workflow of app
                 Log.i("DEBUG", "permission granted")
             } else {
                 // if permission denied then check whether never ask
@@ -291,7 +309,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             .isCycle(true) // 49,50,-50,-49 and so on
             .counterDelay(50) // speed of counter
             .startNumber(qty.toDouble()).counterStep(1)  // steps e.g. 0,2,4,6...
-            .listener(this) // to listen counter results and show them in app
+            .listener(this) // to listen to counter results and show them in app
             .build()
 
         binding.qtyEditText.addTextChangedListener(object : TextWatcher {
@@ -457,16 +475,24 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             return
         }
 
-        if (mBluetoothDevice == null) {
-            makeText(
-                binding.root, getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR
-            )
+        if (printer.isEmpty() || settingViewModel.useBtPrinter && mBluetoothDevice == null) {
+            makeText(binding.root, getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR)
             return
         }
 
         val sendThis = labelArray.joinToString(lineSeparator) { it.body }
 
-        printItem(sendThis)
+        when {
+            settingViewModel.useBtPrinter -> printBtItem(sendThis)
+
+            settingViewModel.useNetPrinter -> printNetItem(sendThis)
+
+            else -> makeText(
+                binding.root,
+                getString(R.string.there_is_no_selected_printer),
+                SnackBarType.ERROR
+            )
+        }
     }
 
     fun printItemById(itemIdArray: ArrayList<Long>) {
@@ -495,10 +521,8 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             return
         }
 
-        if (mBluetoothDevice == null) {
-            makeText(
-                binding.root, getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR
-            )
+        if (printer.isEmpty() || settingViewModel.useBtPrinter && mBluetoothDevice == null) {
+            makeText(binding.root, getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR)
             return
         }
 
@@ -509,10 +533,62 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             }
         }
 
-        printItem(sendThis)
+        when {
+            settingViewModel.useBtPrinter -> printBtItem(sendThis)
+
+            settingViewModel.useNetPrinter -> printNetItem(sendThis)
+
+            else -> makeText(
+                binding.root,
+                getString(R.string.there_is_no_selected_printer),
+                SnackBarType.ERROR
+            )
+        }
     }
 
-    private fun printItem(sendThis: String) {
+    private fun printNetItem(sendThis: String) {
+        val ipPrinter = settingViewModel.ipNetPrinter
+        val portPrinter = settingViewModel.portNetPrinter
+
+        Log.v(this::class.java.simpleName, "Printer IP: $ipPrinter ($portPrinter)")
+        Log.v(this::class.java.simpleName, sendThis)
+
+        val t = object : Thread() {
+            override fun run() {
+                try {
+                    val sock = Socket(ipPrinter, portPrinter)
+                    val out = sock.getOutputStream()
+                    out.write(sendThis.toByteArray())
+                    out.flush()
+                    sock.close()
+                } catch (e: UnknownHostException) {
+                    e.printStackTrace()
+                    makeText(
+                        binding.root,
+                        "${getString(R.string.unknown_host)}: $ipPrinter ($portPrinter)",
+                        SnackBarType.ERROR
+                    )
+                } catch (e: ConnectException) {
+                    e.printStackTrace()
+                    makeText(
+                        binding.root,
+                        "${getString(R.string.error_connecting_to)}: $ipPrinter ($portPrinter)",
+                        SnackBarType.ERROR
+                    )
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    makeText(
+                        binding.root,
+                        "${getString(R.string.error_printing_to)} $ipPrinter ($portPrinter)",
+                        SnackBarType.ERROR
+                    )
+                }
+            }
+        }
+        t.start()
+    }
+
+    private fun printBtItem(sendThis: String) {
         val t = object : Thread() {
             override fun run() {
                 try {
@@ -526,6 +602,11 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                         requireActivity(),
                         this::class.java.simpleName,
                         "${getString(R.string.exception_error)}: " + e.message
+                    )
+                    makeText(
+                        binding.root,
+                        "${getString(R.string.error_connecting_to)}: ${settingViewModel.printerBtAddress}",
+                        SnackBarType.ERROR
                     )
                 }
             }
@@ -599,12 +680,12 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         }
     }
 
-    // region Filtro para aceptar sólo números entre ciertos parámetros
+    // region Filtro para aceptar solo números entre ciertos parámetros
 
     /**
      * Devuelve una cadena de texto formateada que se ajusta a los parámetros.
      * Devuelve una cadena vacía en caso de Exception.
-     * Devuelve null si no es necesario cambiar la cadena ingresada porque ya se ajusta a los parámatros
+     * Devuelve null si no es necesario cambiar la cadena ingresada porque ya se ajusta a los parámetros
      *          o porque es igual que la cadena original.
      */
     private fun getValidValue(
@@ -648,14 +729,14 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                 integerPart = validText
             }
 
-            // Si la parte entera es más larga que el máximo de digitos permitidos
-            // retorna un caracter vacío.
+            // Si la parte entera es más larga que el máximo de dígitos permitidos
+            // retorna un carácter vacío.
             if (integerPart.length > maxIntegerPlaces) {
                 return ""
             }
 
             // Si la cantidad de espacios decimales permitidos es cero devolver la parte entera
-            // sino, concatenar la parte entera con el separador de decimales y
+            // si no, concatenar la parte entera con el separador de decimales y
             // la cantidad permitida de decimales.
             val result = if (maxDecimalPlaces == 0) {
                 integerPart
@@ -664,7 +745,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                 if (decimalPart.length > maxDecimalPlaces) maxDecimalPlaces else decimalPart.length
             )
 
-            // Devolver sólo si son valores positivos diferentes a los de originales.
+            // Devolver solo si son valores positivos diferentes a los de originales.
             // NULL si no hay que hacer cambios sobre el texto original.
             return if (result != source) {
                 result
