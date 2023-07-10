@@ -4,7 +4,6 @@ import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
-import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.ToneGenerator
@@ -25,13 +24,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.experimental.inv
 
 
-class Vh75Bt(
-    private var listener: RfidDeviceListener?,
-    private var context: Context?,
-) : Rfid() {
+class Vh75Bt(private var listener: RfidDeviceListener?) : Rfid() {
     /**
      * Constructor. Prepares a new Vh75Bt session.     *
-     * BuilderVH75 Contain both the Listener and the Context
+     * BuilderVH75 Contains both the Listener and the Context
      */
     // Member fields
     private val mAdapter: BluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
@@ -65,13 +61,17 @@ class Vh75Bt(
     private fun pairDevice() {
         val sv = settingViewModel
         val btAddress = sv.rfidBtAddress
-        if (btAddress.isEmpty()) return
+        if (btAddress.isEmpty()) {
+            return
+        }
 
         if (ActivityCompat.checkSelfPermission(
-                WarehouseCounterApp.context,
+                context,
                 Manifest.permission.BLUETOOTH_CONNECT
             ) != PackageManager.PERMISSION_GRANTED
-        ) return
+        ) {
+            return
+        }
 
         val pairedDevices = mAdapter.bondedDevices
         Log.v(this::class.java.simpleName, "pairDevice: Total devices: ${pairedDevices.size}")
@@ -110,8 +110,7 @@ class Vh75Bt(
             // given BluetoothDevice
             try {
                 if (ActivityCompat.checkSelfPermission(
-                        WarehouseCounterApp.context,
-                        Manifest.permission.BLUETOOTH_CONNECT
+                        WarehouseCounterApp.context, Manifest.permission.BLUETOOTH_CONNECT
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
                     tmp = mDevice.createRfcommSocketToServiceRecord(uuid)
@@ -130,8 +129,7 @@ class Vh75Bt(
             Log.v(tag, "BEGIN mConnectThread")
 
             if (ActivityCompat.checkSelfPermission(
-                    WarehouseCounterApp.context,
-                    Manifest.permission.BLUETOOTH_CONNECT
+                    WarehouseCounterApp.context, Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 return
@@ -230,11 +228,9 @@ class Vh75Bt(
         mNewState = mState
 
         if (mNewState == STATE_CONNECTED) {
-            if (context != null) {
-                val toneGen1 = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-                toneGen1.startTone(ToneGenerator.TONE_DTMF_S, 150)
-                // RFID Device connected SUCCESS!
-            }
+            val toneGen1 = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+            toneGen1.startTone(ToneGenerator.TONE_DTMF_S, 150)
+            // RFID Device connected SUCCESS!
         }
         if (listener != null) {
             listener!!.onStateChanged(mNewState)
@@ -289,7 +285,7 @@ class Vh75Bt(
         reportState()
 
         // Leer la configuración del dispositivo.
-        // El resultado de la lectura dispara el evento onRead y éste
+        // El resultado de la lectura dispara el evento onRead y este
         // se procesará en Rfid.processMessage, si el resultado es correcto
         // se reconfigurará el dispositivo con los parámetros de configuración del usuario
 
@@ -316,20 +312,20 @@ class Vh75Bt(
      * @param out The bytes to write
      * @see ConnectedThread.write
      */
-    fun write(out: ByteArray) {
-        // Create temporary object
+    private fun write(out: ByteArray) {
+        // Create a temporary object
         val r: ConnectedThread?
         // Synchronize a copy of the ConnectedThread
         synchronized(this) {
             if (mState != STATE_CONNECTED) return
             r = mConnectedThread
         }
-        // Perform the write unsynchronized
+        // Perform the writing in an unsynchronized way
         r?.write(out)
     }
 
     fun pause() {
-        // Create temporary object
+        // Create a temporary object
         val r: ConnectedThread?
         // Synchronize a copy of the ConnectedThread
         synchronized(this) {
@@ -348,7 +344,7 @@ class Vh75Bt(
     }
 
     fun resume() {
-        // Create temporary object
+        // Create a temporary object
         val r: ConnectedThread?
         // Synchronize a copy of the ConnectedThread
         synchronized(this) {
@@ -369,8 +365,7 @@ class Vh75Bt(
         Log.v(tag, "reportMode() ${getThreadModeDescription(currentMode)} ($currentMode)")
     }
 
-    private fun getThreadModeDescription(currentMode: Int): String {
-        /*
+    private fun getThreadModeDescription(currentMode: Int): String {/*
         val MODE_PAUSE = 0
         val MODE_CONTINUOS_READ = 1
         val MODE_FIRST_READ_UNTIL_TIMEOUT = 2
@@ -393,7 +388,7 @@ class Vh75Bt(
     fun writeTag(data: String): Boolean {
         dataToWrite = data
 
-        // Create temporary object
+        // Create a temporary object
         val r: ConnectedThread?
         // Synchronize a copy of the ConnectedThread
         synchronized(this) {
@@ -411,7 +406,7 @@ class Vh75Bt(
             r!!.mThreadMode = MODE_FIRST_READ_UNTIL_TIMEOUT
             reportMode(r.mThreadMode)
 
-            // 2. Comando de solicitud de la lista de TAGs detectados
+            // 2. Comando de solicitud de la lista de TAG detectados
             listTagID(1, 0, 0)
         } catch (e: java.lang.Exception) {
             Log.e(this::class.java.simpleName, "writeTag: Error reading InputStream. ${e.message}")
@@ -464,8 +459,7 @@ class Vh75Bt(
         if (reconnectAttempts < 3) {
             reconnectAttempts++
             Log.v(
-                tag,
-                "${context!!.getString(R.string.searching_rfid_reader)} ($reconnectAttempts)..."
+                tag, "${context.getString(R.string.searching_rfid_reader)} ($reconnectAttempts)..."
             )
 
             destroy()
@@ -477,8 +471,7 @@ class Vh75Bt(
      * This thread runs during a connection with a remote device.
      * It handles all incoming and outgoing transmissions.
      */
-    private inner class ConnectedThread(private val mmSocket: BluetoothSocket, threadMode: Int) :
-        Thread() {
+    private inner class ConnectedThread(private val mmSocket: BluetoothSocket, threadMode: Int) : Thread() {
         private val mmInStream: InputStream?
         private val mmOutStream: OutputStream?
 
@@ -599,8 +592,7 @@ class Vh75Bt(
                                 val commandCode = buffer[2]
                                 val commandStr = CommandCode.getByCode(commandCode)
                                 Log.v(
-                                    tag,
-                                    "${getThreadModeDescription(mThreadMode)} Command Code: $commandStr"
+                                    tag, "${getThreadModeDescription(mThreadMode)} Command Code: $commandStr"
                                 )
                             }
                             if (listener != null) {
@@ -660,7 +652,6 @@ class Vh75Bt(
                 // 1. Dejar de escuchar los eventos
                 Log.v(tag, "ConnectedThread -> Destroying listener and context...")
                 listener = null
-                context = null
 
                 // 2. Detener el Thread
                 Log.v(tag, "ConnectedThread -> Interrupting connected thread...")
@@ -700,7 +691,7 @@ class Vh75Bt(
         const val MODE_PAUSE = 0       // Pausar lecturas
         const val MODE_CONTINUOS_READ = 1 // Lectura continua
         const val MODE_FIRST_READ_UNTIL_TIMEOUT = 2  // Primera lectura antes del TimeOut
-        const val MODE_ALL_READ_UNTIL_TIMEOUT = 3  // Todas las lecturas antes del TimeOut        
+        const val MODE_ALL_READ_UNTIL_TIMEOUT = 3  // Todas las lecturas antes del TimeOut
 
         fun checkSuccess(data: ByteArray): Boolean {
             var commandCode = "Unknown command"
@@ -715,34 +706,30 @@ class Vh75Bt(
 
             when {
                 data[0] == Head.RECEIVE_OK.code -> Log.v(
-                    tag,
-                    "checkSuccess: $commandCode ${Head.RECEIVE_OK.name} ${
-                        Utility.bytes2HexStringWithSperator(data)
+                    tag, "checkSuccess: $commandCode ${Head.RECEIVE_OK.name} ${
+                        Utility.bytes2HexStringWithSeparator(data)
                     }"
                 )
 
                 data[0] == Head.RECEIVE_FAIL.code -> Log.e(
-                    tag,
-                    "checkSuccess: $commandCode ${Head.RECEIVE_FAIL.name} ${
-                        Utility.bytes2HexStringWithSperator(data)
+                    tag, "checkSuccess: $commandCode ${Head.RECEIVE_FAIL.name} ${
+                        Utility.bytes2HexStringWithSeparator(data)
                     }"
                 )
 
                 data[0] == Head.SEND.code -> Log.v(
-                    tag,
-                    "checkSuccess: $commandCode ${Head.SEND.name} ${
-                        Utility.bytes2HexStringWithSperator(data)
+                    tag, "checkSuccess: $commandCode ${Head.SEND.name} ${
+                        Utility.bytes2HexStringWithSeparator(data)
                     }"
                 )
 
                 data[0] == 0x00.toByte() -> Log.v(
-                    tag,
-                    "checkSuccess: $commandCode OK ${Utility.bytes2HexStringWithSperator(data)}"
+                    tag, "checkSuccess: $commandCode OK ${Utility.bytes2HexStringWithSeparator(data)}"
                 )
 
                 else -> Log.v(
                     tag, "checkSuccess: $commandCode Unknown Result ${
-                        Utility.bytes2HexStringWithSperator(data)
+                        Utility.bytes2HexStringWithSeparator(data)
                     }"
                 )
             }
@@ -758,7 +745,7 @@ class Vh75Bt(
             }
 
             val epcLen = 12
-            Log.v(tag, "processMessage: ${Utility.bytes2HexStringWithSperator(ret2)}")
+            Log.v(tag, "processMessage: ${Utility.bytes2HexStringWithSeparator(ret2)}")
 
             // Cuando se escanea un tag con el botón del dispositivo devuelve estos primeros 12 bytes:
             // 000055AA-13031B04-03030406
@@ -787,7 +774,7 @@ class Vh75Bt(
                 }
             } else {
                 var bootCode = ret2[0]
-                val len = ret2[1] // Lenght of last 3 parts
+                val len = ret2[1] // Length of last 3 parts
                 val commandCode = ret2[2]
                 val dataSegment = getDataSegment(ret2)
                 var checkSum = ret2.last()
@@ -867,10 +854,10 @@ class Vh75Bt(
         for (i in 0 until len) {
             checksum = (checksum + data[i]).toByte()
         }
-        checksum = Utility.BYTE(checksum.inv().toInt())
-        checksum = Utility.BYTE(checksum + 1)
+        checksum = Utility.toByte(checksum.inv().toInt())
+        checksum = Utility.toByte(checksum + 1)
 
-        return Utility.BYTE(checksum.toInt())
+        return Utility.toByte(checksum.toInt())
     }
 
     fun resetToFactory() {
@@ -914,7 +901,7 @@ class Vh75Bt(
         val alarm = sv.rfidPlaySoundOnRead
         val shock = sv.rfidShockOnRead
 
-        param.Power = power.toString().toByte()
+        param.Power = power.toByte()
         param.Alarm = if (alarm) 1.toByte() else 0.toByte()
         param.Reserve19 = if (shock) 1.toByte() else 0.toByte()
         param.TagType = tagType.toByte()
@@ -969,11 +956,7 @@ class Vh75Bt(
 
         try {
             writeWordBlock(
-                epc = epcIdHex,
-                mem = mem,
-                address = tagDataAddress,
-                data = dataHex,
-                password = defaultPassword
+                epc = epcIdHex, mem = mem, address = tagDataAddress, data = dataHex, password = defaultPassword
             )
         } catch (e: java.lang.Exception) {
             e.printStackTrace()
@@ -1107,8 +1090,7 @@ class Vh75Bt(
         val underlyingSocket: BluetoothSocket?
     }
 
-    open class NativeBluetoothSocket(override val underlyingSocket: BluetoothSocket) :
-        BluetoothSocketWrapper {
+    open class NativeBluetoothSocket(override val underlyingSocket: BluetoothSocket) : BluetoothSocketWrapper {
         @get:Throws(IOException::class)
         override val inputStream: InputStream
             get() = underlyingSocket.inputStream
@@ -1119,8 +1101,7 @@ class Vh75Bt(
 
         override val remoteDeviceName: String
             get() = if (ActivityCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.BLUETOOTH_CONNECT
+                    WarehouseCounterApp.context, Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 ""
@@ -1131,8 +1112,7 @@ class Vh75Bt(
         @Throws(IOException::class)
         override fun connect() {
             if (ActivityCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.BLUETOOTH_CONNECT
+                    WarehouseCounterApp.context, Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 return
@@ -1163,8 +1143,7 @@ class Vh75Bt(
         @Throws(IOException::class)
         override fun connect() {
             if (ActivityCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.BLUETOOTH_CONNECT
+                    WarehouseCounterApp.context, Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 return

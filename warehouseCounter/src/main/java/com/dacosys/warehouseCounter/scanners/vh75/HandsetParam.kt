@@ -4,18 +4,25 @@ package com.dacosys.warehouseCounter.scanners.vh75
  * Device parameters
  */
 class HandsetParam {
-    var TagType: Byte =
-        0          //Label type: 01H-ISO18000-6B, 02H-EPCC1, 04H-EPCC1G2, 08H-EM4442.
-    var Alarm: Byte =
-        0            //Bit0-bit7 bit0:0-no alarm, 1-alarm bit1:0-do not use whitelist 1-Use whitelist. 0/1
-    var OutputMode: Byte =
-        0       //Data output mode: 0-Save and direct output, 1-Save but not directly output, 2-Do not save but directly output
+    var TagType: Byte = 0          //Label type: 01H-ISO18000-6B, 02H-EPCC1, 04H-EPCC1G2, 08H-EM4442.
+    var Alarm: Byte = 0            //Bit0-bit7
+
+    //   bit0:0-no alarm, 1-alarm
+    //   bit1:0-do not use whitelist 1-Use whitelist.
+    //   0/1
+    var OutputMode: Byte = 0       //Data output mode:
+
+    //   0-Save and direct output,
+    //   1-Save but not directly output,
+    //   2-Do not save but directly output
     var USBBaudRate: Byte = 0      //USB interface baud rate 04H--08H
     var Reserve5: Byte = 0         //reserved
-    var Min_Frequence: Byte =
-        0    //The starting point of the frequency of the transmitted microwave signal, value: 1~63。
-    var Max_Frequence: Byte =
-        0    //The starting point of the frequency of the transmitted microwave signal, value: 1~63。
+    var Min_Frequence: Byte = 0    //The starting point of the frequency of the transmitted microwave signal,
+
+    //   value: 1~63。
+    var Max_Frequence: Byte = 0    //The starting point of the frequency of the transmitted microwave signal,
+
+    //   value: 1~63。
     var Power: Byte = 0            //Transmission power value, value: 18-26。
     var RFhrdVer1: Byte = 0        //RF module hardware main version
     var RFhrdVer2: Byte = 0        //RF module hardware minor version
@@ -24,7 +31,7 @@ class HandsetParam {
     var ISTID: Byte = 0            //Whether to read the TID area
     var TIDAddr: Byte = 0          //TID read start position
     var TIDLen: Byte = 0           //TID read length
-    var ISUSER: Byte = 0           //Do you read USER
+    var ISUSER: Byte = 0           //Do you read USER?
     var USERAddr: Byte = 0         //USER reads the starting position
     var USERLen: Byte = 0          //USER read length
     var Reserve19: Byte = 0        //vibration,0-NO，1-Vibrate

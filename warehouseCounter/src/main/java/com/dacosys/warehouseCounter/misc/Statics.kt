@@ -311,7 +311,7 @@ class Statics {
         //    return ""
         //}
 
-        // region Operaciones de escritura en almacenamiento de Ordenes
+        // region Operaciones de escritura en almacenamiento de Órdenes
 
         fun writeJsonToFile(v: View, filename: String, value: String, completed: Boolean): Boolean {
             if (!isExternalStorageWritable) {
@@ -407,6 +407,7 @@ class Statics {
 
             return jsonStr
         }
+
         // endregion
     }
 }

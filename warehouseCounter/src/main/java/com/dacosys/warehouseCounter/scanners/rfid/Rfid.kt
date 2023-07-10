@@ -1,6 +1,5 @@
 package com.dacosys.warehouseCounter.scanners.rfid
 
-import android.content.Context
 import android.util.Log
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.scanners.vh75.Utility
@@ -19,7 +18,7 @@ open class Rfid {
 
             Log.v(
                 this::class.java.simpleName,
-                "onRead Data (b: $bytes): " + Utility.bytes2HexStringWithSperator(res)
+                "onRead Data (b: $bytes): " + Utility.bytes2HexStringWithSeparator(res)
             )
             if (rfidDevice != null) {
                 if (rfidDevice is Vh75Bt) {
@@ -31,7 +30,7 @@ open class Rfid {
         fun onWrite(data: ByteArray) {
             Log.v(
                 this::class.java.simpleName,
-                "onWrite Data: " + Utility.bytes2HexStringWithSperator(data)
+                "onWrite Data: " + Utility.bytes2HexStringWithSeparator(data)
             )
         }
 
@@ -103,7 +102,7 @@ open class Rfid {
 
         fun setListener(listener: RfidDeviceListener, rfidType: RfidType) {
             if (Statics.initRequired()) {
-                build(listener, listener as Context, rfidType)
+                build(listener, rfidType)
             } else {
                 if (rfidDevice != null && rfidDevice is Vh75Bt) {
                     (rfidDevice as Vh75Bt).setListener(listener)
@@ -112,9 +111,9 @@ open class Rfid {
         }
 
         //endregion
-        fun build(listener: RfidDeviceListener?, context: Context, rfidType: RfidType): Rfid? {
+        fun build(listener: RfidDeviceListener?, rfidType: RfidType): Rfid? {
             if (rfidType == RfidType.vh75) {
-                rfidDevice = Vh75Bt(listener, context)
+                rfidDevice = Vh75Bt(listener)
             }
             return rfidDevice
         }

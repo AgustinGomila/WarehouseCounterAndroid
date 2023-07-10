@@ -270,7 +270,7 @@ object JotterListener : Jotter.Listener {
 
     fun rfidStart(activity: AppCompatActivity) {
         Rfid.destroy()
-        Rfid.build(null, activity, RfidType.vh75)
+        Rfid.build(if (activity is Rfid.RfidDeviceListener) activity else null, RfidType.vh75)
     }
 
     private fun rfidSetup(activity: AppCompatActivity) {
