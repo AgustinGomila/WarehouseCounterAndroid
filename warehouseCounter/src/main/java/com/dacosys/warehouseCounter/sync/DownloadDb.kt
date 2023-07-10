@@ -1,8 +1,11 @@
 package com.dacosys.warehouseCounter.sync
 
 import android.util.Log
+import com.dacosys.imageControl.network.upload.SendPending
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
 import com.dacosys.warehouseCounter.ktor.functions.SendItemCode
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -190,45 +193,13 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                 return
             }
 
-            /////////////////////////////////////
-            // region: Enviar datos pendientes //
-
-            // Si aún no está loggeado y hay datos por enviar, no descargar la base de datos
-            if (Statics.currentUserId > 0) {
-                uploadStatus = null
-
-                ItemCodeCoroutines().getToUpload {
-                    try {
-                        thread {
-                            SendItemCode(it) { it2 -> onTaskSendItemCodeEnded(it2) }.execute()
-                        }
-                    } catch (ex: Exception) {
-                        ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
-                    }
-
-                    // Espera hasta que salga del SyncUpload
-                    // Tiene que terminar de enviar los datos pendientes para continuar con la descarga
-                    loop@ while (true) {
-                        when (uploadStatus) {
-                            ProgressStatus.finished -> break@loop
-                            ProgressStatus.crashed, ProgressStatus.canceled,
-                            -> {
-                                errorMsg =
-                                    context.getString(R.string.error_trying_to_send_item_codes)
-                                mCallback?.onDownloadDbTask(CRASHED)
-                                return@getToUpload
-                            }
-                        }
-                    }
-                }
-            }
+            // Enviar datos pendientes si existen
+            sendPendingData()
 
             if (uploadStatus == ProgressStatus.crashed) return
-            // endregion: Enviar datos pendientes //
-            ////////////////////////////////////////
 
             // Leer el archivo antiguo de fecha de creación de la base de datos
-            // en el servidor, si la esta fecha es igual a la del archivo del servidor,
+            // en el servidor, si la fecha es igual a la del archivo del servidor,
             // no hace falta descargar la base de datos.
             if (destTimeFile.exists()) {
                 oldDateTimeStr = getDateTimeStr()
@@ -380,6 +351,47 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
         return
     }
 
+    /**
+     * Send pending data
+     * Enviar los datos pendientes y las imágenes
+     */
+    private fun sendPendingData() {
+        // Si está autentificado y hay datos por enviar,
+        // enviar la información y después descargar la base de datos
+        uploadStatus = ProgressStatus.unknown
+
+        if (Statics.currentUserId > 0) {
+            ItemCodeCoroutines().getToUpload {
+                try {
+                    thread {
+                        SendItemCode(it) { it2 -> onTaskSendItemCodeEnded(it2) }.execute()
+                    }
+                } catch (ex: Exception) {
+                    ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
+                }
+
+                // Espera hasta que salga del SyncUpload
+                // Tiene que terminar de enviar los datos pendientes para continuar con la descarga
+                loop@ while (true) {
+                    when (uploadStatus) {
+                        ProgressStatus.finished -> break@loop
+                        ProgressStatus.crashed, ProgressStatus.canceled,
+                        -> {
+                            errorMsg =
+                                context.getString(R.string.error_trying_to_send_item_codes)
+                            mCallback?.onDownloadDbTask(CRASHED)
+                            return@getToUpload
+                        }
+                    }
+                }
+            }
+
+            // Enviar las imágenes pendientes...
+            if (uploadStatus == ProgressStatus.finished && settingViewModel.useImageControl) {
+                SendPending(onProgress = { syncViewModel.setUploadImagesProgress(it) })
+            }
+        }
+    }
 
     private fun getDateTimeStr(): String {
         var dateTime = ""

@@ -11,8 +11,8 @@ class Table(var tableId: Int, var tableName: String, var description: String) {
     }
 
     companion object {
-        var orderRequest = Table(6, "order_request", context.getString(R.string.order_request))
-        var item = Table(2, "item", context.getString(R.string.items))
+        var item = Table(100, "item", context.getString(R.string.items))
+        var orderRequest = Table(101, "order_request", context.getString(R.string.order_request))
 
         fun getAll(): ArrayList<Table> {
             val allSections = ArrayList<Table>()

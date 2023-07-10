@@ -17,6 +17,7 @@ import android.util.Log
 import android.view.*
 import android.view.View.GONE
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -31,6 +32,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.dacosys.imageControl.dto.DocumentContent
+import com.dacosys.imageControl.dto.DocumentContentRequestResult
+import com.dacosys.imageControl.network.common.ProgramData
+import com.dacosys.imageControl.network.download.GetImages.Companion.toDocumentContentList
+import com.dacosys.imageControl.network.webService.WsFunction
+import com.dacosys.imageControl.room.dao.ImageCoroutines
+import com.dacosys.imageControl.ui.activities.ImageControlCameraActivity
+import com.dacosys.imageControl.ui.activities.ImageControlGridActivity
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
@@ -65,7 +74,8 @@ import kotlin.concurrent.thread
 class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
     ItemSelectFilterFragment.OnFilterChangedListener, ItemRecyclerAdapter.CheckedChangedListener,
-    PrintLabelFragment.FragmentListener, ItemRecyclerAdapter.DataSetChangedListener {
+    PrintLabelFragment.FragmentListener, ItemRecyclerAdapter.DataSetChangedListener,
+    ItemRecyclerAdapter.AddPhotoRequiredListener, ItemRecyclerAdapter.AlbumViewRequiredListener {
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -720,6 +730,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             selectedItemChangedListener = null,
             editItemRequiredListener = null
         )
+        adapter?.refreshImageControlListeners(
+            addPhotoListener = this,
+            albumViewListener = this
+        )
     }
 
     private fun fillSummaryRow() {
@@ -1077,6 +1091,116 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     override fun onReadCompleted(scanCode: String) {
         scannerCompleted(scanCode)
     }
-
     //endregion READERS Reception
+
+    //region ImageControl
+    override fun onAddPhotoRequired(tableId: Int, itemId: Long, description: String) {
+        if (!settingViewModel.useImageControl) {
+            return
+        }
+
+        if (!rejectNewInstances) {
+            rejectNewInstances = true
+
+            val intent = Intent(this, ImageControlCameraActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            intent.putExtra("programObjectId", tableId.toLong())
+            intent.putExtra("objectId1", itemId.toString())
+            intent.putExtra("description", description)
+            intent.putExtra("addPhoto", settingViewModel.autoSend)
+            resultForPhotoCapture.launch(intent)
+        }
+    }
+
+    private val resultForPhotoCapture =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            val data = it?.data
+            try {
+                if (it?.resultCode == RESULT_OK && data != null) {
+                    val item = adapter?.currentItem() ?: return@registerForActivityResult
+                    adapter?.updateItem(item, true)
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            } finally {
+                rejectNewInstances = false
+            }
+        }
+
+    override fun onAlbumViewRequired(tableId: Int, itemId: Long) {
+        if (!settingViewModel.useImageControl) {
+            return
+        }
+
+        if (rejectNewInstances) return
+        rejectNewInstances = true
+
+        tempObjectId = itemId.toString()
+        tempTableId = tableId
+
+        val programData = ProgramData(
+            programObjectId = tempTableId.toLong(),
+            objId1 = tempObjectId
+        )
+
+        ImageCoroutines().get(programData = programData) {
+            val allLocal = toDocumentContentList(images = it, programData = programData)
+            if (allLocal.isEmpty()) {
+                getFromWebservice()
+            } else {
+                showPhotoAlbum(allLocal)
+            }
+        }
+    }
+
+    private fun getFromWebservice() {
+        WsFunction().documentContentGetBy12(
+            programObjectId = tempTableId,
+            objectId1 = tempObjectId
+        ) { it2 ->
+            if (it2 != null) fillResults(it2)
+            else {
+                makeText(binding.root, getString(R.string.no_images), INFO)
+                rejectNewInstances = false
+            }
+        }
+    }
+
+    private fun showPhotoAlbum(images: ArrayList<DocumentContent> = ArrayList()) {
+        val intent = Intent(this, ImageControlGridActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        intent.putExtra("programObjectId", tempTableId.toLong())
+        intent.putExtra("objectId1", tempObjectId)
+        intent.putExtra("docContObjArrayList", images)
+        resultForShowPhotoAlbum.launch(intent)
+    }
+
+    private val resultForShowPhotoAlbum =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            rejectNewInstances = false
+        }
+
+    private var tempObjectId = ""
+    private var tempTableId = 0
+
+    private fun fillResults(docContReqResObj: DocumentContentRequestResult) {
+        if (docContReqResObj.documentContentArray.isEmpty()) {
+            makeText(binding.root, getString(R.string.no_images), INFO)
+            rejectNewInstances = false
+            return
+        }
+
+        val anyAvailable = docContReqResObj.documentContentArray.any { it.available }
+
+        if (!anyAvailable) {
+            makeText(
+                binding.root, getString(R.string.images_not_yet_processed), INFO
+            )
+            rejectNewInstances = false
+            return
+        }
+
+        showPhotoAlbum()
+    }
+    //endregion ImageControl    
 }

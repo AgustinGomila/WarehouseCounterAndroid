@@ -11,6 +11,7 @@ import com.dacosys.warehouseCounter.misc.Statics.Companion.INTERNAL_IMAGE_CONTRO
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.settings.SettingsViewModel
+import com.dacosys.warehouseCounter.sync.SyncViewModel
 import id.pahlevikun.jotter.Jotter
 import id.pahlevikun.jotter.event.ActivityEvent
 import io.ktor.client.*
@@ -69,6 +70,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
         single { SettingsRepository() }
 
         viewModel { SettingsViewModel() }
+        viewModel { SyncViewModel() }
 
         single {
             val sv = settingViewModel
@@ -116,6 +118,9 @@ class WarehouseCounterApp : Application(), KoinComponent {
             get() = get().get()
 
         val settingViewModel: SettingsViewModel
+            get() = get().get()
+
+        val syncViewModel: SyncViewModel
             get() = get().get()
 
         val httpClient: HttpClient

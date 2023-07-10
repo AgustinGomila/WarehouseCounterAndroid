@@ -2,12 +2,14 @@ package com.dacosys.warehouseCounter.sync
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.dacosys.imageControl.network.upload.UploadImagesProgress
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
 
 class SyncViewModel : ViewModel() {
     val syncCompletedOrders: MutableLiveData<ArrayList<OrderRequest>> = MutableLiveData()
     val syncNewOrders: MutableLiveData<ArrayList<OrderRequest>> = MutableLiveData()
     val syncTimer: MutableLiveData<Int?> = MutableLiveData()
+    val uploadImagesProgress: MutableLiveData<UploadImagesProgress?> = MutableLiveData()
 
     @Suppress("unused")
     fun getSyncCompleted(): ArrayList<OrderRequest> {
@@ -34,5 +36,14 @@ class SyncViewModel : ViewModel() {
 
     fun setSyncTimer(it: Int) {
         syncTimer.postValue(it)
+    }
+
+    @Suppress("unused")
+    fun getUploadImagesProgress(): UploadImagesProgress? {
+        return uploadImagesProgress.value
+    }
+
+    fun setUploadImagesProgress(it: UploadImagesProgress) {
+        uploadImagesProgress.postValue(it)
     }
 }

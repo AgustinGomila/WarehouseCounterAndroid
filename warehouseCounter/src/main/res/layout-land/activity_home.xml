@@ -9,6 +9,49 @@
                                                    tools:layout_editor_absoluteX="0dp"
                                                    tools:layout_editor_absoluteY="25dp" android:id="@+id/home">
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/progressBarLayout"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+                android:id="@+id/syncStatusTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/uploading_"
+                android:textSize="12sp"
+                app:layout_constraintBottom_toBottomOf="@+id/progressBar"
+                app:layout_constraintEnd_toEndOf="@+id/progressBar"
+                app:layout_constraintStart_toStartOf="@+id/progressBar"/>
+
+        <ProgressBar
+                android:id="@+id/progressBar"
+                style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
+                android:layout_width="156dp"
+                android:layout_height="96dp"
+                android:layout_gravity="center"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/rounded_corner_button_808f87"
+                android:backgroundTint="@color/colorSemitransparent3"
+                android:backgroundTintMode="multiply"
+                android:paddingStart="16dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="16dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.25"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
     <androidx.appcompat.widget.Toolbar
             android:id="@+id/top_appbar"
             style="@style/MyActionBar"

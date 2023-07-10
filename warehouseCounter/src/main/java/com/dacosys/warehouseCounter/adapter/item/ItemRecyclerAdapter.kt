@@ -885,6 +885,11 @@ class ItemRecyclerAdapter(
             binding.categoryLabelTextView.setTextColor(titleForeColor)
             binding.priceLabelTextView.setTextColor(titleForeColor)
             binding.extIdLabelTextView.setTextColor(titleForeColor)
+
+            // ImageControl
+            binding.signImageView.imageTintList = ColorStateList.valueOf(titleForeColor)
+            binding.addPhotoImageView.imageTintList = ColorStateList.valueOf(titleForeColor)
+            binding.albumImageView.imageTintList = ColorStateList.valueOf(titleForeColor)
         }
     }
 

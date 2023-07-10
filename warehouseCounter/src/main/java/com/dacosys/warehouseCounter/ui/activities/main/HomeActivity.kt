@@ -26,7 +26,6 @@ import android.view.animation.Animation
 import android.view.animation.TranslateAnimation
 import android.widget.Button
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
@@ -36,15 +35,19 @@ import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.ViewCompat
+import com.dacosys.imageControl.network.upload.UploadImagesProgress
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
 import com.dacosys.warehouseCounter.ktor.functions.SendOrder
+import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.isDebuggable
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
@@ -212,6 +215,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
             // Vamos a reconstruir el scanner por si cambió la configuración
             JotterListener.autodetectDeviceModel(this)
+
+            setupImageControl()
 
             // Permitir o no la rotación de pantalla
             Screen.setScreenRotation(this)
@@ -644,7 +649,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
     private lateinit var splashScreen: SplashScreen
     private lateinit var binding: ActivityHomeBinding
-    private val syncViewModel: SyncViewModel by viewModels()
+    private val syncVm: SyncViewModel by lazy { syncViewModel }
 
     private fun createSplashScreen() {
         // Set up 'core-splashscreen' to handle the splash screen in a backward compatible manner.
@@ -674,9 +679,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        syncViewModel.syncCompletedOrders.observe(this) { if (it != null) onCompletedOrder(it) }
-        syncViewModel.syncNewOrders.observe(this) { if (it != null) onNewOrder(it) }
-        syncViewModel.syncTimer.observe(this) { if (it != null) onTimerTick(it) }
+        syncVm.syncCompletedOrders.observe(this) { if (it != null) onCompletedOrder(it) }
+        syncVm.syncNewOrders.observe(this) { if (it != null) onNewOrder(it) }
+        syncVm.syncTimer.observe(this) { if (it != null) onTimerTick(it) }
+        syncVm.uploadImagesProgress.observe(this) { if (it != null) onUploadImagesProgress(it) }
 
         var freshSessionReq = false
 
@@ -706,6 +712,51 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 login()
             }
             return
+        }
+    }
+
+    private fun onUploadImagesProgress(it: UploadImagesProgress) {
+        if (isDestroyed || isFinishing) return
+
+        val result: com.dacosys.imageControl.network.common.ProgressStatus = it.result
+        val msg: String = it.msg
+
+        when (result.id) {
+            ProgressStatus.starting.id, ProgressStatus.running.id -> {
+                setProgressBarText(msg)
+                showImageProgressBar(true)
+            }
+
+            ProgressStatus.crashed.id, ProgressStatus.canceled.id -> {
+                showImageProgressBar(false)
+                makeText(this, msg, ERROR)
+            }
+
+            ProgressStatus.success.id -> {
+                showImageProgressBar(false)
+                makeText(this, getString(R.string.upload_images_success), SnackBarType.SUCCESS)
+            }
+        }
+    }
+
+    private fun setProgressBarText(text: String) {
+        runOnUiThread {
+            run {
+                binding.syncStatusTextView.text = text
+            }
+        }
+    }
+
+    private fun showImageProgressBar(show: Boolean) {
+        runOnUiThread {
+            if (show && binding.progressBarLayout.visibility != View.VISIBLE) {
+                binding.progressBarLayout.bringToFront()
+                binding.progressBarLayout.visibility = View.VISIBLE
+
+                ViewCompat.setZ(binding.progressBarLayout, 0F)
+            } else if (!show && binding.progressBarLayout.visibility != View.GONE) {
+                binding.progressBarLayout.visibility = View.GONE
+            }
         }
     }
 
@@ -911,9 +962,9 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
     private fun startSync() {
         Thread {
             Sync.startSync(
-                onNewOrders = { syncViewModel.setSyncNew(it) },
-                onCompletedOrders = { syncViewModel.setSyncCompleted(it) },
-                onTimerTick = { syncViewModel.setSyncTimer(it) }
+                onNewOrders = { syncVm.setSyncNew(it) },
+                onCompletedOrders = { syncVm.setSyncCompleted(it) },
+                onTimerTick = { syncVm.setSyncTimer(it) }
             )
         }.start()
     }

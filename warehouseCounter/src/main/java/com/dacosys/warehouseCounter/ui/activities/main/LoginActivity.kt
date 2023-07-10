@@ -30,6 +30,8 @@ import com.dacosys.warehouseCounter.databinding.LoginActivityBinding
 import com.dacosys.warehouseCounter.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.ktor.functions.GetClientPackages.Companion.getConfig
 import com.dacosys.warehouseCounter.ktor.functions.GetDatabaseLocation
+import com.dacosys.warehouseCounter.misc.ImageControl.Companion.closeImageControl
+import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.Md5
 import com.dacosys.warehouseCounter.misc.Proxy
 import com.dacosys.warehouseCounter.misc.Statics
@@ -387,7 +389,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         binding.versionTextView.text = str
         // endregion
 
-        // region Mostar imágen de cabecera
+        // region Mostar la imagen de cabecera
         binding.imageView.setImageResource(0)
 
         var draw = ContextCompat.getDrawable(this, R.drawable.wc)
@@ -492,10 +494,11 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         } else {
             try {
                 /* Des-inicializamos IC para evitar que se
-                   suban imágenes pendientes antes de loggearse.
+                   suban imágenes pendientes antes de autentificarse.
                    Escenario en el que el usuario ha vuelto a esta
-                   actividad después haber estado loggeado.
-                */
+                   actividad después haber estado autentificado.
+                 */
+                closeImageControl()
 
                 WcDatabase.cleanInstance()
                 IcDatabase.cleanInstance()
@@ -622,7 +625,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 userSpinnerFragment!!.view?.requestFocus()
             }
         } else {
-            // Show a progress spinner, and kick off a background task to
+            // Show a progress spinner and kick off a background task to
             // perform the user login attempt.
             if (userPass == Md5.getMd5(password)) {
 
@@ -631,7 +634,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 Statics.currentUserName = user!!.name
                 Statics.isLogged = true
 
-                settingViewModel.setupImageControl()
+                setupImageControl()
 
                 finish()
             } else {
