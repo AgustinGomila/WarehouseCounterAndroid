@@ -17,7 +17,7 @@
             android:title="@string/account_configuration"/>
     <Preference
             android:id="@+id/devices_settings"
-            android:fragment="com.dacosys.warehouseCounter.ui.fragments.settings.DevicesPreferenceFragment"
+            android:fragment="com.dacosys.warehouseCounter.ui.fragments.settings.DevicePreferenceFragment"
             android:icon="@drawable/ic_devices"
             android:summary="@string/device_configuration_summary"
             android:title="@string/pref_header_devices"/>
