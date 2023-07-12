@@ -150,16 +150,17 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             .filter { it.tag == MainButton.PendingCounts.id }
             .forEach {
                 runOnUiThread {
-                    it.text = String.format(
-                        "%s%s(%s)",
-                        MainButton.PendingCounts.description,
-                        lineSeparator,
-                        countPending()
-                    )
+                    val c = countPending()
+                    var s = MainButton.PendingCounts.description
+                    if (c > 0) s = "${s}$lineSeparator$c"
 
-                    if (settingViewModel.shakeOnPendingOrders) shakeDevice()
-                    if (settingViewModel.soundOnPendingOrders) playNotification()
-                    shakeView(it, 20, 5)
+                    it.text = s
+
+                    if (c > 0) {
+                        if (settingViewModel.shakeOnPendingOrders) shakeDevice()
+                        if (settingViewModel.soundOnPendingOrders) playNotification()
+                        shakeView(it, 20, 5)
+                    }
                 }
             }
     }

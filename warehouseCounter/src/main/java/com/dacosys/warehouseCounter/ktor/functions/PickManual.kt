@@ -3,6 +3,8 @@ package com.dacosys.warehouseCounter.ktor.functions
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiService
+import com.dacosys.warehouseCounter.dto.apiParam.ApiParam
+import com.dacosys.warehouseCounter.dto.apiParam.PtlQuery
 import com.dacosys.warehouseCounter.dto.ptlOrder.PickItem
 import com.dacosys.warehouseCounter.ktor.APIServiceImpl.Companion.validUrl
 import com.dacosys.warehouseCounter.ktor.functions.GetToken.Companion.Token
@@ -13,7 +15,6 @@ import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
-import org.json.JSONObject
 import kotlin.concurrent.thread
 
 class PickManual(
@@ -66,23 +67,15 @@ class PickManual(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiService.pickManual(body = getBody(), callback = {
+        val body = ApiParam(
+            userToken = Token.token,
+            ptlQuery = PtlQuery(orderId = orderId, warehouseAreaId = warehouseAreaId, itemId = itemId, qty = qty)
+        )
+        ktorApiService.pickManual(body = body, callback = {
             it.contents.forEach { s -> r.add(s) }
             if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
             else sendEvent(it.details, SnackBarType.INFO)
         })
-    }
-
-    private fun getBody(): JSONObject {
-        // BODY ////////////////////////////
-        val ptlQuery = JSONObject()
-        ptlQuery.put("orderId", orderId).put("warehouseAreaId", warehouseAreaId).put("itemId", itemId).put("qty", qty)
-
-        // Token DATA //////////////////
-        val jsonParam = JSONObject()
-        jsonParam.put("userToken", Token.token).put("ptlQuery", ptlQuery)
-
-        return jsonParam
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {

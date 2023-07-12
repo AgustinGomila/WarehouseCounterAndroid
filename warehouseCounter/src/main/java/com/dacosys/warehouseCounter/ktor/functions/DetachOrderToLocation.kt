@@ -1,8 +1,10 @@
 package com.dacosys.warehouseCounter.ktor.functions
 
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiService
+import com.dacosys.warehouseCounter.dto.apiParam.ApiParam
+import com.dacosys.warehouseCounter.dto.apiParam.PtlQuery
 import com.dacosys.warehouseCounter.dto.ptlOrder.ApiResponse.Companion.RESULT_OK
 import com.dacosys.warehouseCounter.ktor.APIServiceImpl.Companion.validUrl
 import com.dacosys.warehouseCounter.ktor.functions.GetToken.Companion.Token
@@ -14,7 +16,6 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
 import kotlinx.coroutines.*
-import org.json.JSONObject
 import kotlin.concurrent.thread
 
 class DetachOrderToLocation(
@@ -63,22 +64,14 @@ class DetachOrderToLocation(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        WarehouseCounterApp.ktorApiService.detachPtlOrderToLocation(body = getBody(), callback = {
+        val body = ApiParam(
+            userToken = Token.token,
+            ptlQuery = PtlQuery(orderId = orderId, warehouseAreaId = warehouseAreaId)
+        )
+        ktorApiService.detachPtlOrderToLocation(body = body, callback = {
             if (it.result == RESULT_OK) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
             else sendEvent(context.getString(R.string.invalid_response), SnackBarType.ERROR)
         })
-    }
-
-    private fun getBody(): JSONObject {
-        // BODY ////////////////////////////
-        val ptlQuery = JSONObject()
-        ptlQuery.put("orderId", orderId).put("warehouseAreaId", warehouseAreaId)
-
-        // Token DATA //////////////////
-        val jsonParam = JSONObject()
-        jsonParam.put("userToken", Token.token).put("ptlQuery", ptlQuery)
-
-        return jsonParam
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {

@@ -84,7 +84,7 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
         /** Limpiamos el token actual antes de solicitar uno nuevo. **/
         cleanToken()
 
-        ktorApiService.getToken(body = getBody(), callback = {
+        ktorApiService.getToken(body = body, callback = {
             if (it == null) {
                 Log.e(this.javaClass.simpleName, "error")
                 onEvent.invoke(RequestResult(ResultStatus.ERROR, "error"))
@@ -100,8 +100,8 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
      * Devuelve las opciones guardadas en la configuración de la app en
      * forma de Json para enviar a la API
      */
-    private fun getBody(): UserAuthData {
-        return UserAuthData().apply {
+    private val body by lazy {
+        UserAuthData().apply {
             authData = AuthData().apply {
                 username = currentUser.name
                 password = currentUser.password ?: ""

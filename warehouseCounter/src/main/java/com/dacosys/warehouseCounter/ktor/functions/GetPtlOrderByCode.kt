@@ -58,15 +58,17 @@ class GetPtlOrderByCode(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiService.getPtlOrderByCode(body = getBody(), callback = {
+        val body = PtlOrderBody(
+            userToken = UserToken(Token.token), searchItem = SearchItem(
+                id = null,
+                extId = code.toLong()
+            )
+        )
+        ktorApiService.getPtlOrderByCode(body = body, callback = {
             r = ArrayList(it.orders)
             if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
             else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
         })
-    }
-
-    private fun getBody(): PtlOrderBody {
-        return PtlOrderBody(UserToken(Token.token), SearchItem(null, code.toLong()))
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {

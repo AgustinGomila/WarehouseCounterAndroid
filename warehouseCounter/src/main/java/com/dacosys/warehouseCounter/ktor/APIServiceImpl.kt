@@ -3,6 +3,7 @@ package com.dacosys.warehouseCounter.ktor
 import android.util.Log
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.httpClient
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.dto.apiParam.ApiParam
 import com.dacosys.warehouseCounter.dto.database.DatabaseData
 import com.dacosys.warehouseCounter.dto.database.DatabaseDataIntermediate
 import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
@@ -133,83 +134,83 @@ class APIServiceImpl : APIService {
         callback(arrayListOf(result.databaseData))
     }
 
-    override suspend fun attachPtlOrderToLocation(body: JSONObject, callback: (ApiResponse) -> Unit) {
+    override suspend fun attachPtlOrderToLocation(body: ApiParam, callback: (ApiResponse) -> Unit) {
         val url = "${apiUrl}/api/p-t-l/attach-order-to-warehouse-area"
         val result = httpClient.post {
             url(url)
             contentType(ContentType.Application.Json)
-            setBody(body.toString())
+            setBody(body)
         }.body<ApiResponse>()
         callback(result)
     }
 
-    override suspend fun detachPtlOrderToLocation(body: JSONObject, callback: (ApiResponse) -> Unit) {
+    override suspend fun detachPtlOrderToLocation(body: ApiParam, callback: (ApiResponse) -> Unit) {
         val url = "${apiUrl}/api/p-t-l/detach-order-from-warehouse-area"
         val result = httpClient.post {
             url(url)
             contentType(ContentType.Application.Json)
-            setBody(body.toString())
+            setBody(body)
         }.body<ApiResponse>()
         callback(result)
     }
 
-    override suspend fun addBoxToOrder(body: JSONObject, callback: (ApiResponse) -> Unit) {
+    override suspend fun addBoxToOrder(body: ApiParam, callback: (ApiResponse) -> Unit) {
         val url = "${apiUrl}/api/p-t-l/add-box-to-order"
         val result = httpClient.post {
             url(url)
             contentType(ContentType.Application.Json)
-            setBody(body.toString())
+            setBody(body)
         }.body<ApiResponse>()
         callback(result)
     }
 
-    override suspend fun printBox(body: JSONObject, callback: (LabelResponse) -> Unit) {
+    override suspend fun printBox(body: ApiParam, callback: (LabelResponse) -> Unit) {
         val url = "${apiUrl}/api/p-t-l/print-box"
         val result = httpClient.post {
             url(url)
             contentType(ContentType.Application.Json)
-            setBody(body.toString())
+            setBody(body)
         }.body<LabelResponse>()
         callback(result)
     }
 
-    override suspend fun pickManual(body: JSONObject, callback: (PickManualResponse) -> Unit) {
+    override suspend fun pickManual(body: ApiParam, callback: (PickManualResponse) -> Unit) {
         val url = "${apiUrl}/api/p-t-l/pick-manual"
         val result: String = httpClient.post {
             url(url)
             contentType(ContentType.Application.Json)
-            setBody(body.toString())
+            setBody(body)
         }.bodyAsText()
         Log.i(javaClass.simpleName, result)
         callback(Json.decodeFromString<PickManualResponse>(result))
     }
 
-    override suspend fun blinkOneItem(body: JSONObject, callback: (ApiResponse) -> Unit) {
+    override suspend fun blinkOneItem(body: ApiParam, callback: (ApiResponse) -> Unit) {
         val url = "${apiUrl}/api/p-t-l/blink-one-item"
         val result = httpClient.post {
             url(url)
             contentType(ContentType.Application.Json)
-            setBody(body.toString())
+            setBody(body)
         }.body<ApiResponse>()
         callback(result)
     }
 
-    override suspend fun blinkAllOrder(body: JSONObject, callback: (ApiResponse) -> Unit) {
+    override suspend fun blinkAllOrder(body: ApiParam, callback: (ApiResponse) -> Unit) {
         val url = "${apiUrl}/api/p-t-l/blink-all-order"
         val result = httpClient.post {
             url(url)
             contentType(ContentType.Application.Json)
-            setBody(body.toString())
+            setBody(body)
         }.body<ApiResponse>()
         callback(result)
     }
 
-    override suspend fun getPtlOrderContent(body: JSONObject, callback: (PtlContentResponse) -> Unit) {
+    override suspend fun getPtlOrderContent(body: ApiParam, callback: (PtlContentResponse) -> Unit) {
         val url = "${apiUrl}/api/p-t-l/order-content"
         val result = httpClient.post {
             url(url)
             contentType(ContentType.Application.Json)
-            setBody(body.toString())
+            setBody(body)
         }.body<PtlContentResponse>()
         callback(result)
     }

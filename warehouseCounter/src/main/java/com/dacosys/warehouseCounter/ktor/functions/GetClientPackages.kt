@@ -63,7 +63,7 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorDacoService.getClientPackage(getBody(), callback = {
+        ktorDacoService.getClientPackage(body, callback = {
             val packageList = ArrayList(it.packages.values)
 
             for (p in packageList) {
@@ -83,14 +83,15 @@ class GetClientPackages(private val onEvent: (PackagesResult) -> Unit) {
         })
     }
 
-    private fun getBody(): AuthDataCont {
-        // Autentificación del Ciente
-        val authData = ClientAuthData().apply {
-            this.version = "1"
-            this.email = myEmail
-            this.password = myPassword
+    private val body by lazy {
+        // Autentificación del Cliente
+        AuthDataCont().apply {
+            this.authData = ClientAuthData().apply {
+                this.version = "1"
+                this.email = myEmail
+                this.password = myPassword
+            }
         }
-        return AuthDataCont().apply { this.authData = authData }
     }
 
     private fun sendEvent(

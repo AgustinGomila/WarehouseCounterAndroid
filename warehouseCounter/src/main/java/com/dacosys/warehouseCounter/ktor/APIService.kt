@@ -1,5 +1,6 @@
 package com.dacosys.warehouseCounter.ktor
 
+import com.dacosys.warehouseCounter.dto.apiParam.ApiParam
 import com.dacosys.warehouseCounter.dto.clientPackage.AuthDataCont
 import com.dacosys.warehouseCounter.dto.clientPackage.PackageResponse
 import com.dacosys.warehouseCounter.dto.database.DatabaseData
@@ -27,12 +28,12 @@ interface APIService {
     suspend fun sendItemCode(body: JSONObject, callback: () -> Unit)
     suspend fun sendOrders(body: JSONObject, callback: () -> Unit)
     suspend fun getDbLocation(version: String, callback: (ArrayList<DatabaseData>) -> Unit)
-    suspend fun attachPtlOrderToLocation(body: JSONObject, callback: (ApiResponse) -> Unit)
-    suspend fun detachPtlOrderToLocation(body: JSONObject, callback: (ApiResponse) -> Unit)
-    suspend fun addBoxToOrder(body: JSONObject, callback: (ApiResponse) -> Unit)
-    suspend fun printBox(body: JSONObject, callback: (LabelResponse) -> Unit)
-    suspend fun pickManual(body: JSONObject, callback: (PickManualResponse) -> Unit)
-    suspend fun blinkOneItem(body: JSONObject, callback: (ApiResponse) -> Unit)
-    suspend fun blinkAllOrder(body: JSONObject, callback: (ApiResponse) -> Unit)
-    suspend fun getPtlOrderContent(body: JSONObject, callback: (PtlContentResponse) -> Unit)
+    suspend fun attachPtlOrderToLocation(body: ApiParam, callback: (ApiResponse) -> Unit)
+    suspend fun detachPtlOrderToLocation(body: ApiParam, callback: (ApiResponse) -> Unit)
+    suspend fun addBoxToOrder(body: ApiParam, callback: (ApiResponse) -> Unit)
+    suspend fun printBox(body: ApiParam, callback: (LabelResponse) -> Unit)
+    suspend fun pickManual(body: ApiParam, callback: (PickManualResponse) -> Unit)
+    suspend fun blinkOneItem(body: ApiParam, callback: (ApiResponse) -> Unit)
+    suspend fun blinkAllOrder(body: ApiParam, callback: (ApiResponse) -> Unit)
+    suspend fun getPtlOrderContent(body: ApiParam, callback: (PtlContentResponse) -> Unit)
 }

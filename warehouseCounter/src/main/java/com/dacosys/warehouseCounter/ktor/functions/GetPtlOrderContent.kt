@@ -3,6 +3,8 @@ package com.dacosys.warehouseCounter.ktor.functions
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiService
+import com.dacosys.warehouseCounter.dto.apiParam.ApiParam
+import com.dacosys.warehouseCounter.dto.apiParam.PtlQuery
 import com.dacosys.warehouseCounter.dto.ptlOrder.PtlContent
 import com.dacosys.warehouseCounter.ktor.APIServiceImpl.Companion.validUrl
 import com.dacosys.warehouseCounter.ktor.functions.GetToken.Companion.Token
@@ -12,7 +14,6 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
 import kotlinx.coroutines.*
-import org.json.JSONObject
 import kotlin.concurrent.thread
 
 class GetPtlOrderContent(
@@ -52,23 +53,15 @@ class GetPtlOrderContent(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiService.getPtlOrderContent(body = getBody(), callback = {
+        val body = ApiParam(
+            userToken = Token.token,
+            ptlQuery = PtlQuery(orderId = orderId, warehouseAreaId = warehouseAreaId)
+        )
+        ktorApiService.getPtlOrderContent(body = body, callback = {
             r = ArrayList(it.contents)
             if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
             else sendEvent(it.details, SnackBarType.INFO)
         })
-    }
-
-    private fun getBody(): JSONObject {
-        // BODY ////////////////////////////
-        val ptlQuery = JSONObject()
-        ptlQuery.put("orderId", orderId).put("warehouseAreaId", warehouseAreaId)
-
-        // Token DATA //////////////////
-        val jsonParam = JSONObject()
-        jsonParam.put("userToken", Token.token).put("ptlQuery", ptlQuery)
-
-        return jsonParam
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {
