@@ -84,7 +84,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private fun destroyLocals() {
         /*
         TODO:
-        Usar tabla temporal para guardar listas largas.
+         Usar tabla temporal para guardar listas largas.
         */
         if (isFinishingByUser) {
             // Borramos los Ids temporales que se usaron en la actividad.
@@ -263,7 +263,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             if (b) {
                 /*
                 TODO:
-                  Transición suave de teclado.
+                 Transición suave de teclado.
                 Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
                 Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
                 el teclado cambiará de tipo y puede tener una altura diferente.

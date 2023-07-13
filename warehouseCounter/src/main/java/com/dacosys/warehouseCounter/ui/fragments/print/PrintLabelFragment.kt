@@ -38,6 +38,7 @@ import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -435,6 +436,8 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     }
 
     private fun attemptEnterConfig(password: String) {
+        Screen.closeKeyboard(requireActivity())
+
         val realPass = settingViewModel.confPassword
         if (password == realPass) {
             if (!rejectNewInstances) {
@@ -442,13 +445,19 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
                 val intent = Intent(requireContext(), SettingsActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                startActivity(intent)
+                resultForPrinterConfig.launch(intent)
             }
-            isReturnedFromSettings = true
         } else {
             makeText(binding.root, getString(R.string.invalid_password), SnackBarType.ERROR)
         }
     }
+
+    private val resultForPrinterConfig =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            loadPrinterPreferences()
+            refreshViews()
+            rejectNewInstances = false
+        }
 
     private fun requestPrint() {
         fragmentListener?.onPrintRequested(printer = printer, qty = qty)
@@ -506,10 +515,18 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         }
 
         val items: ArrayList<Item> = ArrayList()
-        for (id in itemIdArray) {
+        var isDone = false
+        for ((index, id) in itemIdArray.withIndex()) {
             ItemCoroutines().getById(id) {
                 if (it != null) items.add(it)
+                isDone = index == itemIdArray.lastIndex
             }
+        }
+
+        var startTime = System.currentTimeMillis()
+        while (!isDone) {
+            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong())
+                isDone = true
         }
 
         if (items.isEmpty()) {
@@ -527,10 +544,18 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         }
 
         var sendThis = ""
-        for (item in items) {
+        isDone = false
+        for ((index, item) in items.withIndex()) {
             getLabel(item) {
                 sendThis += it
+                isDone = index == items.lastIndex
             }
+        }
+
+        startTime = System.currentTimeMillis()
+        while (!isDone) {
+            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong())
+                isDone = true
         }
 
         when {
@@ -680,7 +705,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         }
     }
 
-    // region Filtro para aceptar solo números entre ciertos parámetros
+// region Filtro para aceptar solo números entre ciertos parámetros
 
     /**
      * Devuelve una cadena de texto formateada que se ajusta a los parámetros.
@@ -753,7 +778,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         }
     }
 
-    // endregion
+// endregion
 
     override fun onIncrement(view: View?, number: Double) {
         binding.qtyEditText.setText(number.toString())

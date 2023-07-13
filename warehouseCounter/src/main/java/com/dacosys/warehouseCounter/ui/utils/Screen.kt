@@ -21,6 +21,7 @@ import android.widget.Switch
 import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatTextView
+import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
@@ -189,6 +190,17 @@ class Screen {
         }
 
         fun closeKeyboard(activity: AppCompatActivity) {
+            if (KeyboardVisibilityEvent.isKeyboardVisible(activity)) {
+                val imm =
+                    activity.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE) as InputMethodManager
+                val cf = activity.currentFocus
+                if (cf != null) {
+                    imm.hideSoftInputFromWindow(cf.windowToken, 0)
+                }
+            }
+        }
+
+        fun closeKeyboard(activity: FragmentActivity) {
             if (KeyboardVisibilityEvent.isKeyboardVisible(activity)) {
                 val imm =
                     activity.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE) as InputMethodManager
