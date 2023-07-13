@@ -14,6 +14,8 @@ import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.json.JSONObject
 import java.io.File
 import kotlin.concurrent.thread
@@ -107,7 +109,7 @@ class SendOrder(
         // Todos los Pedidos //////////////////
         val orArrayJson = JSONObject()
         for ((index, orderRequest) in orderRequestArray.withIndex()) {
-            orArrayJson.put("order$index", orderRequest)
+            orArrayJson.put("order$index", Json.encodeToString(orderRequest))
 
             // Guardamos el archivo subido
             successFiles.add(orderRequest.filename)

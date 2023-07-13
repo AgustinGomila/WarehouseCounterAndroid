@@ -15,6 +15,8 @@ import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.json.JSONObject
 import kotlin.concurrent.thread
 
@@ -100,7 +102,7 @@ class SendItemCode(
         // Todos los ItemCodes ////////////
         val icArrayJson = JSONObject()
         for ((index, itemCode) in itemCodeArray.withIndex()) {
-            icArrayJson.put("itemCode$index", itemCode)
+            icArrayJson.put("itemCode$index", Json.encodeToString(itemCode))
 
             // Actualizamos la lista de códigos a transferir
             itemCodeToUpdate.add(itemCode)
