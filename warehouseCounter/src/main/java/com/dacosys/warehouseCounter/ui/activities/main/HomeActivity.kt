@@ -93,9 +93,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             getString(R.string.completed_orders_) + orders.count()
         )
 
-        if (orders.isEmpty()) return
-
-        if (settingViewModel.autoSend) {
+        if (orders.isNotEmpty() && settingViewModel.autoSend) {
             try {
                 thread { SendOrder(orders) { }.execute() }
             } catch (ex: Exception) {
@@ -109,12 +107,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             .filter { it.tag == MainButton.CompletedCounts.id }
             .forEach {
                 runOnUiThread {
-                    it.text = String.format(
-                        "%s%s(%s)",
-                        MainButton.CompletedCounts.description,
-                        lineSeparator,
-                        orders.count()
-                    )
+                    val c = orders.count()
+                    var s = MainButton.CompletedCounts.description
+                    if (c > 0) s = "${s}:$lineSeparator$c"
+
+                    it.text = s
                 }
             }
     }
@@ -152,7 +149,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 runOnUiThread {
                     val c = countPending()
                     var s = MainButton.PendingCounts.description
-                    if (c > 0) s = "${s}$lineSeparator$c"
+                    if (c > 0) s = "${s}:$lineSeparator$c"
 
                     it.text = s
 
