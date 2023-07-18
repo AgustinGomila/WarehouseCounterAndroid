@@ -7,7 +7,7 @@ package com.dacosys.warehouseCounter.scanners.vh75
 /**
  * Command header
  */
-enum class Head constructor(code: Byte) {
+enum class Head(code: Byte) {
     SEND(0x40.toByte()),
     RECEIVE_OK(0xf0.toByte()),
     RECEIVE_FAIL(0xf4.toByte());

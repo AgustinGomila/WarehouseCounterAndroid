@@ -4,7 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.widget.*
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
@@ -36,7 +36,7 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("obs", binding.obsEditText.text.trim().toString())
+        savedInstanceState.putString(ARG_OBS, binding.obsEditText.text.trim().toString())
     }
 
     private lateinit var binding: ObservationsActivityBinding
@@ -54,13 +54,13 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
         title = getString(R.string.observations)
 
         if (savedInstanceState != null) {
-            val t1 = savedInstanceState.getString("obs")
+            val t1 = savedInstanceState.getString(ARG_OBS)
             if (t1 != null) obs = t1
         }
 
         val extras = intent.extras
         if (extras != null) {
-            val t1 = extras.getString("obs")
+            val t1 = extras.getString(ARG_OBS)
             if (t1 != null) obs = t1
         }
 
@@ -82,7 +82,7 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
         Screen.closeKeyboard(this)
 
         val data = Intent()
-        data.putExtra("obs", binding.obsEditText.text.trim().toString())
+        data.putExtra(ARG_OBS, binding.obsEditText.text.trim().toString())
         setResult(RESULT_OK, data)
         finish()
     }
@@ -115,7 +115,7 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         autoText = ""
 
-        ItemCoroutines().getByQuery(tempCode) {
+        ItemCoroutines.getByQuery(tempCode) {
             var item: Item? = null
             if (it.size > 0) item = it.first()
 
@@ -173,5 +173,9 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         setResult(RESULT_CANCELED)
         finish()
+    }
+
+    companion object {
+        const val ARG_OBS = "obs"
     }
 }

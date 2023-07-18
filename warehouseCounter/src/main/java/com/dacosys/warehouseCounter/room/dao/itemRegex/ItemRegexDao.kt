@@ -20,7 +20,7 @@ interface ItemRegexDao {
 
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(itemRegex: ItemRegex)
+    suspend fun insert(itemRegex: ItemRegex): Long?
 
 
     @Update

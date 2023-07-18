@@ -16,9 +16,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.QtySelectorBinding
-import com.dacosys.warehouseCounter.dto.orderRequest.Item
-import com.dacosys.warehouseCounter.dto.orderRequest.Item.CREATOR.fromItemRoom
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
@@ -26,6 +24,7 @@ import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.round
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -47,7 +46,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
 
     private var ch: CounterHandler? = null
 
-    private var orc: OrderRequestContent? = null
+    private lateinit var orc: OrderRequestContent
     private var partial: Boolean = false
 
     private var multiplier: Long = 1
@@ -61,33 +60,33 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putParcelable("orderRequestContent", orc)
-        savedInstanceState.putBoolean("partial", partial)
+        savedInstanceState.putParcelable(ARG_ORDER_REQUEST_CONTENT, orc)
+        savedInstanceState.putBoolean(ARG_PARTIAL, partial)
 
-        savedInstanceState.putDouble("currentValue", currentValue)
-        savedInstanceState.putLong("multiplier", multiplier)
-        savedInstanceState.putDouble("minValue", minValue)
-        savedInstanceState.putDouble("maxValue", maxValue)
+        savedInstanceState.putDouble(ARG_CURRENT_VALUE, currentValue)
+        savedInstanceState.putLong(ARG_MULTIPLIER, multiplier)
+        savedInstanceState.putDouble(ARG_MIN_VALUE, minValue)
+        savedInstanceState.putDouble(ARG_MAX_VALUE, maxValue)
     }
 
     private fun loadBundleValues(b: Bundle) {
-        orc = b.getParcelable("orderRequestContent")
-        partial = b.getBoolean("partial")
+        orc = b.getParcelable(ARG_ORDER_REQUEST_CONTENT) ?: OrderRequestContent()
+        partial = b.getBoolean(ARG_PARTIAL)
 
-        currentValue = b.getDouble("currentValue")
-        multiplier = b.getLong("multiplier")
-        minValue = b.getDouble("minValue")
-        minValue = b.getDouble("minValue")
+        currentValue = b.getDouble(ARG_CURRENT_VALUE)
+        multiplier = b.getLong(ARG_MULTIPLIER)
+        minValue = b.getDouble(ARG_MIN_VALUE)
+        minValue = b.getDouble(ARG_MIN_VALUE)
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
-        orc = Parcels.unwrap<OrderRequestContent>(b.getParcelable("orderRequestContent"))
-        partial = b.getBoolean("partial")
+        orc = Parcels.unwrap(b.getParcelable(ARG_ORDER_REQUEST_CONTENT))
+        partial = b.getBoolean(ARG_PARTIAL)
 
-        currentValue = b.getDouble("initialValue")
-        multiplier = b.getLong("multiplier")
-        minValue = b.getDouble("minValue")
-        maxValue = b.getDouble("maxValue")
+        currentValue = b.getDouble(ARG_INITIAL_VALUE)
+        multiplier = b.getLong(ARG_MULTIPLIER)
+        minValue = b.getDouble(ARG_MIN_VALUE)
+        maxValue = b.getDouble(ARG_MAX_VALUE)
     }
 
     private lateinit var binding: QtySelectorBinding
@@ -113,17 +112,15 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         refreshTextViews()
 
         binding.editDescriptionButton.setOnClickListener {
-            if (orc != null) {
-                itemDescriptionDialog(orc!!)
-            }
+            itemDescriptionDialog(orc)
         }
 
         if (partial) {
             binding.typeTextView.setText(R.string.partial_count)
-            minValue = -(orc!!.qty!!.qtyCollected)!!
+            minValue = -(orc.qtyCollected ?: 0.0)
         } else {
             binding.typeTextView.setText(R.string.total_count)
-            currentValue = orc!!.qty!!.qtyCollected ?: 0.toDouble()
+            currentValue = orc.qtyCollected ?: 0.0
             multiplier = 1 // Conteo total, multiplicar por 1
         }
 
@@ -216,12 +213,8 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         }
 
         val resultData = Intent()
-
-        resultData.putExtra("qty", round(qty * multiplier, decimalPlaces))
-        if (orc != null) {
-            resultData.putExtra("orderRequestContent", Parcels.wrap<OrderRequestContent>(orc))
-        }
-
+        resultData.putExtra(ARG_QTY, round(qty * multiplier, decimalPlaces))
+        resultData.putExtra(ARG_ORDER_REQUEST_CONTENT, Parcels.wrap(orc))
         setResult(RESULT_OK, resultData)
         finish()
     }
@@ -233,8 +226,8 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
 
         val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra("title", getString(R.string.enter_description))
-        intent.putExtra("orc", orc)
+        intent.putExtra(EnterCodeActivity.ARG_TITLE, getString(R.string.enter_description))
+        intent.putExtra(EnterCodeActivity.ARG_ORC, orc)
         resultForDescriptionSelect.launch(intent)
     }
 
@@ -243,10 +236,8 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val description = data.getStringExtra("description") ?: ""
-                    val orc = Parcels.unwrap<OrderRequestContent>(
-                        data.getParcelableExtra("orc")
-                    )
+                    val description = data.getStringExtra(EnterCodeActivity.ARG_CODE) ?: ""
+                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(EnterCodeActivity.ARG_ORC))
                     setDescription(orc, description)
                 }
             } catch (ex: Exception) {
@@ -260,7 +251,9 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         }
 
     private fun setDescription(orc: OrderRequestContent, description: String) {
-        updateItemDescriptionToDb(orc.item, description) {
+        val itemId = orc.itemId ?: return
+
+        updateItemDescriptionToDb(itemId, description) {
             if (it == null) {
                 val res =
                     getString(R.string.an_error_occurred_while_updating_the_description_of_the_item_in_the_database)
@@ -269,48 +262,42 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
                 return@updateItemDescriptionToDb
             }
 
-            this.orc!!.item = it
+            orc.apply { itemDescription = it.description }
+            this.orc = orc
+
             refreshTextViews()
         }
     }
 
     private fun updateItemDescriptionToDb(
-        item: Item?,
+        itemId: Long,
         description: String,
         onFinish: (Item?) -> Unit = {},
     ) {
-        if (item == null) return
-        val itemId = item.itemId ?: return
-
-        ItemCoroutines().updateDescription(itemId, description) {
-            ItemCoroutines().getById(itemId) {
-                if (it != null) onFinish(fromItemRoom(it))
+        ItemCoroutines.updateDescription(itemId, description) {
+            ItemCoroutines.getById(itemId) {
+                if (it != null) onFinish(it)
                 else onFinish(null)
             }
         }
     }
 
     private fun refreshTextViews() {
-        if (orc != null && orc?.item != null && orc?.qty != null) {
-            val item = orc!!.item!!
-            val qty = orc!!.qty!!
+        decimalPlaces = 0
 
-            decimalPlaces = 0
+        binding.itemDescriptionTextView.text = String.format(
+            "%s: %s", getString(R.string.item), orc.itemDescription
+        )
+        binding.typeTextView.text = getString(R.string.unit)
+        binding.codeTextView.text = String.format(
+            "%s: %s", getString(R.string.item_code), orc.ean
+        )
 
-            binding.itemDescriptionTextView.text = String.format(
-                "%s: %s", getString(R.string.item), item.itemDescription
-            )
-            binding.typeTextView.text = getString(R.string.unit)
-            binding.codeTextView.text = String.format(
-                "%s: %s", getString(R.string.item_code), item.ean
-            )
-
-            binding.totalTextView.text = String.format(
-                "%s: %s",
-                getString(R.string.total_qty),
-                Statics.roundToString(qty.qtyCollected!!, decimalPlaces)
-            )
-        }
+        binding.totalTextView.text = String.format(
+            "%s: %s",
+            getString(R.string.total_qty),
+            Statics.roundToString(orc.qtyCollected!!, decimalPlaces)
+        )
     }
 
     public override fun onStart() {
@@ -341,7 +328,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
-        if (equals(scanCode, orc!!.item!!.ean)) {
+        if (equals(scanCode, orc.ean)) {
             try {
                 val currentQty: Double
                 try {
@@ -362,12 +349,6 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
             } finally {
                 JotterListener.lockScanner(this, false)
             }
-        }
-    }
-
-    companion object {
-        fun equals(a: Any?, b: Any?): Boolean {
-            return a != null && a == b
         }
     }
 
@@ -428,7 +409,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
             }
 
             // Si la cantidad de espacios decimales permitidos es cero devolver la parte entera
-            // sino, concatenar la parte entera con el separador de decimales y
+            // si no, concatenar la parte entera con el separador de decimales y
             // la cantidad permitida de decimales.
             val result = if (maxDecimalPlaces == 0) {
                 integerPart
@@ -463,4 +444,19 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
     }
 
     //endregion READERS Reception
+
+    companion object {
+        const val ARG_QTY = "qty"
+        const val ARG_ORDER_REQUEST_CONTENT = "orderRequestContent"
+        const val ARG_PARTIAL = "partial"
+        const val ARG_INITIAL_VALUE = "initialValue"
+        const val ARG_MULTIPLIER = "multiplier"
+        const val ARG_MIN_VALUE = "minValue"
+        const val ARG_MAX_VALUE = "maxValue"
+        const val ARG_CURRENT_VALUE = "currentValue"
+
+        fun equals(a: Any?, b: Any?): Boolean {
+            return a != null && a == b
+        }
+    }
 }

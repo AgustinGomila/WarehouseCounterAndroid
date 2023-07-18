@@ -43,7 +43,7 @@ class CheckItemCode(
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         try {
             val count = list.count()
-            if (Statics.demoMode) {
+            if (Statics.DEMO_MODE) {
                 if (count >= 5) {
                     val res = context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     onEventData(SnackBarEventData(res, SnackBarType.ERROR))
@@ -78,7 +78,7 @@ class CheckItemCode(
             }
 
             // Si no está en el adaptador del control, buscar en la base de datos
-            ItemCoroutines().getByQuery(code) {
+            ItemCoroutines.getByQuery(code) {
                 val itemObj = it.firstOrNull()
 
                 if (itemObj != null) {
@@ -90,7 +90,7 @@ class CheckItemCode(
                     return@getByQuery
                 }
 
-                ItemCodeCoroutines().getByCode(code) { icList ->
+                ItemCodeCoroutines.getByCode(code) { icList ->
                     itemCode = icList.firstOrNull()
                     val itemId = itemCode?.itemId
                     if (itemId == null) {

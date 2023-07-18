@@ -31,9 +31,9 @@ data class ItemRegex(
     companion object {
         class RegexResult(var ean: String, var lot: String, var qty: Float?) : Parcelable {
             constructor(parcel: Parcel) : this(
-                parcel.readString() ?: "",
-                parcel.readString() ?: "",
-                parcel.readValue(Float::class.java.classLoader) as? Float
+                ean = parcel.readString() ?: "",
+                lot = parcel.readString() ?: "",
+                qty = parcel.readValue(Float::class.java.classLoader) as? Float
             )
 
             override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -66,7 +66,7 @@ data class ItemRegex(
          * @return Lista de resultados completos del Regex
          */
         fun tryToRegex(codeRead: String, onFinished: (ArrayList<RegexResult>) -> Unit = {}) {
-            ItemRegexCoroutines().get {
+            ItemRegexCoroutines.get {
                 val result = ArrayList<RegexResult>()
 
                 // Es un regex?

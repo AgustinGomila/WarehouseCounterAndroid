@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.EnterCodeActivityBinding
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
@@ -27,12 +27,10 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("title", title.toString())
-        savedInstanceState.putString("hint", binding.codeEditText.hint.toString())
-        savedInstanceState.putParcelable("orc", orc)
-        savedInstanceState.putString(
-            "defaultValue", binding.codeEditText.editableText.toString().trim()
-        )
+        savedInstanceState.putString(ARG_TITLE, title.toString())
+        savedInstanceState.putString(ARG_HINT, binding.codeEditText.hint.toString())
+        savedInstanceState.putParcelable(ARG_ORC, orc)
+        savedInstanceState.putString(ARG_DEFAULT_VALUE, binding.codeEditText.editableText.toString().trim())
     }
 
     private lateinit var binding: EnterCodeActivityBinding
@@ -53,28 +51,28 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         var defaultValue = ""
 
         if (savedInstanceState != null) {
-            val t1 = savedInstanceState.getString("title")
+            val t1 = savedInstanceState.getString(ARG_TITLE)
             if (!t1.isNullOrEmpty()) tempTitle = t1
 
-            val t2 = savedInstanceState.getString("hint")
+            val t2 = savedInstanceState.getString(ARG_HINT)
             if (!t2.isNullOrEmpty()) tempHint = t2
 
-            orc = savedInstanceState.getParcelable("orc")
+            orc = savedInstanceState.getParcelable(ARG_ORC)
 
-            defaultValue = savedInstanceState.getString("defaultValue") ?: ""
+            defaultValue = savedInstanceState.getString(ARG_DEFAULT_VALUE) ?: ""
         } else {
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
+                val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                val t2 = extras.getString("hint")
+                val t2 = extras.getString(ARG_HINT)
                 if (!t2.isNullOrEmpty()) tempHint = t2
 
-                val t3 = extras.getParcelable("orc") as OrderRequestContent?
+                val t3 = extras.getParcelable(ARG_ORC) as OrderRequestContent?
                 if (t3 != null) orc = t3
 
-                defaultValue = extras.getString("defaultValue") ?: ""
+                defaultValue = extras.getString(ARG_DEFAULT_VALUE) ?: ""
             }
         }
 
@@ -116,8 +114,8 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             RESULT_OK
         }
 
-        data.putExtra("code", binding.codeEditText.editableText.toString().trim())
-        data.putExtra("orc", Parcels.wrap(orc))
+        data.putExtra(ARG_CODE, binding.codeEditText.editableText.toString().trim())
+        data.putExtra(ARG_ORC, Parcels.wrap(orc))
         setResult(result, data)
         finish()
     }
@@ -153,4 +151,12 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     override fun onWriteCompleted(isOk: Boolean) {}
 
     override fun onGetBluetoothName(name: String) {}
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_HINT = "hint"
+        const val ARG_ORC = "orc"
+        const val ARG_CODE = "code"
+        const val ARG_DEFAULT_VALUE = "defaultValue"
+    }
 }

@@ -67,10 +67,6 @@ data class Client(
         return name
     }
 
-    override fun hashCode(): Int {
-        return clientId.hashCode()
-    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -78,6 +74,22 @@ data class Client(
         other as Client
 
         return clientId == other.clientId
+    }
+
+    override fun hashCode(): Int {
+        var result = clientId.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + (contactName?.hashCode() ?: 0)
+        result = 31 * result + (phone?.hashCode() ?: 0)
+        result = 31 * result + (address?.hashCode() ?: 0)
+        result = 31 * result + (city?.hashCode() ?: 0)
+        result = 31 * result + (userId ?: 0)
+        result = 31 * result + active
+        result = 31 * result + (latitude?.hashCode() ?: 0)
+        result = 31 * result + (longitude?.hashCode() ?: 0)
+        result = 31 * result + (countryId ?: 0)
+        result = 31 * result + (taxNumber?.hashCode() ?: 0)
+        return result
     }
 
     companion object CREATOR : Parcelable.Creator<Client> {

@@ -6,6 +6,8 @@ import android.content.Intent
 import android.util.Log
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTION_RESULT
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTION_RESULT_NOTIFICATION
+import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTIVITY_INTENT_FILTER_ACTION
+import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.DATA_WEDGE_INTENT_KEY_DATA
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_COMMAND
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_KEY_VALUE_CONFIGURATION_UPDATE
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_KEY_VALUE_NOTIFICATION_PROFILE_NAME
@@ -17,8 +19,6 @@ import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_RESULT_
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_RESULT_INFO
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_RESULT_NOTIFICATION
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_RESULT_NOTIFICATION_TYPE
-import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.activityIntentFilterAction
-import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.datawedgeIntentKeyData
 
 @Suppress("ConvertSecondaryConstructorToPrimary", "unused")
 class ZebraBroadcastReceiver : BroadcastReceiver {
@@ -42,7 +42,7 @@ class ZebraBroadcastReceiver : BroadcastReceiver {
             Log.i(this::class.java.simpleName, "DataWedge Version: $dwVersion")
         }
 
-        if (action == activityIntentFilterAction) {
+        if (action == ACTIVITY_INTENT_FILTER_ACTION) {
             //  Received a barcode scan
             try {
                 displayScanResult(intent)
@@ -112,7 +112,7 @@ class ZebraBroadcastReceiver : BroadcastReceiver {
         if (zebra.lockScannerEvent) return
 
         // store decoded data
-        val codeRead = initiatingIntent.getStringExtra(datawedgeIntentKeyData)
+        val codeRead = initiatingIntent.getStringExtra(DATA_WEDGE_INTENT_KEY_DATA)
         // store decoder type
         // val decodedLabelType = initiatingIntent.getStringExtra(datawedgeIntentKeyLabelType)
 

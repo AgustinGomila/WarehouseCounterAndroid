@@ -17,15 +17,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.adapter.orderRequest.OrcAdapter
 import com.dacosys.warehouseCounter.databinding.OrderRequestDetailActivityBinding
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestContent
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.room.entity.client.Client
+import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrcAdapter
 import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderRequestHeader
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import org.parceler.Parcels
@@ -49,7 +50,8 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     private var client: Client? = null
 
     // OrderRequest
-    private var orderRequest: OrderRequest? = null
+    private var orderRequestId: Long = 0L
+    private lateinit var orderRequest: OrderRequest
 
     // Lista completa
     private var completeList: ArrayList<OrderRequestContent> = ArrayList()
@@ -70,9 +72,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshOrc.isRefreshing = false
-            }
+            binding.swipeRefreshOrc.isRefreshing = false
         }, 100)
     }
 
@@ -87,12 +87,10 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         if (adapter != null) {
             savedInstanceState.putParcelable("lastSelected", adapter?.currentItem())
             savedInstanceState.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
-            savedInstanceState.putParcelableArrayList("completeList", adapter?.fullList)
-            savedInstanceState.putLongArray("checkedIdArray", adapter?.checkedIdArray?.map { it }?.toLongArray())
             savedInstanceState.putInt("currentScrollPosition", currentScrollPosition)
         }
-        savedInstanceState.putParcelable("client", client)
-        savedInstanceState.putParcelable("orderRequest", orderRequest)
+        savedInstanceState.putLong(ARG_ID, orderRequestId)
+        savedInstanceState.putParcelable(ARG_CLIENT, client)
     }
 
     private lateinit var binding: OrderRequestDetailActivityBinding
@@ -121,46 +119,33 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
         if (savedInstanceState != null) {
             // region Recuperar el título de la ventana
-            val t2 = savedInstanceState.getString("title")
+            val t2 = savedInstanceState.getString(ARG_TITLE)
             if (!t2.isNullOrEmpty()) tempTitle = t2
             // endregion
 
-            client = savedInstanceState.getParcelable("client")
-            orderRequest = savedInstanceState.getParcelable("orderRequest")
-            completeList =
-                savedInstanceState.getParcelableArrayList("completeList") ?: ArrayList()
+            orderRequestId = savedInstanceState.getLong(ARG_ID)
+            client = savedInstanceState.getParcelable(ARG_CLIENT)
             checkedIdArray =
                 (savedInstanceState.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
             lastSelected = savedInstanceState.getParcelable("lastSelected")
             firstVisiblePos =
-                if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos") else -1
+                if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos")
+                else -1
             currentScrollPosition = savedInstanceState.getInt("currentScrollPosition")
         } else {
             // Nueva instancia de la actividad
 
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
+                val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                orderRequest =
-                    Parcels.unwrap<OrderRequest>(extras.getParcelable("orderRequest"))
-                client = Parcels.unwrap<Client>(extras.getParcelable("client"))
-                val t2 = extras.getParcelableArrayList<OrderRequestContent>("orcArray")
-                if (t2 != null) completeList = t2
+                client = Parcels.unwrap<Client>(extras.getParcelable(ARG_CLIENT))
+                orderRequestId = extras.getLong(ARG_ID)
             }
         }
 
         title = tempTitle
-
-        binding.countTypeActionTextView.text = when (orderRequest!!.orderRequestedType) {
-            OrderRequestType.deliveryAudit -> OrderRequestType.deliveryAudit.description
-            OrderRequestType.prepareOrder -> OrderRequestType.prepareOrder.description
-            OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
-            OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
-            OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
-            else -> getString(R.string.counted)
-        }
 
         binding.swipeRefreshOrc.setOnRefreshListener(this)
         binding.swipeRefreshOrc.setColorSchemeResources(
@@ -184,7 +169,36 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
         if (fillRequired) {
             fillRequired = false
-            fillAdapter(completeList)
+
+            loadOrderRequest()
+        }
+    }
+
+    private fun loadOrderRequest() {
+        OrderRequestCoroutines.getOrderRequestById(
+            id = orderRequestId,
+            onResult = {
+                if (it != null) {
+                    orderRequest = it
+                    completeList = ArrayList(it.contents)
+
+                    fillHeader()
+                    fillAdapter(completeList)
+                }
+            }
+        )
+    }
+
+    private fun fillHeader() {
+        runOnUiThread {
+            binding.countTypeActionTextView.text = when (orderRequest.orderRequestType) {
+                OrderRequestType.deliveryAudit -> OrderRequestType.deliveryAudit.description
+                OrderRequestType.prepareOrder -> OrderRequestType.prepareOrder.description
+                OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
+                OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
+                OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
+                else -> getString(R.string.counted)
+            }
         }
     }
 
@@ -193,9 +207,9 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
      * dependiendo del tipo de conteo que se está haciendo.
      */
     private fun setHeaderFragment() {
-        if (orderRequest == null || adapter == null) return
+        if (adapter == null) return
 
-        val orType = orderRequest?.orderRequestedType
+        val orType = orderRequest.orderRequestType
         val newFragment: androidx.fragment.app.Fragment =
             if (orType == OrderRequestType.deliveryAudit ||
                 orType == OrderRequestType.prepareOrder ||
@@ -203,7 +217,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 orType == OrderRequestType.receptionAudit ||
                 orType == OrderRequestType.stockAuditFromDevice
             ) {
-                OrderRequestHeader.newInstance(orderRequest, adapter?.fullList ?: ArrayList())
+                OrderRequestHeader.newInstance(orderRequestId)
             } else {
                 return
             }
@@ -277,9 +291,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshOrc.isRefreshing = show
-            }
+            binding.swipeRefreshOrc.isRefreshing = show
         }, 20)
     }
 
@@ -332,8 +344,8 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
                 val filteredList = ArrayList(completeList.indices
                     .filter {
-                        (completeList[it].qty?.qtyCollected ?: 0.0) < (completeList[it].qty?.qtyRequested ?: 0.0) ||
-                                (completeList[it].qty?.qtyCollected ?: 0.0) > (completeList[it].qty?.qtyRequested
+                        (completeList[it].qtyCollected ?: 0.0) < (completeList[it].qtyRequested ?: 0.0) ||
+                                (completeList[it].qtyCollected ?: 0.0) > (completeList[it].qtyRequested
                             ?: 0.0)
                     }
                     .map { completeList[it] })
@@ -342,8 +354,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                     recyclerView = binding.recyclerView,
                     fullList = filteredList,
                     checkedIdArray = checkedIdArray,
-                    orType = orderRequest?.orderRequestedType
-                        ?: OrderRequestType.stockAuditFromDevice,
+                    orType = orderRequest.orderRequestType,
                 )
 
                 refreshAdapterListeners()
@@ -380,12 +391,6 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         )
     }
 
-    companion object {
-        fun equals(a: Any?, b: Any?): Boolean {
-            return a != null && a == b
-        }
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
         return if (id == R.id.home || id == android.R.id.home) {
@@ -396,10 +401,18 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
     override fun onDataSetChanged() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                setHeaderFragment()
-                setCountedTextBox()
-            }
+            setHeaderFragment()
+            setCountedTextBox()
         }, 100)
+    }
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_ID = "id"
+        const val ARG_CLIENT = "client"
+
+        fun equals(a: Any?, b: Any?): Boolean {
+            return a != null && a == b
+        }
     }
 }

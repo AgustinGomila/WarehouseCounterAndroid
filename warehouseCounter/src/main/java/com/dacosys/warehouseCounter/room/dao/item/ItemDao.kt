@@ -19,14 +19,14 @@ interface ItemDao {
     suspend fun getMinorId(): Long
 
     @RewriteQueriesToDropUnusedColumns
-    @Query("$basicSelect, $joinSelect $basicFrom $leftJoin WHERE ${Entry.TABLE_NAME}.${Entry.ITEM_ID} = :itemId $basicOrder")
+    @Query("$BASIC_SELECT, $JOIN_SELECT $BASIC_FROM $LEFT_JOIN WHERE ${Entry.TABLE_NAME}.${Entry.ITEM_ID} = :itemId $BASIC_ORDER")
     suspend fun getById(itemId: Long): Item?
 
     @RewriteQueriesToDropUnusedColumns
-    @Query("$basicSelect, $joinSelect $basicFrom $leftJoin WHERE ${Entry.TABLE_NAME}.${Entry.ITEM_CATEGORY_ID} = :itemCatId $basicOrder")
+    @Query("$BASIC_SELECT, $JOIN_SELECT $BASIC_FROM $LEFT_JOIN WHERE ${Entry.TABLE_NAME}.${Entry.ITEM_CATEGORY_ID} = :itemCatId $BASIC_ORDER")
     suspend fun getByItemCategoryId(itemCatId: Long): List<Item>
 
-    @Query(getCodesQuery)
+    @Query(GET_CODES_QUERY)
     suspend fun getCodes(onlyActive: Int = 1): List<String>
 
     /**
@@ -57,19 +57,19 @@ interface ItemDao {
     suspend fun delete(item: Item)
 
     companion object {
-        const val basicFrom = "FROM ${Entry.TABLE_NAME}"
-        const val basicOrder = "ORDER BY ${Entry.TABLE_NAME}.${Entry.DESCRIPTION}"
+        const val BASIC_FROM = "FROM ${Entry.TABLE_NAME}"
+        const val BASIC_ORDER = "ORDER BY ${Entry.TABLE_NAME}.${Entry.DESCRIPTION}"
 
-        const val basicSelect =
+        const val BASIC_SELECT =
             "SELECT ${Entry.TABLE_NAME}.${Entry.ITEM_ID},${Entry.TABLE_NAME}.${Entry.DESCRIPTION},${Entry.TABLE_NAME}.${Entry.ACTIVE},${Entry.TABLE_NAME}.${Entry.PRICE},${Entry.TABLE_NAME}.${Entry.EAN},${Entry.TABLE_NAME}.${Entry.ITEM_CATEGORY_ID},${Entry.TABLE_NAME}.${Entry.EXTERNAL_ID},${Entry.TABLE_NAME}.${Entry.LOT_ENABLED}"
 
-        const val joinSelect =
+        const val JOIN_SELECT =
             "${IcEntry.TABLE_NAME}.${IcEntry.DESCRIPTION} AS ${Entry.ITEM_CATEGORY_STR}"
 
-        const val leftJoin =
+        const val LEFT_JOIN =
             "LEFT JOIN ${IcEntry.TABLE_NAME} ON ${IcEntry.TABLE_NAME}.${IcEntry.ITEM_CATEGORY_ID} = ${Entry.TABLE_NAME}.${Entry.ITEM_CATEGORY_ID}"
 
-        const val getCodesQuery =
+        const val GET_CODES_QUERY =
             "SELECT ${Entry.TABLE_NAME}.${Entry.EAN} FROM ${Entry.TABLE_NAME} WHERE ${Entry.TABLE_NAME}.${Entry.ACTIVE} = :onlyActive ORDER BY ${Entry.TABLE_NAME}.${Entry.EAN}"
 
         /**
@@ -109,7 +109,7 @@ interface ItemDao {
                 args.add(itemCategoryId)
             }
 
-            val query = "$basicSelect, $joinSelect $basicFrom $leftJoin $where $basicOrder"
+            val query = "$BASIC_SELECT, $JOIN_SELECT $BASIC_FROM $LEFT_JOIN $where $BASIC_ORDER"
 
             return SimpleSQLiteQuery(query, args.toTypedArray())
         }

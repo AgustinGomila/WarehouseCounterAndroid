@@ -41,10 +41,6 @@ data class User(
         return name
     }
 
-    override fun hashCode(): Int {
-        return userId.hashCode()
-    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -52,6 +48,14 @@ data class User(
         other as User
 
         return userId == other.userId
+    }
+
+    override fun hashCode(): Int {
+        var result = userId.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + active
+        result = 31 * result + (password?.hashCode() ?: 0)
+        return result
     }
 
     companion object CREATOR : Parcelable.Creator<User> {

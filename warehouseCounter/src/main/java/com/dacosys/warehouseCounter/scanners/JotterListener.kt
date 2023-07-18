@@ -243,7 +243,7 @@ object JotterListener : Jotter.Listener {
      *
      * Si la actividad ya fue creada, y estamos recreándola para reconfigurar el
      * escáner luego de volver de Settings, estamos llegando aquí después de onResume(),
-     * por lo tanto tenemos que evitar volver a registrar la actividad porque:
+     * por lo tanto, tenemos que evitar volver a registrar la actividad porque:
      *
      * java.lang.IllegalStateException:
      * LifecycleOwner com.dacosys.warehouseCounter.xxx.xxxActivity@cf72429

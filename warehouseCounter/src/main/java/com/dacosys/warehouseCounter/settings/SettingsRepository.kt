@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.settings
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
 import java.util.*
 
 class SettingsRepository {
@@ -130,7 +130,7 @@ class SettingsRepository {
         description = context.getString(R.string.ic_ws_pass),
         default = ""
     )
-    /* endregion ImageControl WebService */
+    //endregion ImageControl WebService */
 
     var useNfc = Preference(
         key = "conf_nfc_use_default",
@@ -252,6 +252,11 @@ class SettingsRepository {
         description = context.getString(R.string.printer_speed),
         default = 1
     )
+    var printerQty = Preference(
+        key = "printer_qty",
+        description = context.getString(R.string.amount_of_labels),
+        default = 1
+    )
     var connectionTimeout = Preference(
         key = "connection_timeout",
         description = context.getString(R.string.timeout),
@@ -319,7 +324,7 @@ class SettingsRepository {
         default = false
     )
 
-    // region FloatingCamera Position and Size
+    //region FloatingCamera Position and Size
     var flCameraPortraitLocX = Preference(
         key = "fl_camera_portrait_loc_x",
         description = "fl_camera_portrait_loc_x",
@@ -458,7 +463,7 @@ class SettingsRepository {
         description = context.getString(R.string.upc_ean_extension),
         default = false
     )
-    /* endregion Symbologies */
+    //endregion Symbologies */
 
     /* region WarehouseCounter Server */
     var clientPackage = Preference(
@@ -521,9 +526,9 @@ class SettingsRepository {
         description = context.getString(R.string.refresh_order_interval),
         default = 15
     )
-    /* endregion WarehouseCounter WebService */
+    //endregion WarehouseCounter WebService */
 
-    // region Opciones de la actividad de selectora de Items
+    //region Opciones de la actividad de selectora de Items
     var selectItemSearchByItemEan = Preference(
         key = "item_select_search_by_item_ean",
         description = context.getString(R.string.item_select_search_by_item_ean),
@@ -539,7 +544,60 @@ class SettingsRepository {
         description = context.getString(R.string.only_active),
         default = true
     )
-    /* endregion WarehouseCounter WebService */
+    // endregion
+
+    //region Actividad de búsqueda de pedidos
+    var orderLocationSearchByOrderId = Preference(
+        key = "order_location_search_by_order_id",
+        description = context.getString(R.string.order_location_search_by_order_id),
+        default = true
+    )
+    var orderLocationSearchByOrderExtId = Preference(
+        key = "order_location_search_by_order_external_id",
+        description = context.getString(R.string.order_location_search_by_order_external_id),
+        default = false
+    )
+    var orderLocationSearchByWarehouse = Preference(
+        key = "order_location_search_by_warehouse",
+        description = context.getString(R.string.order_location_search_by_warehouse),
+        default = false
+    )
+    var orderLocationSearchByArea = Preference(
+        key = "order_location_search_by_area",
+        description = context.getString(R.string.order_location_search_by_area),
+        default = true
+    )
+    var orderLocationSearchByRack = Preference(
+        key = "order_location_search_by_rack",
+        description = context.getString(R.string.order_location_search_by_rack),
+        default = true
+    )
+    var orderLocationSearchByItemDescription = Preference(
+        key = "order_location_search_by_item_description",
+        description = context.getString(R.string.order_location_search_by_item_description),
+        default = true
+    )
+    var orderLocationSearchByItemCode = Preference(
+        key = "order_location_search_by_item_code",
+        description = context.getString(R.string.order_location_search_by_item_code),
+        default = true
+    )
+    var orderLocationSearchByItemEan = Preference(
+        key = "order_location_search_by_item_ean",
+        description = context.getString(R.string.order_location_search_by_item_ean),
+        default = true
+    )
+    var orderLocationSearchByOnlyActive = Preference(
+        key = "order_location_search_by_only_active",
+        description = context.getString(R.string.only_active),
+        default = true
+    )
+    var orderLocationOnlyActive = Preference(
+        key = "order_location_only_active",
+        description = context.getString(R.string.only_active),
+        default = true
+    )
+    //endregion
 
     companion object {
         fun getAll(): ArrayList<Preference> {
@@ -619,6 +677,7 @@ class SettingsRepository {
                 sp.portNetPrinter,
                 sp.printerPower,
                 sp.printerSpeed,
+                sp.printerQty,
 
                 sp.selectItemSearchByItemCategory,
                 sp.selectItemSearchByItemEan,
@@ -767,6 +826,24 @@ class SettingsRepository {
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections, sp.selectItemSearchByItemCategory, sp.selectItemSearchByItemEan
+            )
+
+            return ArrayList(allSections.sortedWith(compareBy { it.key }))
+        }
+
+        fun getAllSelectOrderLocationVisibleControls(): ArrayList<Preference> {
+            val sp = settingRepository
+            val allSections = ArrayList<Preference>()
+            Collections.addAll(
+                allSections,
+                sp.orderLocationSearchByOrderId,
+                sp.orderLocationSearchByOrderExtId,
+                sp.orderLocationSearchByWarehouse,
+                sp.orderLocationSearchByArea,
+                sp.orderLocationSearchByRack,
+                sp.orderLocationSearchByItemDescription,
+                sp.orderLocationSearchByItemCode,
+                sp.orderLocationSearchByItemEan
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))

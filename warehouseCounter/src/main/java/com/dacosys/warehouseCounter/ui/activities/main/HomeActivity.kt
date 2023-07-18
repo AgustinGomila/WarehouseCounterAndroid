@@ -20,7 +20,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.text.InputType
 import android.text.format.DateFormat
-import android.util.Log
 import android.view.*
 import android.view.animation.Animation
 import android.view.animation.TranslateAnimation
@@ -40,20 +39,23 @@ import com.dacosys.imageControl.network.upload.UploadImagesProgress
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
-import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
-import com.dacosys.warehouseCounter.ktor.functions.SendOrder
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
+import com.dacosys.warehouseCounter.ktor.v2.functions.CreateOrder
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.Statics.Companion.DATE_FORMAT
 import com.dacosys.warehouseCounter.misc.Statics.Companion.isDebuggable
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
+import com.dacosys.warehouseCounter.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
@@ -62,6 +64,7 @@ import com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity
 import com.dacosys.warehouseCounter.ui.activities.item.ItemSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.NewCountActivity
+import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderLocationSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity
 import com.dacosys.warehouseCounter.ui.activities.ptlOrder.NewPtlOrdersActivity
 import com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderActivity
@@ -76,7 +79,6 @@ import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
-import kotlinx.serialization.json.Json
 import org.parceler.Parcels
 import java.io.File
 import java.io.UnsupportedEncodingException
@@ -84,18 +86,21 @@ import java.lang.reflect.Field
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.concurrent.thread
+import com.dacosys.warehouseCounter.room.entity.orderRequest.OrderRequest as OrderRequestRoom
 
 class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
     private fun onCompletedOrder(orders: ArrayList<OrderRequest>) {
-        Log.d(
+        android.util.Log.d(
             this::class.java.simpleName,
             getString(R.string.completed_orders_) + orders.count()
         )
 
         if (orders.isNotEmpty() && settingViewModel.autoSend) {
             try {
-                thread { SendOrder(orders) { }.execute() }
+                thread {
+                    CreateOrder(orderArray = orders, onEvent = { }, onFinish = { }).execute()
+                }
             } catch (ex: Exception) {
                 ErrorLog.writeLog(
                     this, this::class.java.simpleName, ex.message.toString()
@@ -118,10 +123,13 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
     private fun onNewOrder(itemArray: ArrayList<OrderRequest>) {
         if (itemArray.isNotEmpty()) {
-            Log.d(this::class.java.simpleName, "${getString(R.string.new_orders_received_)}${itemArray.count()}")
+            android.util.Log.d(
+                this::class.java.simpleName,
+                "${getString(R.string.new_orders_received_)}${itemArray.count()}"
+            )
 
             if (!Statics.isExternalStorageWritable) {
-                Log.e(
+                android.util.Log.e(
                     this::class.java.simpleName,
                     getString(R.string.error_external_storage_not_available_for_reading_or_writing)
                 )
@@ -177,11 +185,9 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         try {
             /*
             runOnUiThread {
-                run {
-                    val checkCodeTask = CodeRead()
-                    checkCodeTask.addParams(this, scanCode)
-                    checkCodeTask.execute()
-                }
+                val checkCodeTask = CodeRead()
+                checkCodeTask.addParams(this, scanCode)
+                checkCodeTask.execute()
             }
             */
         } catch (ex: Exception) {
@@ -322,9 +328,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         draw = resize(draw!!)
         binding.imageViewHeader.setImageDrawable(draw)
 
-        //region Configurar dispositivos de lectura de datos
-        //endregion Configurar dispositivos de lectura de datos
-
         /// SETUP BUTTONS
         setupMainButton()
     }
@@ -345,7 +348,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 rejectNewInstances = true
 
                 val intent = Intent(context, NewCountActivity::class.java)
-                intent.putExtra("title", getString(R.string.new_count))
+                intent.putExtra(NewCountActivity.ARG_TITLE, getString(R.string.new_count))
                 resultForNewCount.launch(intent)
             }
 
@@ -355,7 +358,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 JotterListener.lockScanner(this, true)
 
                 val intent = Intent(context, InboxActivity::class.java)
-                intent.putExtra("title", getString(R.string.pending_counts))
+                intent.putExtra(InboxActivity.ARG_TITLE, getString(R.string.pending_counts))
                 resultForPendingCount.launch(intent)
             }
 
@@ -364,7 +367,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 rejectNewInstances = true
 
                 val intent = Intent(context, OutboxActivity::class.java)
-                intent.putExtra("title", getString(R.string.completed_counts))
+                intent.putExtra(OutboxActivity.ARG_TITLE, getString(R.string.completed_counts))
                 startActivity(intent)
             }
 
@@ -373,7 +376,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 rejectNewInstances = true
 
                 val intent = Intent(context, CodeCheckActivity::class.java)
-                intent.putExtra("title", getString(R.string.code_read))
+                intent.putExtra(CodeCheckActivity.ARG_TITLE, getString(R.string.code_read))
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                 startActivity(intent)
             }
@@ -384,7 +387,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
                 try {
                     val intent = Intent(context, LinkCodeActivity::class.java)
-                    intent.putExtra("title", getString(R.string.link_code))
+                    intent.putExtra(LinkCodeActivity.ARG_TITLE, getString(R.string.link_code))
                     startActivity(intent)
                 } catch (ex: Exception) {
                     makeText(binding.root, "Error:" + ex.message, ERROR)
@@ -405,8 +408,23 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
                 try {
                     val intent = Intent(context, ItemSelectActivity::class.java)
-                    intent.putExtra("title", getString(R.string.print_code))
-                    intent.putExtra("multiSelect", true)
+                    intent.putExtra(ItemSelectActivity.ARG_TITLE, getString(R.string.print_code))
+                    intent.putExtra(ItemSelectActivity.ARG_MULTI_SELECT, true)
+                    startActivity(intent)
+                } catch (ex: Exception) {
+                    makeText(binding.root, "Error:" + ex.message, ERROR)
+                }
+            }
+
+            MainButton.OrderLocationLabel -> {
+                if (rejectNewInstances) return
+                rejectNewInstances = true
+                JotterListener.lockScanner(this, true)
+
+                try {
+                    val intent = Intent(context, OrderLocationSelectActivity::class.java)
+                    intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.order_location))
+                    intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, true)
                     startActivity(intent)
                 } catch (ex: Exception) {
                     makeText(binding.root, "Error:" + ex.message, ERROR)
@@ -421,7 +439,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
     private fun startNewPtlOrderActivity() {
         val intent = Intent(context, NewPtlOrdersActivity::class.java)
-        intent.putExtra("title", getString(R.string.setup_new_ptl))
+        intent.putExtra(NewPtlOrdersActivity.ARG_TITLE, getString(R.string.setup_new_ptl))
         resultForNewPtl.launch(intent)
     }
 
@@ -431,7 +449,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val warehouseArea =
-                        Parcels.unwrap<WarehouseArea>(data.getParcelableExtra("warehouseArea"))
+                        Parcels.unwrap<WarehouseArea>(data.getParcelableExtra(NewPtlOrdersActivity.ARG_WAREHOUSE_AREA))
                     if (warehouseArea == null) {
                         rejectNewInstances = false
                         return@registerForActivityResult
@@ -447,7 +465,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                     )
 
                     val intent = Intent(context, PtlOrderActivity::class.java)
-                    intent.putExtra("warehouseArea", Parcels.wrap(warehouseArea))
+                    intent.putExtra(PtlOrderActivity.ARG_WAREHOUSE_AREA, Parcels.wrap(warehouseArea))
                     resultForPtlFinish.launch(intent)
                 }
             } catch (ex: Exception) {
@@ -475,11 +493,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val client = Parcels.unwrap<Client>(data.getParcelableExtra("client"))
-                    val description = data.getStringExtra("description")
+                    val client = Parcels.unwrap<Client>(data.getParcelableExtra(NewCountActivity.ARG_CLIENT))
+                    val description = data.getStringExtra(NewCountActivity.ARG_DESCRIPTION)
                     val orderRequestType =
-                        Parcels.unwrap<OrderRequestType>(data.getParcelableExtra<OrderRequestType>("orderRequestType"))
-                    val log = com.dacosys.warehouseCounter.dto.log.Log()
+                        Parcels.unwrap<OrderRequestType>(data.getParcelableExtra<OrderRequestType>(NewCountActivity.ARG_ORDER_REQUEST_TYPE))
 
                     makeText(
                         binding.root, String.format(
@@ -490,40 +507,30 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                         ), INFO
                     )
 
-                    val r = Random()
-                    val fakeOrderRequestId = r.nextInt(-888888 - -999999)
-
-                    val or = OrderRequest(
-                        orderRequestId = fakeOrderRequestId.toLong(),
+                    val orderRequest = OrderRequestRoom(
                         clientId = client?.clientId ?: 0,
-                        userId = Statics.currentUserId,
-                        externalId = "",
-                        creationDate = DateFormat.format(
-                            "yyyy-MM-dd hh:mm:ss", System.currentTimeMillis()
-                        ).toString(),
+                        creationDate = DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString(),
                         description = description ?: "",
-                        zone = "",
-                        orderRequestedType = orderRequestType,
-                        resultDiffQty = true,
-                        resultDiffProduct = true,
-                        resultAllowDiff = true,
-                        resultAllowMod = true,
-                        completed = false,
-                        startDate = DateFormat.format(
-                            "yyyy-MM-dd hh:mm:ss", System.currentTimeMillis()
-                        ).toString(),
-                        finishDate = null,
-                        content = ArrayList(),
-                        documents = ArrayList(),
-                        log = log
+                        orderTypeDescription = orderRequestType.description,
+                        orderTypeId = orderRequestType.id.toInt(),
+                        resultAllowDiff = 1,
+                        resultAllowMod = 1,
+                        resultDiffProduct = 1,
+                        resultDiffQty = 1,
+                        startDate = DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString(),
+                        userId = Statics.currentUserId,
                     )
 
-                    val intent = Intent(context, OrderRequestContentActivity::class.java)
-                    intent.putExtra("orderRequest", Parcels.wrap(or))
-                    intent.putExtra("isNew", true)
-
-                    //start the second Activity
-                    startActivity(intent)
+                    OrderRequestCoroutines.add(
+                        orderRequest = orderRequest,
+                        onResult = { newId ->
+                            if (newId != null) {
+                                val intent = Intent(context, OrderRequestContentActivity::class.java)
+                                intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
+                                intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, true)
+                                startActivity(intent)
+                            }
+                        })
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -539,7 +546,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val orArray: ArrayList<OrderRequest> =
-                        data.getParcelableArrayListExtra("orderRequests")
+                        data.getParcelableArrayListExtra(InboxActivity.ARG_ORDER_REQUESTS)
                             ?: return@registerForActivityResult
 
                     if (orArray.isEmpty()) return@registerForActivityResult
@@ -549,27 +556,23 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                         makeText(
                             binding.root, String.format(
                                 getString(R.string.requested_count_state_),
-                                if (equals(
-                                        or.description, ""
-                                    )
-                                ) getString(R.string.no_description) else or.description,
-                                if (or.completed != null && or.completed!!) getString(R.string.completed) else getString(
+                                if (equals(or.description, "")) getString(R.string.no_description)
+                                else or.description,
+                                if (or.completed == true) getString(R.string.completed) else getString(
                                     R.string.pending
                                 )
                             ), INFO
                         )
 
                         val intent = Intent(context, OrderRequestContentActivity::class.java)
-                        intent.putExtra("orderRequest", Parcels.wrap(or))
-                        intent.putExtra("isNew", false)
-
-                        //start the second Activity
+                        intent.putExtra(OrderRequestContentActivity.ARG_ID, or.orderRequestId)
+                        intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
                         startActivity(intent)
                     } catch (ex: Exception) {
                         val res =
                             getString(R.string.an_error_occurred_while_trying_to_load_the_order)
                         makeText(binding.root, res, ERROR)
-                        Log.e(this::class.java.simpleName, res)
+                        android.util.Log.e(this::class.java.simpleName, res)
                     }
                 }
             } catch (ex: Exception) {
@@ -739,9 +742,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
     private fun setProgressBarText(text: String) {
         runOnUiThread {
-            run {
-                binding.syncStatusTextView.text = text
-            }
+            binding.syncStatusTextView.text = text
         }
     }
 
@@ -960,7 +961,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
     private fun startSync() {
         Thread {
             Sync.startSync(
-                onNewOrders = { syncVm.setSyncNew(it) },
+                onNewOrders = { /* syncVm.setSyncNew(it)*/ },
                 onCompletedOrders = { syncVm.setSyncCompleted(it) },
                 onTimerTick = { syncVm.setSyncTimer(it) }
             )
@@ -1000,7 +1001,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         var isOk = true
         for (newOrder in newOrArray) {
-            val orJson = Json.encodeToString(OrderRequest.serializer(), newOrder)
+            val orJson = json.encodeToString(OrderRequest.serializer(), newOrder)
 
             // Acá se comprueba si el ID ya existe y actualizamos la orden.
             // Si no se agrega una orden nueva.
@@ -1013,8 +1014,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                         isOk = if (newOrder.completed == true) {
                             // Está completada, eliminar localmente
                             val currentDir = Statics.getPendingPath()
-                            val filePath =
-                                currentDir.absolutePath + File.separator + pendingOr.filename
+                            val filePath = "${currentDir.absolutePath}${File.separator}${pendingOr.filename}"
                             val fl = File(filePath)
                             fl.delete()
                         } else {
@@ -1031,7 +1031,9 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 val orFileName = String.format("%s.json", df.format(Calendar.getInstance().time))
 
                 if (!writeToFile(
-                        fileName = orFileName, data = orJson, directory = Statics.getPendingPath()
+                        fileName = orFileName,
+                        data = orJson,
+                        directory = Statics.getPendingPath()
                     )
                 ) {
                     isOk = false
@@ -1045,19 +1047,19 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         if (isOk) {
             val res = getString(R.string.new_counts_saved)
             makeText(binding.root, res, SnackBarType.SUCCESS)
-            Log.d(this::class.java.simpleName, res)
+            android.util.Log.d(this::class.java.simpleName, res)
         } else {
             val res = getString(R.string.an_error_occurred_while_trying_to_save_the_count)
             makeText(binding.root, res, ERROR)
-            Log.e(this::class.java.simpleName, res)
+            android.util.Log.e(this::class.java.simpleName, res)
         }
     }
 
     private fun updateOrder(origOrder: OrderRequest, newOrder: OrderRequest): Boolean {
         var error: Boolean
         try {
-            val orJson = Json.encodeToString(OrderRequest.serializer(), newOrder)
-            Log.i(this::class.java.simpleName, orJson)
+            val orJson = json.encodeToString(OrderRequest.serializer(), newOrder)
+            android.util.Log.i(this::class.java.simpleName, orJson)
             val orFileName = origOrder.filename.substringAfterLast('/')
 
             error = !Statics.writeJsonToFile(
@@ -1068,7 +1070,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             )
         } catch (e: UnsupportedEncodingException) {
             e.printStackTrace()
-            Log.e(this::class.java.simpleName, e.message ?: "")
+            android.util.Log.e(this::class.java.simpleName, e.message ?: "")
             error = true
         }
         return !error

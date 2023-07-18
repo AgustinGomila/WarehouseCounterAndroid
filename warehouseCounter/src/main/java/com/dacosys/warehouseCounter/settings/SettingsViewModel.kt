@@ -86,6 +86,13 @@ class SettingsViewModel : ViewModel() {
             settingRepository.barcodeLabelTemplateId.value = value
         }
 
+    // Printer Quantity
+    var printerQty: Int
+        get() = settingRepository.printerQty.value as Int
+        set(value) {
+            settingRepository.printerQty.value = value
+        }
+
     // Connection Timeout
     var connectionTimeout: Int
         get() = settingRepository.connectionTimeout.value as Int
@@ -503,6 +510,66 @@ class SettingsViewModel : ViewModel() {
         get() = settingRepository.selectItemOnlyActive.value as Boolean
         set(value) {
             settingRepository.selectItemOnlyActive.value = value
+        }
+
+    var orderLocationSearchByOrderId: Boolean
+        get() = settingRepository.orderLocationSearchByOrderId.value as Boolean
+        set(value) {
+            settingRepository.orderLocationSearchByOrderId.value = value
+        }
+
+    var orderLocationSearchByOrderExtId: Boolean
+        get() = settingRepository.orderLocationSearchByOrderExtId.value as Boolean
+        set(value) {
+            settingRepository.orderLocationSearchByOrderExtId.value = value
+        }
+
+    var orderLocationSearchByWarehouse: Boolean
+        get() = settingRepository.orderLocationSearchByWarehouse.value as Boolean
+        set(value) {
+            settingRepository.orderLocationSearchByWarehouse.value = value
+        }
+
+    var orderLocationSearchByArea: Boolean
+        get() = settingRepository.orderLocationSearchByArea.value as Boolean
+        set(value) {
+            settingRepository.orderLocationSearchByArea.value = value
+        }
+
+    var orderLocationSearchByRack: Boolean
+        get() = settingRepository.orderLocationSearchByRack.value as Boolean
+        set(value) {
+            settingRepository.orderLocationSearchByRack.value = value
+        }
+
+    var orderLocationSearchByItemCode: Boolean
+        get() = settingRepository.orderLocationSearchByItemCode.value as Boolean
+        set(value) {
+            settingRepository.orderLocationSearchByItemCode.value = value
+        }
+
+    var orderLocationSearchByItemDescription: Boolean
+        get() = settingRepository.orderLocationSearchByItemDescription.value as Boolean
+        set(value) {
+            settingRepository.orderLocationSearchByItemDescription.value = value
+        }
+
+    var orderLocationSearchByItemEan: Boolean
+        get() = settingRepository.orderLocationSearchByItemEan.value as Boolean
+        set(value) {
+            settingRepository.orderLocationSearchByItemEan.value = value
+        }
+
+    var orderLocationSearchByOnlyActive: Boolean
+        get() = settingRepository.orderLocationSearchByOnlyActive.value as Boolean
+        set(value) {
+            settingRepository.orderLocationSearchByOnlyActive.value = value
+        }
+
+    var orderLocationOnlyActive: Boolean
+        get() = settingRepository.orderLocationOnlyActive.value as Boolean
+        set(value) {
+            settingRepository.orderLocationOnlyActive.value = value
         }
 
     var finishOrder: Boolean

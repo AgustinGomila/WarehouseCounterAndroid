@@ -45,7 +45,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("code", binding.codeEditText.text.toString())
+        savedInstanceState.putString(ARG_CODE, binding.codeEditText.text.toString())
     }
 
     private lateinit var binding: CodeCheckActivityBinding
@@ -61,7 +61,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         if (savedInstanceState != null) {
             binding.codeEditText.setText(
-                savedInstanceState.getString("code"), TextView.BufferType.EDITABLE
+                savedInstanceState.getString(ARG_CODE), TextView.BufferType.EDITABLE
             )
         }
 
@@ -209,12 +209,12 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         var itemObj: Item? = null
         var itemCode: ItemCode? = null
 
-        ItemCoroutines().getByQuery(scannedCode) {
+        ItemCoroutines.getByQuery(scannedCode) {
             if (it.size > 0) itemObj = it.first()
 
             if (itemObj == null) {
                 // ¿No está? Buscar en la tabla item_code de la base de datos
-                ItemCodeCoroutines().getByCode(scannedCode) { it2 ->
+                ItemCodeCoroutines.getByCode(scannedCode) { it2 ->
                     if (it2.size > 0) itemCode = it2.first()
 
                     try {
@@ -281,6 +281,9 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     }
 
     companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_CODE = "code"
+
         fun equals(a: Any?, b: Any?): Boolean {
             return a != null && a == b
         }

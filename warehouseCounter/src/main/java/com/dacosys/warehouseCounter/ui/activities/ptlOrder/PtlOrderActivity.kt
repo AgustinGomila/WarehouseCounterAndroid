@@ -31,20 +31,20 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlContentAdapter
 import com.dacosys.warehouseCounter.databinding.PtlOrderActivityBottomPanelCollapsedBinding
-import com.dacosys.warehouseCounter.dto.ptlOrder.Label
-import com.dacosys.warehouseCounter.dto.ptlOrder.PickItem
-import com.dacosys.warehouseCounter.dto.ptlOrder.PtlContent
-import com.dacosys.warehouseCounter.dto.ptlOrder.PtlOrder
-import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
-import com.dacosys.warehouseCounter.ktor.functions.*
+import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.Label
+import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PickItem
+import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlContent
+import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlOrder
+import com.dacosys.warehouseCounter.ktor.v1.functions.*
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlContentAdapter
 import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.fragments.ptlOrder.PtlOrderHeaderFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -204,9 +204,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     override fun onDataSetChanged() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                fillSummaryRow()
-            }
+            fillSummaryRow()
         }, 100)
     }
 
@@ -239,9 +237,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshWac.isRefreshing = false
-            }
+            binding.swipeRefreshWac.isRefreshing = false
         }, 100)
     }
 
@@ -281,7 +277,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     override fun onSaveInstanceState(b: Bundle) {
         super.onSaveInstanceState(b)
 
-        b.putString("title", title.toString())
+        b.putString(ARG_TITLE, title.toString())
 
         b.putParcelableArrayList("tempWacArray", tempContArray)
         if (adapter != null) {
@@ -296,17 +292,17 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
 
         if (orderHeaderFragment != null) {
-            b.putParcelable("warehouseArea", orderHeaderFragment!!.warehouseArea)
-            b.putParcelable("ptlOrder", orderHeaderFragment!!.ptlOrder)
+            b.putParcelable(ARG_WAREHOUSE_AREA, orderHeaderFragment!!.warehouseArea)
+            b.putParcelable(ARG_PTL_ORDER, orderHeaderFragment!!.ptlOrder)
         }
     }
 
     private fun loadBundleValues(b: Bundle) {
-        val t1 = b.getString("title")
+        val t1 = b.getString(ARG_TITLE)
         if (!t1.isNullOrEmpty()) tempTitle = t1
 
-        warehouseArea = b.getParcelable("warehouseArea")
-        currentPtlOrder = b.getParcelable("ptlOrder")
+        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
+        currentPtlOrder = b.getParcelable(ARG_PTL_ORDER)
 
         currentInventory = b.getStringArrayList("currentInventory")
 
@@ -322,11 +318,11 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
-        val t1 = b.getString("title")
+        val t1 = b.getString(ARG_TITLE)
         if (!t1.isNullOrEmpty()) tempTitle = t1
 
-        warehouseArea = Parcels.unwrap<WarehouseArea>(b.getParcelable("warehouseArea"))
-        currentPtlOrder = Parcels.unwrap<PtlOrder>(b.getParcelable("ptlOrder"))
+        warehouseArea = Parcels.unwrap<WarehouseArea>(b.getParcelable(ARG_WAREHOUSE_AREA))
+        currentPtlOrder = Parcels.unwrap<PtlOrder>(b.getParcelable(ARG_PTL_ORDER))
 
         initialScannedCode = b.getString("initial_scanned_code") ?: ""
     }
@@ -538,7 +534,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         if (orderHeaderFragment == null)
             orderHeaderFragment = supportFragmentManager.findFragmentById(R.id.headerFragment) as PtlOrderHeaderFragment
 
-        orderHeaderFragment?.setOrder(currentPtlOrder, warehouseArea, false)
+        orderHeaderFragment?.setOrder(order = currentPtlOrder, location = warehouseArea, sendEvent = false)
         orderHeaderFragment?.setChangeOrderListener(this)
 
         if (printLabelFragment == null)
@@ -699,9 +695,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshWac.isRefreshing = show
-            }
+            binding.swipeRefreshWac.isRefreshing = show
         }, 20)
     }
 
@@ -842,7 +836,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     private fun onGetPtlOrder(it: ArrayList<PtlOrder>) {
         if (it.any()) {
-            orderHeaderFragment?.setOrder(it.first(), warehouseArea)
+            orderHeaderFragment?.setOrder(order = it.first(), location = warehouseArea)
             return
         }
         gentlyReturn()
@@ -1046,5 +1040,11 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     private var qtyPrinterIsFocused = false
     override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {
         qtyPrinterIsFocused = hasFocus
+    }
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_WAREHOUSE_AREA = "warehouseArea"
+        const val ARG_PTL_ORDER = "ptlOrder"
     }
 }

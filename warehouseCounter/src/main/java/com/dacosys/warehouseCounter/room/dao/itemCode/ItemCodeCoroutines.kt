@@ -1,22 +1,19 @@
 package com.dacosys.warehouseCounter.room.dao.itemCode
 
 import android.util.Log
-import com.dacosys.warehouseCounter.room.database.WcDatabase
+import com.dacosys.warehouseCounter.room.database.WcDatabase.Companion.database
 import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
-class ItemCodeCoroutines {
+object ItemCodeCoroutines {
     @Throws(Exception::class)
     fun getByItemId(
         itemId: Long,
         onResult: (ArrayList<ItemCode>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = ArrayList(WcDatabase.getDatabase().itemCodeDao().getByItemId(itemId))
-            onResult.invoke(r)
+            val r = async { ArrayList(database.itemCodeDao().getByItemId(itemId)) }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(ArrayList())
@@ -29,8 +26,8 @@ class ItemCodeCoroutines {
         onResult: (ArrayList<ItemCode>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = ArrayList(WcDatabase.getDatabase().itemCodeDao().getByCode(code))
-            onResult.invoke(r)
+            val r = async { ArrayList(database.itemCodeDao().getByCode(code)) }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(ArrayList())
@@ -42,8 +39,8 @@ class ItemCodeCoroutines {
         onResult: (ArrayList<ItemCode>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = ArrayList(WcDatabase.getDatabase().itemCodeDao().getToUpload())
-            onResult.invoke(r)
+            val r = async { ArrayList(database.itemCodeDao().getToUpload()) }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(ArrayList())
@@ -57,8 +54,8 @@ class ItemCodeCoroutines {
         onResult: () -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            WcDatabase.getDatabase().itemCodeDao().insert(itemCode)
-            onResult.invoke()
+            async { database.itemCodeDao().insert(itemCode) }.await()
+            onResult()
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult()
@@ -72,8 +69,13 @@ class ItemCodeCoroutines {
         onResult: (Int) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = WcDatabase.getDatabase().itemCodeDao().countLink(itemId, code)
-            onResult.invoke(r)
+            val r = async {
+                database.itemCodeDao().countLink(
+                    itemId = itemId,
+                    code = code
+                )
+            }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(0)
@@ -87,8 +89,13 @@ class ItemCodeCoroutines {
         onResult: () -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            WcDatabase.getDatabase().itemCodeDao().unlinkCode(itemId, code)
-            onResult.invoke()
+            async {
+                database.itemCodeDao().unlinkCode(
+                    itemId = itemId,
+                    code = code
+                )
+            }.await()
+            onResult()
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult()
@@ -103,8 +110,14 @@ class ItemCodeCoroutines {
         onResult: () -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            WcDatabase.getDatabase().itemCodeDao().updateQty(itemId, code, qty)
-            onResult.invoke()
+            async {
+                database.itemCodeDao().updateQty(
+                    itemId = itemId,
+                    code = code,
+                    qty = qty
+                )
+            }.await()
+            onResult()
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult()
@@ -118,8 +131,13 @@ class ItemCodeCoroutines {
         onResult: () -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            WcDatabase.getDatabase().itemCodeDao().updateTransferred(itemId, code)
-            onResult.invoke()
+            async {
+                database.itemCodeDao().updateTransferred(
+                    itemId = itemId,
+                    code = code
+                )
+            }.await()
+            onResult()
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult()

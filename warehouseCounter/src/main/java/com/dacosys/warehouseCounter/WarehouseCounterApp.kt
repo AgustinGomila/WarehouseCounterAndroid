@@ -3,10 +3,12 @@ package com.dacosys.warehouseCounter
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Base64
 import androidx.preference.PreferenceManager
 import com.dacosys.imageControl.ImageControl
-import com.dacosys.warehouseCounter.ktor.APIServiceImpl
-import com.dacosys.warehouseCounter.ktor.DacoServiceImpl
+import com.dacosys.warehouseCounter.ktor.v1.impl.DacoServiceImpl
+import com.dacosys.warehouseCounter.ktor.v2.impl.ApiRequest
+import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.INTERNAL_IMAGE_CONTROL_APP_ID
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.settings.SettingsRepository
@@ -16,6 +18,8 @@ import id.pahlevikun.jotter.Jotter
 import id.pahlevikun.jotter.event.ActivityEvent
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.auth.providers.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
@@ -44,29 +48,30 @@ class WarehouseCounterApp : Application(), KoinComponent {
             modules(koinAppModule())
         }
 
-        // Eventos del ciclo de vida de las actividades
-        // que nos interesa interceptar para conectar y
-        // desconectar los medios de lectura de códigos.
-        Jotter.Builder(this@WarehouseCounterApp).setLogEnable(true).setActivityEventFilter(
-            listOf(
-                ActivityEvent.CREATE,
-                ActivityEvent.RESUME,
-                ActivityEvent.PAUSE,
-                ActivityEvent.DESTROY
+        /**
+         * Life cicle events of the activities
+         * that we are interested in intercepting to connect and disconnect the code reading means.
+         */
+        Jotter.Builder(this@WarehouseCounterApp)
+            .setLogEnable(true)
+            .setActivityEventFilter(
+                listOf(
+                    ActivityEvent.CREATE,
+                    ActivityEvent.RESUME,
+                    ActivityEvent.PAUSE,
+                    ActivityEvent.DESTROY
+                )
             )
-        )
-            //.setFragmentEventFilter(listOf(FragmentEvent.VIEW_CREATE, FragmentEvent.PAUSE))
             .setJotterListener(JotterListener).build().startListening()
 
-        // Setup ImageControl context
+        /** Setup ImageControl context and app identification */
         ImageControl().create(
-            context = applicationContext,
-            id = INTERNAL_IMAGE_CONTROL_APP_ID
+            context = applicationContext, id = INTERNAL_IMAGE_CONTROL_APP_ID
         )
     }
 
     private fun koinAppModule() = module {
-        single { sharedPreferences }
+        single { PreferenceManager.getDefaultSharedPreferences(context) }
         single { SettingsRepository() }
 
         viewModel { SettingsViewModel() }
@@ -86,6 +91,15 @@ class WarehouseCounterApp : Application(), KoinComponent {
             }
         }
 
+        single {
+            Json {
+                prettyPrint = true
+                isLenient = true
+                encodeDefaults = true
+                ignoreUnknownKeys = true
+            }
+        }
+
         // Ktor
         single {
             HttpClient(OkHttp) {
@@ -97,17 +111,31 @@ class WarehouseCounterApp : Application(), KoinComponent {
                     }
                 }
                 install(ContentNegotiation) {
-                    json(Json {
-                        prettyPrint = true
-                        isLenient = true
-                        encodeDefaults = true
-                        ignoreUnknownKeys = true
-                    })
+                    json(json)
+
+                }
+                install(Auth) {
+                    basic {
+                        credentials {
+                            BasicAuthCredentials(
+                                username = Statics.currentUserName,
+                                password = String(Base64.decode(Statics.currentPass, Base64.DEFAULT))
+                            )
+                        }
+                    }
                 }
             }
         }
-        single { APIServiceImpl() }
+
+        /** Services for the different versions of the API and the Client Configuration service */
+        /** API Version 1 */
+        single { com.dacosys.warehouseCounter.ktor.v1.impl.APIServiceImpl() }
+        /** Client packages API Service Version 1 */
         single { DacoServiceImpl() }
+
+        /** API Version 2 */
+        single { com.dacosys.warehouseCounter.ktor.v2.impl.APIServiceImpl() }
+        single { ApiRequest() }
     }
 
     companion object {
@@ -126,13 +154,25 @@ class WarehouseCounterApp : Application(), KoinComponent {
         val httpClient: HttpClient
             get() = get().get()
 
-        val ktorApiService: APIServiceImpl
+        val ktorApiServiceV1: com.dacosys.warehouseCounter.ktor.v1.impl.APIServiceImpl
             get() = get().get()
 
         val ktorDacoService: DacoServiceImpl
             get() = get().get()
 
+        val ktorApiServiceV2: com.dacosys.warehouseCounter.ktor.v2.impl.APIServiceImpl
+            get() = get().get()
+
         val currentProxy: Proxy
+            get() = get().get()
+
+        val json: Json
+            get() = get().get()
+
+        val sharedPreferences: SharedPreferences
+            get() = get().get()
+
+        val apiRequest: ApiRequest
             get() = get().get()
 
         fun applicationName(): String {
@@ -141,8 +181,5 @@ class WarehouseCounterApp : Application(), KoinComponent {
             return if (stringId == 0) applicationInfo.nonLocalizedLabel.toString()
             else context.getString(stringId)
         }
-
-        val sharedPreferences: SharedPreferences
-            get() = PreferenceManager.getDefaultSharedPreferences(context)
     }
 }

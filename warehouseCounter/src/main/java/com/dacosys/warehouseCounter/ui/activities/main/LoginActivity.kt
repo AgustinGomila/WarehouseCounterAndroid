@@ -11,11 +11,14 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
-import android.view.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View.GONE
 import android.view.View.VISIBLE
+import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
-import android.widget.*
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -27,9 +30,12 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.LoginActivityBinding
-import com.dacosys.warehouseCounter.dto.clientPackage.Package
-import com.dacosys.warehouseCounter.ktor.functions.GetClientPackages.Companion.getConfig
-import com.dacosys.warehouseCounter.ktor.functions.GetDatabaseLocation
+import com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package
+import com.dacosys.warehouseCounter.ktor.v1.functions.GetClientPackages.Companion.getConfig
+import com.dacosys.warehouseCounter.ktor.v1.service.PackagesResult
+import com.dacosys.warehouseCounter.ktor.v2.dto.database.DatabaseData
+import com.dacosys.warehouseCounter.ktor.v2.functions.GetDatabase
+import com.dacosys.warehouseCounter.ktor.v2.impl.ApiRequest
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.closeImageControl
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.Md5
@@ -37,10 +43,9 @@ import com.dacosys.warehouseCounter.misc.Proxy
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.DbLocationResult
-import com.dacosys.warehouseCounter.network.PackagesResult
 import com.dacosys.warehouseCounter.room.dao.user.UserCoroutines
 import com.dacosys.warehouseCounter.room.database.WcDatabase
+import com.dacosys.warehouseCounter.room.database.WcTempDatabase
 import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
@@ -120,44 +125,20 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         }
     }
 
-    private fun onDatabaseLocationEnded(data: DbLocationResult) {
-        val status: ProgressStatus = data.status
-        val timeFileUrl: String = data.result.dbDate
-        val dbFileUrl: String = data.result.dbFile
-        val msg: String = data.msg
-
-        when (status) {
-            ProgressStatus.crashed -> {
-                showSnackBar(SnackBarEventData(msg, ERROR))
-                showProgressBar()
-
-                setButton(ButtonStyle.REFRESH)
-                attemptSync = false
+    private fun onGetDatabaseData(data: DatabaseData?) {
+        if (data != null) {
+            thread {
+                val sync = DownloadDb()
+                sync.addParams(callBack = this,
+                    timeFileUrl = data.dbDate,
+                    dbFileUrl = data.dbFile,
+                    onEventData = { showSnackBar(it) })
+                sync.execute()
             }
-
-            ProgressStatus.running -> {
-                setButton(ButtonStyle.BUSY)
-            }
-
-            ProgressStatus.canceled -> {
-                showSnackBar(SnackBarEventData(msg, ERROR))
-                showProgressBar()
-                attemptSync = false
-
-                // Sin conexión
-                enableLogin()
-            }
-
-            ProgressStatus.finished -> {
-                thread {
-                    val sync = DownloadDb()
-                    sync.addParams(callBack = this,
-                        timeFileUrl = timeFileUrl,
-                        dbFileUrl = dbFileUrl,
-                        onEventData = { showSnackBar(it) })
-                    sync.execute()
-                }
-            }
+        } else {
+            showProgressBar()
+            setButton(ButtonStyle.REFRESH)
+            attemptSync = false
         }
     }
 
@@ -341,8 +322,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putParcelable("user", userSpinnerFragment!!.selectedUser)
-        savedInstanceState.putString("password", binding.passwordEditText.text.toString())
+        savedInstanceState.putParcelable(ARG_USER, userSpinnerFragment!!.selectedUser)
+        savedInstanceState.putString(ARG_PASSWORD, binding.passwordEditText.text.toString())
     }
 
     private var userSpinnerFragment: UserSpinnerFragment? = null
@@ -373,17 +354,17 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             supportFragmentManager.findFragmentById(R.id.userSpinnerFragment) as UserSpinnerFragment?
 
         if (savedInstanceState != null) {
-            user = savedInstanceState.getParcelable("user")
-            password = savedInstanceState.getString("pass") ?: ""
+            user = savedInstanceState.getParcelable(ARG_USER)
+            password = savedInstanceState.getString(ARG_PASSWORD) ?: ""
         } else {
             val extras = intent.extras
             if (extras != null) {
-                user = Parcels.unwrap<User>(extras.getParcelable<User>("user"))
-                password = extras.getString("password") ?: ""
+                user = Parcels.unwrap<User>(extras.getParcelable<User>(ARG_USER))
+                password = extras.getString(ARG_PASSWORD) ?: ""
             }
         }
 
-        // region Mostrar número de versión, etc...
+        // region Mostrar número de versión, etc.
         val pInfo = packageManager.getPackageInfo(packageName, 0)
         val str = "${getString(R.string.app_milestone)} ${pInfo.versionName}"
         binding.versionTextView.text = str
@@ -464,15 +445,15 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     private fun initSync() {
-        try {
-            thread {
-                GetDatabaseLocation { onDatabaseLocationEnded(it) }.execute()
-            }
-        } catch (ex: Exception) {
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+        if (!ApiRequest.validUrl()) {
+            showSnackBar(SnackBarEventData(context.getString(R.string.invalid_url), ERROR))
+            return
+        }
 
-            setButton(ButtonStyle.REFRESH)
-            attemptSync = false
+        thread {
+            GetDatabase(
+                onEvent = { showSnackBar(it) },
+                onFinish = { onGetDatabaseData(it) }).execute()
         }
     }
 
@@ -501,6 +482,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 closeImageControl()
 
                 WcDatabase.cleanInstance()
+                WcTempDatabase.cleanInstance()
                 IcDatabase.cleanInstance()
 
                 initSync()
@@ -632,6 +614,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 Statics.cleanCurrentUser()
                 Statics.currentUserId = user!!.userId
                 Statics.currentUserName = user!!.name
+                Statics.currentPass = user!!.password ?: ""
                 Statics.isLogged = true
 
                 setupImageControl()
@@ -677,7 +660,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 val password = confJson.getString("log_password")
 
                 if (userName.isNotEmpty() && password.isNotEmpty()) {
-                    UserCoroutines().getByName(userName) {
+                    UserCoroutines.getByName(userName) {
                         if (it != null) {
                             attemptLogin(it.userId, it.password ?: "", password)
                         } else {
@@ -827,5 +810,10 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
             RUNNING -> {}
         }
+    }
+
+    companion object {
+        const val ARG_USER = "user"
+        const val ARG_PASSWORD = "password"
     }
 }

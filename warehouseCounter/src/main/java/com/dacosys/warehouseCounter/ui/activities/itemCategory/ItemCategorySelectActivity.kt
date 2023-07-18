@@ -16,11 +16,11 @@ import android.widget.AdapterView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.adapter.itemCategory.ItemCategoryAdapter
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.itemCategory.ItemCategoryCoroutines
 import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
+import com.dacosys.warehouseCounter.ui.adapter.itemCategory.ItemCategoryAdapter
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
@@ -40,11 +40,12 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.setAdapter(null)
     }
 
+    private var fillRequired = false
     private var itemCategory: ItemCategory? = null
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putParcelable("itemCategory", itemCategory)
+        savedInstanceState.putParcelable(ARG_ITEM_CATEGORY, itemCategory)
     }
 
     private lateinit var binding: CodeSelectActivityBinding
@@ -69,16 +70,20 @@ class ItemCategorySelectActivity : AppCompatActivity(),
             binding.autoCompleteTextView.setOnTouchListener(null)
             binding.autoCompleteTextView.onFocusChangeListener = null
             binding.autoCompleteTextView.setOnDismissListener(null)
-            itemCategory = savedInstanceState.getParcelable("itemCategory")
+
+            itemCategory = savedInstanceState.getParcelable(ARG_ITEM_CATEGORY)
         } else {
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
+                val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                itemCategory = extras.getParcelable("itemCategory")
+                itemCategory = extras.getParcelable(ARG_ITEM_CATEGORY)
             }
         }
+
+        // Para el llenado en el onStart siguiente de onCreate
+        fillRequired = true
 
         title = tempTitle
         binding.codeSelect.setOnClickListener { onBackPressed() }
@@ -110,9 +115,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
                 if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold && binding.autoCompleteTextView.adapter != null && (binding.autoCompleteTextView.adapter as ItemCategoryAdapter).count > 0 && !binding.autoCompleteTextView.isPopupShowing) {
                     // Display the suggestion dropdown on focus
                     Handler(Looper.getMainLooper()).post {
-                        run {
-                            adjustAndShowDropDown()
-                        }
+                        adjustAndShowDropDown()
                     }
                 }
             }
@@ -173,14 +176,20 @@ class ItemCategorySelectActivity : AppCompatActivity(),
 
         KeyboardVisibilityEvent.registerEventListener(this, this)
         refreshItemCategoryText(cleanText = false, focus = true)
-        thread { fillAdapter() }
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        if (fillRequired) {
+            fillRequired = false
+            thread { fillAdapter() }
+        }
     }
 
     private fun showProgressBar(visibility: Int) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.progressBar.visibility = visibility
-            }
+            binding.progressBar.visibility = visibility
         }, 20)
     }
 
@@ -214,7 +223,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         Screen.closeKeyboard(this)
 
         val data = Intent()
-        data.putExtra("itemCategory", itemCategory)
+        data.putExtra(ARG_ITEM_CATEGORY, itemCategory)
         setResult(RESULT_OK, data)
         finish()
     }
@@ -225,9 +234,9 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         isFilling = true
 
         try {
-            Log.d(this::class.java.simpleName, "Selecting item categories...")
+            Log.d(this::class.java.simpleName, "Selecting categories...")
 
-            ItemCategoryCoroutines().get {
+            ItemCategoryCoroutines.get {
                 val adapter = ItemCategoryAdapter(
                     activity = this,
                     resource = R.layout.item_category_row,
@@ -261,7 +270,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         finish()
     }
 
-    // region SOFT KEYBOARD AND DROPDOWN ISSUES
+    //region SOFT KEYBOARD AND DROPDOWN ISSUES
     override fun onVisibilityChanged(isOpen: Boolean) {
         adjustDropDownHeight()
     }
@@ -348,4 +357,9 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         }
     }
     // endregion SOFT KEYBOARD AND DROPDOWN ISSUES
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_ITEM_CATEGORY = "itemCategory"
+    }
 }

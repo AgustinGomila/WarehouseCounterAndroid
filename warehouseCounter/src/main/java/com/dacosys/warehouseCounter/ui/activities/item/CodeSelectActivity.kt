@@ -18,12 +18,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.item.ItemAdapter
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
+import com.dacosys.warehouseCounter.ui.adapter.item.ItemAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
@@ -47,13 +47,28 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     private var code: String = ""
+    private val currentText: String
+        get() {
+            return binding.autoCompleteTextView.text.toString().trim()
+        }
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("code", binding.autoCompleteTextView.text.toString().trim())
+        savedInstanceState.putString(ARG_CODE, currentText)
+        savedInstanceState.putString(ARG_TITLE, title.toString())
     }
 
+    private fun loadSavedValues(b: Bundle) {
+        val t1 = b.getString(ARG_TITLE)
+        title =
+            if (!t1.isNullOrEmpty()) t1
+            else getString(R.string.search_by_code)
+
+        code = b.getString(ARG_CODE) ?: ""
+    }
+
+    private var fillRequired = false
     private lateinit var binding: CodeSelectActivityBinding
 
     @SuppressLint("ClickableViewAccessibility")
@@ -67,7 +82,6 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         // fuera de la ventana. Esta actividad se ve como un diálogo.
         setFinishOnTouchOutside(true)
 
-        var tempTitle = getString(R.string.search_by_code)
         if (savedInstanceState != null) {
             // Dejo de escuchar estos eventos hasta pasar los valores guardados
             // más adelante se reconectan
@@ -76,18 +90,18 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
             binding.autoCompleteTextView.setOnTouchListener(null)
             binding.autoCompleteTextView.onFocusChangeListener = null
             binding.autoCompleteTextView.setOnDismissListener(null)
-            code = savedInstanceState.getString("code") ?: ""
+
+            loadSavedValues(savedInstanceState)
         } else {
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
-                if (!t1.isNullOrEmpty()) tempTitle = t1
-
-                code = extras.getString("code") ?: ""
+                loadSavedValues(extras)
             }
         }
 
-        title = tempTitle
+        // Para el llenado en el onStart siguiente de onCreate
+        fillRequired = true
+
         binding.codeSelect.setOnClickListener { onBackPressed() }
 
         binding.codeClearImageView.setOnClickListener {
@@ -98,7 +112,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         // region Setup ITEM_CATEGORY ID AUTOCOMPLETE
         // Set an item click checkedChangedListener for auto complete text view
         binding.autoCompleteTextView.threshold = 1
-        binding.autoCompleteTextView.hint = tempTitle
+        binding.autoCompleteTextView.hint = title
         binding.autoCompleteTextView.onItemClickListener =
             AdapterView.OnItemClickListener { _, _, position, _ ->
                 if (binding.autoCompleteTextView.adapter != null && binding.autoCompleteTextView.adapter is ItemAdapter) {
@@ -112,12 +126,17 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         binding.autoCompleteTextView.setOnContractsAvailability(this)
         binding.autoCompleteTextView.onFocusChangeListener =
             View.OnFocusChangeListener { _, hasFocus ->
-                if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold && binding.autoCompleteTextView.adapter != null && (binding.autoCompleteTextView.adapter as ItemAdapter).count > 0 && !binding.autoCompleteTextView.isPopupShowing) {
+                val count = binding.autoCompleteTextView.adapter?.count ?: 0
+                val text = currentText
+
+                if (hasFocus &&
+                    text.length >= binding.autoCompleteTextView.threshold &&
+                    count > 0 &&
+                    !binding.autoCompleteTextView.isPopupShowing
+                ) {
                     // Display the suggestion dropdown on focus
                     Handler(Looper.getMainLooper()).post {
-                        run {
-                            adjustAndShowDropDown()
-                        }
+                        adjustAndShowDropDown()
                     }
                 }
             }
@@ -137,7 +156,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         }
         binding.autoCompleteTextView.setOnEditorActionListener { _, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_DONE || event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
-                if (binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold) {
+                if (currentText.length >= binding.autoCompleteTextView.threshold) {
                     code = binding.autoCompleteTextView.text!!.toString().trim()
                 }
                 itemSelected()
@@ -150,17 +169,21 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
 
         KeyboardVisibilityEvent.registerEventListener(this, this)
         refreshCodeText(cleanText = false, focus = true)
-        thread { fillAdapter() }
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        if (fillRequired) {
+            fillRequired = false
+            thread { fillAdapter() }
+        }
     }
 
     private fun refreshCodeText(cleanText: Boolean, focus: Boolean) {
         runOnUiThread {
             binding.autoCompleteTextView.setText(code.ifEmpty {
-                if (cleanText) {
-                    ""
-                } else {
-                    binding.autoCompleteTextView.text.toString()
-                }
+                if (cleanText) "" else currentText
             })
 
             binding.autoCompleteTextView.post {
@@ -177,7 +200,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         Screen.closeKeyboard(this)
 
         val data = Intent()
-        data.putExtra("itemCode", code)
+        data.putExtra(ARG_CODE, code)
         setResult(RESULT_OK, data)
         finish()
     }
@@ -190,7 +213,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         try {
             Log.d(this::class.java.simpleName, "Selecting items...")
 
-            ItemCoroutines().get {
+            ItemCoroutines.get {
                 val adapter = ItemAdapter(
                     resource = R.layout.item_row_simple,
                     activity = this,
@@ -219,9 +242,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
 
     private fun showProgressBar(visibility: Int) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.progressBar.visibility = visibility
-            }
+            binding.progressBar.visibility = visibility
         }, 20)
     }
 
@@ -337,7 +358,6 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
 
         JotterListener.lockScanner(this, true)
 
-
         try {
             code = scanCode
             refreshCodeText(cleanText = false, focus = true)
@@ -349,5 +369,10 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
             // Unless is blocked, unlock the partial
             JotterListener.lockScanner(this, false)
         }
+    }
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_CODE = "code"
     }
 }

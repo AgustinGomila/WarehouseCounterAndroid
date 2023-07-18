@@ -14,9 +14,11 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.NewPtlOrdersBinding
-import com.dacosys.warehouseCounter.dto.warehouse.Warehouse
-import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
-import com.dacosys.warehouseCounter.ktor.functions.GetWarehouse
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
+import com.dacosys.warehouseCounter.ktor.v2.functions.GetWarehouse
+import com.dacosys.warehouseCounter.ktor.v2.impl.ApiActionParam
+import com.dacosys.warehouseCounter.ktor.v2.impl.ApiRequest
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
@@ -52,19 +54,19 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putParcelable("warehouseArea", warehouseArea)
+        savedInstanceState.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
     }
 
     private fun loadBundleValues(b: Bundle) {
-        val t1 = b.getString("title")
+        val t1 = b.getString(ARG_TITLE)
         tempTitle = if (!t1.isNullOrEmpty()) t1
         else context.getString(R.string.setup_new_ptl)
 
-        warehouseArea = b.getParcelable("warehouseArea")
+        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
     }
 
     private fun loadExtraBundleValues(b: Bundle) {
-        val t1 = b.getString("title")
+        val t1 = b.getString(ARG_TITLE)
         tempTitle = if (!t1.isNullOrEmpty()) t1
         else context.getString(R.string.setup_new_ptl)
     }
@@ -97,8 +99,8 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
         binding.areaTextView.setOnClickListener {
             val intent = Intent(this, WarehouseAreaSelectActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra("warehouseArea", warehouseArea)
-            intent.putExtra("title", context.getString(R.string.select_area))
+            intent.putExtra(WarehouseAreaSelectActivity.ARG_WAREHOUSE_AREA, warehouseArea)
+            intent.putExtra(WarehouseAreaSelectActivity.ARG_TITLE, context.getString(R.string.select_area))
             resultForAreaSelect.launch(intent)
         }
 
@@ -109,33 +111,52 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
         }
     }
 
-    private val resultForAreaSelect =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            val data = it?.data
-            try {
-                if (it?.resultCode == RESULT_OK && data != null) {
-                    warehouseArea =
-                        data.getParcelableExtra("warehouseArea") ?: return@registerForActivityResult
-                    setAreaText()
-                }
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+    private val resultForAreaSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                warehouseArea = data.getParcelableExtra(WarehouseAreaSelectActivity.ARG_WAREHOUSE_AREA)
+                    ?: return@registerForActivityResult
+                setAreaText()
             }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         }
+    }
 
     private fun selectDefaultArea() {
         if (isFinishing) return
 
+        if (!ApiRequest.validUrl()) {
+            showSnackBar(SnackBarEventData(context.getString(R.string.invalid_url), SnackBarType.ERROR))
+            return
+        }
+
         thread {
-            GetWarehouse(onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
-                onFinish = { if (it.any()) onGetAreas(it) }).execute()
+            GetWarehouse(
+                action = action,
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                onFinish = { if (it.any()) onGetWarehouses(it) }
+            ).execute()
         }
     }
 
-    private fun onGetAreas(it: ArrayList<Warehouse>) {
+    private val action: ArrayList<ApiActionParam> by lazy {
+        arrayListOf(
+            ApiActionParam(
+                action = ApiActionParam.ACTION_EXPAND,
+                extension = setOf(
+                    ApiActionParam.EXTENSION_WAREHOUSE_AREA_LIST,
+                    ApiActionParam.EXTENSION_STATUS
+                )
+            )
+        )
+    }
+
+    private fun onGetWarehouses(it: ArrayList<Warehouse>) {
         val w = it.first()
-        val wa = w.areas.first()
+        val wa = w.areas?.first()
 
         warehouseArea = wa
         setAreaText()
@@ -162,7 +183,7 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
 
         val data = Intent()
         if (warehouseArea != null) data.putExtra(
-            "warehouseArea", Parcels.wrap<WarehouseArea>(warehouseArea)
+            ARG_WAREHOUSE_AREA, Parcels.wrap<WarehouseArea>(warehouseArea)
         )
 
         setResult(RESULT_OK, data)
@@ -242,6 +263,9 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
     }
 
     companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_WAREHOUSE_AREA = "warehouseArea"
+
         fun equals(a: Any?, b: Any?): Boolean {
             return a != null && a == b
         }

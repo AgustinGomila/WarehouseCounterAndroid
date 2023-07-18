@@ -24,7 +24,7 @@ class CommandCode : Parcelable {
     }
 
     override fun hashCode(): Int {
-        return this.code.toInt()
+        return this.code.hashCode()
     }
 
     constructor(parcel: Parcel) {

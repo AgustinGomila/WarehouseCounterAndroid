@@ -15,12 +15,11 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.dto.clientPackage.Package
-import com.dacosys.warehouseCounter.ktor.functions.GetClientPackages
+import com.dacosys.warehouseCounter.ktor.v1.functions.GetClientPackages
+import com.dacosys.warehouseCounter.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.PackagesResult
 import com.dacosys.warehouseCounter.settings.Preference
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.settings.utils.QRConfigType
@@ -37,26 +36,28 @@ class ClientPackage {
     companion object : DialogInterface.OnMultiChoiceClickListener {
 
         // region Selección automática de paquetes del cliente
-        private var allProductArray: ArrayList<Package> = ArrayList()
-        private var validProductsArray: ArrayList<Package> = ArrayList()
-        private var selected: BooleanArray? = null
+        private var allProductArray: ArrayList<com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package> =
+            ArrayList()
+        private var validProductsArray: ArrayList<com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package> =
+            ArrayList()
+        private var selected: BooleanArray = booleanArrayOf()
 
         override fun onClick(dialog: DialogInterface?, which: Int, isChecked: Boolean) {
             if (isChecked) {
                 val tempProdVersionId = validProductsArray[which].productVersionId
 
                 for (i in 0 until validProductsArray.size) {
-                    if ((selected ?: return)[i]) {
+                    if (selected[i]) {
                         val prodVerId = validProductsArray[i].productVersionId
                         if (prodVerId == tempProdVersionId) {
-                            (selected ?: return)[i] = false
+                            selected[i] = false
                             (dialog as AlertDialog).listView.setItemChecked(i, false)
                         }
                     }
                 }
             }
 
-            (selected ?: return)[which] = isChecked
+            selected[which] = isChecked
         }
 
         private val validProducts: ArrayList<String>
@@ -70,7 +71,7 @@ class ClientPackage {
         fun selectClientPackage(
             callback: TaskConfigPanelEnded,
             weakAct: WeakReference<FragmentActivity>,
-            allPackage: ArrayList<Package>,
+            allPackage: ArrayList<com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package>,
             email: String,
             password: String,
             onEventData: (SnackBarEventData) -> Unit = {},
@@ -162,9 +163,10 @@ class ClientPackage {
             builder.setMultiChoiceItems(listItems.toTypedArray(), selected, this)
 
             builder.setPositiveButton(R.string.accept) { dialog, _ ->
-                val selectedPacks: ArrayList<Package> = ArrayList()
+                val selectedPacks: ArrayList<com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package> =
+                    ArrayList()
                 for ((i, prod) in validProductsArray.withIndex()) {
-                    if ((selected ?: return@setPositiveButton)[i]) {
+                    if (selected[i]) {
                         selectedPacks.add(prod)
                     }
                 }
@@ -200,7 +202,7 @@ class ClientPackage {
 
         private fun setConfigPanel(
             callback: TaskConfigPanelEnded,
-            packArray: ArrayList<Package>,
+            packArray: ArrayList<com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package>,
             email: String,
             password: String,
             onEventData: (SnackBarEventData) -> Unit = {},
@@ -245,12 +247,12 @@ class ClientPackage {
 
                 val customOptJsonObj = pack.customOptions
                 for ((key, value) in customOptJsonObj) {
-                    if (key == Package.icUserTag) {
+                    if (key == com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package.IC_USER_KEY) {
                         icUser = when (value) {
                             is JsonPrimitive -> value.content
                             else -> value.toString()
                         }
-                    } else if (key == Package.icPasswordTag) {
+                    } else if (key == com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package.IC_PASSWORD_KEY) {
                         icPass = when (value) {
                             is JsonPrimitive -> value.content
                             else -> value.toString()

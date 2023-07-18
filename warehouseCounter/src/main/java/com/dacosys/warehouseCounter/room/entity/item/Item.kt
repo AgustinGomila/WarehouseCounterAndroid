@@ -4,7 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import androidx.room.*
 import androidx.room.ColumnInfo.Companion.NOCASE
-import com.dacosys.warehouseCounter.adapter.item.ItemStatus
+import com.dacosys.warehouseCounter.ui.adapter.item.ItemStatus
 import com.dacosys.warehouseCounter.room.entity.item.ItemEntry as Entry
 
 @Entity(
@@ -69,10 +69,6 @@ data class Item(
         return description
     }
 
-    override fun hashCode(): Int {
-        return itemId.hashCode()
-    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -80,6 +76,20 @@ data class Item(
         other as Item
 
         return itemId == other.itemId
+    }
+
+    override fun hashCode(): Int {
+        var result = itemId.hashCode()
+        result = 31 * result + description.hashCode()
+        result = 31 * result + active
+        result = 31 * result + (price?.hashCode() ?: 0)
+        result = 31 * result + ean.hashCode()
+        result = 31 * result + itemCategoryId.hashCode()
+        result = 31 * result + (externalId?.hashCode() ?: 0)
+        result = 31 * result + lotEnabled
+        result = 31 * result + itemCategoryStr.hashCode()
+        result = 31 * result + itemStatus.hashCode()
+        return result
     }
 
     companion object CREATOR : Parcelable.Creator<Item> {

@@ -37,8 +37,8 @@ class ProgressStatus(var id: Int, var description: String) {
             return ArrayList(allSections.sortedWith(compareBy { it.id }))
         }
 
-        fun getById(ProgressStatusId: Int): ProgressStatus? {
-            return getAll().firstOrNull { it.id == ProgressStatusId }
+        fun getById(id: Int): ProgressStatus? {
+            return getAll().firstOrNull { it.id == id }
         }
     }
 }

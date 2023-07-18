@@ -85,16 +85,23 @@ android {
         dataBinding true
         viewBinding true
     }
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/*']
+        }
+    }
     productFlavors {}
     buildToolsVersion = buildToolsVer
     kotlinOptions {
         jvmTarget = '1.8'
     }
     defaultConfig {
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         proguardFiles
         manifestPlaceholders = [:]
         targetSdk = androidTargetSdk
         minSdk = androidMinSdk
+        multiDexEnabled true
 
         javaCompileOptions {
             // Necesario para Room si se define exportSchema en [true] en la clase @Database
@@ -112,35 +119,31 @@ android {
 }
 
 dependencies {
+    // MultiDex
+    implementation 'com.android.support:multidex:1.0.3'
+
     // Permite utilizar API restringidas no públicas del SDK
     implementation 'com.github.tiann:FreeReflection:3.1.0'
     implementation 'com.google.android.gms:play-services-basement:18.2.0'
 
     // Permite utilizar las librerías Zxing en API 23
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.6'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
 
     // LeakCanary: debugImplementation because LeakCanary should only run in debug builds.
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
 
-    // TODO: Implementar Unit Test
-    // testImplementation 'junit:junit:4.13.2'
-    // testImplementation 'com.google.truth:truth:1.1.3'
+    // Testing
+    testImplementation "junit:junit:$junitVersion"
+    testImplementation "androidx.arch.core:core-testing:$coreTestingVersion"
+    androidTestImplementation("androidx.test.espresso:espresso-core:$espressoVersion", {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
 
-    // androidTestImplementation 'androidx.test:runner:1.4.0'
-    // androidTestImplementation('androidx.test.espresso:espresso-core:3.4.0', {
-    //     exclude group: 'com.android.support', module: 'support-annotations'
-    // })
-
-    // Constaint Layout
-    // No update 2.0.1 (Bugs persist in: 2.0.2, 2.0.3, 2.0.4, 2.1.0),
+    // Constraint Layout
+    // No update 2.0.1 (Bugs persist until 2.1.4),
     // Todas tienen un bug al finalizar una animación que no re-dibuja los fragmentos
     implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
-
-    // Common STATUS CODES that are often shared across API surfaces
-    // implementation 'com.google.android.gms:play-services-vision:20.1.3'
-
-    // SOAP Library
-    implementation 'com.google.code.ksoap2-android:ksoap2-android:3.6.2'
 
     // Keyboard Visibility Library
     implementation 'net.yslibrary.keyboardvisibilityevent:keyboardvisibilityevent:2.3.0'
@@ -178,7 +181,7 @@ dependencies {
     // Some AndroidX Libs
     implementation 'androidx.annotation:annotation:1.6.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.compose.animation:animation-core:1.6.0-alpha01'
+    implementation 'androidx.compose.animation:animation-core:1.6.0-alpha02'
 
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.percentlayout:percentlayout:1.0.0'
@@ -189,7 +192,7 @@ dependencies {
 
     // Para ActivityResults
     implementation 'androidx.activity:activity-ktx:1.8.0-alpha06'
-    implementation 'androidx.fragment:fragment-ktx:1.6.0'
+    implementation 'androidx.fragment:fragment-ktx:1.6.1'
 
     // Honeywell native driver
     implementation files('libs/honeywell/DataCollection.aar')
@@ -201,7 +204,11 @@ dependencies {
     api("androidx.room:room-runtime:$roomVersion")
     annotationProcessor("androidx.room:room-compiler:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
+    implementation('android.arch.persistence.room:runtime:1.1.1')
+    androidTestImplementation "androidx.room:room-testing:$roomVersion"
+
     // To use Kotlin annotation processing tool (kapt)
+    kapt("android.arch.persistence.room:compiler:1.1.1")
     kapt("androidx.room:room-compiler:$roomVersion")
 
     // KTor
@@ -210,9 +217,10 @@ dependencies {
     implementation "io.ktor:ktor-client-content-negotiation:$kTorVersion"
     implementation "io.ktor:ktor-serialization-kotlinx-json:$kTorVersion"
     implementation "io.ktor:ktor-client-json:$kTorVersion"
+    implementation "io.ktor:ktor-client-auth:$kTorVersion"
 
     // RecyclerView
-    implementation 'androidx.recyclerview:recyclerview:1.3.0'
+    implementation 'androidx.recyclerview:recyclerview:1.3.1'
 
     // KotlinX Serialization
     runtimeOnly 'org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.5.1'

@@ -17,7 +17,7 @@ interface ItemCategoryDao {
 
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(itemCategory: ItemCategory)
+    suspend fun insert(itemCategory: ItemCategory): Long?
 
 
     @Update

@@ -8,13 +8,13 @@ import androidx.appcompat.widget.TooltipCompat
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.databinding.OrderRequestHeaderBinding
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
+import com.dacosys.warehouseCounter.room.dao.orderRequest.OrderRequestCoroutines
 
 /**
  * A simple [Fragment] subclass.
@@ -22,29 +22,7 @@ import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
  * create an instance of this fragment.
  */
 class OrderRequestHeader : Fragment() {
-    private var orderRequest: OrderRequest? = null
-    private var orcArray: ArrayList<OrderRequestContent> = ArrayList()
-
-    // Este método es llamado cuando el fragmento se está creando.
-    // En el puedes inicializar todos los componentes que deseas guardar si el fragmento fue pausado o detenido.
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        if (arguments != null) {
-            orderRequest = requireArguments().getParcelable("orderRequest")
-            orcArray = requireArguments().getParcelableArrayList("orcArray") ?: ArrayList()
-        }
-    }
-
-    fun fill(
-        orderRequest: OrderRequest?,
-        orcArray: ArrayList<OrderRequestContent>,
-    ) {
-        this.orderRequest = orderRequest
-        this.orcArray = orcArray
-
-        fillControls()
-    }
+    private lateinit var orderRequest: OrderRequest
 
     private var _binding: OrderRequestHeaderBinding? = null
 
@@ -57,24 +35,36 @@ class OrderRequestHeader : Fragment() {
         _binding = null
     }
 
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
         _binding = OrderRequestHeaderBinding.inflate(inflater, container, false)
-        val view = binding.root
-
-        fillControls()
-        return view
+        return binding.root
     }
 
-    private fun fillControls() {
-        val or = orderRequest ?: return
-        val clientId = or.clientId ?: return
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        if (arguments == null) return
 
-        ClientCoroutines().getById(clientId) {
+        val id = requireArguments().getLong(ARG_ID)
+        OrderRequestCoroutines.getOrderRequestById(
+            id = id,
+            onResult = {
+                if (it != null) {
+                    orderRequest = it
+
+                    fillClientData()
+                    fillOrderData()
+                }
+            }
+        )
+    }
+
+    private fun fillClientData() {
+        val clientId = orderRequest.clientId ?: return
+        ClientCoroutines.getById(clientId) {
             when {
                 it != null -> {
                     binding.clientTextView.text = it.name
@@ -89,10 +79,12 @@ class OrderRequestHeader : Fragment() {
                 }
             }
         }
+    }
 
+    private fun fillOrderData() {
         // Descripción
         when {
-            or.description.isEmpty() -> {
+            orderRequest.description.isEmpty() -> {
                 binding.descriptionTextView.text = getString(R.string.count_without_description)
                 TooltipCompat.setTooltipText(
                     binding.descriptionTextView, getString(R.string.count_without_description)
@@ -100,49 +92,42 @@ class OrderRequestHeader : Fragment() {
             }
 
             else -> {
-                binding.descriptionTextView.text = or.description
-                TooltipCompat.setTooltipText(
-                    binding.descriptionTextView, or.description
-                )
+                binding.descriptionTextView.text = orderRequest.description
+                TooltipCompat.setTooltipText(binding.descriptionTextView, orderRequest.description)
             }
         }
 
         // Resumen
         var resume = ""
         val breakLine = lineSeparator
-        val totalItems = orcArray.count()
+        val totalItems = orderRequest.contents.count()
 
-        if (orderRequest?.orderRequestedType != OrderRequestType.stockAuditFromDevice) {
+        if (orderRequest.orderRequestType != OrderRequestType.stockAuditFromDevice) {
             var unknownItems = 0
             var diffQtyItems = 0
-            for (x in orcArray.indices) {
-                if (orcArray[x].qty != null) {
-                    val qty = orcArray[x].qty!!
+            for (orc in orderRequest.contents) {
+                if (orc.qtyRequested == 0.toDouble()) {
+                    unknownItems++
+                    continue
+                }
 
-                    if (qty.qtyRequested == 0.toDouble()) {
-                        unknownItems++
-                        continue
-                    }
-
-                    if (qty.qtyRequested != qty.qtyCollected) {
-                        diffQtyItems++
-                    }
+                if (orc.qtyRequested != orc.qtyCollected) {
+                    diffQtyItems++
                 }
             }
 
             if (unknownItems > 0 || diffQtyItems > 0) {
                 resume += getString(R.string.differences_exist)
-                // confirmButton!!.isEnabled = or.resultAllowDiff!!
             }
 
-            if (or.resultDiffProduct!!) {
+            if (orderRequest.resultDiffProduct!!) {
                 resume += breakLine + String.format(
                     getString(R.string._product_differences),
                     Statics.roundToString(unknownItems.toDouble(), decimalPlaces)
                 )
             }
 
-            if (or.resultDiffQty!!) {
+            if (orderRequest.resultDiffQty!!) {
                 resume += breakLine + String.format(
                     getString(R.string._quantity_differences),
                     Statics.roundToString(diffQtyItems.toDouble(), decimalPlaces)
@@ -155,12 +140,9 @@ class OrderRequestHeader : Fragment() {
         }
 
         var totalQtyCollected = 0.0
-        for (a in 0 until orcArray.count()) {
-            if (orcArray[a].qty != null) {
-                val qty = orcArray[a].qty!!
-
-                totalQtyCollected += qty.qtyCollected!!
-            }
+        for (a in 0 until orderRequest.contents.count()) {
+            val orc = orderRequest.contents[a]
+            totalQtyCollected += orc.qtyCollected!!
         }
 
         resume += breakLine + String.format(
@@ -173,17 +155,15 @@ class OrderRequestHeader : Fragment() {
     }
 
     companion object {
-        fun newInstance(
-            orderRequest: OrderRequest?,
-            orcArray: ArrayList<OrderRequestContent>,
-        ): OrderRequestHeader {
+        const val ARG_ID = "id"
+
+        fun newInstance(id: Long): OrderRequestHeader {
             val fragment = OrderRequestHeader()
 
             val args = Bundle()
-            args.putParcelable("orderRequest", orderRequest)
-            args.putParcelableArrayList("orcArray", orcArray)
-
+            args.putLong(ARG_ID, id)
             fragment.arguments = args
+
             return fragment
         }
 

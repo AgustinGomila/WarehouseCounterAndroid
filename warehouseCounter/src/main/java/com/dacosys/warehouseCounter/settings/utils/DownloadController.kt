@@ -22,7 +22,7 @@ class DownloadController(private val view: View) {
         private const val MIME_TYPE = "application/vnd.android.package-archive"
         private const val PROVIDER_PATH = ".provider"
 
-        private const val apkUrl =
+        private const val APK_URL =
             "http://resources.dacosys.com/Warehouse_Counter/Milestone12/installers/android/warehouseCounter-release.apk"
     }
 
@@ -39,7 +39,7 @@ class DownloadController(private val view: View) {
         if (file.exists()) file.delete()
 
         val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        val downloadUri = Uri.parse(apkUrl)
+        val downloadUri = Uri.parse(APK_URL)
         val request = DownloadManager.Request(downloadUri)
 
         request.setMimeType(MIME_TYPE)

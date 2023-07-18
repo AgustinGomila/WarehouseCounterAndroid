@@ -15,10 +15,15 @@
     </string>
     <string name="an_error_occurred_while_trying_to_add_the_item">Ha ocurrido un error al intentar agregar el ítem
     </string>
+    <string name="an_error_occurred_while_trying_to_add_the_item_code">Ha ocurrido un error al intentar agregar el
+        código de ítem
+    </string>
     <string name="an_error_occurred_while_trying_to_delete_the_count">Ha ocurrido un error al intentar eliminar el
         arqueo
     </string>
     <string name="an_error_occurred_while_trying_to_load_the_order">Ha ocurrido un error al intentar cargar el arqueo
+    </string>
+    <string name="an_error_occurred_while_trying_to_send_the_order">Ha ocurrido un error al intentar enviar el arqueo
     </string>
     <string name="an_error_occurred_while_trying_to_save_the_count">Ha ocurrido un error al intentar guardar el arqueo
     </string>
@@ -175,6 +180,14 @@
     <string name="item_select_search_by_item_category">Categoría</string>
     <string name="item_select_search_by_item_ean">EAN o descripción del ítem</string>
     <string name="item_unlinked_from_codes">Ítem %s desvinculado de códigos</string>
+    <string name="order_location_search_by_order_id">Buscar por número de pedido…</string>
+    <string name="order_location_search_by_order_external_id">Buscar por número externo de pedido…</string>
+    <string name="order_location_search_by_warehouse">Buscar por depósito…</string>
+    <string name="order_location_search_by_area">Buscar por área…</string>
+    <string name="order_location_search_by_rack">Buscar por rack…</string>
+    <string name="order_location_search_by_item_ean">Buscar por EAN del ítem…</string>
+    <string name="order_location_search_by_item_code">Buscar por código del ítem…</string>
+    <string name="order_location_search_by_item_description">Buscar por descripción del ítem…</string>
     <string name="items">ítems</string>
     <string name="link">Vincular</string>
     <string name="link_code">Vincular códigos</string>
@@ -660,4 +673,19 @@
     <string name="edit_items">Editar ítems</string>
     <string name="unknown_host">Host desconocido</string>
     <string name="error_printing_to">Error al imprimir en</string>
+    <string name="amount_of_labels">Cantidad de etiquetas</string>
+    <string name="not_defined">No definido</string>
+    <string name="item_not_exists">El ítem no existe</string>
+    <string name="search_by_order">Buscar por número de pedido…</string>
+    <string name="search_by_description">Buscar por descripción…</string>
+    <string name="search_by_ean">Buscar por EAN…</string>
+    <string name="search_by_location">Buscar por ubicación…</string>
+    <string name="rack">Rack</string>
+    <string name="order_location">Ubicación de pedidos</string>
+    <string name="enter_ean">Ingresar EAN</string>
+    <string name="enter_order_id">Ingresar pedido ID</string>
+    <string name="enter_order_external_id">Ingresar ID externo</string>
+    <string name="enter_warehouse">Ingresar depósito</string>
+    <string name="enter_area">Ingresar área</string>
+    <string name="enter_rack">Ingresar rack</string>
 </resources>

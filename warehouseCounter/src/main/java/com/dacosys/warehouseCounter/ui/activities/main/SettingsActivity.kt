@@ -15,9 +15,9 @@ import androidx.preference.PreferenceFragmentCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
 import com.dacosys.warehouseCounter.databinding.SettingsActivityBinding
-import com.dacosys.warehouseCounter.dto.clientPackage.Package
+import com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package
+import com.dacosys.warehouseCounter.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.PackagesResult
 import com.dacosys.warehouseCounter.room.database.FileHelper.Companion.removeDataBases
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
@@ -42,12 +42,11 @@ import java.lang.ref.WeakReference
  * A [SettingsActivity] that presents a set of application settings. On
  * handset devices, settings are presented as a single list. On tablets,
  * settings are split by category, with category headers shown to the left of
- * the list of settings.
+ * the settings list.
  *
- *
- * See [
- * Android Design: Settings](http://developer.android.com/design/patterns/settings.html) for design guidelines and the [Settings
- * API Guide](http://developer.android.com/guide/topics/ui/settings.html) for more information on developing a Settings UI.
+ * See:
+ * [Android Design: Settings](http://developer.android.com/design/patterns/settings.html) for design guidelines and the
+ * [Settings API Guide](http://developer.android.com/guide/topics/ui/settings.html) for more information on developing a Settings UI.
  */
 
 class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPreferenceStartFragmentCallback,
@@ -62,7 +61,10 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         fragment.arguments = args
 
         // Replace the existing Fragment with the new Fragment
-        supportFragmentManager.beginTransaction().replace(R.id.settings, fragment).addToBackStack(null).commit()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.settings, fragment)
+            .addToBackStack(null)
+            .commit()
         supportFragmentManager.setFragmentResultListener("requestKey", this) { key, _ ->
             if (key == "requestKey") title = pref.title
         }
@@ -85,9 +87,11 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         titleTag = getString(R.string.settings)
 
         if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction().replace(R.id.settings, HeaderFragment()).commit()
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.settings, HeaderFragment())
+                .commit()
         } else {
-            titleTag = savedInstanceState.getCharSequence("title").toString()
+            titleTag = savedInstanceState.getCharSequence(ARG_TITLE).toString()
             title = titleTag
         }
 
@@ -146,7 +150,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         // Save current requireActivity() title so we can set it again after a configuration change
-        outState.putCharSequence("title", title)
+        outState.putCharSequence(ARG_TITLE, title)
     }
 
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
@@ -191,6 +195,8 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
     }
 
     companion object {
+        const val ARG_TITLE = "title"
+
         //region CAMERA SCAN
         var currentQRConfigType = QRConfigApp
 
@@ -357,4 +363,3 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         }
     }
 }
-

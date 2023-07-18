@@ -23,11 +23,11 @@ data class ItemCode(
     @ColumnInfo(name = Entry.TO_UPLOAD) var toUpload: Int = 0,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
-        parcel.readLong(),
-        parcel.readValue(Long::class.java.classLoader) as? Long,
-        parcel.readString(),
-        parcel.readValue(Double::class.java.classLoader) as? Double,
-        parcel.readInt()
+        _id = parcel.readLong(),
+        itemId = parcel.readValue(Long::class.java.classLoader) as? Long,
+        code = parcel.readString(),
+        qty = parcel.readValue(Double::class.java.classLoader) as? Double,
+        toUpload = parcel.readInt()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {

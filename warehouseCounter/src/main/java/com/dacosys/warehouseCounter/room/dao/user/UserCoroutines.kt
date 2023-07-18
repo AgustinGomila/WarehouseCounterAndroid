@@ -1,22 +1,19 @@
 package com.dacosys.warehouseCounter.room.dao.user
 
 import android.util.Log
-import com.dacosys.warehouseCounter.room.database.WcDatabase
+import com.dacosys.warehouseCounter.room.database.WcDatabase.Companion.database
 import com.dacosys.warehouseCounter.room.entity.user.User
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
-class UserCoroutines {
+object UserCoroutines {
     @Throws(Exception::class)
     fun getById(
         itemId: Long,
         onResult: (User?) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = WcDatabase.getDatabase().userDao().getById(itemId)
-            onResult.invoke(r)
+            val r = async { database.userDao().getById(itemId) }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(null)
@@ -29,8 +26,8 @@ class UserCoroutines {
         onResult: (User?) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = WcDatabase.getDatabase().userDao().getByName(name)
-            onResult.invoke(r)
+            val r = async { database.userDao().getByName(name) }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(null)
@@ -42,8 +39,8 @@ class UserCoroutines {
         onResult: (ArrayList<User>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = ArrayList(WcDatabase.getDatabase().userDao().getAll())
-            onResult.invoke(r)
+            val r = async { ArrayList(database.userDao().getAll()) }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(ArrayList())
@@ -56,8 +53,8 @@ class UserCoroutines {
         onResult: () -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            WcDatabase.getDatabase().userDao().insert(user)
-            onResult.invoke()
+            async { database.userDao().insert(user) }.await()
+            onResult()
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult()

@@ -61,8 +61,6 @@ class CollectorTypeSpinnerFragment : Fragment() {
             else -> 0
         }
 
-    // Este método es llamado cuando el fragmento se está creando.
-    // En el puedes inicializar todos los componentes que deseas guardar si el fragmento fue pausado o detenido.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (arguments != null) {
@@ -146,7 +144,7 @@ class CollectorTypeSpinnerFragment : Fragment() {
     }
 
     companion object {
-        // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+        // The fragment initialization parameters
         private const val ARG_ALL_COLLECTOR_TYPE = "allCollectorType"
         private const val ARG_SHOW_GENERAL_LEVEL = "showGeneralLevel"
 

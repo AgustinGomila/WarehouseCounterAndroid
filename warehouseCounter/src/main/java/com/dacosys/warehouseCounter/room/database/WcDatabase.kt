@@ -22,51 +22,43 @@ import com.dacosys.warehouseCounter.room.entity.itemRegex.ItemRegex
 import com.dacosys.warehouseCounter.room.entity.lot.Lot
 import com.dacosys.warehouseCounter.room.entity.user.User
 
-
 @Database(
     entities = [Item::class, Client::class, ItemCategory::class, ItemCode::class, ItemRegex::class, Lot::class, User::class],
     version = DATABASE_VERSION
 )
 abstract class WcDatabase : RoomDatabase() {
     abstract fun itemDao(): ItemDao
-
     abstract fun clientDao(): ClientDao
-
     abstract fun itemCategoryDao(): ItemCategoryDao
-
     abstract fun itemCodeDao(): ItemCodeDao
-
     abstract fun itemRegexDao(): ItemRegexDao
-
     abstract fun lotDao(): LotDao
-
     abstract fun userDao(): UserDao
 
-
     companion object {
-
         const val DATABASE_VERSION = 2
         const val DATABASE_NAME = "wc.sqlite"
 
         @Volatile
         private var INSTANCE: WcDatabase? = null
 
-        fun getDatabase(): WcDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance =
-                    Room.databaseBuilder(
-                        context,
-                        WcDatabase::class.java,
-                        DATABASE_NAME
-                    )
-                        .createFromAsset(DATABASE_NAME)
-                        .addMigrations(MIGRATION_1_2)
-                        .build()
+        val database: WcDatabase
+            get() {
+                return INSTANCE ?: synchronized(this) {
+                    val instance =
+                        Room.databaseBuilder(
+                            context = context,
+                            klass = WcDatabase::class.java,
+                            name = DATABASE_NAME
+                        )
+                            .createFromAsset(DATABASE_NAME)
+                            .addMigrations(MIGRATION_1_2)
+                            .build()
 
-                INSTANCE = instance
-                instance
+                    INSTANCE = instance
+                    instance
+                }
             }
-        }
 
         fun cleanInstance() {
             INSTANCE?.close()

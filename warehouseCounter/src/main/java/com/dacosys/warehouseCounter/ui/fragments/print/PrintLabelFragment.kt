@@ -25,7 +25,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.PrintLabelFragmentBinding
-import com.dacosys.warehouseCounter.dto.ptlOrder.Label
+import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.Label
 import com.dacosys.warehouseCounter.misc.BtPrinter.Companion.printerBluetoothDevice
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
@@ -269,13 +269,13 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     //endregion
 
     private fun loadBundleValues(b: Bundle) {
-        printer = b.getString(argPrinter) ?: ""
-        qty = b.getInt(argQty)
+        printer = b.getString(ARG_PRINTER) ?: ""
+        qty = b.getInt(ARG_QTY)
     }
 
     private fun saveBundleValues(b: Bundle) {
-        b.putString(argPrinter, printer)
-        b.putInt(argQty, Integer.parseInt(binding.qtyEditText.text.toString()))
+        b.putString(ARG_PRINTER, printer)
+        b.putInt(ARG_QTY, Integer.parseInt(binding.qtyEditText.text.toString()))
     }
 
     private var _binding: PrintLabelFragmentBinding? = null
@@ -517,7 +517,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         val items: ArrayList<Item> = ArrayList()
         var isDone = false
         for ((index, id) in itemIdArray.withIndex()) {
-            ItemCoroutines().getById(id) {
+            ItemCoroutines.getById(id) {
                 if (it != null) items.add(it)
                 isDone = index == itemIdArray.lastIndex
             }
@@ -645,7 +645,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         var description: String
         var price: String
 
-        ItemCategoryCoroutines().getById(item.itemCategoryId) {
+        ItemCategoryCoroutines.getById(item.itemCategoryId) {
             itemCategoryStr = ""
             if (it != null) {
                 if (it.parentStr.isNotEmpty()) {
@@ -801,8 +801,8 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     companion object {
 
         // region Fragment initialization parameters
-        private const val argPrinter = "printer"
-        private const val argQty = "qty"
+        private const val ARG_PRINTER = "printer"
+        private const val ARG_QTY = "qty"
         // endregion
 
         /**
@@ -816,8 +816,8 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             val fragment = PrintLabelFragment()
 
             val args = Bundle()
-            args.putString(argPrinter, printer)
-            args.putInt(argQty, qty)
+            args.putString(ARG_PRINTER, printer)
+            args.putInt(ARG_QTY, qty)
 
             fragment.arguments = args
             return fragment

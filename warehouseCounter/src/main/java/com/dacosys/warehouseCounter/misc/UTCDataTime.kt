@@ -6,7 +6,7 @@ import java.util.*
 
 class UTCDataTime {
     companion object {
-        private const val dateFormat = "yyyy-MM-dd HH:mm:ss"
+        private const val DATE_FORMAT = "yyyy-MM-dd HH:mm:ss"
 
         fun getUTCDateTimeAsDate(): Date? {
             //note: doesn't check for null
@@ -14,7 +14,7 @@ class UTCDataTime {
         }
 
         fun getUTCDateTimeAsString(): String {
-            val sdf = SimpleDateFormat(dateFormat, Locale.US)
+            val sdf = SimpleDateFormat(DATE_FORMAT, Locale.US)
             sdf.timeZone = TimeZone.getTimeZone("UTC")
 
             val date = sdf.parse(sdf.format(Date())) ?: Calendar.getInstance()
@@ -24,7 +24,7 @@ class UTCDataTime {
         }
 
         fun dateToStringDate(dateTime: Date): String? {
-            val sdf = SimpleDateFormat(dateFormat, Locale.US)
+            val sdf = SimpleDateFormat(DATE_FORMAT, Locale.US)
             return try {
                 val date = sdf.parse(sdf.format(dateTime)) ?: Calendar.getInstance()
                 sdf.format(date)
@@ -34,12 +34,12 @@ class UTCDataTime {
             }
         }
 
-        private fun stringDateToDate(StrDate: String): Date? {
+        private fun stringDateToDate(strDate: String): Date? {
             var dateToReturn: Date? = null
-            val dateFormat = SimpleDateFormat(dateFormat, Locale.US)
+            val dateFormat = SimpleDateFormat(DATE_FORMAT, Locale.US)
 
             try {
-                dateToReturn = dateFormat.parse(StrDate) as Date
+                dateToReturn = dateFormat.parse(strDate) as Date
             } catch (e: ParseException) {
                 e.printStackTrace()
             }

@@ -1,0 +1,496 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "f0be7d3fce798ab928a3121839d596c7",
+    "entities": [
+      {
+        "tableName": "order_request",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `client_id` INTEGER NOT NULL, `completed` INTEGER NOT NULL DEFAULT 0, `creation_date` TEXT NOT NULL, `description` TEXT NOT NULL, `external_id` TEXT NOT NULL, `finish_date` TEXT NOT NULL, `order_type_description` TEXT NOT NULL, `order_type_id` INTEGER NOT NULL, `result_allow_diff` INTEGER NOT NULL DEFAULT 0, `result_allow_mod` INTEGER NOT NULL DEFAULT 0, `result_diff_product` INTEGER NOT NULL DEFAULT 0, `result_diff_qty` INTEGER NOT NULL DEFAULT 0, `start_date` TEXT NOT NULL, `user_id` INTEGER NOT NULL, `zone` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "orderRequestId",
+            "columnName": "_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientId",
+            "columnName": "client_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completed",
+            "columnName": "completed",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "creationDate",
+            "columnName": "creation_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "externalId",
+            "columnName": "external_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "finishDate",
+            "columnName": "finish_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "orderTypeDescription",
+            "columnName": "order_type_description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "orderTypeId",
+            "columnName": "order_type_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resultAllowDiff",
+            "columnName": "result_allow_diff",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "resultAllowMod",
+            "columnName": "result_allow_mod",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "resultDiffProduct",
+            "columnName": "result_diff_product",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "resultDiffQty",
+            "columnName": "result_diff_qty",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "startDate",
+            "columnName": "start_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "user_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "zone",
+            "columnName": "zone",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "IDX_order_request_description",
+            "unique": false,
+            "columnNames": [
+              "description"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_order_request_description` ON `${TABLE_NAME}` (`description`)"
+          },
+          {
+            "name": "IDX_order_request_external_id",
+            "unique": false,
+            "columnNames": [
+              "external_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_order_request_external_id` ON `${TABLE_NAME}` (`external_id`)"
+          },
+          {
+            "name": "IDX_order_request_order_type_id",
+            "unique": false,
+            "columnNames": [
+              "order_type_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_order_request_order_type_id` ON `${TABLE_NAME}` (`order_type_id`)"
+          },
+          {
+            "name": "IDX_order_request_client_id",
+            "unique": false,
+            "columnNames": [
+              "client_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_order_request_client_id` ON `${TABLE_NAME}` (`client_id`)"
+          },
+          {
+            "name": "IDX_order_request_user_id",
+            "unique": false,
+            "columnNames": [
+              "user_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_order_request_user_id` ON `${TABLE_NAME}` (`user_id`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "order_request_content",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `order_request_id` INTEGER NOT NULL, `item_id` INTEGER NOT NULL, `item_description` TEXT NOT NULL, `item_code_read` TEXT NOT NULL, `item_ean` TEXT NOT NULL, `item_price` REAL, `item_active` INTEGER NOT NULL DEFAULT 0, `item_external_id` TEXT NOT NULL, `item_category_id` INTEGER NOT NULL, `item_lot_enabled` INTEGER NOT NULL DEFAULT 0, `lot_id` INTEGER NOT NULL, `lot_code` TEXT NOT NULL, `lot_active` INTEGER NOT NULL DEFAULT 0, `qty_requested` REAL, `qty_collected` REAL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "orderRequestId",
+            "columnName": "order_request_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemId",
+            "columnName": "item_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemDescription",
+            "columnName": "item_description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "codeRead",
+            "columnName": "item_code_read",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ean",
+            "columnName": "item_ean",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "price",
+            "columnName": "item_price",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "itemActive",
+            "columnName": "item_active",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "externalId",
+            "columnName": "item_external_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemCategoryId",
+            "columnName": "item_category_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lotEnabled",
+            "columnName": "item_lot_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "lotId",
+            "columnName": "lot_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "code",
+            "columnName": "lot_code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lotActive",
+            "columnName": "lot_active",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "qtyRequested",
+            "columnName": "qty_requested",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "qtyCollected",
+            "columnName": "qty_collected",
+            "affinity": "REAL",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "IDX_order_request_content_order_request_id",
+            "unique": false,
+            "columnNames": [
+              "order_request_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_order_request_content_order_request_id` ON `${TABLE_NAME}` (`order_request_id`)"
+          },
+          {
+            "name": "IDX_order_request_content_item_id",
+            "unique": false,
+            "columnNames": [
+              "item_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_order_request_content_item_id` ON `${TABLE_NAME}` (`item_id`)"
+          },
+          {
+            "name": "IDX_order_request_content_item_ean",
+            "unique": false,
+            "columnNames": [
+              "item_ean"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_order_request_content_item_ean` ON `${TABLE_NAME}` (`item_ean`)"
+          },
+          {
+            "name": "IDX_order_request_content_item_description",
+            "unique": false,
+            "columnNames": [
+              "item_description"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_order_request_content_item_description` ON `${TABLE_NAME}` (`item_description`)"
+          },
+          {
+            "name": "IDX_order_request_content_item_category_id",
+            "unique": false,
+            "columnNames": [
+              "item_category_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_order_request_content_item_category_id` ON `${TABLE_NAME}` (`item_category_id`)"
+          },
+          {
+            "name": "IDX_order_request_content_item_external_id",
+            "unique": false,
+            "columnNames": [
+              "item_external_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_order_request_content_item_external_id` ON `${TABLE_NAME}` (`item_external_id`)"
+          },
+          {
+            "name": "IDX_order_request_content_item_active",
+            "unique": false,
+            "columnNames": [
+              "item_active"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_order_request_content_item_active` ON `${TABLE_NAME}` (`item_active`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `order_request_id` INTEGER NOT NULL, `client_id` INTEGER, `user_id` INTEGER, `item_id` INTEGER, `item_description` TEXT NOT NULL, `item_code` TEXT NOT NULL, `scanned_code` TEXT NOT NULL, `variation_qty` REAL, `final_qty` REAL, `date` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "orderRequestId",
+            "columnName": "order_request_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientId",
+            "columnName": "client_id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "user_id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "itemId",
+            "columnName": "item_id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "itemDescription",
+            "columnName": "item_description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemCode",
+            "columnName": "item_code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scannedCode",
+            "columnName": "scanned_code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "variationQty",
+            "columnName": "variation_qty",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "finalQty",
+            "columnName": "final_qty",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "IDX_log_order_request_id",
+            "unique": false,
+            "columnNames": [
+              "order_request_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_log_order_request_id` ON `${TABLE_NAME}` (`order_request_id`)"
+          },
+          {
+            "name": "IDX_log_client_id",
+            "unique": false,
+            "columnNames": [
+              "client_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_log_client_id` ON `${TABLE_NAME}` (`client_id`)"
+          },
+          {
+            "name": "IDX_log_user_id",
+            "unique": false,
+            "columnNames": [
+              "user_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_log_user_id` ON `${TABLE_NAME}` (`user_id`)"
+          },
+          {
+            "name": "IDX_log_item_id",
+            "unique": false,
+            "columnNames": [
+              "item_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_log_item_id` ON `${TABLE_NAME}` (`item_id`)"
+          },
+          {
+            "name": "IDX_log_item_description",
+            "unique": false,
+            "columnNames": [
+              "item_description"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_log_item_description` ON `${TABLE_NAME}` (`item_description`)"
+          },
+          {
+            "name": "IDX_log_item_code",
+            "unique": false,
+            "columnNames": [
+              "item_code"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_log_item_code` ON `${TABLE_NAME}` (`item_code`)"
+          },
+          {
+            "name": "IDX_log_scanned_code",
+            "unique": false,
+            "columnNames": [
+              "scanned_code"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `IDX_log_scanned_code` ON `${TABLE_NAME}` (`scanned_code`)"
+          }
+        ],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f0be7d3fce798ab928a3121839d596c7')"
+    ]
+  }
+}

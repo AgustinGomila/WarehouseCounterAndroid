@@ -16,11 +16,11 @@ import android.widget.AdapterView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.adapter.client.ClientAdapter
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
 import com.dacosys.warehouseCounter.room.entity.client.Client
+import com.dacosys.warehouseCounter.ui.adapter.client.ClientAdapter
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
@@ -44,7 +44,7 @@ class ClientSelectActivity : AppCompatActivity(),
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putParcelable("client", client)
+        savedInstanceState.putParcelable(ARG_CLIENT, client)
     }
 
     private lateinit var binding: CodeSelectActivityBinding
@@ -69,14 +69,15 @@ class ClientSelectActivity : AppCompatActivity(),
             binding.autoCompleteTextView.setOnTouchListener(null)
             binding.autoCompleteTextView.onFocusChangeListener = null
             binding.autoCompleteTextView.setOnDismissListener(null)
-            client = savedInstanceState.getParcelable("client")
+
+            client = savedInstanceState.getParcelable(ARG_CLIENT)
         } else {
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
+                val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                client = extras.getParcelable("client")
+                client = extras.getParcelable(ARG_CLIENT)
             }
         }
 
@@ -110,9 +111,7 @@ class ClientSelectActivity : AppCompatActivity(),
                 if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold && binding.autoCompleteTextView.adapter != null && (binding.autoCompleteTextView.adapter as ClientAdapter).count > 0 && !binding.autoCompleteTextView.isPopupShowing) {
                     // Display the suggestion dropdown on focus
                     Handler(Looper.getMainLooper()).post {
-                        run {
-                            adjustAndShowDropDown()
-                        }
+                        adjustAndShowDropDown()
                     }
                 }
             }
@@ -179,9 +178,7 @@ class ClientSelectActivity : AppCompatActivity(),
 
     private fun showProgressBar(visibility: Int) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.progressBar.visibility = visibility
-            }
+            binding.progressBar.visibility = visibility
         }, 20)
     }
 
@@ -215,7 +212,7 @@ class ClientSelectActivity : AppCompatActivity(),
         Screen.closeKeyboard(this)
 
         val data = Intent()
-        data.putExtra("client", client)
+        data.putExtra(ARG_CLIENT, client)
         setResult(RESULT_OK, data)
         finish()
     }
@@ -226,8 +223,8 @@ class ClientSelectActivity : AppCompatActivity(),
         isFilling = true
 
         try {
-            Log.d(this::class.java.simpleName, "Selecting item clients...")
-            ClientCoroutines().get {
+            Log.d(this::class.java.simpleName, "Selecting clients...")
+            ClientCoroutines.get {
                 val adapter = ClientAdapter(
                     activity = this,
                     resource = R.layout.client_row,
@@ -261,7 +258,7 @@ class ClientSelectActivity : AppCompatActivity(),
         finish()
     }
 
-    // region SOFT KEYBOARD AND DROPDOWN ISSUES
+    //region SOFT KEYBOARD AND DROPDOWN ISSUES
     override fun onVisibilityChanged(isOpen: Boolean) {
         adjustDropDownHeight()
     }
@@ -347,5 +344,11 @@ class ClientSelectActivity : AppCompatActivity(),
             centerLayout()
         }
     }
-// endregion SOFT KEYBOARD AND DROPDOWN ISSUES
+    // endregion SOFT KEYBOARD AND DROPDOWN ISSUES
+
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_CLIENT = "client"
+    }
 }

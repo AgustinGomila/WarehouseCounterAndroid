@@ -1,22 +1,19 @@
 package com.dacosys.warehouseCounter.room.dao.item
 
 import android.util.Log
-import com.dacosys.warehouseCounter.room.database.WcDatabase
+import com.dacosys.warehouseCounter.room.database.WcDatabase.Companion.database
 import com.dacosys.warehouseCounter.room.entity.item.Item
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
-class ItemCoroutines {
+object ItemCoroutines {
     @Throws(Exception::class)
     fun getById(
         itemId: Long,
         onResult: (Item?) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = WcDatabase.getDatabase().itemDao().getById(itemId)
-            onResult.invoke(r)
+            val r = async { database.itemDao().getById(itemId) }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(null)
@@ -28,8 +25,8 @@ class ItemCoroutines {
         onResult: (ArrayList<Item>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = ArrayList(WcDatabase.getDatabase().itemDao().getAll())
-            onResult.invoke(r)
+            val r = async { ArrayList(database.itemDao().getAll()) }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(ArrayList())
@@ -42,8 +39,8 @@ class ItemCoroutines {
         onResult: (ArrayList<Item>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = ArrayList(WcDatabase.getDatabase().itemDao().getByItemCategoryId(itemCatId))
-            onResult.invoke(r)
+            val r = async { ArrayList(database.itemDao().getByItemCategoryId(itemCatId)) }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(ArrayList())
@@ -58,9 +55,15 @@ class ItemCoroutines {
         onResult: (ArrayList<Item>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val query = ItemDao.getEanDescCatQuery(ean, description, itemCategoryId)
-            val r = ArrayList(WcDatabase.getDatabase().itemDao().getByQuery(query))
-            onResult.invoke(r)
+            val r = async {
+                val query = ItemDao.getEanDescCatQuery(
+                    ean = ean,
+                    description = description,
+                    itemCategoryId = itemCategoryId
+                )
+                ArrayList(database.itemDao().getByQuery(query))
+            }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(ArrayList())
@@ -73,8 +76,8 @@ class ItemCoroutines {
         onResult: (ArrayList<String>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = ArrayList(WcDatabase.getDatabase().itemDao().getCodes(if (onlyActive) 1 else 0))
-            onResult.invoke(r)
+            val r = async { ArrayList(database.itemDao().getCodes(if (onlyActive) 1 else 0)) }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(ArrayList())
@@ -87,8 +90,8 @@ class ItemCoroutines {
         onResult: (Long?) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = WcDatabase.getDatabase().itemDao().insert(item)
-            onResult.invoke(r)
+            val r = async { database.itemDao().insert(item) }.await()
+            onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult(null)
@@ -102,8 +105,13 @@ class ItemCoroutines {
         onResult: () -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            WcDatabase.getDatabase().itemDao().updateDescription(itemId, description)
-            onResult.invoke()
+            async {
+                database.itemDao().updateDescription(
+                    itemId = itemId,
+                    description = description
+                )
+            }.await()
+            onResult()
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
             onResult()

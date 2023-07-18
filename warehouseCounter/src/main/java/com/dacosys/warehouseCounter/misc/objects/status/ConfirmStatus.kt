@@ -43,7 +43,7 @@ class ConfirmStatus : Parcelable {
     }
 
     override fun hashCode(): Int {
-        return id
+        return id.hashCode()
     }
 
     companion object CREATOR : Parcelable.Creator<ConfirmStatus> {

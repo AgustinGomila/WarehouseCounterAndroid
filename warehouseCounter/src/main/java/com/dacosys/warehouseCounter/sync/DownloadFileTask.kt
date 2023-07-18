@@ -21,7 +21,6 @@ class DownloadFileTask {
     private var fileType: DownloadDb.FileType? = null
 
     interface OnDownloadFileTask {
-        // Define data you like to return from AysncTask
         fun onDownloadFileTask(
             msg: String,
             fileType: DownloadDb.FileType,
@@ -45,8 +44,7 @@ class DownloadFileTask {
     private fun preExecute() {
         // take CPU lock to prevent CPU from going off if the user
         // presses the power button during download
-        val pm = context
-            .getSystemService(Context.POWER_SERVICE) as PowerManager
+        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, javaClass.name)
         mWakeLock?.acquire(3 * 60 * 1000L /*3 minutes*/)
     }
@@ -57,9 +55,7 @@ class DownloadFileTask {
         if (fileType != null) {
             if (result) {
                 mCallback?.onDownloadFileTask(
-                    msg = "${
-                        context.getString(R.string.download_ok)
-                    }: ${fileType.toString()}",
+                    msg = "${context.getString(R.string.download_ok)}: ${fileType.toString()}",
                     fileType = fileType!!,
                     downloadStatus = DownloadDb.DownloadStatus.FINISHED,
                     progress = null,
@@ -68,9 +64,7 @@ class DownloadFileTask {
                 )
             } else {
                 mCallback?.onDownloadFileTask(
-                    msg = "${
-                        context.getString(R.string.download_error)
-                    }: ${fileType.toString()}",
+                    msg = "${context.getString(R.string.download_error)}: ${fileType.toString()}",
                     fileType = fileType!!,
                     downloadStatus = DownloadDb.DownloadStatus.CRASHED,
                     progress = null,
@@ -126,9 +120,7 @@ class DownloadFileTask {
 
         if (destination.exists()) {
             mCallback?.onDownloadFileTask(
-                msg = "${
-                    context.getString(R.string.destination_already_exists)
-                }: $destination",
+                msg = "${context.getString(R.string.destination_already_exists)}: $destination",
                 fileType = fileType!!,
                 downloadStatus = DownloadDb.DownloadStatus.INFO,
                 progress = null,
@@ -139,9 +131,7 @@ class DownloadFileTask {
         }
 
         mCallback?.onDownloadFileTask(
-            msg = "${
-                context.getString(R.string.destination)
-            }: $destination${lineSeparator()}URL: $urlStr",
+            msg = "${context.getString(R.string.destination)}: $destination${lineSeparator()}URL: $urlStr",
             fileType = fileType!!,
             downloadStatus = DownloadDb.DownloadStatus.INFO,
             progress = null,
@@ -158,9 +148,7 @@ class DownloadFileTask {
             val url = URL(urlStr)
 
             mCallback?.onDownloadFileTask(
-                msg = "${
-                    context.getString(R.string.opening_connection)
-                }: $urlStr",
+                msg = "${context.getString(R.string.opening_connection)}: $urlStr",
                 fileType = fileType!!,
                 downloadStatus = DownloadDb.DownloadStatus.INFO,
                 progress = null,
@@ -174,9 +162,7 @@ class DownloadFileTask {
             // instead of the file
             if (connection.responseCode != HttpURLConnection.HTTP_OK) {
                 mCallback?.onDownloadFileTask(
-                    msg = "${
-                        context.getString(R.string.error_connecting_to)
-                    } $urlStr: Server returned HTTP ${connection.responseCode} ${connection.responseMessage}",
+                    msg = "${context.getString(R.string.error_connecting_to)} $urlStr: Server returned HTTP ${connection.responseCode} ${connection.responseMessage}",
                     fileType = fileType!!,
                     downloadStatus = DownloadDb.DownloadStatus.CRASHED,
                     progress = null,
@@ -190,9 +176,7 @@ class DownloadFileTask {
             // might be -1: server did not report the length
             val fileLength = connection.contentLength
             mCallback?.onDownloadFileTask(
-                msg = "${
-                    context.getString(R.string.file_length)
-                }: $fileLength",
+                msg = "${context.getString(R.string.file_length)}: $fileLength",
                 fileType = fileType!!,
                 downloadStatus = DownloadDb.DownloadStatus.INFO,
                 progress = null,
@@ -253,9 +237,7 @@ class DownloadFileTask {
             } while (true)
         } catch (e: Exception) {
             mCallback?.onDownloadFileTask(
-                msg = "${
-                    context.getString(R.string.exception_when_downloading)
-                }: ${e.message}",
+                msg = "${context.getString(R.string.exception_when_downloading)}: ${e.message}",
                 fileType = fileType!!,
                 downloadStatus = DownloadDb.DownloadStatus.CRASHED,
                 progress = null,

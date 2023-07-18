@@ -4,13 +4,11 @@ import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dto.orderRequest.Item
-import com.dacosys.warehouseCounter.dto.orderRequest.Item.CREATOR.fromItemRoom
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.dto.orderRequest.Qty
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -43,7 +41,7 @@ class CheckCode(
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         try {
             val count = list.count()
-            if (Statics.demoMode) {
+            if (Statics.DEMO_MODE) {
                 if (count >= 5) {
                     val res = context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
@@ -67,33 +65,39 @@ class CheckCode(
             if (count > 0) {
                 // Buscar primero en el adaptador de la lista
                 (0 until count).map { list[it] }
-                    .filter { it.item?.ean == scannedCode }.forEach { it2 ->
+                    .filter { it.ean == scannedCode }.forEach { it2 ->
                         callback.invoke(CheckCodeEnded(it2, itemCode))
                         return@withContext
                     }
             }
 
             // Si no está en el adaptador del control, buscar en la base de datos
-            ItemCoroutines().getByQuery(code) {
+            ItemCoroutines.getByQuery(code) {
                 val itemObj = it.firstOrNull()
 
                 if (itemObj != null) {
                     callback.invoke(
                         CheckCodeEnded(
-                            OrderRequestContent().apply {
-                                item = Item(itemObj, code)
-                                lot = null
-                                qty = Qty().apply {
-                                    qtyCollected = 0.toDouble()
-                                    qtyRequested = 0.toDouble()
-                                }
-                            }, itemCode
+                            orc = OrderRequestContent().apply {
+                                codeRead = code // TODO: Ver esto...
+                                itemId = itemObj.itemId
+                                itemDescription = itemObj.description
+                                ean = itemObj.ean
+                                price = itemObj.price?.toDouble()
+                                itemActive = itemObj.active == 1
+                                externalId = itemObj.externalId
+                                itemCategoryId = itemObj.itemCategoryId
+                                lotEnabled = itemObj.lotEnabled == 1
+                                qtyCollected = 0.toDouble()
+                                qtyRequested = 0.toDouble()
+                            },
+                            itemCode = itemCode
                         )
                     )
                     return@getByQuery
                 }
 
-                ItemCodeCoroutines().getByCode(code) { icList ->
+                ItemCodeCoroutines.getByCode(code) { icList ->
                     itemCode = icList.firstOrNull()
                     val itemId = itemCode?.itemId
                     if (itemId == null) {
@@ -104,7 +108,7 @@ class CheckCode(
                     // Buscar de nuevo dentro del adaptador del control
                     for (x in 0 until count) {
                         val item = list[x]
-                        if (item.item!!.itemId == itemId) {
+                        if (item.itemId == itemId) {
                             callback.invoke(CheckCodeEnded(item, itemCode))
                             return@getByCode
                         }
@@ -112,21 +116,25 @@ class CheckCode(
 
                     if (settingViewModel.allowUnknownCodes) {
                         // Item desconocido, agregar al base de datos
-                        val item = com.dacosys.warehouseCounter.room.entity.item.Item(
+                        val item = Item(
                             description = context.getString(R.string.unknown_item), ean = code
                         )
 
-                        ItemCoroutines().add(item) { id ->
+                        ItemCoroutines.add(item) { id ->
                             if (id != null) {
                                 callback.invoke(
                                     CheckCodeEnded(
                                         OrderRequestContent().apply {
-                                            this.item = fromItemRoom(item)
-                                            lot = null
-                                            qty = Qty().apply {
-                                                qtyCollected = 0.toDouble()
-                                                qtyRequested = 0.toDouble()
-                                            }
+                                            this.itemId = item.itemId
+                                            itemDescription = item.description
+                                            ean = item.ean
+                                            price = item.price?.toDouble()
+                                            itemActive = item.active == 1
+                                            externalId = item.externalId
+                                            itemCategoryId = item.itemCategoryId
+                                            lotEnabled = item.lotEnabled == 1
+                                            qtyCollected = 0.toDouble()
+                                            qtyRequested = 0.toDouble()
                                         }, itemCode
                                     )
                                 )

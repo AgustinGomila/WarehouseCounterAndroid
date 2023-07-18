@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.sync
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.dacosys.imageControl.network.upload.UploadImagesProgress
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
 
 class SyncViewModel : ViewModel() {
     val syncCompletedOrders: MutableLiveData<ArrayList<OrderRequest>> = MutableLiveData()

@@ -1,3 +1,7 @@
+wc.jks
+private_key.pepk
+pass.txt
+
 # Built application files
 *.apk
 *.aar

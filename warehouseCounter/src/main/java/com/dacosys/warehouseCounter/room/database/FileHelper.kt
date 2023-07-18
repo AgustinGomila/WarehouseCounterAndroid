@@ -18,6 +18,7 @@ import com.dacosys.warehouseCounter.room.database.WcDatabase.Companion.DATABASE_
 import com.dacosys.warehouseCounter.sync.DownloadDb
 import java.io.*
 import kotlin.math.min
+import com.dacosys.warehouseCounter.room.database.WcTempDatabase.Companion.DATABASE_NAME as TEMP_DATABASE_NAME
 
 class FileHelper {
     companion object {
@@ -26,6 +27,7 @@ class FileHelper {
         fun removeDataBases() {
             removeImageControlDataBase()
             removeLocalDataBase()
+            removeTempLocalDataBase()
         }
 
         private fun removeImageControlDataBase() {
@@ -45,9 +47,7 @@ class FileHelper {
         }
 
         private fun removeLocalDataBase() {
-            // Path to the just created empty db
             val outFileName = context.getDatabasePath(DATABASE_NAME).toString()
-
             try {
                 Log.i("Local DataBase", "Eliminando: $outFileName")
                 val f = File(outFileName)
@@ -57,6 +57,20 @@ class FileHelper {
             } catch (e: IOException) {
                 e.printStackTrace()
                 ErrorLog.writeLog(null, "removeLocalDataBase", e)
+            }
+        }
+
+        private fun removeTempLocalDataBase() {
+            val outFileName = context.getDatabasePath(TEMP_DATABASE_NAME).toString()
+            try {
+                Log.i("Local DataBase", "Eliminando: $outFileName")
+                val f = File(outFileName)
+                if (f.exists()) {
+                    f.delete()
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+                ErrorLog.writeLog(null, "removeTempLocalDataBase", e)
             }
         }
 
@@ -261,7 +275,7 @@ class FileHelper {
             return file.path
         }
 
-        /***
+        /**
          * Used for Android Q+
          * @param uri
          * @param newDirName if you want to create a directory, you can set this variable
@@ -499,7 +513,7 @@ class FileHelper {
                     // only if total length is known
                     mCallback?.onDownloadFileTask(
                         msg = context.getString(R.string.copying_database),
-                        fileType = DownloadDb.FileType.DBFILE,
+                        fileType = DownloadDb.FileType.DB_FILE,
                         downloadStatus = DownloadDb.DownloadStatus.COPYING,
                         progress = (total * 100 / totalSize).toInt()
                     )

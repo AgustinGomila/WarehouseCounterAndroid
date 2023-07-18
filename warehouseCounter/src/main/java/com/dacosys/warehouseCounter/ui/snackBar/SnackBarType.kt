@@ -60,7 +60,7 @@ class SnackBarType : Parcelable {
     }
 
     override fun hashCode(): Int {
-        return snackBarTypeId
+        return snackBarTypeId.hashCode()
     }
 
     companion object CREATOR {

@@ -17,9 +17,12 @@ import android.text.format.DateFormat
 import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
-import android.view.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View.GONE
 import android.view.View.VISIBLE
+import android.view.WindowManager
 import android.widget.EditText
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -35,20 +38,24 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.orderRequest.OrcAdapter
 import com.dacosys.warehouseCounter.databinding.OrderRequestActivityBothPanelsCollapsedBinding
-import com.dacosys.warehouseCounter.dto.log.Log
-import com.dacosys.warehouseCounter.dto.log.LogContent
-import com.dacosys.warehouseCounter.dto.orderRequest.*
-import com.dacosys.warehouseCounter.dto.orderRequest.Item.CREATOR.fromItemRoom
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.Log
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestContent
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.misc.ParcelLong
 import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.Statics.Companion.DATE_FORMAT
+import com.dacosys.warehouseCounter.misc.Statics.Companion.FILENAME_DATE_FORMAT
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.confirm
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.modify
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.room.dao.orderRequest.LogCoroutines
+import com.dacosys.warehouseCounter.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.room.entity.itemRegex.ItemRegex
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -60,17 +67,16 @@ import com.dacosys.warehouseCounter.ui.activities.common.MultiplierSelectActivit
 import com.dacosys.warehouseCounter.ui.activities.common.QtySelectorActivity
 import com.dacosys.warehouseCounter.ui.activities.item.ItemSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.log.LogContentActivity
+import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrcAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import kotlinx.serialization.json.Json
 import org.parceler.Parcels
 import java.io.UnsupportedEncodingException
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.concurrent.thread
 
 class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChangedListener,
     OrcAdapter.EditQtyListener, OrcAdapter.EditDescriptionListener,
@@ -89,7 +95,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         // Definir las cantidades según el modo de ingreso actual
         if (binding.requiredDescCheckBox.isChecked &&
-            orc.item?.itemDescription == context.getString(
+            orc.itemDescription == context.getString(
                 R.string.unknown_item
             )
         ) {
@@ -120,7 +126,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
-        if (BuildConfig.DEBUG || Statics.testMode) {
+        if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
             menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
@@ -173,15 +179,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 val codes: ArrayList<String> = ArrayList()
 
                 (adapter?.fullList ?: ArrayList<OrderRequestContent>()
-                    .filter { it.item != null && !it.item?.codeRead.isNullOrEmpty() })
-                    .mapTo(codes) { it.item?.codeRead ?: "" }
+                    .filter { it.codeRead.isNotEmpty() })
+                    .mapTo(codes) { it.codeRead }
 
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
 
             menuItemRandomIt -> {
-                ItemCoroutines().getCodes(true) {
+                ItemCoroutines.getCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)
@@ -239,23 +245,21 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun checkLotEnabled(orc: OrderRequestContent) {
         // Check LOT ENABLED
-        val item = orc.item ?: return
-        if ((item.itemId ?: 0) > 0 && item.lotEnabled == true) {
-            val tLot = lastRegexResult?.lot ?: orc.lot?.lotId?.toString() ?: ""
-            if (tLot.isNotEmpty()) {
-                lastRegexResult = null
-                setLotCode(orc, tLot)
-            } else {
-                lotCodeDialog(orc)
-            }
+        val itemId = orc.itemId ?: 0
+        if (itemId <= 0 || orc.lotEnabled != true) return
+
+        val tLot = lastRegexResult?.lot ?: orc.lotId?.toString() ?: ""
+        if (tLot.isNotEmpty()) {
+            lastRegexResult = null
+            setLotCode(orc = orc, lotId = tLot)
+        } else {
+            lotCodeDialog(orc)
         }
     }
 
     override fun onDataSetChanged() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                fillSummaryRow()
-            }
+            fillSummaryRow()
         }, 100)
     }
 
@@ -279,9 +283,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshOrc.isRefreshing = false
-            }
+            binding.swipeRefreshOrc.isRefreshing = false
         }, 100)
     }
 
@@ -292,8 +294,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var panelBottomIsExpanded = false
     private var panelTopIsExpanded = false
 
+    private lateinit var orderRequest: OrderRequest
+
     private var itemCode: ItemCode? = null
-    private var orderRequest: OrderRequest? = null
+    private var orderRequestId: Long = 0L
     private var completeList: ArrayList<OrderRequestContent> = ArrayList()
     private var checkedIdArray: ArrayList<Long> = ArrayList()
     private var isNew: Boolean = false
@@ -308,7 +312,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var firstVisiblePos: Int? = null
     private var currentScrollPosition: Int = 0
 
-    private var log: Log? = null
+    private val itemCount: Int
+        get() {
+            return adapter?.itemCount ?: 0
+        }
+
+    private val countChecked: Int
+        get() {
+            return adapter?.countChecked() ?: 0
+        }
 
     private var allowClicks = true
     private var rejectNewInstances = false
@@ -345,17 +357,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         if (adapter != null) {
             b.putParcelable("lastSelected", adapter?.currentItem())
             b.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
-            b.putParcelableArrayList("completeList", adapter?.fullList)
             b.putLongArray("checkedIdArray", adapter?.checkedIdArray?.map { it }?.toLongArray())
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
+        b.putLong(ARG_ID, orderRequestId)
+        b.putBoolean(ARG_IS_NEW, isNew)
+
         b.putParcelable("itemCode", itemCode)
-        b.putParcelable("orderRequest", orderRequest)
-
-        b.putBoolean("isNew", isNew)
-
-        b.putParcelable("log", log)
 
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
         b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
@@ -368,25 +377,25 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         b.putParcelable("lastRegexResult", lastRegexResult)
 
         b.putBoolean("tempCompleted", tempCompleted)
+
+        // Guardar en Room la orden
+        saveTempOrder()
     }
 
     private fun loadBundleValues(b: Bundle) {
         // region Recuperar el título de la ventana
-        val t1 = b.getString("title")
+        val t1 = b.getString(ARG_TITLE)
         if (!t1.isNullOrEmpty()) tempTitle = t1
         // endregion
 
         itemCode = b.getParcelable("itemCode")
-        orderRequest = b.getParcelable("orderRequest")
-        completeList = b.getParcelableArrayList("completeList") ?: ArrayList()
         checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
         lastSelected = b.getParcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
 
-        isNew = b.getBoolean("isNew")
-
-        log = b.getParcelable("log")
+        isNew = b.getBoolean(ARG_IS_NEW)
+        orderRequestId = b.getLong(ARG_ID)
 
         partial = b.getBoolean("partial")
         partialBlock = b.getBoolean("partialBlock")
@@ -403,27 +412,31 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun loadExtraBundleValues(extras: Bundle) {
-        val t1 = extras.getString("title")
+        val t1 = extras.getString(ARG_TITLE)
         if (!t1.isNullOrEmpty()) tempTitle = t1
 
-        isNew = extras.getBoolean("isNew")
-        orderRequest = Parcels.unwrap<OrderRequest>(extras.getParcelable("orderRequest"))
+        isNew = extras.getBoolean(ARG_IS_NEW)
+        orderRequestId = extras.getLong(ARG_ID)
 
         loadDefaultValues()
     }
 
-    private fun loadDefaultValues() {
-        val or = orderRequest ?: return
-        completeList = ArrayList(orderRequest?.content ?: ArrayList())
+    private fun loadOrderRequest() {
+        OrderRequestCoroutines.getOrderRequestById(
+            id = orderRequestId,
+            onResult = {
+                if (it != null) {
+                    orderRequest = it
+                    completeList = ArrayList(it.contents)
 
-        log = Log(
-            or.clientId,
-            Statics.currentUserId,
-            or.description,
-            DateFormat.format("yyyy-MM-dd hh:mm:ss", System.currentTimeMillis()).toString(),
-            ArrayList()
+                    fillHeader()
+                    fillAdapter(completeList)
+                }
+            }
         )
+    }
 
+    private fun loadDefaultValues() {
         when (settingViewModel.scanModeCount) {
             1 -> {
                 partialBlock = false
@@ -467,26 +480,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val extras = intent.extras
             if (extras != null) loadExtraBundleValues(extras)
         }
-
-        // Nunca debería ser NULL.
-        if (orderRequest != null) {
-            if (orderRequest!!.description.isNotEmpty()) {
-                tempTitle = "${context.getString(R.string.count)}: ${orderRequest!!.description}"
-            }
-
-            if (orderRequest!!.orderRequestedType != null) {
-                binding.orTypeTextView.text = when (orderRequest!!.orderRequestedType) {
-                    OrderRequestType.deliveryAudit -> OrderRequestType.deliveryAudit.description
-                    OrderRequestType.prepareOrder -> OrderRequestType.prepareOrder.description
-                    OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
-                    OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
-                    OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
-                    else -> context.getString(R.string.counted)
-                }
-            }
-        }
-
-        title = tempTitle
 
         binding.swipeRefreshOrc.setOnRefreshListener(this)
         binding.swipeRefreshOrc.setColorSchemeResources(
@@ -687,9 +680,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshOrc.isRefreshing = show
-            }
+            binding.swipeRefreshOrc.isRefreshing = show
         }, 20)
     }
 
@@ -755,9 +746,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
     }
 
+    private fun removeOrder(onFinish: () -> Unit) {
+        OrderRequestCoroutines.removeById(
+            id = orderRequestId,
+            onResult = { onFinish() })
+    }
+
     private fun cancelCount() {
-        if ((adapter?.itemCount ?: 0) <= 0) {
-            finish()
+        if (itemCount <= 0) {
+            removeOrder(onFinish = { finish() })
             return
         }
 
@@ -768,9 +765,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             builder.setNeutralButton(getString(R.string.cancel)) { dialog, _ ->
                 dialog.dismiss()
             }
-            builder.setNegativeButton(R.string.no) { _, _ -> finish() }
+            builder.setNegativeButton(R.string.no) { _, _ ->
+                removeOrder(onFinish = { finish() })
+            }
             builder.setPositiveButton(R.string.yes) { _, _ ->
-                processCount(completed = false, finishAtEnd = true)
+                processCount(completed = false)
             }
 
             val alertDialog: AlertDialog = builder.create()
@@ -798,8 +797,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     allowEditQty = true,
                     allowEditDescription = true,
                     checkedIdArray = checkedIdArray,
-                    orType = orderRequest?.orderRequestedType
-                        ?: OrderRequestType.stockAuditFromDevice,
+                    orType = orderRequest.orderRequestType,
                 )
 
                 refreshAdapterListeners()
@@ -823,6 +821,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex)
             } finally {
                 showProgressBar(false)
+                gentlyReturn()
             }
         }
     }
@@ -838,7 +837,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun fillSummaryRow() {
         runOnUiThread {
-            if (orderRequest?.orderRequestedType != OrderRequestType.stockAuditFromDevice) {
+            if (orderRequest.orderRequestType != OrderRequestType.stockAuditFromDevice) {
                 binding.totalLabelTextView.text = context.getString(R.string.total)
                 binding.qtyReqLabelTextView.text = context.getString(R.string.cant)
                 binding.selectedLabelTextView.visibility = VISIBLE
@@ -849,7 +848,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     val t = adapter?.itemCount ?: 0
                     binding.totalTextView.text = t.toString()
                     binding.qtyReqTextView.text = Statics.roundToString(cont, 0)
-                    binding.selectedTextView.text = adapter!!.countChecked().toString()
+                    binding.selectedTextView.text = countChecked.toString()
                 }
             } else {
                 binding.totalLabelTextView.text = context.getString(R.string.total)
@@ -882,28 +881,28 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     @SuppressLint("SimpleDateFormat")
     private fun removeItem() {
-        if (adapter?.currentItem() == null && (adapter?.countChecked() ?: 0) <= 0) {
+        val currentItem = adapter?.currentItem()
+        if (currentItem == null && countChecked <= 0) {
             allowClicks = true
             return
         }
 
         val orcsToRemove =
-            if ((adapter?.countChecked() ?: 0) > 0)
-                adapter?.getAllChecked() else arrayListOf(adapter?.currentItem()!!)
+            if (countChecked > 0) adapter?.getAllChecked()
+            else if (currentItem != null) arrayListOf(currentItem)
+            else arrayListOf()
 
         var allCodes = ""
         if (orcsToRemove!!.isNotEmpty()) {
             for (w in orcsToRemove) {
-                if (w.item != null) {
-                    allCodes = "${w.item?.ean}, $allCodes"
-                }
+                allCodes = "${w.ean}, $allCodes"
             }
 
             if (allCodes.endsWith(", ")) {
                 allCodes = allCodes.substring(0, allCodes.length - 2)
             }
 
-            allCodes = if (adapter!!.countChecked() > 1) {
+            allCodes = if (countChecked > 1) {
                 String.format(getString(R.string.do_you_want_to_remove_the_items), allCodes)
             } else {
                 String.format(getString(R.string.do_you_want_to_remove_the_item), allCodes)
@@ -919,40 +918,38 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 adb.setMessage(allCodes)
                 adb.setNegativeButton(R.string.cancel, null)
                 adb.setPositiveButton(R.string.accept) { _, _ ->
+                    var isDone = false
+                    for ((index, i) in orcsToRemove.withIndex()) {
+                        val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
+                        val now = df.format(Calendar.getInstance().time)
 
-                    val logContent: ArrayList<LogContent> = ArrayList(log?.content ?: ArrayList())
+                        val variationQty = i.qtyCollected!! * -1
+                        if (variationQty != 0.toDouble()) {
 
-                    for (i in orcsToRemove) {
-                        if (i.item != null && i.qty != null) {
-                            val itemObj = i.item!!
-                            val qtyObj = i.qty!!
-                            val lot = i.lot
-
-                            val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
-                            val now = df.format(Calendar.getInstance().time)
-
-                            val variationQty = qtyObj.qtyCollected!! * -1
-                            if (variationQty != 0.toDouble()) {
-                                logContent.add(
-                                    LogContent(
-                                        itemId = itemObj.itemId,
-                                        itemStr = itemObj.itemDescription,
-                                        itemCode = itemObj.ean,
-                                        lotId = lot?.lotId,
-                                        lotCode = lot?.code ?: "",
-                                        scannedCode = itemObj.codeRead,
-                                        variationQty = variationQty,
-                                        finalQty = 0.toDouble(),
-                                        date = now
-                                    )
-                                )
-                            }
+                            LogCoroutines.add(
+                                orderId = orderRequestId,
+                                log = Log(
+                                    clientId = orderRequest.clientId,
+                                    userId = Statics.currentUserId,
+                                    itemId = i.itemId,
+                                    itemDescription = i.itemDescription,
+                                    itemCode = i.ean,
+                                    scannedCode = i.codeRead,
+                                    variationQty = variationQty,
+                                    finalQty = 0.toDouble(),
+                                    date = now
+                                ),
+                                onResult = { isDone = index == orcsToRemove.lastIndex }
+                            )
                         }
                     }
 
-                    log?.content = logContent
-
-                    adapter!!.remove(orcsToRemove)
+                    val startTime = System.currentTimeMillis()
+                    while (!isDone) {
+                        if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong())
+                            isDone = true
+                    }
+                    adapter?.remove(orcsToRemove)
                 }
                 adb.show()
             } catch (ex: java.lang.Exception) {
@@ -972,8 +969,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val intent = Intent(context, ItemSelectActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-        intent.putExtra("title", context.getString(R.string.select_item))
-        intent.putExtra("multiSelect", false)
+        intent.putExtra(ARG_TITLE, context.getString(R.string.select_item))
+        intent.putExtra(ItemSelectActivity.ARG_MULTI_SELECT, false)
         resultForItemSelect.launch(intent)
     }
 
@@ -983,21 +980,25 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val items: ArrayList<ParcelLong> =
-                        data.getParcelableArrayListExtra("ids") ?: return@registerForActivityResult
+                        data.getParcelableArrayListExtra(ItemSelectActivity.ARG_IDS) ?: return@registerForActivityResult
 
                     if (items.isEmpty()) return@registerForActivityResult
 
-                    ItemCoroutines().getById(items.first().value) { it2 ->
+                    ItemCoroutines.getById(items.first().value) { it2 ->
                         if (it2 == null) return@getById
 
                         try {
                             addOrc(OrderRequestContent().apply {
-                                item = fromItemRoom(it2)
-                                lot = null
-                                qty = Qty().apply {
-                                    qtyCollected = 0.toDouble()
-                                    qtyRequested = 0.toDouble()
-                                }
+                                itemId = it2.itemId
+                                itemDescription = it2.description
+                                ean = it2.ean
+                                price = it2.price?.toDouble()
+                                itemActive = it2.active == 1
+                                externalId = it2.externalId
+                                itemCategoryId = it2.itemCategoryId
+                                lotEnabled = it2.lotEnabled == 1
+                                qtyCollected = 0.toDouble()
+                                qtyRequested = 0.toDouble()
                             })
                         } catch (ex: Exception) {
                             val res =
@@ -1018,10 +1019,23 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun finishCountDialog() {
         JotterListener.lockScanner(this, true)
 
-        val intent = Intent(this, OrderRequestConfirmActivity::class.java)
+        saveTempOrder {
+            launchFinishDialog()
+        }
+    }
 
-        intent.putExtra("orderRequest", Parcels.wrap<OrderRequest>(orderRequest))
-        intent.putParcelableArrayListExtra("orcArray", adapter?.fullList ?: ArrayList())
+    private fun saveTempOrder(onFinish: () -> Unit = {}) {
+        val fullList = adapter?.fullList?.toList() ?: listOf()
+        OrderRequestCoroutines.update(
+            orderRequest = orderRequest,
+            contents = fullList,
+            onResult = { onFinish() })
+    }
+
+    private fun launchFinishDialog() {
+        val intent = Intent(this, OrderRequestConfirmActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        intent.putExtra(OrderRequestConfirmActivity.ARG_ID, orderRequestId)
         resultForFinishCount.launch(intent)
     }
 
@@ -1030,9 +1044,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    when (Parcels.unwrap<ConfirmStatus>(data.getParcelableExtra("confirmStatus"))) {
-                        modify -> processCount(completed = false, finishAtEnd = true)
-                        confirm -> processCount(completed = true, finishAtEnd = true)
+                    when (Parcels.unwrap<ConfirmStatus>(data.getParcelableExtra(OrderRequestConfirmActivity.ARG_CONFIRM_STATUS))) {
+                        modify -> processCount(completed = false)
+                        confirm -> processCount(completed = true)
                     }
                 }
             } catch (ex: Exception) {
@@ -1047,35 +1061,40 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     // se requerirán permisos de escritura y se tenga que retomar la
     // actividad después de que el usuario los otorgue.
     private var tempCompleted = false
-    private var tempFinishAtEnd = false
 
-    private fun processCount(completed: Boolean, finishAtEnd: Boolean = false) {
-        val tOrderRequest = orderRequest ?: return
-
+    private fun processCount(completed: Boolean) {
         tempCompleted = completed
-        tempFinishAtEnd = finishAtEnd
-        var error = false
 
         // Preparar el conteo
-        tOrderRequest.content = adapter?.fullList ?: ArrayList()
-        tOrderRequest.completed = tempCompleted
-        tOrderRequest.finishDate = if (tempCompleted) DateFormat.format(
-            "yyyy-MM-dd hh:mm:ss", System.currentTimeMillis()
-        ).toString()
-        else ""
+        orderRequest.contents = adapter?.fullList?.toList() ?: listOf()
+        orderRequest.completed = tempCompleted
+        orderRequest.finishDate =
+            if (tempCompleted) DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString()
+            else ""
 
-        if (tOrderRequest.filename.isEmpty()) {
-            val df = SimpleDateFormat("yyMMddHHmmssZ", Locale.getDefault())
-            tOrderRequest.filename = String.format("%s.json", df.format(Calendar.getInstance().time))
+        if (orderRequest.filename.isEmpty()) {
+            val df = SimpleDateFormat(FILENAME_DATE_FORMAT, Locale.getDefault())
+            orderRequest.filename = String.format("%s.json", df.format(Calendar.getInstance().time))
         }
-        tOrderRequest.log = log ?: Log()
 
         setImagesJson()
 
+        LogCoroutines.getByOrderId(
+            orderId = orderRequestId,
+            onResult = {
+                orderRequest.logs = it.toList()
+                proceed()
+            }
+        )
+    }
+
+    private fun proceed() {
+        val error: Boolean
         try {
-            orJson = Json.encodeToString(OrderRequest.serializer(), tOrderRequest)
+            orJson = json.encodeToString(OrderRequest.serializer(), orderRequest)
             android.util.Log.i(this::class.java.simpleName, orJson)
-            orFileName = tOrderRequest.filename.substringAfterLast('/')
+
+            orFileName = orderRequest.filename.substringAfterLast('/')
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
                 PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
@@ -1088,7 +1107,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     value = orJson,
                     completed = tempCompleted
                 )
-                if (!error && tempFinishAtEnd) finish()
+
+                if (!error) {
+                    finish()
+                }
             } else {
                 requestPermissions(
                     arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE
@@ -1136,10 +1158,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         val intent = Intent(context, LogContentActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-
-        intent.putExtra("title", context.getString(R.string.count_log))
-        intent.putExtra("log", log)
-        intent.putExtra("logContent", ArrayList(log?.content ?: ArrayList()))
+        intent.putExtra(LogContentActivity.ARG_TITLE, context.getString(R.string.count_log))
+        intent.putExtra(LogContentActivity.ARG_ID, orderRequestId)
         resultForLog.launch(intent)
     }
 
@@ -1206,7 +1226,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun addOrc(tempOrc: OrderRequestContent?): Boolean {
         try {
             val count = adapter?.itemCount ?: 0
-            if (Statics.demoMode) {
+            if (Statics.DEMO_MODE) {
                 if (count >= 5) {
                     val res =
                         context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
@@ -1224,10 +1244,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             // Buscar primero en el adaptador de la lista
             for (a in 0 until count) {
                 val orc = adapter?.currentList?.get(a) ?: continue
-                if (orc.item?.itemId == tempOrc.item?.itemId) {
-                    setQtyCollected(
-                        orc = orc, qty = tempOrc.qty?.qtyCollected ?: 0.toDouble(), manualAdd = true
-                    )
+                if (orc.itemId == tempOrc.itemId) {
+                    val qtyCollected = tempOrc.qtyCollected ?: 0.toDouble()
+                    setQtyCollected(orc = orc, qty = qtyCollected, manualAdd = true)
                     return true
                 }
             }
@@ -1258,9 +1277,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-        intent.putExtra("title", context.getString(R.string.enter_description))
-        intent.putExtra("hint", context.getString(R.string.item_description_hint))
-        intent.putExtra("orc", orc)
+        intent.putExtra(ARG_TITLE, context.getString(R.string.enter_description))
+        intent.putExtra(EnterCodeActivity.ARG_HINT, context.getString(R.string.item_description_hint))
+        intent.putExtra(EnterCodeActivity.ARG_ORC, orc)
         resultForEnterDescription.launch(intent)
     }
 
@@ -1269,10 +1288,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (data != null) {
-                    val description = data.getStringExtra("code") ?: ""
-                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra("orc"))
+                    val description = data.getStringExtra(EnterCodeActivity.ARG_CODE) ?: ""
+                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(EnterCodeActivity.ARG_ORC))
 
-                    val item = orc.item ?: return@registerForActivityResult
+                    val item = orc ?: return@registerForActivityResult
 
                     if (it.resultCode == RESULT_OK) {
                         if (description.trim().isEmpty() && binding.requiredDescCheckBox.isChecked) {
@@ -1306,9 +1325,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-        intent.putExtra("title", context.getString(R.string.enter_description))
-        intent.putExtra("hint", context.getString(R.string.item_description_hint))
-        intent.putExtra("orc", orc)
+        intent.putExtra(ARG_TITLE, context.getString(R.string.enter_description))
+        intent.putExtra(EnterCodeActivity.ARG_HINT, context.getString(R.string.item_description_hint))
+        intent.putExtra(EnterCodeActivity.ARG_ORC, orc)
         resultForAddDescription.launch(intent)
     }
 
@@ -1317,10 +1336,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (data != null) {
-                    val description = data.getStringExtra("code") ?: ""
-                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra("orc"))
+                    val description = data.getStringExtra(EnterCodeActivity.ARG_CODE) ?: ""
+                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(EnterCodeActivity.ARG_ORC))
 
-                    val item = orc.item ?: return@registerForActivityResult
+                    val item = orc ?: return@registerForActivityResult
 
                     if (it.resultCode == RESULT_OK) {
                         if (description.trim().isEmpty() && binding.requiredDescCheckBox.isChecked) {
@@ -1354,10 +1373,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-
-        intent.putExtra("title", context.getString(R.string.enter_lot_code))
-        intent.putExtra("hint", context.getString(R.string.lot_code))
-        intent.putExtra("orc", orc)
+        intent.putExtra(ARG_TITLE, context.getString(R.string.enter_lot_code))
+        intent.putExtra(EnterCodeActivity.ARG_HINT, context.getString(R.string.lot_code))
+        intent.putExtra(EnterCodeActivity.ARG_ORC, orc)
         resultForLotCodeSelect.launch(intent)
     }
 
@@ -1366,9 +1384,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val code = data.getStringExtra("code") ?: ""
-                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra("orc"))
-                    setLotCode(orc, code)
+                    val code = data.getStringExtra(EnterCodeActivity.ARG_CODE) ?: ""
+                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(EnterCodeActivity.ARG_ORC))
+                    setLotCode(orc = orc, lotId = code)
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -1391,18 +1409,38 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     override fun onReadCompleted(scanCode: String) {
         scannerCompleted(scanCode)
     }
-    //endregion READERS Reception
+//endregion READERS Reception
 
     public override fun onStart() {
         super.onStart()
 
-        thread {
-            if (fillRequired) {
-                fillRequired = false
-                fillAdapter(completeList)
-            }
+        if (fillRequired) {
+            fillRequired = false
+
+            loadOrderRequest()
+        } else {
+            gentlyReturn()
         }
-        gentlyReturn()
+    }
+
+    private fun fillHeader() {
+        runOnUiThread {
+            if (orderRequest.description.isNotEmpty()) {
+                tempTitle = "${context.getString(R.string.count)}: ${orderRequest.description}"
+            }
+
+            if (orderRequest.orderRequestType != OrderRequestType.notDefined) {
+                binding.orTypeTextView.text = when (orderRequest.orderRequestType) {
+                    OrderRequestType.deliveryAudit -> OrderRequestType.deliveryAudit.description
+                    OrderRequestType.prepareOrder -> OrderRequestType.prepareOrder.description
+                    OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
+                    OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
+                    OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
+                    else -> context.getString(R.string.counted)
+                }
+            }
+            title = tempTitle
+        }
     }
 
     override fun onBackPressed() {
@@ -1422,14 +1460,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         JotterListener.lockScanner(this, true)
 
         val intent = Intent(this, QtySelectorActivity::class.java)
-
-        intent.putExtra("orderRequestContent", Parcels.wrap(orc))
-        intent.putExtra("partial", (partial || partialBlock))
-
-        intent.putExtra("initialValue", initialQty)
-        intent.putExtra("multiplier", multiplier.toLong())
-        intent.putExtra("minValue", minValue)
-        intent.putExtra("maxValue", maxValue)
+        intent.putExtra(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT, Parcels.wrap(orc))
+        intent.putExtra(QtySelectorActivity.ARG_PARTIAL, (partial || partialBlock))
+        intent.putExtra(QtySelectorActivity.ARG_INITIAL_VALUE, initialQty)
+        intent.putExtra(QtySelectorActivity.ARG_MULTIPLIER, multiplier.toLong())
+        intent.putExtra(QtySelectorActivity.ARG_MIN_VALUE, minValue)
+        intent.putExtra(QtySelectorActivity.ARG_MAX_VALUE, maxValue)
         if (total) resultForTotalSelect.launch(intent)
         else resultForPartialSelect.launch(intent)
     }
@@ -1439,23 +1475,18 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val qty = data.getDoubleExtra("qty", 0.toDouble())
+                    val qty = data.getDoubleExtra(QtySelectorActivity.ARG_QTY, 0.toDouble())
                     val orc =
-                        Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra("orderRequestContent"))
+                        Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT))
 
                     // La descripción puede modificarse desde el selector de cantidades
                     setDescription(
                         orc = orc,
-                        description = orc.item?.itemDescription ?: "",
+                        description = orc.itemDescription,
                         updateDb = false
                     )
 
-                    setQtyCollected(
-                        orc = orc,
-                        qty = qty,
-                        manualAdd = true,
-                        total = true
-                    )
+                    setQtyCollected(orc = orc, qty = qty, manualAdd = true, total = true)
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -1470,23 +1501,18 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val qty = data.getDoubleExtra("qty", 0.toDouble())
+                    val qty = data.getDoubleExtra(QtySelectorActivity.ARG_QTY, 0.toDouble())
                     val orc =
-                        Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra("orderRequestContent"))
+                        Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT))
 
                     // La descripción puede modificarse desde el selector de cantidades
                     setDescription(
                         orc = orc,
-                        description = orc.item?.itemDescription ?: "",
+                        description = orc.itemDescription,
                         updateDb = false
                     )
 
-                    setQtyCollected(
-                        orc = orc,
-                        qty = qty,
-                        manualAdd = true,
-                        total = false
-                    )
+                    setQtyCollected(orc = orc, qty = qty, manualAdd = true, total = false)
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -1504,8 +1530,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val multiplier = settingViewModel.scanMultiplier
         val intent = Intent(context, MultiplierSelectActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra("title", context.getString(R.string.select_multiplier))
-        intent.putExtra("multiplier", multiplier)
+        intent.putExtra(MultiplierSelectActivity.ARG_TITLE, context.getString(R.string.select_multiplier))
+        intent.putExtra(MultiplierSelectActivity.ARG_MULTIPLIER, multiplier)
         resultForMultiplierSelect.launch(intent)
     }
 
@@ -1525,8 +1551,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
     private fun setLotCode(orc: OrderRequestContent, lotId: String) {
-        val lotCode = orc.item?.codeRead ?: ""
-        if (lotCode == "") return
+        val lotCode = orc.codeRead
+        if (lotCode.isEmpty()) {
+            return
+        }
 
         val longLotId: Long
         try {
@@ -1537,26 +1565,18 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         if (longLotId < 0) return
 
-        for (i in 0 until (adapter?.itemCount ?: 0)) {
-            val t = adapter?.fullList?.get(i)
-            if (t?.lot != null) {
-                if (equals(t.lot?.lotId, longLotId)) {
-                    // Encontrado, volver!
-                    return
-                }
-            }
+        val itemId = orc.itemId ?: return
+        val t = adapter?.fullList?.firstOrNull { it.itemId == itemId } ?: return
+
+        if (equals(t.lotId, longLotId)) {
+            // ¡Encontrado, volver!
+            return
         }
 
-        val lot = Lot(longLotId, lotCode, true)
-
-        for (i in 0 until (adapter?.itemCount ?: 0)) {
-            val t = adapter?.fullList?.get(i)
-            if (t?.item != null) {
-                if (equals(t.item, orc.item)) {
-                    t.lot = lot
-                    break
-                }
-            }
+        if (equals(t, orc)) {
+            t.lotId = longLotId
+            t.lotCode = lotCode
+            t.lotActive = true
         }
     }
 
@@ -1565,14 +1585,13 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         description: String,
         updateDb: Boolean = true,
     ) {
-        val item = orc.item ?: return
         if (updateDb) {
-            val itemId = item.itemId ?: return
-            ItemCoroutines().updateDescription(itemId, description) {
+            val itemId = orc.itemId ?: return
+            ItemCoroutines.updateDescription(itemId, description) {
                 adapter?.updateDescription(itemId, description)
             }
         } else {
-            adapter?.updateDescription(item, description)
+            adapter?.updateDescription(orc, description)
         }
     }
 
@@ -1600,66 +1619,53 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
         }
 
-        val initialQty = orc.qty?.qtyCollected ?: 0.0
-        val logContent: ArrayList<LogContent> = ArrayList(log?.content ?: ArrayList())
+        val initialQty = orc.qtyCollected ?: 0.0
+        val itemId = orc.itemId ?: 0L
+        val tempOrc = adapter?.fullList?.firstOrNull { it.itemId == itemId } ?: return
 
-        for (i in 0 until (adapter?.itemCount ?: 0)) {
-            val tempOrc = adapter?.fullList?.get(i)
-            if (tempOrc == null ||
-                tempOrc != orc ||
-                !(tempOrc.item != null && tempOrc.qty != null)
-            ) continue
-
-            val itemObj = tempOrc.item ?: return
-            val qtyObj = tempOrc.qty ?: return
-            val lot = tempOrc.lot
-
-            val tempQty: Double = if (!total) {
-                qty * multi + (qtyObj.qtyCollected ?: 0.toDouble())
-            } else {
-                qty * multi
-            }
-
-            if (tempQty <= 0) {
-                removeItem()
-                lastRegexResult = null
-                return
-            }
-
-            adapter?.updateQtyCollected(tempOrc, tempQty)
-
-            // Unless is blocked, unlock the partial
-            if (!partialBlock) {
-                partial = false
-                partialBlock = false
-                setupPartial()
-            }
-
-            val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
-            val now = df.format(Calendar.getInstance().time)
-
-            val variationQty = (qtyObj.qtyCollected ?: 0.0) - initialQty
-            if (variationQty != 0.toDouble()) {
-                logContent.add(
-                    LogContent(
-                        itemId = itemObj.itemId,
-                        itemStr = itemObj.itemDescription,
-                        itemCode = itemObj.ean,
-                        lotId = lot?.lotId,
-                        lotCode = lot?.code ?: "",
-                        scannedCode = itemObj.codeRead,
-                        variationQty = variationQty,
-                        finalQty = qtyObj.qtyCollected,
-                        date = now
-                    )
-                )
-            }
-
-            checkLotEnabled(tempOrc)
-            break
+        val tempQty: Double = if (!total) {
+            qty * multi + (tempOrc.qtyCollected ?: 0.toDouble())
+        } else {
+            qty * multi
         }
 
-        log?.content = logContent
+        if (tempQty <= 0) {
+            removeItem()
+            lastRegexResult = null
+            return
+        }
+
+        adapter?.updateQtyCollected(tempOrc, tempQty)
+
+        // Unless is blocked, unlock the partial
+        if (!partialBlock) {
+            partial = false
+            partialBlock = false
+            setupPartial()
+        }
+
+        val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
+        val now = df.format(Calendar.getInstance().time)
+
+        val variationQty = (tempOrc.qtyCollected ?: 0.0) - initialQty
+        if (variationQty != 0.toDouble()) {
+            LogCoroutines.add(
+                orderId = orderRequestId,
+                log = Log(
+                    clientId = orderRequest.clientId,
+                    userId = Statics.currentUserId,
+                    itemId = tempOrc.itemId,
+                    itemDescription = tempOrc.itemDescription,
+                    itemCode = tempOrc.ean,
+                    scannedCode = tempOrc.codeRead,
+                    variationQty = variationQty,
+                    finalQty = tempOrc.qtyCollected,
+                    date = now
+                )
+            )
+        }
+
+        checkLotEnabled(tempOrc)
     }
 
     override fun onRequestPermissionsResult(
@@ -1686,7 +1692,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                             value = orJson,
                             completed = tempCompleted
                         )
-                        if (!error && tempFinishAtEnd) finish()
+                        if (!error) finish()
                     }
                 }
             }
@@ -1702,6 +1708,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         JotterListener.lockScanner(this, true)
 
         var code: String
+        val fullList = adapter?.fullList ?: ArrayList()
 
         ItemRegex.tryToRegex(scanCode) { it ->
             if (!it.any()) {
@@ -1720,13 +1727,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
 
                 // Utilizamos la primera coincidencia
-                lastRegexResult = it.first()
+                val regexRes = it.firstOrNull()
+                lastRegexResult = regexRes
+                if (regexRes == null) return@tryToRegex
 
                 // Si la cantidad no es NULL proseguimos con el Regex
-                if (lastRegexResult!!.qty != null) {
+                if (regexRes.qty != null) {
                     CheckCode(callback = { onCheckCodeEnded(it) },
-                        scannedCode = lastRegexResult!!.ean,
-                        list = adapter?.fullList ?: ArrayList(),
+                        scannedCode = regexRes.ean,
+                        list = fullList,
                         onEventData = { showSnackBar(it) }).execute()
 
                     return@tryToRegex
@@ -1738,7 +1747,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
                 // Mostrar advertencia.
                 showSnackBar(SnackBarEventData("Cantidad nula en Regex", INFO))
-                code = lastRegexResult!!.ean
+                code = regexRes.ean
 
                 // endregion Regex Founded
             }
@@ -1753,7 +1762,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
             CheckCode(callback = { onCheckCodeEnded(it) },
                 scannedCode = code,
-                list = adapter?.fullList ?: ArrayList(),
+                list = fullList,
                 onEventData = { it2 -> showSnackBar(it2) }).execute()
 
             gentlyReturn()
@@ -1779,6 +1788,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_ID = "id"
+        const val ARG_IS_NEW = "isNew"
+
         private const val REQUEST_EXTERNAL_STORAGE = 3001
 
         fun equals(a: Any?, b: Any?): Boolean {

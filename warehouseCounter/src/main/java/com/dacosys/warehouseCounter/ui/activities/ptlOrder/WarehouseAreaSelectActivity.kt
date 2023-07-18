@@ -10,20 +10,21 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import android.view.View.GONE
 import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.adapter.ptlOrder.WarehouseAreaAdapter
 import com.dacosys.warehouseCounter.databinding.WarehouseAreaSelectActivityBinding
-import com.dacosys.warehouseCounter.dto.warehouse.Warehouse
-import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
-import com.dacosys.warehouseCounter.ktor.functions.GetWarehouse
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
+import com.dacosys.warehouseCounter.ktor.v2.functions.GetWarehouse
+import com.dacosys.warehouseCounter.ktor.v2.impl.ApiActionParam
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.WarehouseAreaAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
@@ -47,7 +48,7 @@ class WarehouseAreaSelectActivity : AppCompatActivity(),
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putParcelable("warehouseArea", warehouseArea)
+        savedInstanceState.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
     }
 
     private lateinit var binding: WarehouseAreaSelectActivityBinding
@@ -72,14 +73,14 @@ class WarehouseAreaSelectActivity : AppCompatActivity(),
             binding.autoCompleteTextView.setOnTouchListener(null)
             binding.autoCompleteTextView.onFocusChangeListener = null
             binding.autoCompleteTextView.setOnDismissListener(null)
-            warehouseArea = savedInstanceState.getParcelable("warehouseArea")
+            warehouseArea = savedInstanceState.getParcelable(ARG_WAREHOUSE_AREA)
         } else {
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
+                val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                warehouseArea = extras.getParcelable("warehouseArea")
+                warehouseArea = extras.getParcelable(ARG_WAREHOUSE_AREA)
             }
         }
 
@@ -113,9 +114,7 @@ class WarehouseAreaSelectActivity : AppCompatActivity(),
                 if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold && binding.autoCompleteTextView.adapter != null && (binding.autoCompleteTextView.adapter as WarehouseAreaAdapter).count > 0 && !binding.autoCompleteTextView.isPopupShowing) {
                     // Display the suggestion dropdown on focus
                     Handler(Looper.getMainLooper()).post {
-                        run {
-                            adjustAndShowDropDown()
-                        }
+                        adjustAndShowDropDown()
                     }
                 }
             }
@@ -178,14 +177,12 @@ class WarehouseAreaSelectActivity : AppCompatActivity(),
 
         refreshWarehouseAreaText(cleanText = false, focus = true)
 
-        thread { fillAdapter() }
+        fillAdapter()
     }
 
     private fun showProgressBar(visibility: Int) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.progressBar.visibility = visibility
-            }
+            binding.progressBar.visibility = visibility
         }, 20)
     }
 
@@ -219,7 +216,7 @@ class WarehouseAreaSelectActivity : AppCompatActivity(),
         Screen.closeKeyboard(this)
 
         val data = Intent()
-        data.putExtra("warehouseArea", warehouseArea)
+        data.putExtra(ARG_WAREHOUSE_AREA, warehouseArea)
         setResult(RESULT_OK, data)
         finish()
     }
@@ -230,17 +227,37 @@ class WarehouseAreaSelectActivity : AppCompatActivity(),
         isFilling = true
 
         try {
-            Log.d(this::class.java.simpleName, "Selecting item areas...")
+            Log.d(this::class.java.simpleName, "Selecting areas...")
 
-            GetWarehouse(onEvent = { showSnackBar(it) }, onFinish = {
-                if (it.any()) fill(it)
-            }).execute()
+            thread {
+                GetWarehouse(
+                    action = action,
+                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                    onFinish = {
+                        fill(it)
+
+                        showProgressBar(View.GONE)
+                        isFilling = false
+                    }
+                ).execute()
+            }
         } catch (ex: java.lang.Exception) {
             ex.printStackTrace()
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
-        } finally {
             isFilling = false
         }
+    }
+
+    private val action: ArrayList<ApiActionParam> by lazy {
+        arrayListOf(
+            ApiActionParam(
+                action = ApiActionParam.ACTION_EXPAND,
+                extension = setOf(
+                    ApiActionParam.EXTENSION_WAREHOUSE_AREA_LIST,
+                    ApiActionParam.EXTENSION_STATUS
+                )
+            )
+        )
     }
 
     private fun showSnackBar(it: SnackBarEventData) {
@@ -248,12 +265,12 @@ class WarehouseAreaSelectActivity : AppCompatActivity(),
     }
 
     private fun fill(it: ArrayList<Warehouse>) {
-        val waArray = it.first().areas
+        val waArray = it.firstOrNull()?.areas ?: listOf()
 
         val adapter = WarehouseAreaAdapter(
             activity = this,
             resource = R.layout.warehouse_area_row,
-            warehouseAreas = waArray as ArrayList<WarehouseArea>,
+            warehouseAreas = ArrayList(waArray),
             suggestedList = ArrayList()
         )
 
@@ -264,8 +281,8 @@ class WarehouseAreaSelectActivity : AppCompatActivity(),
             while (binding.autoCompleteTextView.adapter == null) {
                 // Wait for complete loaded
             }
+
             refreshWarehouseAreaText(cleanText = false, focus = false)
-            showProgressBar(GONE)
         }
     }
 
@@ -362,5 +379,10 @@ class WarehouseAreaSelectActivity : AppCompatActivity(),
             centerLayout()
         }
     }
-// endregion SOFT KEYBOARD AND DROPDOWN ISSUES
+    // endregion SOFT KEYBOARD AND DROPDOWN ISSUES
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_WAREHOUSE_AREA = "warehouseArea"
+    }
 }

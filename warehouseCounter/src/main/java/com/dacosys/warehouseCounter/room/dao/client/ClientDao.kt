@@ -17,7 +17,7 @@ interface ClientDao {
 
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(client: Client)
+    suspend fun insert(client: Client): Long?
 
 
     @Update

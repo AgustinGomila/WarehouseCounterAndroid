@@ -52,14 +52,16 @@ class Statics {
         var downloadDbRequired = false
 
         val lineSeparator: String = System.getProperty("line.separator") ?: "\\r\\n"
+        const val DATE_FORMAT: String = "yyyy-MM-dd hh:mm:ss"
+        const val FILENAME_DATE_FORMAT: String = "yyMMddHHmmssZ"
 
         /**
          * Modo DEMO
          */
-        const val demoMode = false
-        const val superDemoMode = false
-        const val downloadDbAlways = false
-        const val testMode = false
+        const val DEMO_MODE = false
+        const val SUPER_DEMO_MODE = false
+        const val DOWNLOAD_DB_ALWAYS = false
+        const val TEST_MODE = false
 
         // Estos números se corresponden con package_id https://manager.dacosys.com/package/index
         const val APP_VERSION_ID: Int = 8 // WarehouseCounter Milestone12
@@ -136,10 +138,10 @@ class Statics {
             for (f in tempItemCodes) {
                 if (f.code.isNullOrEmpty()) continue
 
-                ItemCodeCoroutines().getByCode(f.code) {
+                ItemCodeCoroutines.getByCode(f.code) {
                     if (!it.any()) {
                         f.toUpload = 0
-                        ItemCodeCoroutines().add(f)
+                        ItemCodeCoroutines.add(f)
                     }
                 }
             }
@@ -163,13 +165,14 @@ class Statics {
 
         // region CURRENT USER
         var currentUserId: Long = -1L
+        var currentPass: String = ""
         var currentUserName: String = ""
         var isLogged = false
 
         private var currentUser: User? = null
         fun getCurrentUser(onResult: (User?) -> Unit = {}) {
             if (currentUser == null) {
-                UserCoroutines().getById(currentUserId) {
+                UserCoroutines.getById(currentUserId) {
                     currentUser = it
                     onResult(currentUser)
                 }

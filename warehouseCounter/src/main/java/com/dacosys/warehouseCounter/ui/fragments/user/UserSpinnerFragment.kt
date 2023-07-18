@@ -8,11 +8,11 @@ import android.view.ViewGroup
 import android.widget.AdapterView
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.adapter.user.UserAdapter
 import com.dacosys.warehouseCounter.databinding.FragmentSpinnerBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.room.dao.user.UserCoroutines
 import com.dacosys.warehouseCounter.room.entity.user.User
+import com.dacosys.warehouseCounter.ui.adapter.user.UserAdapter
 import org.parceler.Parcels
 
 /**
@@ -156,8 +156,6 @@ class UserSpinnerFragment : Fragment() {
         savedInstanceState.putInt("oldPos", oldPos)
     }
 
-    // Este método es llamado cuando el fragmento se está creando.
-    // En el puedes inicializar todos los componentes que deseas guardar si el fragmento fue pausado o detenido.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -253,10 +251,10 @@ class UserSpinnerFragment : Fragment() {
     }
 
     private fun getUsers() {
-        UserCoroutines().get {
+        UserCoroutines.get {
             allUser = it
 
-            if (!allUser!!.any() && Statics.superDemoMode) {
+            if (!allUser!!.any() && Statics.SUPER_DEMO_MODE) {
                 // En modo desarrollo o para mostrar sin datos reales
                 // y si no hay usuarios agregados, agrego
                 // DATOS FALSOS de 5 items de fantasía
@@ -267,7 +265,7 @@ class UserSpinnerFragment : Fragment() {
                 fantasyNames.add("arturo")
                 fantasyNames.add("agustin")
                 for (i in 1..5) {
-                    UserCoroutines().add(
+                    UserCoroutines.add(
                         User(
                             name = fantasyNames[i - 1],
                             password = "81dc9bdb52d04dc20036dbd8313ed055"
@@ -275,7 +273,7 @@ class UserSpinnerFragment : Fragment() {
                     )
                 }
 
-                UserCoroutines().get { it2 ->
+                UserCoroutines.get { it2 ->
                     allUser = it2
                     fillAdapter()
                 }
@@ -309,7 +307,7 @@ class UserSpinnerFragment : Fragment() {
     }
 
     companion object {
-        // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+        // The fragment initialization parameters
         private const val ARG_ALL_USER = "allUser"
         private const val ARG_SHOW_GENERAL_LEVEL = "showGeneralLevel"
 

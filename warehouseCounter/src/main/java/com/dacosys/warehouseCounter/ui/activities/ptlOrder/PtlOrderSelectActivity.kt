@@ -10,8 +10,11 @@ import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
 import android.util.Log
-import android.view.*
-import android.widget.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.EditText
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -27,18 +30,18 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter
-import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
 import com.dacosys.warehouseCounter.databinding.PtlSelectOrderActivityBinding
-import com.dacosys.warehouseCounter.dto.ptlOrder.PtlOrder
-import com.dacosys.warehouseCounter.ktor.functions.GetPtlOrder
-import com.dacosys.warehouseCounter.ktor.functions.GetPtlOrderByCode
+import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlOrder
+import com.dacosys.warehouseCounter.ktor.v1.functions.GetPtlOrder
+import com.dacosys.warehouseCounter.ktor.v1.functions.GetPtlOrderByCode
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter
+import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -62,9 +65,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshItem.isRefreshing = false
-            }
+            binding.swipeRefreshItem.isRefreshing = false
         }, 100)
     }
 
@@ -99,7 +100,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     }
 
     private fun saveBundleValues(b: Bundle) {
-        b.putString("title", title.toString())
+        b.putString(ARG_TITLE, title.toString())
         b.putBoolean("multiSelect", multiSelect)
 
         if (adapter != null) {
@@ -115,7 +116,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
 
     private fun loadBundleValues(b: Bundle) {
-        tempTitle = b.getString("title") ?: ""
+        tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_order)
 
         multiSelect = b.getBoolean("multiSelect", multiSelect)
@@ -131,7 +132,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
-        tempTitle = b.getString("title") ?: ""
+        tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
         multiSelect = b.getBoolean("multiSelect", false)
@@ -295,14 +296,14 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             Screen.closeKeyboard(this)
 
             val data = Intent()
-            data.putParcelableArrayListExtra("ptlOrder", arrayListOf(adapter!!.currentPtlOrder()))
+            data.putParcelableArrayListExtra(ARG_PTL_ORDER, arrayListOf(adapter!!.currentPtlOrder()))
             setResult(RESULT_OK, data)
             finish()
         } else if (multiSelect && ((adapter?.countChecked()) ?: 0) > 0) {
             Screen.closeKeyboard(this)
 
             val data = Intent()
-            data.putParcelableArrayListExtra("ptlOrder", adapter!!.getAllChecked())
+            data.putParcelableArrayListExtra(ARG_PTL_ORDER, adapter!!.getAllChecked())
             setResult(RESULT_OK, data)
             finish()
         }
@@ -314,9 +315,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshItem.isRefreshing = show
-            }
+            binding.swipeRefreshItem.isRefreshing = show
         }, 20)
     }
 
@@ -542,7 +541,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             }
 
             menuItemRandomIt -> {
-                ItemCoroutines().getCodes(true) {
+                ItemCoroutines.getCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)
@@ -584,9 +583,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
     override fun onDataSetChanged() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                fillSummaryRow()
-            }
+            fillSummaryRow()
         }, 100)
     }
 
@@ -606,4 +603,9 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     }
 
     //endregion READERS Reception
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_PTL_ORDER = "ptlOrder"
+    }
 }

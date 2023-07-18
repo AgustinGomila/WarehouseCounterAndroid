@@ -11,8 +11,8 @@ import androidx.appcompat.widget.TooltipCompat
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.databinding.PtlOrderHeaderBinding
-import com.dacosys.warehouseCounter.dto.ptlOrder.PtlOrder
-import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
+import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlOrder
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderSelectActivity
 
@@ -25,22 +25,6 @@ class PtlOrderHeaderFragment : Fragment() {
     interface OrderChangedListener {
         fun onOrderChanged(ptlOrder: PtlOrder?)
     }
-
-    private val resultForOrderSelect =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            val data = it?.data
-            try {
-                if (it?.resultCode == AppCompatActivity.RESULT_OK && data != null) {
-                    val p = data.getParcelableArrayListExtra<PtlOrder>("ptlOrder")?.firstOrNull()
-                    if (p != null) {
-                        setOrder(p, warehouseArea)
-                    }
-                }
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                ErrorLog.writeLog(requireActivity(), this::class.java.simpleName, ex)
-            }
-        }
 
     override fun onDestroy() {
         destroyLocals()
@@ -64,8 +48,8 @@ class PtlOrderHeaderFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         if (arguments != null) {
-            ptlOrder = requireArguments().getParcelable("ptlOrder")
-            warehouseArea = requireArguments().getParcelable("warehouseArea")
+            ptlOrder = requireArguments().getParcelable(ARG_PTL_ORDER)
+            warehouseArea = requireArguments().getParcelable(ARG_WAREHOUSE_AREA)
         }
     }
 
@@ -76,8 +60,8 @@ class PtlOrderHeaderFragment : Fragment() {
         savedInstanceState.putBoolean("showOrderPanel", showOrderPanel)
         savedInstanceState.putBoolean("showLocationPanel", showLocationPanel)
 
-        savedInstanceState.putParcelable("ptlOrder", ptlOrder)
-        savedInstanceState.putParcelable("warehouseArea", warehouseArea)
+        savedInstanceState.putParcelable(ARG_PTL_ORDER, ptlOrder)
+        savedInstanceState.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
     }
 
     fun setChangeOrderListener(listener: OrderChangedListener) {
@@ -169,8 +153,8 @@ class PtlOrderHeaderFragment : Fragment() {
         val view = binding.root
 
         if (savedInstanceState != null) {
-            ptlOrder = savedInstanceState.getParcelable("ptlOrder")
-            warehouseArea = savedInstanceState.getParcelable("warehouseArea")
+            ptlOrder = savedInstanceState.getParcelable(ARG_PTL_ORDER)
+            warehouseArea = savedInstanceState.getParcelable(ARG_WAREHOUSE_AREA)
 
             showChangeOrderButton = savedInstanceState.getBoolean("showChangeOrderButton")
             showOrderPanel = savedInstanceState.getBoolean("showOrderPanel")
@@ -190,7 +174,7 @@ class PtlOrderHeaderFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setOrder(ptlOrder, warehouseArea, false)
+        setOrder(order = ptlOrder, location = warehouseArea, sendEvent = false)
     }
 
     private fun setButtonPanelVisibility() {
@@ -208,14 +192,32 @@ class PtlOrderHeaderFragment : Fragment() {
     private fun changeOrder() {
         val intent = Intent(requireContext(), PtlOrderSelectActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-
-        intent.putExtra("title", getString(R.string.select_order))
-        intent.putExtra("ptlOrder", ptlOrder)
-
+        intent.putExtra(PtlOrderSelectActivity.ARG_TITLE, getString(R.string.select_order))
+        // TODO: Ver si es necesario pasar la orden seleccionada
+        // intent.putExtra(PtlOrderSelectActivity.ARG_PTL_ORDER, ptlOrder)
         resultForOrderSelect.launch(intent)
     }
 
+    private val resultForOrderSelect =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            val data = it?.data
+            try {
+                if (it?.resultCode == AppCompatActivity.RESULT_OK && data != null) {
+                    val p =
+                        data.getParcelableArrayListExtra<PtlOrder>(PtlOrderSelectActivity.ARG_PTL_ORDER)?.firstOrNull()
+                    if (p != null) {
+                        setOrder(order = p, location = warehouseArea)
+                    }
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                ErrorLog.writeLog(requireActivity(), this::class.java.simpleName, ex)
+            }
+        }
+
     companion object {
+        const val ARG_PTL_ORDER = "ptlOrder"
+        const val ARG_WAREHOUSE_AREA = "warehouseArea"
 
         fun newInstance(
             orderChangedListener: OrderChangedListener,
@@ -225,8 +227,8 @@ class PtlOrderHeaderFragment : Fragment() {
             val fragment = PtlOrderHeaderFragment()
 
             val args = Bundle()
-            args.putParcelable("ptlOrder", ptlOrder)
-            args.putParcelable("warehouseArea", warehouseArea)
+            args.putParcelable(ARG_PTL_ORDER, ptlOrder)
+            args.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
 
             fragment.arguments = args
             fragment.orderChangedListener = orderChangedListener

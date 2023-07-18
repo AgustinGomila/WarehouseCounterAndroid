@@ -31,7 +31,7 @@
 * [Koin](https://github.com/InsertKoinIO/koin)
 * [Room](https://android.googlesource.com/platform/frameworks/support/+/androidx-master-dev/room)
 * [Ktor](https://github.com/ktorio/ktor)
-* [ZXing](https://github.com/journeyapps/zxing-android-embedded)
+* [Zxing](https://github.com/journeyapps/zxing-android-embedded)
 
 ## Algunas características
 
@@ -57,7 +57,7 @@ La aplicación es multiusuario y permite la configuración a través de escaneo 
 
 | <img src="warehouseCounter/wc_capture1.png" alt="WarehouseCounter Screenshot" width="300"/> | <img src="warehouseCounter/wc_capture2.png" alt="WarehouseCounter Screenshot" width="300"/> |
 |---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| Pantalla principal de la aplicación.                                                        | Pantalla de Catálogo de productos, impresión de etiquetas, etc.                             |
+| Pantalla principal de la aplicación.                                                        | Pantalla de Catálogo de productos, <br/>impresión de etiquetas, etc.                        |
 
 | <img src="warehouseCounter/wc_capture3.png" alt="WarehouseCounter Screenshot" width="300"/> | <img src="warehouseCounter/wc_capture4.png" alt="WarehouseCounter Screenshot" width="300"/> |
 |---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|

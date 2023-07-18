@@ -18,7 +18,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.NewCountActivityBinding
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
 import com.dacosys.warehouseCounter.room.entity.client.Client
@@ -64,21 +64,21 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("description", binding.countCodeEditText.text.toString())
-        savedInstanceState.putParcelable("client", client)
+        savedInstanceState.putString(ARG_DESCRIPTION, binding.countCodeEditText.text.toString())
+        savedInstanceState.putParcelable(ARG_CLIENT, client)
     }
 
     private fun loadBundleValues(b: Bundle) {
-        val t1 = b.getString("title")
+        val t1 = b.getString(ARG_TITLE)
         tempTitle = if (!t1.isNullOrEmpty()) t1
         else context.getString(R.string.setup_new_count)
 
-        tempDescription = b.getString("description") ?: ""
-        client = b.getParcelable("client")
+        tempDescription = b.getString(ARG_DESCRIPTION) ?: ""
+        client = b.getParcelable(ARG_CLIENT)
     }
 
     private fun loadExtraBundleValues(b: Bundle) {
-        val t1 = b.getString("title")
+        val t1 = b.getString(ARG_TITLE)
         tempTitle = if (!t1.isNullOrEmpty()) t1
         else context.getString(R.string.setup_new_count)
     }
@@ -111,8 +111,8 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         binding.clientTextView.setOnClickListener {
             val intent = Intent(this, ClientSelectActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra("client", client)
-            intent.putExtra("title", context.getString(R.string.select_client))
+            intent.putExtra(ARG_CLIENT, client)
+            intent.putExtra(ARG_TITLE, context.getString(R.string.select_client))
             resultForClientSelect.launch(intent)
         }
 
@@ -160,7 +160,8 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    client = data.getParcelableExtra("client") ?: return@registerForActivityResult
+                    client =
+                        data.getParcelableExtra(ClientSelectActivity.ARG_CLIENT) ?: return@registerForActivityResult
                     setClientText()
                 }
             } catch (ex: Exception) {
@@ -172,7 +173,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private fun selectDefaultClient() {
         if (isFinishing) return
 
-        ClientCoroutines().get {
+        ClientCoroutines.get {
             client = it.firstOrNull()
             setClientText()
         }
@@ -224,9 +225,9 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             Screen.closeKeyboard(this)
 
             val data = Intent()
-            data.putExtra("description", description.trim())
-            if (client != null) data.putExtra("client", Parcels.wrap<Client>(client))
-            data.putExtra("orderRequestType", Parcels.wrap(OrderRequestType.stockAuditFromDevice))
+            data.putExtra(ARG_DESCRIPTION, description.trim())
+            if (client != null) data.putExtra(ARG_CLIENT, Parcels.wrap<Client>(client))
+            data.putExtra(ARG_ORDER_REQUEST_TYPE, Parcels.wrap(OrderRequestType.stockAuditFromDevice))
 
             setResult(RESULT_OK, data)
             finish()
@@ -316,9 +317,13 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_DESCRIPTION = "description"
+        const val ARG_CLIENT = "client"
+        const val ARG_ORDER_REQUEST_TYPE = "orderRequestType"
+
         fun equals(a: Any?, b: Any?): Boolean {
             return a != null && a == b
         }
     }
 }
-

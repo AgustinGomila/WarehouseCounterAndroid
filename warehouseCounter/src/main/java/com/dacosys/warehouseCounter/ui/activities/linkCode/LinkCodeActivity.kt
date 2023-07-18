@@ -14,10 +14,14 @@ import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.util.Log
-import android.view.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
-import android.widget.*
+import android.widget.EditText
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -27,7 +31,10 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
-import androidx.core.view.*
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsAnimationCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -46,10 +53,8 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.item.ItemRecyclerAdapter
-import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
 import com.dacosys.warehouseCounter.databinding.LinkCodeActivityBottomPanelCollapsedBinding
-import com.dacosys.warehouseCounter.ktor.functions.SendItemCode
+import com.dacosys.warehouseCounter.ktor.v2.functions.SendItemCodeArray
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalSeparator
@@ -66,6 +71,8 @@ import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.ui.activities.item.CheckItemCode
+import com.dacosys.warehouseCounter.ui.adapter.item.ItemRecyclerAdapter
+import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
 import com.dacosys.warehouseCounter.ui.fragments.item.ItemSelectFilterFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
@@ -73,7 +80,6 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import kotlinx.coroutines.*
 import org.parceler.Parcels
 import java.util.*
 import kotlin.concurrent.thread
@@ -96,7 +102,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     override fun onSelectedItemChanged(item: Item?) {
         if (item != null) {
-            ItemCodeCoroutines().getByItemId(item.itemId) {
+            ItemCodeCoroutines.getByItemId(item.itemId) {
                 var allItemCodes = ""
                 val breakLine = lineSeparator
 
@@ -122,17 +128,6 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             runOnUiThread {
                 binding.moreCodesConstraintLayout.visibility = GONE
             }
-        }
-    }
-
-    private fun onTaskSendItemCodeEnded(snackBarEventData: SnackBarEventData) {
-        val msg = snackBarEventData.text
-
-        if (snackBarEventData.snackBarType == SnackBarType.SUCCESS) {
-            makeText(binding.root, msg, SnackBarType.SUCCESS)
-            setSendButtonText()
-        } else if (snackBarEventData.snackBarType == ERROR) {
-            makeText(binding.root, msg, ERROR)
         }
     }
 
@@ -241,8 +236,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun saveBundleValues(b: Bundle) {
-        b.putString("title", title.toString())
-        b.putBoolean("multiSelect", multiSelect)
+        b.putString(ARG_TITLE, title.toString())
+        b.putBoolean(ARG_MULTISELECT, multiSelect)
         b.putString("linkCode", linkCode)
         b.putBoolean("panelIsExpanded", panelIsExpanded)
 
@@ -258,10 +253,10 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun loadBundleValues(b: Bundle) {
-        tempTitle = b.getString("title") ?: ""
+        tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.link_code)
 
-        multiSelect = b.getBoolean("multiSelect", multiSelect)
+        multiSelect = b.getBoolean(ARG_MULTISELECT, multiSelect)
         panelIsExpanded = b.getBoolean("panelIsExpanded")
 
         linkCode = b.getString("linkCode") ?: ""
@@ -277,13 +272,12 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
-        tempTitle = b.getString("title") ?: ""
+        tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.link_code)
 
-        itemSelectFilterFragment?.itemCode = b.getString("itemCode") ?: ""
-        itemSelectFilterFragment?.itemCategory =
-            Parcels.unwrap<ItemCategory>(b.getParcelable("itemCategory"))
-        multiSelect = b.getBoolean("multiSelect", false)
+        itemSelectFilterFragment?.itemCode = b.getString(ARG_ITEM_CODE) ?: ""
+        itemSelectFilterFragment?.itemCategory = Parcels.unwrap<ItemCategory>(b.getParcelable(ARG_ITEM_CATEGORY))
+        multiSelect = b.getBoolean(ARG_MULTISELECT, false)
     }
 
     private lateinit var binding: LinkCodeActivityBottomPanelCollapsedBinding
@@ -558,7 +552,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     // endregion
 
     private fun setSendButtonText() {
-        ItemCodeCoroutines().getToUpload {
+        ItemCodeCoroutines.getToUpload {
             runOnUiThread {
                 binding.sendButton.text = String.format(
                     "%s%s(%s)",
@@ -571,7 +565,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun sendDialog() {
-        ItemCodeCoroutines().getToUpload {
+        ItemCodeCoroutines.getToUpload {
             if (it.isNotEmpty()) {
                 sendItemCodes(it)
             } else {
@@ -596,7 +590,11 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             alert.setPositiveButton(R.string.ok) { _, _ ->
                 try {
                     thread {
-                        SendItemCode(it) { it2 -> onTaskSendItemCodeEnded(it2) }.execute()
+                        SendItemCodeArray(
+                            payload = it,
+                            onEvent = { showSnackBar(it) },
+                            onFinish = { setSendButtonText() }
+                        ).execute()
                     }
                 } catch (ex: Exception) {
                     ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
@@ -648,7 +646,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 }
 
                 // Chequear si ya está vinculado
-                ItemCodeCoroutines().getByCode(tempCode) {
+                ItemCodeCoroutines.getByCode(tempCode) {
                     if (it.size > 0) {
                         makeText(
                             binding.root,
@@ -659,11 +657,11 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     }
 
                     // Actualizamos si existe
-                    ItemCodeCoroutines().countLink(item.itemId, tempCode) { ic ->
+                    ItemCodeCoroutines.countLink(item.itemId, tempCode) { ic ->
                         if (ic > 0) {
-                            ItemCodeCoroutines().updateQty(item.itemId, tempCode, tempQty)
+                            ItemCodeCoroutines.updateQty(item.itemId, tempCode, tempQty)
                         } else {
-                            ItemCodeCoroutines().add(
+                            ItemCodeCoroutines.add(
                                 ItemCode(
                                     itemId = item.itemId,
                                     code = tempCode,
@@ -703,7 +701,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     return
                 }
 
-                ItemCodeCoroutines().unlinkCode(item.itemId, tempCode) {
+                ItemCodeCoroutines.unlinkCode(item.itemId, tempCode) {
                     makeText(
                         binding.root,
                         String.format(getString(R.string.item_unlinked_from_codes), item.itemId),
@@ -871,9 +869,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshItem.isRefreshing = show
-            }
+            binding.swipeRefreshItem.isRefreshing = show
         }, 20)
     }
 
@@ -905,7 +901,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 )
         }
 
-        if (BuildConfig.DEBUG || Statics.testMode) {
+        if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
             menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
@@ -990,7 +986,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             }
 
             menuItemRandomIt -> {
-                ItemCoroutines().getCodes(true) {
+                ItemCoroutines.getCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)
@@ -1061,7 +1057,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
         try {
             Log.d(this::class.java.simpleName, "Selecting items...")
-            ItemCoroutines().getByQuery(
+            ItemCoroutines.getByQuery(
                 ean = itemCode.trim(),
                 description = itemCode.trim(),
                 itemCategoryId = itemCategory?.itemCategoryId
@@ -1206,17 +1202,13 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshItem.isRefreshing = false
-            }
+            binding.swipeRefreshItem.isRefreshing = false
         }, 100)
     }
 
     override fun onDataSetChanged() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                fillSummaryRow()
-            }
+            fillSummaryRow()
         }, 100)
     }
 
@@ -1283,10 +1275,10 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
             val intent = Intent(this, ImageControlCameraActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra("programObjectId", tableId.toLong())
-            intent.putExtra("objectId1", itemId.toString())
-            intent.putExtra("description", description)
-            intent.putExtra("addPhoto", settingViewModel.autoSend)
+            intent.putExtra(ImageControlCameraActivity.ARG_PROGRAM_OBJECT_ID, tableId.toLong())
+            intent.putExtra(ImageControlCameraActivity.ARG_OBJECT_ID_1, itemId.toString())
+            intent.putExtra(ImageControlCameraActivity.ARG_DESCRIPTION, description)
+            intent.putExtra(ImageControlCameraActivity.ARG_ADD_PHOTO, settingViewModel.autoSend)
             resultForPhotoCapture.launch(intent)
         }
     }
@@ -1348,9 +1340,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private fun showPhotoAlbum(images: ArrayList<DocumentContent> = ArrayList()) {
         val intent = Intent(this, ImageControlGridActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra("programObjectId", tempTableId.toLong())
-        intent.putExtra("objectId1", tempObjectId)
-        intent.putExtra("docContObjArrayList", images)
+        intent.putExtra(ImageControlGridActivity.ARG_PROGRAM_OBJECT_ID, tempTableId.toLong())
+        intent.putExtra(ImageControlGridActivity.ARG_OBJECT_ID_1, tempObjectId)
+        intent.putExtra(ImageControlGridActivity.ARG_DOC_CONT_OBJ_ARRAY_LIST, images)
         resultForShowPhotoAlbum.launch(intent)
     }
 
@@ -1382,4 +1374,11 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         showPhotoAlbum()
     }
     //endregion ImageControl
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_ITEM_CODE = "itemCode"
+        const val ARG_ITEM_CATEGORY = "itemCategory"
+        const val ARG_MULTISELECT = "multiSelect"
+    }
 }

@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.widget.*
+import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
@@ -18,10 +18,9 @@ class MultiplierSelectActivity : AppCompatActivity() {
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("title", title.toString())
-        savedInstanceState.putInt("tempMultiplier", tempMultiplier ?: 1)
+        savedInstanceState.putString(ARG_TITLE, title.toString())
+        savedInstanceState.putInt(ARG_MULTIPLIER, tempMultiplier ?: 1)
     }
-
 
     private lateinit var binding: ScanMultiplierSelectBinding
 
@@ -39,17 +38,17 @@ class MultiplierSelectActivity : AppCompatActivity() {
         var tempTitle = getString(R.string.select_multiplier)
 
         if (savedInstanceState != null) {
-            val t1 = savedInstanceState.getString("title")
+            val t1 = savedInstanceState.getString(ARG_TITLE)
             if (!t1.isNullOrEmpty()) tempTitle = t1
 
-            tempMultiplier = savedInstanceState.getInt("tempMultiplier")
+            tempMultiplier = savedInstanceState.getInt(ARG_MULTIPLIER)
         } else {
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
+                val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                tempMultiplier = extras.getInt("multiplier")
+                tempMultiplier = extras.getInt(ARG_MULTIPLIER)
             }
         }
 
@@ -96,7 +95,7 @@ class MultiplierSelectActivity : AppCompatActivity() {
         } else {
             settingViewModel.scanMultiplier = tempMultiplier!!
 
-            data.putExtra("multiplier", Parcels.wrap(tempMultiplier))
+            data.putExtra(ARG_MULTIPLIER, Parcels.wrap(tempMultiplier))
             setResult(RESULT_OK, data)
             finish()
         }
@@ -107,5 +106,10 @@ class MultiplierSelectActivity : AppCompatActivity() {
 
         setResult(RESULT_CANCELED)
         finish()
+    }
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_MULTIPLIER = "multiplier"
     }
 }

@@ -8,7 +8,9 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.*
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -25,26 +27,25 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.databinding.OutboxActivityBinding
-import com.dacosys.warehouseCounter.dto.log.Log
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest.CREATOR.getCompletedOrders
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
-import com.dacosys.warehouseCounter.ktor.functions.SendOrder
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestContent
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
+import com.dacosys.warehouseCounter.ktor.v2.functions.CreateOrder
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
+import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import kotlinx.serialization.json.Json
-import org.parceler.Parcels
 import java.io.File
 import java.io.UnsupportedEncodingException
 import kotlin.concurrent.thread
@@ -71,16 +72,6 @@ class OutboxActivity : AppCompatActivity() {
             settingViewModel.outboxShowCheckBoxes = value
         }
 
-    private fun onSendOrderEnded(snackBarEventData: SnackBarEventData) {
-        val msg = snackBarEventData.text
-
-        if (snackBarEventData.snackBarType == SnackBarType.SUCCESS) {
-            thread { fillAdapter(ArrayList()) }
-        } else if (snackBarEventData.snackBarType == ERROR) {
-            makeText(binding.root, msg, ERROR)
-        }
-    }
-
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -93,8 +84,8 @@ class OutboxActivity : AppCompatActivity() {
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("title", title.toString())
-        savedInstanceState.putBoolean("multiSelect", multiSelect)
+        savedInstanceState.putString(ARG_TITLE, title.toString())
+        savedInstanceState.putBoolean(ARG_MULTISELECT, multiSelect)
         if (adapter != null) {
             savedInstanceState.putParcelable("lastSelected", (adapter ?: return).currentItem())
             savedInstanceState.putInt("firstVisiblePos", (adapter ?: return).firstVisiblePos())
@@ -133,15 +124,15 @@ class OutboxActivity : AppCompatActivity() {
 
         if (savedInstanceState != null) {
             // region Recuperar el título de la ventana
-            val t1 = savedInstanceState.getString("title")
+            val t1 = savedInstanceState.getString(ARG_TITLE)
             if (!t1.isNullOrEmpty()) tempTitle = t1
             // endregion
 
-            multiSelect = savedInstanceState.getBoolean("multiSelect", multiSelect)
+            multiSelect = savedInstanceState.getBoolean(ARG_MULTISELECT, multiSelect)
             checkedIdArray =
-                (savedInstanceState.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(java.util.ArrayList())
+                (savedInstanceState.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
             completeList =
-                savedInstanceState.getParcelableArrayList<OrderRequest>("completeList") as java.util.ArrayList<OrderRequest>
+                savedInstanceState.getParcelableArrayList<OrderRequest>("completeList") as ArrayList<OrderRequest>
             lastSelected = savedInstanceState.getParcelable("lastSelected")
             firstVisiblePos =
                 if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos") else -1
@@ -152,10 +143,10 @@ class OutboxActivity : AppCompatActivity() {
             // Traer los parámetros que recibe la actividad
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
+                val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                multiSelect = extras.getBoolean("multiSelect", true)
+                multiSelect = extras.getBoolean(ARG_MULTISELECT, true)
             }
         }
 
@@ -222,7 +213,7 @@ class OutboxActivity : AppCompatActivity() {
 
                 override fun onProgress(
                     insets: WindowInsetsCompat,
-                    runningAnimations: MutableList<WindowInsetsAnimationCompat>
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>,
                 ): WindowInsetsCompat {
                     paddingBottomView(rootView, insets)
 
@@ -250,23 +241,20 @@ class OutboxActivity : AppCompatActivity() {
     // endregion
 
     private fun showDetail() {
-        if (adapter != null && adapter!!.currentItem() != null) {
-            val intent = Intent(context, OrderRequestDetailActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-
-            intent.putExtra("orderRequest", Parcels.wrap<OrderRequest>(adapter!!.currentItem()))
-
-            // Valid content
-            intent.putParcelableArrayListExtra("orcArray", ArrayList(adapter!!.currentItem()!!.content))
-
-            startActivity(intent)
-        }
+        val orderRequest = adapter?.currentItem() ?: return
+        val intent = Intent(context, OrderRequestDetailActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        intent.putExtra(OrderRequestDetailActivity.ARG_ID, orderRequest.orderRequestId)
+        startActivity(intent)
     }
 
     private fun sendDialog() {
+        val checked = adapter?.countChecked() ?: 0
+        val orderRequest = adapter?.currentItem()
+
         val toSend = when {
-            ((adapter?.countChecked()) ?: 0) > 0 -> adapter?.getAllChecked()!!
-            adapter?.currentItem() != null -> arrayListOf(adapter!!.currentItem()!!)
+            checked > 0 -> adapter?.getAllChecked() ?: ArrayList()
+            orderRequest != null -> arrayListOf(orderRequest)
             else -> return
         }
 
@@ -291,11 +279,24 @@ class OutboxActivity : AppCompatActivity() {
     private fun sendSelected(orArray: ArrayList<OrderRequest>) {
         try {
             thread {
-                SendOrder(orderRequestArray = orArray) { onSendOrderEnded(it) }.execute()
+                CreateOrder(
+                    orderArray = orArray,
+                    onEvent = { showSnackBar(it) },
+                    onFinish = {
+                        OrderRequestCoroutines.removeById(
+                            idList = orArray.mapNotNull { it.orderRequestId },
+                            onResult = {
+                                fillAdapter(ArrayList())
+                            })
+                    }).execute()
             }
         } catch (ex: Exception) {
             ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
         }
+    }
+
+    private fun showSnackBar(it: SnackBarEventData) {
+        makeText(binding.root, it.text, it.snackBarType)
     }
 
     private fun removeResetDialog() {
@@ -308,7 +309,7 @@ class OutboxActivity : AppCompatActivity() {
         val toRemove: ArrayList<OrderRequest> = ArrayList()
         val toReset: ArrayList<OrderRequest> = ArrayList()
         for (or in toRemoveReset) {
-            if (or.orderRequestedType == OrderRequestType.stockAuditFromDevice) {
+            if (or.orderRequestType == OrderRequestType.stockAuditFromDevice) {
                 toRemove.add(or)
             } else {
                 toReset.add(or)
@@ -377,25 +378,22 @@ class OutboxActivity : AppCompatActivity() {
             orderRequest.finishDate = null
             orderRequest.userId = null
 
-            for (orderRequestContent in orderRequest.content) {
-                if (orderRequestContent.qty != null) {
-                    if (orderRequestContent.qty!!.qtyRequested == null || orderRequestContent.qty!!.qtyRequested == 0.toDouble()) {
-                        orcToRemove.add(orderRequestContent)
-                        continue
-                    }
-
-                    orderRequestContent.qty!!.qtyCollected = null
+            for (content in orderRequest.contents) {
+                if (content.qtyRequested == null || content.qtyRequested == 0.toDouble()) {
+                    orcToRemove.add(content)
+                    continue
                 }
+                content.qtyCollected = null
             }
 
-            val logContent: ArrayList<OrderRequestContent> = ArrayList(orderRequest.content)
+            val logContent: ArrayList<OrderRequestContent> = ArrayList(orderRequest.contents)
             logContent.removeAll(orcToRemove.toSet())
 
-            orderRequest.content = logContent
-            orderRequest.log = Log()
+            orderRequest.contents = logContent
+            orderRequest.logs = arrayListOf()
 
             try {
-                orJson = Json.encodeToString(OrderRequest.serializer(), orderRequest)
+                orJson = json.encodeToString(OrderRequest.serializer(), orderRequest)
                 orderRequest.filename.substringAfterLast('/')
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
@@ -446,9 +444,7 @@ class OutboxActivity : AppCompatActivity() {
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshItem.isRefreshing = show
-            }
+            binding.swipeRefreshItem.isRefreshing = show
         }, 20)
     }
 
@@ -456,7 +452,7 @@ class OutboxActivity : AppCompatActivity() {
         if (isListViewFilling) return
         isListViewFilling = true
 
-        Handler(Looper.getMainLooper()).post { run { Screen.closeKeyboard(this) } }
+        Handler(Looper.getMainLooper()).post { Screen.closeKeyboard(this) }
 
         var temp = t
         if (!temp.any()) {
@@ -531,7 +527,7 @@ class OutboxActivity : AppCompatActivity() {
         for (i in set) {
             if (i.trim().isEmpty()) continue
             val status = OrderRequestType.getById(i.toLong())
-            if (status != null) {
+            if (status != OrderRequestType.notDefined) {
                 visibleStatusArray.add(status)
             }
         }
@@ -680,17 +676,20 @@ class OutboxActivity : AppCompatActivity() {
         }
     }
 
-    companion object {
-        private const val REQUEST_EXTERNAL_STORAGE = 5001
-
-        private var orFileName = ""
-        private var orJson = ""
-    }
-
     override fun onBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()
+    }
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_MULTISELECT = "multiSelect"
+
+        private const val REQUEST_EXTERNAL_STORAGE = 5001
+
+        private var orFileName = ""
+        private var orJson = ""
     }
 }

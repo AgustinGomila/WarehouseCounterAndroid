@@ -14,9 +14,13 @@ import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.util.Log
-import android.view.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.view.View.GONE
-import android.widget.*
+import android.widget.EditText
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -26,7 +30,10 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
-import androidx.core.view.*
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsAnimationCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -45,8 +52,6 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.item.ItemRecyclerAdapter
-import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.misc.ParcelLong
 import com.dacosys.warehouseCounter.misc.Statics
@@ -59,6 +64,8 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.settings.SettingsRepository
+import com.dacosys.warehouseCounter.ui.adapter.item.ItemRecyclerAdapter
+import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
 import com.dacosys.warehouseCounter.ui.fragments.item.ItemSelectFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -83,8 +90,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private fun destroyLocals() {
         /*
-        TODO:
-         Usar tabla temporal para guardar listas largas.
+        TODO: Usar tabla temporal para guardar listas largas.
         */
         if (isFinishingByUser) {
             // Borramos los Ids temporales que se usaron en la actividad.
@@ -99,9 +105,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshItem.isRefreshing = false
-            }
+            binding.swipeRefreshItem.isRefreshing = false
         }, 100)
     }
 
@@ -157,9 +161,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     private fun saveBundleValues(b: Bundle) {
-        b.putString("title", title.toString())
-        b.putBoolean("multiSelect", multiSelect)
-        b.putBoolean("hideFilterPanel", hideFilterPanel)
+        b.putString(ARG_TITLE, title.toString())
+        b.putBoolean(ARG_MULTI_SELECT, multiSelect)
+        b.putBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
         b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
 
@@ -175,11 +179,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     private fun loadBundleValues(b: Bundle) {
-        tempTitle = b.getString("title") ?: ""
+        tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
-        multiSelect = b.getBoolean("multiSelect", multiSelect)
-        hideFilterPanel = b.getBoolean("hideFilterPanel", hideFilterPanel)
+        multiSelect = b.getBoolean(ARG_MULTI_SELECT, multiSelect)
+        hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
         panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
         panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
 
@@ -194,15 +198,15 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
-        tempTitle = b.getString("title") ?: ""
+        tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
-        itemSelectFilterFragment?.itemCode = b.getString("itemCode") ?: ""
+        itemSelectFilterFragment?.itemCode = b.getString(ARG_ITEM_CODE) ?: ""
         itemSelectFilterFragment?.itemCategory =
-            Parcels.unwrap<ItemCategory>(b.getParcelable("itemCategory"))
+            Parcels.unwrap<ItemCategory>(b.getParcelable(ARG_ITEM_CATEGORY))
 
-        hideFilterPanel = b.getBoolean("hideFilterPanel")
-        multiSelect = b.getBoolean("multiSelect", false)
+        hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
+        multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
     }
 
     private lateinit var binding: ItemPrintLabelActivityTopPanelCollapsedBinding
@@ -262,8 +266,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             searchTextIsFocused = b
             if (b) {
                 /*
-                TODO:
-                 Transición suave de teclado.
+                TODO: Transición suave de teclado.
                 Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
                 Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
                 el teclado cambiará de tipo y puede tener una altura diferente.
@@ -469,7 +472,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             var itemArray: ArrayList<Item> = ArrayList()
 
             if (!multiSelect && item != null) {
-                data.putParcelableArrayListExtra("ids", arrayListOf(ParcelLong(item.itemId)))
+                data.putParcelableArrayListExtra(ARG_IDS, arrayListOf(ParcelLong(item.itemId)))
                 setResult(RESULT_OK, data)
             } else if (multiSelect) {
                 if (countChecked > 0 || item != null) {
@@ -478,7 +481,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                         itemArray = arrayListOf(item!!)
                     }
                     data.putParcelableArrayListExtra(
-                        "ids",
+                        ARG_IDS,
                         itemArray.map { ParcelLong(it.itemId) } as ArrayList<ParcelLong>)
                     setResult(RESULT_OK, data)
                 } else {
@@ -634,9 +637,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshItem.isRefreshing = show
-            }
+            binding.swipeRefreshItem.isRefreshing = show
         }, 20)
     }
 
@@ -653,7 +654,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         try {
             Log.d(this::class.java.simpleName, "Selecting items...")
-            ItemCoroutines().getByQuery(
+            ItemCoroutines.getByQuery(
                 ean = itemCode.trim(),
                 description = itemCode.trim(),
                 itemCategoryId = itemCategory?.itemCategoryId
@@ -855,7 +856,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 )
         }
 
-        if (BuildConfig.DEBUG || Statics.testMode) {
+        if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
             menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
@@ -940,7 +941,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             }
 
             menuItemRandomIt -> {
-                ItemCoroutines().getCodes(true) {
+                ItemCoroutines.getCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)
@@ -1071,9 +1072,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     override fun onDataSetChanged() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                fillSummaryRow()
-            }
+            fillSummaryRow()
         }, 100)
     }
 
@@ -1104,10 +1103,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
             val intent = Intent(this, ImageControlCameraActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra("programObjectId", tableId.toLong())
-            intent.putExtra("objectId1", itemId.toString())
-            intent.putExtra("description", description)
-            intent.putExtra("addPhoto", settingViewModel.autoSend)
+            intent.putExtra(ImageControlCameraActivity.ARG_PROGRAM_OBJECT_ID, tableId.toLong())
+            intent.putExtra(ImageControlCameraActivity.ARG_OBJECT_ID_1, itemId.toString())
+            intent.putExtra(ImageControlCameraActivity.ARG_DESCRIPTION, description)
+            intent.putExtra(ImageControlCameraActivity.ARG_ADD_PHOTO, settingViewModel.autoSend)
             resultForPhotoCapture.launch(intent)
         }
     }
@@ -1169,9 +1168,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private fun showPhotoAlbum(images: ArrayList<DocumentContent> = ArrayList()) {
         val intent = Intent(this, ImageControlGridActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra("programObjectId", tempTableId.toLong())
-        intent.putExtra("objectId1", tempObjectId)
-        intent.putExtra("docContObjArrayList", images)
+        intent.putExtra(ImageControlGridActivity.ARG_PROGRAM_OBJECT_ID, tempTableId.toLong())
+        intent.putExtra(ImageControlGridActivity.ARG_OBJECT_ID_1, tempObjectId)
+        intent.putExtra(ImageControlGridActivity.ARG_DOC_CONT_OBJ_ARRAY_LIST, images)
         resultForShowPhotoAlbum.launch(intent)
     }
 
@@ -1202,5 +1201,14 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         showPhotoAlbum()
     }
-    //endregion ImageControl    
+    //endregion ImageControl
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_ITEM_CODE = "itemCode"
+        const val ARG_ITEM_CATEGORY = "itemCategory"
+        const val ARG_MULTI_SELECT = "multiSelect"
+        const val ARG_HIDE_FILTER_PANEL = "hideFilterPanel"
+        const val ARG_IDS = "ids"
+    }
 }

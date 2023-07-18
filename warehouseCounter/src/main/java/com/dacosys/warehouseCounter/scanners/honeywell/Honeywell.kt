@@ -74,12 +74,12 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
          * Este es el nombre creado por defecto en los Honeywell
          * Settings / Scan Settings / Internal Scanner / + / Select an application / WarehouseCounter
          */
-        const val appProfile = "WarehouseCounter"
+        const val APP_PROFILE = "WarehouseCounter"
 
         /**
          * Categoría por defecto. En otros ejemplos se envía vacía.
          */
-        const val defaultCategory = "android.intent.category.DEFAULT"
+        const val DEFAULT_CATEGORY = "android.intent.category.DEFAULT"
 
         const val EXTRA_CONTROL = "com.honeywell.aidc.action.ACTION_CONTROL_SCANNER"
 
@@ -294,7 +294,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
                        Android Settings > Honeywell Settings > Scanning > Internal scanner > "+"
                 - If we use "DEFAULT" it will apply the settings from the Default profile in Scanner settings
                 - If not found, it will use Factory default settings.
-                 */.putExtra(Constants.EXTRA_PROFILE, Constants.appProfile)
+                 */.putExtra(Constants.EXTRA_PROFILE, Constants.APP_PROFILE)
 
             sendBroadcast(intent)
             isOpened = true
@@ -315,7 +315,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
 
             /*
              * Always provide a non-empty category, for example "android.intent.category.DEFAULT"
-             */.addCategory(Constants.defaultCategory)
+             */.addCategory(Constants.DEFAULT_CATEGORY)
 
         if (sdkVersion < 26) {
             Log.v(this::class.java.simpleName, "Send $intent (${activityName})")

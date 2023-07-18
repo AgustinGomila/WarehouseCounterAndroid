@@ -6,7 +6,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
-import com.dacosys.warehouseCounter.ktor.functions.SendItemCode
+import com.dacosys.warehouseCounter.ktor.v2.functions.SendItemCodeArray
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
@@ -17,7 +17,6 @@ import com.dacosys.warehouseCounter.sync.DownloadDb.DownloadStatus.*
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import kotlinx.coroutines.*
 import java.io.BufferedReader
 import java.io.File
@@ -28,7 +27,6 @@ import kotlin.concurrent.thread
 class DownloadDb : DownloadFileTask.OnDownloadFileTask {
 
     interface DownloadDbTask {
-        // Define data you like to return from AysncTask
         fun onDownloadDbTask(downloadStatus: DownloadStatus)
 
         fun onDownloadFileTask(
@@ -37,26 +35,6 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
             downloadStatus: DownloadStatus,
             progress: Int?,
         )
-    }
-
-    private fun onTaskSendItemCodeEnded(snackBarEventData: SnackBarEventData) {
-        when (snackBarEventData.snackBarType) {
-            SUCCESS -> uploadStatus = ProgressStatus.success
-            ERROR -> uploadStatus = ProgressStatus.crashed
-        }
-
-        val progressStatusDesc = uploadStatus?.description ?: ""
-        val registryDesc = context.getString(R.string.item_codes)
-        val msg = snackBarEventData.text
-
-        if (uploadStatus == ProgressStatus.crashed || downloadStatus == CRASHED) {
-            ErrorLog.writeLog(
-                null, this::class.java.simpleName, "$progressStatusDesc: $registryDesc, $msg"
-            )
-            onEventData(snackBarEventData)
-        } else {
-            Log.d(this::class.java.simpleName, "$progressStatusDesc: $registryDesc, $msg")
-        }
     }
 
     override fun onDownloadFileTask(
@@ -75,9 +53,10 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                 null, this::class.java.simpleName, "${downloadStatus.name}: ${fileType.name}, $msg"
             )
 
-            // Si falla en el Timefile puede ser por no tener conexión.
-            // No mostrar error
-            if (fileType == FileType.TIMEFILE) {
+            /** If it fails to file the DB creation date, it may be due to no connection.
+             * Don't show the error message.
+             */
+            if (fileType == FileType.TIME_FILE) {
                 onEventData(
                     SnackBarEventData(
                         context.getString(R.string.offline_mode), SnackBarType.INFO
@@ -97,7 +76,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
      * De esto depende la lógica para la secuencia de descargas.
      */
     enum class FileType(val id: Int) {
-        TIMEFILE(1), DBFILE(2)
+        TIME_FILE(1), DB_FILE(2)
     }
 
     /**
@@ -212,7 +191,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
             downloadTask.addParams(
                 UrlDestParam(
                     url = timeFileUrl, destination = destTimeFile
-                ), this, FileType.TIMEFILE
+                ), this, FileType.TIME_FILE
             )
             downloadTask.execute()
 
@@ -235,7 +214,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                         // y termina de descargarse salir del loop para poder hacer
                         // las comparaciones
 
-                        if (fileType == FileType.TIMEFILE) {
+                        if (fileType == FileType.TIME_FILE) {
                             break
                         } else {
                             downloadStatus = null
@@ -243,7 +222,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                             downloadTask.addParams(
                                 UrlDestParam(
                                     url = timeFileUrl, destination = destTimeFile
-                                ), this, FileType.TIMEFILE
+                                ), this, FileType.TIME_FILE
                             )
                             downloadTask.execute()
                         }
@@ -254,15 +233,14 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                         // Si no existe el archivo con la fecha en el servidor
                         // es porque aún no se creó la base de datos.
 
-                        if (fileType == FileType.TIMEFILE) {
+                        if (fileType == FileType.TIME_FILE) {
                             // Si falla al bajar la fecha
                             crashNr++
                         }
 
                         if (crashNr > 1) {
                             // Si ya falló dos veces en bajar la fecha, a la mierda.
-                            errorMsg =
-                                context.getString(R.string.failed_to_get_the_db_creation_date_from_the_server)
+                            errorMsg = context.getString(R.string.failed_to_get_the_db_creation_date_from_the_server)
                             mCallback?.onDownloadDbTask(CRASHED)
                             return
                         }
@@ -277,7 +255,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
             currentDateTimeStr = getDateTimeStr()
 
             // True solo en DEBUG
-            if (!Statics.downloadDbAlways) {
+            if (!Statics.DOWNLOAD_DB_ALWAYS) {
                 if (oldDateTimeStr == currentDateTimeStr) {
                     Log.d(
                         this::class.java.simpleName,
@@ -300,7 +278,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                 downloadTask.addParams(
                     UrlDestParam(
                         url = dbFileUrl, destination = destDbFile
-                    ), this, FileType.DBFILE
+                    ), this, FileType.DB_FILE
                 )
                 downloadTask.execute()
 
@@ -310,8 +288,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                     when (downloadStatus) {
                         CANCELED, CRASHED -> {
                             // Si se cancela o choca, sale
-                            errorMsg =
-                                context.getString(R.string.error_downloading_the_database_from_the_server)
+                            errorMsg = context.getString(R.string.error_downloading_the_database_from_the_server)
                             mCallback?.onDownloadDbTask(CRASHED)
                             return
                         }
@@ -361,24 +338,31 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
         uploadStatus = ProgressStatus.unknown
 
         if (Statics.currentUserId > 0) {
-            ItemCodeCoroutines().getToUpload {
+            ItemCodeCoroutines.getToUpload {
                 try {
                     thread {
-                        SendItemCode(it) { it2 -> onTaskSendItemCodeEnded(it2) }.execute()
+                        SendItemCodeArray(
+                            payload = it,
+                            onEvent = { onEventData(it) },
+                            onFinish = { it2 ->
+                                uploadStatus =
+                                    if (it2.size == it.size) ProgressStatus.finished
+                                    else ProgressStatus.crashed
+                            }).execute()
                     }
                 } catch (ex: Exception) {
                     ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
                 }
 
-                // Espera hasta que salga del SyncUpload
-                // Tiene que terminar de enviar los datos pendientes para continuar con la descarga
+                /** Wait until I finish sending all the Item Codes.
+                 * You have to finish sending the pending data to continue with the download.
+                 */
                 loop@ while (true) {
                     when (uploadStatus) {
                         ProgressStatus.finished -> break@loop
                         ProgressStatus.crashed, ProgressStatus.canceled,
                         -> {
-                            errorMsg =
-                                context.getString(R.string.error_trying_to_send_item_codes)
+                            errorMsg = context.getString(R.string.error_trying_to_send_item_codes)
                             mCallback?.onDownloadDbTask(CRASHED)
                             return@getToUpload
                         }

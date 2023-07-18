@@ -4,9 +4,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest.CREATOR.getCompletedOrders
-import com.dacosys.warehouseCounter.ktor.functions.GetNewOrder
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import java.util.*
 import kotlin.concurrent.thread
@@ -16,16 +15,6 @@ import kotlin.concurrent.thread
  * de tiempo dos procesos:
  * 1. Solicitar nuevas órdenes de arqueo (en la web)
  * 2. Solicitar los arqueos completados (en el dispositivo)
- *
- * Cada tarea es independiente y devuelve su resultado en cuanto finaliza
- * a quien esté escuchando (callbacks).
- *
- * Se inicializa con starTimer:
- *  Requiere un context (para comunicarse con la UI, etc),
- *  2 Callbacks (para las entradas y salidas) y
- *  el TASK_CODE (para el callback).
- *
- * Se puede detener mediante stopTimer.
  */
 class Sync {
     companion object {
@@ -107,10 +96,11 @@ class Sync {
 
             thread {
                 try {
-                    GetNewOrder(
-                        onEvent = { },
-                        onFinish = { onNewOrders.invoke(it) }
-                    ).execute()
+                    // TODO: Hacer una función que permita descargar órdenes.
+                    // GetNewOrder(
+                    //     onEvent = { },
+                    //     onFinish = { onNewOrders.invoke(it) }
+                    // ).execute()
                 } catch (ex: Exception) {
                     ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
                     syncNewOrderStatus = DownloadStatus.NOT_RUNNING

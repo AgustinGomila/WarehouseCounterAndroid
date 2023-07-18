@@ -62,23 +62,24 @@ class ItemSelectFilterFragment : Fragment() {
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putBoolean("onlyActive", onlyActive)
-        savedInstanceState.putString("itemCode", itemCode)
-        savedInstanceState.putParcelable("itemCategory", itemCategory)
+        savedInstanceState.putBoolean(ARG_ONLY_ACTIVE, onlyActive)
+        savedInstanceState.putString(ARG_CODE, itemCode)
+        savedInstanceState.putParcelable(ARG_ITEM_CATEGORY, itemCategory)
     }
 
-    // Este método es llamado cuando el fragmento se está creando.
-    // En el puedes inicializar todos los componentes que deseas guardar si el fragmento fue pausado o detenido.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (arguments != null) {
-            itemCategory =
-                Parcels.unwrap<ItemCategory>(requireArguments().getParcelable("itemCategory"))
-            itemCode = requireArguments().getString("itemCode") ?: ""
-
-            onlyActive = settingViewModel.selectItemOnlyActive
+        val args = arguments
+        if (args != null) {
+            loadSavedValues(args)
         }
+    }
+
+    private fun loadSavedValues(b: Bundle) {
+        itemCategory = Parcels.unwrap<ItemCategory>(b.getParcelable(ARG_ITEM_CATEGORY))
+        itemCode = b.getString(ARG_CODE) ?: ""
+        onlyActive = b.getBoolean(ARG_ONLY_ACTIVE)
     }
 
     private var _binding: ItemSelectFilterFragmentBinding? = null
@@ -102,10 +103,7 @@ class ItemSelectFilterFragment : Fragment() {
         val view = binding.root
 
         if (savedInstanceState != null) {
-            itemCode = savedInstanceState.getString("itemCode") ?: ""
-            itemCategory = savedInstanceState.getParcelable("itemCategory")
-            onlyActive = savedInstanceState.getBoolean("onlyActive")
-
+            loadSavedValues(savedInstanceState)
             refreshTextViews()
         }
 
@@ -128,24 +126,10 @@ class ItemSelectFilterFragment : Fragment() {
 
             val intent = Intent(requireContext(), CodeSelectActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra("title", getString(R.string.search_by_ean_description))
-            intent.putExtra("itemCode", itemCode)
+            intent.putExtra(CodeSelectActivity.ARG_TITLE, getString(R.string.search_by_ean_description))
+            intent.putExtra(CodeSelectActivity.ARG_CODE, itemCode)
             resultForItemSelect.launch(intent)
         }
-
-        binding.itemCategoryTextView.setOnClickListener {
-            if (rejectNewInstances) {
-                return@setOnClickListener
-            }
-            rejectNewInstances = true
-
-            val intent = Intent(requireContext(), ItemCategorySelectActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra("itemCategory", itemCategory)
-            intent.putExtra("title", getString(R.string.select_category))
-            resultForCategorySelect.launch(intent)
-        }
-
         binding.codeSearchImageView.setOnClickListener { binding.codeTextView.performClick() }
         binding.codeClearImageView.setOnClickListener {
             itemCode = ""
@@ -155,7 +139,20 @@ class ItemSelectFilterFragment : Fragment() {
                 code = itemCode, itemCategory = itemCategory, onlyActive = onlyActive
             )
         }
-        binding.categorySearchImageView.setOnClickListener { binding.itemCategoryTextView.performClick() }
+
+        binding.categoryTextView.setOnClickListener {
+            if (rejectNewInstances) {
+                return@setOnClickListener
+            }
+            rejectNewInstances = true
+
+            val intent = Intent(requireContext(), ItemCategorySelectActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            intent.putExtra(ItemCategorySelectActivity.ARG_ITEM_CATEGORY, itemCategory)
+            intent.putExtra(ItemCategorySelectActivity.ARG_TITLE, getString(R.string.select_category))
+            resultForCategorySelect.launch(intent)
+        }
+        binding.categorySearchImageView.setOnClickListener { binding.categoryTextView.performClick() }
         binding.categoryClearImageView.setOnClickListener {
             itemCategory = null
             setCategoryText()
@@ -174,7 +171,7 @@ class ItemSelectFilterFragment : Fragment() {
             val data = it?.data
             try {
                 if (it?.resultCode == AppCompatActivity.RESULT_OK && data != null) {
-                    itemCode = data.getStringExtra("itemCode") ?: return@registerForActivityResult
+                    itemCode = data.getStringExtra(CodeSelectActivity.ARG_CODE) ?: return@registerForActivityResult
 
                     setCodeText()
 
@@ -195,8 +192,8 @@ class ItemSelectFilterFragment : Fragment() {
             val data = it?.data
             try {
                 if (it?.resultCode == AppCompatActivity.RESULT_OK && data != null) {
-                    itemCategory =
-                        data.getParcelableExtra("itemCategory") ?: return@registerForActivityResult
+                    itemCategory = data.getParcelableExtra(ItemCategorySelectActivity.ARG_ITEM_CATEGORY)
+                        ?: return@registerForActivityResult
 
                     setCategoryText()
 
@@ -235,17 +232,17 @@ class ItemSelectFilterFragment : Fragment() {
     private fun setCategoryText() {
         activity?.runOnUiThread {
             if (itemCategory == null) {
-                binding.itemCategoryTextView.typeface = Typeface.DEFAULT
-                binding.itemCategoryTextView.text = getString(R.string.search_by_category)
+                binding.categoryTextView.typeface = Typeface.DEFAULT
+                binding.categoryTextView.text = getString(R.string.search_by_category)
             } else {
-                binding.itemCategoryTextView.typeface = Typeface.DEFAULT_BOLD
-                binding.itemCategoryTextView.text = itemCategory!!.description
+                binding.categoryTextView.typeface = Typeface.DEFAULT_BOLD
+                binding.categoryTextView.text = itemCategory!!.description
             }
         }
     }
 
-    // Se llama cuando el fragmento esta visible ante el usuario.
-    // Obviamente depende del método onStart() de la actividad para saber si la actividad se está mostrando.
+    // Se llama cuando el fragmento está visible ante el usuario.
+    // Obviamente, depende del método onStart() de la actividad para saber si la actividad se está mostrando.
     override fun onStart() {
         super.onStart()
         if (mCallback is OnFilterChangedListener) {
@@ -303,20 +300,26 @@ class ItemSelectFilterFragment : Fragment() {
 
     companion object {
 
-        // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+        // The fragment initialization parameters
         private const val ARG_CODE = "itemCode"
         private const val ARG_ITEM_CATEGORY = "itemCategory"
+        private const val ARG_ONLY_ACTIVE = "onlyActive"
 
         /**
          * Use this factory method to create a new instance of
          * this fragment using the provided parameters.
          */
-        fun newInstance(itemCode: String, itemCategory: ItemCategory?): ItemSelectFilterFragment {
+        fun newInstance(
+            itemCode: String = "",
+            itemCategory: ItemCategory? = null,
+            onlyActive: Boolean = true
+        ): ItemSelectFilterFragment {
             val fragment = ItemSelectFilterFragment()
 
             val args = Bundle()
             args.putString(ARG_CODE, itemCode)
             args.putParcelable(ARG_ITEM_CATEGORY, itemCategory)
+            args.putBoolean(ARG_ONLY_ACTIVE, onlyActive)
 
             fragment.arguments = args
             return fragment

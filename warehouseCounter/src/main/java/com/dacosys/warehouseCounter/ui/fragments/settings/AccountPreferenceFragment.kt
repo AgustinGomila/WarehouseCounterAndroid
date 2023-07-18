@@ -11,11 +11,11 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dto.clientPackage.Package
-import com.dacosys.warehouseCounter.ktor.functions.GetClientPackages
+import com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package
+import com.dacosys.warehouseCounter.ktor.v1.functions.GetClientPackages
+import com.dacosys.warehouseCounter.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.PackagesResult
 import com.dacosys.warehouseCounter.room.database.FileHelper
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.settings.utils.QRConfigType

@@ -15,7 +15,7 @@ interface ItemCodeDao {
     @Query("SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.ITEM_ID} = :itemId AND ${Entry.QTY} > 0 ORDER BY ${Entry.CODE}")
     suspend fun getByItemId(itemId: Long?): List<ItemCode>
 
-    @Query("SELECT COUNT(*) FROM ${Entry.TABLE_NAME} $basicWhere")
+    @Query("SELECT COUNT(*) FROM ${Entry.TABLE_NAME} $BASIC_WHERE")
     suspend fun countLink(itemId: Long, code: String): Int
 
     @Query("SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.TO_UPLOAD} = 1")
@@ -23,24 +23,24 @@ interface ItemCodeDao {
 
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(itemCode: ItemCode)
+    suspend fun insert(itemCode: ItemCode): Long?
 
 
     @Update
     suspend fun update(itemCode: ItemCode)
 
     @Query(
-        "UPDATE ${Entry.TABLE_NAME} SET ${Entry.QTY} = :qty, ${Entry.TO_UPLOAD} = 1 $basicWhere"
+        "UPDATE ${Entry.TABLE_NAME} SET ${Entry.QTY} = :qty, ${Entry.TO_UPLOAD} = 1 $BASIC_WHERE"
     )
     suspend fun updateQty(itemId: Long, code: String, qty: Double?)
 
     @Query(
-        "UPDATE ${Entry.TABLE_NAME} SET ${Entry.TO_UPLOAD} = 0 $basicWhere"
+        "UPDATE ${Entry.TABLE_NAME} SET ${Entry.TO_UPLOAD} = 0 $BASIC_WHERE"
     )
     suspend fun updateTransferred(itemId: Long, code: String)
 
     @Query(
-        "UPDATE ${Entry.TABLE_NAME} SET ${Entry.QTY} = 0, ${Entry.TO_UPLOAD} = 1 $basicWhere"
+        "UPDATE ${Entry.TABLE_NAME} SET ${Entry.QTY} = 0, ${Entry.TO_UPLOAD} = 1 $BASIC_WHERE"
     )
     suspend fun unlinkCode(itemId: Long, code: String)
 
@@ -49,6 +49,6 @@ interface ItemCodeDao {
     suspend fun delete(itemCode: ItemCode)
 
     companion object {
-        const val basicWhere = "WHERE ${Entry.ITEM_ID} = :itemId AND ${Entry.CODE} = :code"
+        const val BASIC_WHERE = "WHERE ${Entry.ITEM_ID} = :itemId AND ${Entry.CODE} = :code"
     }
 }

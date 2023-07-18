@@ -22,11 +22,11 @@ data class ItemCategory(
     @ColumnInfo(name = Entry.PARENT_STR) @Ignore var parentStr: String = "",
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
-        parcel.readLong(),
-        parcel.readString() ?: "",
-        parcel.readInt(),
-        parcel.readLong(),
-        parcel.readString() ?: ""
+        itemCategoryId = parcel.readLong(),
+        description = parcel.readString() ?: "",
+        active = parcel.readInt(),
+        parentId = parcel.readLong(),
+        parentStr = parcel.readString() ?: ""
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -45,10 +45,6 @@ data class ItemCategory(
         return description
     }
 
-    override fun hashCode(): Int {
-        return itemCategoryId.hashCode()
-    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -56,6 +52,15 @@ data class ItemCategory(
         other as ItemCategory
 
         return itemCategoryId == other.itemCategoryId
+    }
+
+    override fun hashCode(): Int {
+        var result = itemCategoryId.hashCode()
+        result = 31 * result + description.hashCode()
+        result = 31 * result + active
+        result = 31 * result + parentId.hashCode()
+        result = 31 * result + parentStr.hashCode()
+        return result
     }
 
     companion object CREATOR : Parcelable.Creator<ItemCategory> {
