@@ -61,8 +61,8 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.settings.SettingsRepository
+import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderLocationRecyclerAdapter
-import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
 import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderLocationFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText

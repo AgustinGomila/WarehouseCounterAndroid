@@ -32,7 +32,7 @@ import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.ContentStatus
 import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlContent
 import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlItem
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
+import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
@@ -45,23 +45,25 @@ import java.util.*
  * Created by Agustin on 10/03/2023.
  */
 
-class PtlContentAdapter(
-    private val recyclerView: RecyclerView,
-    var fullList: ArrayList<PtlContent>,
-    var checkedIdArray: ArrayList<Long> = ArrayList(),
-    var multiSelect: Boolean = false,
-    private var allowEditQty: Boolean = false,
-    private var showQtyPanel: Boolean = false,
-    var showCheckBoxes: Boolean = false,
-    private var showCheckBoxesChanged: (Boolean) -> Unit = { },
-    var visibleStatus: ArrayList<ContentStatus> = ArrayList(ContentStatus.values().toList()),
-    private var filterOptions: FilterOptions = FilterOptions("", true)
-) : ListAdapter<PtlContent, ViewHolder>(PtlContentDiffUtilCallback), Filterable {
+class PtlContentAdapter private constructor(builder: Builder) :
+    ListAdapter<PtlContent, ViewHolder>(PtlContentDiffUtilCallback), Filterable {
 
-    private var currentIndex = NO_POSITION
+    private val recyclerView: RecyclerView
+    var fullList: ArrayList<PtlContent>
+    var checkedIdArray: ArrayList<Long> = ArrayList()
+    var multiSelect: Boolean = false
+    private var allowEditQty: Boolean = false
+    private var showQtyPanel: Boolean = false
+    var showCheckBoxes: Boolean = false
+    private var showCheckBoxesChanged: (Boolean) -> Unit = { }
+    var visibleStatus: ArrayList<ContentStatus> = ArrayList(ContentStatus.values().toList())
+    private var filterOptions: FilterOptions = FilterOptions("", true)
+
     private var dataSetChangedListener: DataSetChangedListener? = null
     private var checkedChangedListener: CheckedChangedListener? = null
     private var editQtyListener: EditQtyListener? = null
+
+    private var currentIndex = NO_POSITION
 
     // Clase para distinguir actualizaciones parciales
     private enum class PAYLOADS {
@@ -911,6 +913,21 @@ class PtlContentAdapter(
     }
 
     init {
+        // Set values from Builder
+        recyclerView = builder.recyclerView
+        fullList = builder.fullList
+        checkedIdArray = builder.checkedIdArray
+        multiSelect = builder.multiSelect
+        allowEditQty = builder.allowEditQty
+        showQtyPanel = builder.showQtyPanel
+        showCheckBoxes = builder.showCheckBoxes
+        showCheckBoxesChanged = builder.showCheckBoxesChanged
+        visibleStatus = builder.visibleStatus
+        filterOptions = builder.filterOptions
+        dataSetChangedListener = builder.dataSetChangedListener
+        checkedChangedListener = builder.checkedChangedListener
+        editQtyListener = builder.editQtyListener
+
         setupColors()
 
         // Por el momento no queremos animaciones, ni transiciones ante cambios en el DataSet
@@ -951,5 +968,94 @@ class PtlContentAdapter(
 
     override fun submitList(list: MutableList<PtlContent>?, commitCallback: Runnable?) {
         super.submitList(sortedVisibleList(list), commitCallback)
+    }
+
+    class Builder {
+        fun build(): PtlContentAdapter {
+            return PtlContentAdapter(this)
+        }
+
+        internal lateinit var recyclerView: RecyclerView
+        internal var fullList: ArrayList<PtlContent> = arrayListOf()
+        internal var checkedIdArray: ArrayList<Long> = arrayListOf()
+        internal var multiSelect: Boolean = false
+        internal var allowEditQty: Boolean = false
+        internal var showQtyPanel: Boolean = false
+        internal var showCheckBoxes: Boolean = false
+        internal var showCheckBoxesChanged: (Boolean) -> Unit = { }
+        internal var visibleStatus: ArrayList<ContentStatus> = ArrayList(ContentStatus.values().toList())
+        internal var filterOptions: FilterOptions = FilterOptions("", true)
+        internal var dataSetChangedListener: DataSetChangedListener? = null
+        internal var checkedChangedListener: CheckedChangedListener? = null
+        internal var editQtyListener: EditQtyListener? = null
+
+        // Setter methods for variables with chained methods
+        @Suppress("unused")
+        fun recyclerView(`val`: RecyclerView): Builder {
+            recyclerView = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun fullList(`val`: ArrayList<PtlContent>): Builder {
+            fullList = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun checkedIdArray(`val`: ArrayList<Long>): Builder {
+            checkedIdArray = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun multiSelect(`val`: Boolean): Builder {
+            multiSelect = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun allowEditQty(`val`: Boolean, listener: EditQtyListener?): Builder {
+            allowEditQty = `val`
+            editQtyListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun showQtyPanel(`val`: Boolean): Builder {
+            showQtyPanel = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun showCheckBoxes(`val`: Boolean, listener: (Boolean) -> Unit): Builder {
+            showCheckBoxes = `val`
+            showCheckBoxesChanged = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun visibleStatus(`val`: ArrayList<ContentStatus>): Builder {
+            visibleStatus = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun filterOptions(`val`: FilterOptions): Builder {
+            filterOptions = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun dataSetChangedListener(listener: DataSetChangedListener?): Builder {
+            dataSetChangedListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun checkedChangedListener(listener: CheckedChangedListener?): Builder {
+            checkedChangedListener = listener
+            return this
+        }
     }
 }

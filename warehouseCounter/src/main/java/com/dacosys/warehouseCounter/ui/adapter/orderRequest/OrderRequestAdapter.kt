@@ -28,25 +28,23 @@ import com.dacosys.warehouseCounter.databinding.OrderRequestRowBinding
 import com.dacosys.warehouseCounter.databinding.OrderRequestRowExpandedBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
-import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
+import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
 import java.util.*
 
-class OrderRequestAdapter(
-    private val recyclerView: RecyclerView,
-    var fullList: ArrayList<OrderRequest> = ArrayList(),
-    var checkedIdArray: ArrayList<Long> = ArrayList(),
-    private var multiSelect: Boolean = false,
-    var showCheckBoxes: Boolean = false,
-    private var showCheckBoxesChanged: (Boolean) -> Unit = { },
-    var visibleStatus: ArrayList<OrderRequestType> = OrderRequestType.getAll(),
-    private var filterOptions: FilterOptions = FilterOptions("", true),
-) : ListAdapter<OrderRequest, ViewHolder>(OrderRequestDiffUtilCallback), Filterable {
+class OrderRequestAdapter private constructor(builder: Builder) :
+    ListAdapter<OrderRequest, ViewHolder>(OrderRequestDiffUtilCallback), Filterable {
 
-    // Posición del pedido seleccionado
-    private var currentIndex = NO_POSITION
+    private val recyclerView: RecyclerView
+    var fullList: ArrayList<OrderRequest> = ArrayList()
+    var checkedIdArray: ArrayList<Long> = ArrayList()
+    private var multiSelect: Boolean = false
+    var showCheckBoxes: Boolean = false
+    private var showCheckBoxesChanged: (Boolean) -> Unit = { }
+    var visibleStatus: ArrayList<OrderRequestType> = OrderRequestType.getAll()
+    private var filterOptions: FilterOptions = FilterOptions("", true)
 
     // Este Listener debe usarse para los cambios de cantidad o de pedidos marcados de la lista,
     // ya que se utiliza para actualizar los valores sumarios en la actividad.
@@ -54,6 +52,9 @@ class OrderRequestAdapter(
 
     private var selectedOrderRequestChangedListener: SelectedOrderRequestChangedListener? = null
     private var checkedChangedListener: CheckedChangedListener? = null
+
+    // Posición del pedido seleccionado
+    private var currentIndex = NO_POSITION
 
     // Clase para distinguir actualizaciones parciales
     private enum class PAYLOADS {
@@ -882,6 +883,18 @@ class OrderRequestAdapter(
     }
 
     init {
+        // Set values from Builder
+        recyclerView = builder.recyclerView
+        fullList = builder.fullList
+        checkedIdArray = builder.checkedIdArray
+        multiSelect = builder.multiSelect
+        showCheckBoxes = builder.showCheckBoxes
+        showCheckBoxesChanged = builder.showCheckBoxesChanged
+        visibleStatus = builder.visibleStatus
+        filterOptions = builder.filterOptions
+        dataSetChangedListener = builder.dataSetChangedListener
+        checkedChangedListener = builder.checkedChangedListener
+
         // Configuramos variables de estilo que se van a reutilizar.
         setupColors()
 
@@ -924,5 +937,79 @@ class OrderRequestAdapter(
 
     override fun submitList(list: MutableList<OrderRequest>?, commitCallback: Runnable?) {
         super.submitList(sortedVisibleList(list), commitCallback)
+    }
+
+    class Builder {
+        fun build(): OrderRequestAdapter {
+            return OrderRequestAdapter(this)
+        }
+
+        internal lateinit var recyclerView: RecyclerView
+        internal var fullList: ArrayList<OrderRequest> = ArrayList()
+        internal var checkedIdArray: ArrayList<Long> = ArrayList()
+        internal var multiSelect: Boolean = false
+        internal var showCheckBoxes: Boolean = false
+        internal var showCheckBoxesChanged: (Boolean) -> Unit = { }
+        internal var visibleStatus: ArrayList<OrderRequestType> = OrderRequestType.getAll()
+        internal var filterOptions: FilterOptions = FilterOptions("", true)
+
+        internal var dataSetChangedListener: DataSetChangedListener? = null
+        internal var checkedChangedListener: CheckedChangedListener? = null
+
+        // Setter methods for variables with chained methods
+        @Suppress("unused")
+        fun recyclerView(`val`: RecyclerView): Builder {
+            recyclerView = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun fullList(`val`: ArrayList<OrderRequest>): Builder {
+            fullList = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun checkedIdArray(`val`: ArrayList<Long>): Builder {
+            checkedIdArray = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun multiSelect(`val`: Boolean): Builder {
+            multiSelect = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun showCheckBoxes(`val`: Boolean, listener: (Boolean) -> Unit): Builder {
+            showCheckBoxes = `val`
+            showCheckBoxesChanged = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun visibleStatus(`val`: ArrayList<OrderRequestType>): Builder {
+            visibleStatus = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun filterOptions(`val`: FilterOptions): Builder {
+            filterOptions = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun dataSetChangedListener(listener: DataSetChangedListener?): Builder {
+            dataSetChangedListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun checkedChangedListener(listener: CheckedChangedListener?): Builder {
+            checkedChangedListener = listener
+            return this
+        }
     }
 }

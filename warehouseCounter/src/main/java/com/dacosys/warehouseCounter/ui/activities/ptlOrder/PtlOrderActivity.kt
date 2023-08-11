@@ -212,11 +212,13 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         super.onStart()
         rejectNewInstances = false
 
-        refreshAdapterListeners()
-
         if (initialScannedCode.isNotEmpty()) {
             scannerCompleted(initialScannedCode)
             initialScannedCode = ""
+        }
+
+        if (fillRequired) {
+            fillAdapter(completeList)
         }
 
         setSyncTimer()
@@ -328,6 +330,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     }
 
     private lateinit var binding: PtlOrderActivityBottomPanelCollapsedBinding
+    private var fillRequired = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -344,6 +347,8 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                     (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
             }
         })
+
+        fillRequired = true
 
         tempTitle = getString(R.string.ptl_order)
 
@@ -711,14 +716,14 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                     lastSelected = adapter?.currentItem()
                 }
 
-                adapter = PtlContentAdapter(
-                    recyclerView = binding.recyclerView,
-                    fullList = ptlContArray,
-                    checkedIdArray = checkedIdArray,
-                    showQtyPanel = true
-                )
-
-                refreshAdapterListeners()
+                adapter = PtlContentAdapter.Builder()
+                    .recyclerView(binding.recyclerView)
+                    .fullList(ptlContArray)
+                    .checkedIdArray(checkedIdArray)
+                    .showQtyPanel(true)
+                    .dataSetChangedListener(this)
+                    .allowEditQty(true, this)
+                    .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
                 binding.recyclerView.adapter = adapter
@@ -741,10 +746,6 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                 gentlyReturn()
             }
         }
-    }
-
-    private fun refreshAdapterListeners() {
-        adapter?.refreshListeners(dataSetChangedListener = this, editQtyListener = this)
     }
 
     private val multiselect: Boolean

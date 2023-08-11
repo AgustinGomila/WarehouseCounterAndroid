@@ -28,7 +28,7 @@ import com.dacosys.warehouseCounter.databinding.OrderLocationRowBinding
 import com.dacosys.warehouseCounter.databinding.OrderLocationRowExpandedBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderLocation
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderLocation.OrderLocationStatus
-import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
+import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
@@ -779,7 +779,68 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         // endregion
     }
 
+    init {
+        // Set values from Builder
+        recyclerView = builder.recyclerView
+        fullList = builder.fullList
+        checkedIdArray = builder.checkedIdArray
+        multiSelect = builder.multiSelect
+        showCheckBoxes = builder.showCheckBoxes
+        showCheckBoxesChanged = builder.showCheckBoxesChanged
+        visibleStatus = builder.visibleStatus
+        filterOptions = builder.filterOptions
+        dataSetChangedListener = builder.dataSetChangedListener
+        selectedItemChangedListener = builder.selectedItemChangedListener
+        checkedChangedListener = builder.checkedChangedListener
+
+        // Configuramos variables de estilo que se van a reutilizar.
+        setupColors()
+
+        // Por el momento no queremos animaciones, ni transiciones ante cambios en el DataSet
+        recyclerView.itemAnimator = null
+
+        // Vamos a retener en el caché un [cacheFactor] por ciento de los ítems creados o un máximo de [maxCachedItems]
+        val maxCachedItems = 50
+        val cacheFactor = 0.10
+        var cacheSize = (fullList.size * cacheFactor).toInt()
+        if (cacheSize > maxCachedItems) cacheSize = maxCachedItems
+        recyclerView.setItemViewCacheSize(cacheSize)
+        recyclerView.recycledViewPool.setMaxRecycledViews(SELECTED_VIEW_TYPE, 0)
+        recyclerView.recycledViewPool.setMaxRecycledViews(UNSELECTED_VIEW_TYPE, 0)
+
+        // Ordenamiento natural de la lista completa para trabajar en adelante con una lista ordenada
+        val tList = sortItems(fullList)
+        fullList = tList
+
+        // Suministramos la lista a publicar refrescando el filtro que recorre la lista completa y devuelve los resultados filtrados y ordenados
+        refreshFilter(filterOptions)
+    }
+
+    /**
+     * Return a sorted list of visible state items
+     *
+     * @param list
+     * @return Lista ordenada con los estados visibles
+     */
+    private fun sortedVisibleList(list: MutableList<OrderLocation>?): MutableList<OrderLocation> {
+        val croppedList = (list ?: mutableListOf()).mapNotNull { if (it.itemStatus in visibleStatus) it else null }
+        return sortItems(croppedList.toMutableList())
+    }
+
+    // Sobrecargamos estos métodos para suministrar siempre una lista ordenada y filtrada por estado de visibilidad
+    override fun submitList(list: MutableList<OrderLocation>?) {
+        super.submitList(sortedVisibleList(list))
+    }
+
+    override fun submitList(list: MutableList<OrderLocation>?, commitCallback: Runnable?) {
+        super.submitList(sortedVisibleList(list), commitCallback)
+    }
+
     class Builder {
+        fun build(): OrderLocationRecyclerAdapter {
+            return OrderLocationRecyclerAdapter(this)
+        }
+
         internal lateinit var recyclerView: RecyclerView
         internal var fullList: ArrayList<OrderLocation> = ArrayList()
         internal var checkedIdArray: ArrayList<Long> = ArrayList()
@@ -853,66 +914,5 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
             checkedChangedListener = `val`
             return this
         }
-
-        fun build(): OrderLocationRecyclerAdapter {
-            return OrderLocationRecyclerAdapter(this)
-        }
-    }
-
-    init {
-        // Set values
-        recyclerView = builder.recyclerView
-        fullList = builder.fullList
-        checkedIdArray = builder.checkedIdArray
-        multiSelect = builder.multiSelect
-        showCheckBoxes = builder.showCheckBoxes
-        showCheckBoxesChanged = builder.showCheckBoxesChanged
-        visibleStatus = builder.visibleStatus
-        filterOptions = builder.filterOptions
-        dataSetChangedListener = builder.dataSetChangedListener
-        selectedItemChangedListener = builder.selectedItemChangedListener
-        checkedChangedListener = builder.checkedChangedListener
-
-        // Configuramos variables de estilo que se van a reutilizar.
-        setupColors()
-
-        // Por el momento no queremos animaciones, ni transiciones ante cambios en el DataSet
-        recyclerView.itemAnimator = null
-
-        // Vamos a retener en el caché un [cacheFactor] por ciento de los ítems creados o un máximo de [maxCachedItems]
-        val maxCachedItems = 50
-        val cacheFactor = 0.10
-        var cacheSize = (fullList.size * cacheFactor).toInt()
-        if (cacheSize > maxCachedItems) cacheSize = maxCachedItems
-        recyclerView.setItemViewCacheSize(cacheSize)
-        recyclerView.recycledViewPool.setMaxRecycledViews(SELECTED_VIEW_TYPE, 0)
-        recyclerView.recycledViewPool.setMaxRecycledViews(UNSELECTED_VIEW_TYPE, 0)
-
-        // Ordenamiento natural de la lista completa para trabajar en adelante con una lista ordenada
-        val tList = sortItems(fullList)
-        fullList = tList
-
-        // Suministramos la lista a publicar refrescando el filtro que recorre la lista completa y devuelve los resultados filtrados y ordenados
-        refreshFilter(filterOptions)
-    }
-
-    /**
-     * Return a sorted list of visible state items
-     *
-     * @param list
-     * @return Lista ordenada con los estados visibles
-     */
-    private fun sortedVisibleList(list: MutableList<OrderLocation>?): MutableList<OrderLocation> {
-        val croppedList = (list ?: mutableListOf()).mapNotNull { if (it.itemStatus in visibleStatus) it else null }
-        return sortItems(croppedList.toMutableList())
-    }
-
-    // Sobrecargamos estos métodos para suministrar siempre una lista ordenada y filtrada por estado de visibilidad
-    override fun submitList(list: MutableList<OrderLocation>?) {
-        super.submitList(sortedVisibleList(list))
-    }
-
-    override fun submitList(list: MutableList<OrderLocation>?, commitCallback: Runnable?) {
-        super.submitList(sortedVisibleList(list), commitCallback)
     }
 }

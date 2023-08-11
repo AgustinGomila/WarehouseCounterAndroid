@@ -350,14 +350,13 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                     }
                     .map { completeList[it] })
 
-                adapter = OrcAdapter(
-                    recyclerView = binding.recyclerView,
-                    fullList = filteredList,
-                    checkedIdArray = checkedIdArray,
-                    orType = orderRequest.orderRequestType,
-                )
-
-                refreshAdapterListeners()
+                adapter = OrcAdapter.Builder()
+                    .recyclerView(binding.recyclerView)
+                    .fullList(filteredList)
+                    .checkedIdArray(checkedIdArray)
+                    .orType(orderRequest.orderRequestType)
+                    .dataSetChangedListener(this)
+                    .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
                 binding.recyclerView.adapter = adapter
@@ -380,15 +379,6 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 showProgressBar(false)
             }
         }
-    }
-
-    private fun refreshAdapterListeners() {
-        adapter?.refreshListeners(
-            checkedChangedListener = null,
-            dataSetChangedListener = this,
-            editQtyListener = null,
-            editDescriptionListener = null
-        )
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

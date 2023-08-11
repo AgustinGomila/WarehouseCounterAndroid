@@ -40,8 +40,8 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter
-import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -353,17 +353,16 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                     lastSelected = adapter?.currentPtlOrder()
                 }
 
-                adapter = PtlOrderAdapter(
-                    recyclerView = binding.recyclerView,
-                    fullList = completeList,
-                    checkedIdArray = checkedIdArray,
-                    multiSelect = multiSelect,
-                    showCheckBoxes = showCheckBoxes,
-                    showCheckBoxesChanged = { showCheckBoxes = it },
-                    filterOptions = FilterOptions(searchText, true)
-                )
-
-                refreshAdapterListeners()
+                adapter = PtlOrderAdapter.Builder()
+                    .recyclerView(binding.recyclerView)
+                    .fullList(completeList)
+                    .checkedIdArray(checkedIdArray)
+                    .multiSelect(multiSelect)
+                    .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
+                    .filterOptions(FilterOptions(searchText))
+                    .checkedChangedListener(this)
+                    .dataSetChangedListener(this)
+                    .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
                 binding.recyclerView.adapter = adapter
@@ -386,18 +385,6 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                 showProgressBar(false)
             }
         }
-    }
-
-    private fun refreshAdapterListeners() {
-        // IMPORTANTE:
-        // Se deben actualizar los listeners, si no
-        // las variables de esta actividad pueden
-        // tener valores antiguos en del adaptador.
-
-        adapter?.refreshListeners(
-            checkedChangedListener = this,
-            dataSetChangedListener = this
-        )
     }
 
     private fun fillSummaryRow() {

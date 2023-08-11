@@ -478,16 +478,13 @@ class OutboxActivity : AppCompatActivity() {
                     lastSelected = adapter?.currentItem()
                 }
 
-                adapter = OrderRequestAdapter(
-                    recyclerView = binding.recyclerView,
-                    fullList = completeList,
-                    checkedIdArray = checkedIdArray,
-                    multiSelect = multiSelect,
-                    showCheckBoxes = showCheckBoxes,
-                    showCheckBoxesChanged = { showCheckBoxes = it }
-                )
-
-                refreshAdapterListeners()
+                adapter = OrderRequestAdapter.Builder()
+                    .recyclerView(binding.recyclerView)
+                    .fullList(completeList)
+                    .checkedIdArray(checkedIdArray)
+                    .multiSelect(multiSelect)
+                    .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
+                    .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
                 binding.recyclerView.adapter = adapter
@@ -511,13 +508,6 @@ class OutboxActivity : AppCompatActivity() {
                 isListViewFilling = false
             }
         }
-    }
-
-    private fun refreshAdapterListeners() {
-        adapter?.refreshListeners(
-            checkedChangedListener = null,
-            dataSetChangedListener = null
-        )
     }
 
     private fun getPrefVisibleStatus(): ArrayList<OrderRequestType> {

@@ -11,7 +11,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
@@ -22,30 +22,17 @@ import java.util.*
  */
 
 @Suppress("SpellCheckingInspection")
-class ItemCategoryAdapter : ArrayAdapter<ItemCategory>, Filterable {
-    private var activity: AppCompatActivity
-    private var resource: Int = 0
+class ItemCategoryAdapter(
+    private var activity: AppCompatActivity,
+    private var resource: Int,
+    private var itemCategoryArray: ArrayList<ItemCategory>,
+    private var suggestedList: ArrayList<ItemCategory>
+) : ArrayAdapter<ItemCategory>(context, resource, suggestedList), Filterable {
 
     private var dataSetChangedListener: DataSetChangedListener? = null
     private var checkedChangedListener: CheckedChangedListener? = null
-
     private var multiSelect: Boolean = false
-
-    private var itemCategoryArray: ArrayList<ItemCategory> = ArrayList()
-    private var suggestedList: ArrayList<ItemCategory> = ArrayList()
     private var checkedIdArray: ArrayList<Long> = ArrayList()
-
-    constructor(
-        activity: AppCompatActivity,
-        resource: Int,
-        itemCategorys: ArrayList<ItemCategory>,
-        suggestedList: ArrayList<ItemCategory>,
-    ) : super(WarehouseCounterApp.context, resource, suggestedList) {
-        this.activity = activity
-        this.resource = resource
-        this.itemCategoryArray = itemCategorys
-        this.suggestedList = suggestedList
-    }
 
     fun refreshListeners(
         checkedChangedListener: CheckedChangedListener?,

@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
@@ -20,30 +21,17 @@ import java.util.*
  */
 
 @Suppress("SpellCheckingInspection")
-class ClientAdapter : ArrayAdapter<Client>, Filterable {
-    private var resource: Int = 0
-    private var activity: AppCompatActivity
+class ClientAdapter(
+    private var activity: AppCompatActivity,
+    private var resource: Int,
+    private var clientArray: ArrayList<Client>,
+    private var suggestedList: ArrayList<Client>
+) : ArrayAdapter<Client>(context, resource, suggestedList), Filterable {
 
     private var dataSetChangedListener: DataSetChangedListener? = null
     private var checkedChangedListener: CheckedChangedListener? = null
-
     private var multiSelect: Boolean = false
-
-    private var clientArray: ArrayList<Client> = ArrayList()
-    private var suggestedList: ArrayList<Client> = ArrayList()
     private var checkedIdArray: ArrayList<Long> = ArrayList()
-
-    constructor(
-        activity: AppCompatActivity,
-        resource: Int,
-        clients: ArrayList<Client>,
-        suggestedList: ArrayList<Client>,
-    ) : super(WarehouseCounterApp.context, resource, suggestedList) {
-        this.activity = activity
-        this.resource = resource
-        this.clientArray = clients
-        this.suggestedList = suggestedList
-    }
 
     fun refreshListeners(
         checkedChangedListener: CheckedChangedListener?,

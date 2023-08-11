@@ -32,7 +32,7 @@ import com.dacosys.warehouseCounter.ktor.v2.dto.order.ContentStatus
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
+import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
@@ -45,25 +45,27 @@ import java.util.*
  * Created by Agustin on 10/03/2023.
  */
 
-class OrcAdapter(
-    private val recyclerView: RecyclerView,
-    var fullList: ArrayList<OrderRequestContent>,
-    var orType: OrderRequestType,
-    var checkedIdArray: ArrayList<Long> = ArrayList(),
-    var multiSelect: Boolean = false,
-    private var allowEditQty: Boolean = false,
-    private var allowEditDescription: Boolean = false,
-    var showCheckBoxes: Boolean = false,
-    private var showCheckBoxesChanged: (Boolean) -> Unit = { },
-    var visibleStatus: ArrayList<ContentStatus> = ArrayList(ContentStatus.values().toList()),
-    private var filterOptions: FilterOptions = FilterOptions("", true),
-) : ListAdapter<OrderRequestContent, ViewHolder>(OrderRequestContentDiffUtilCallback), Filterable {
+class OrcAdapter private constructor(builder: Builder) :
+    ListAdapter<OrderRequestContent, ViewHolder>(OrderRequestContentDiffUtilCallback), Filterable {
 
-    private var currentIndex = NO_POSITION
+    private val recyclerView: RecyclerView
+    var fullList: ArrayList<OrderRequestContent>
+    private var orType: OrderRequestType = OrderRequestType.notDefined
+    var checkedIdArray: ArrayList<Long> = ArrayList()
+    var multiSelect: Boolean = false
+    private var allowEditQty: Boolean = false
+    private var allowEditDescription: Boolean = false
+    var showCheckBoxes: Boolean = false
+    private var showCheckBoxesChanged: (Boolean) -> Unit = { }
+    var visibleStatus: ArrayList<ContentStatus> = ArrayList(ContentStatus.values().toList())
+    private var filterOptions: FilterOptions = FilterOptions("", true)
+
     private var dataSetChangedListener: DataSetChangedListener? = null
     private var checkedChangedListener: CheckedChangedListener? = null
     private var editQtyListener: EditQtyListener? = null
     private var editDescriptionListener: EditDescriptionListener? = null
+
+    private var currentIndex = NO_POSITION
 
     // Clase para distinguir actualizaciones parciales
     private enum class PAYLOADS {
@@ -1026,6 +1028,24 @@ class OrcAdapter(
     }
 
     init {
+        // Set values from Builder
+        recyclerView = builder.recyclerView
+        fullList = builder.fullList
+        orType = builder.orType
+        checkedIdArray = builder.checkedIdArray
+        multiSelect = builder.multiSelect
+        allowEditQty = builder.allowEditQty
+        allowEditDescription = builder.allowEditDescription
+        showCheckBoxes = builder.showCheckBoxes
+        showCheckBoxesChanged = builder.showCheckBoxesChanged
+        visibleStatus = builder.visibleStatus
+        filterOptions = builder.filterOptions
+        dataSetChangedListener = builder.dataSetChangedListener
+        checkedChangedListener = builder.checkedChangedListener
+        editQtyListener = builder.editQtyListener
+        editDescriptionListener = builder.editDescriptionListener
+
+        // Configuramos variables de estilo que se van a reutilizar.
         setupColors()
 
         // Por el momento no queremos animaciones, ni transiciones ante cambios en el DataSet
@@ -1067,5 +1087,104 @@ class OrcAdapter(
 
     override fun submitList(list: MutableList<OrderRequestContent>?, commitCallback: Runnable?) {
         super.submitList(sortedVisibleList(list), commitCallback)
+    }
+
+    class Builder {
+        fun build(): OrcAdapter {
+            return OrcAdapter(this)
+        }
+
+        internal lateinit var recyclerView: RecyclerView
+        internal var fullList: ArrayList<OrderRequestContent> = arrayListOf()
+        internal var orType: OrderRequestType = OrderRequestType.notDefined
+        internal var checkedIdArray: ArrayList<Long> = ArrayList()
+        internal var multiSelect: Boolean = false
+        internal var allowEditQty: Boolean = false
+        internal var allowEditDescription: Boolean = false
+        internal var showCheckBoxes: Boolean = false
+        internal var showCheckBoxesChanged: (Boolean) -> Unit = { }
+        internal var visibleStatus: ArrayList<ContentStatus> = ArrayList(ContentStatus.values().toList())
+        internal var filterOptions: FilterOptions = FilterOptions("", true)
+
+        internal var dataSetChangedListener: DataSetChangedListener? = null
+        internal var checkedChangedListener: CheckedChangedListener? = null
+        internal var editQtyListener: EditQtyListener? = null
+        internal var editDescriptionListener: EditDescriptionListener? = null
+
+        // Setter methods for variables with chained methods
+        @Suppress("unused")
+        fun recyclerView(`val`: RecyclerView): Builder {
+            recyclerView = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun fullList(`val`: ArrayList<OrderRequestContent>): Builder {
+            fullList = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun orType(`val`: OrderRequestType): Builder {
+            orType = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun checkedIdArray(`val`: ArrayList<Long>): Builder {
+            checkedIdArray = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun multiSelect(`val`: Boolean): Builder {
+            multiSelect = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun allowEditQty(`val`: Boolean, listener: EditQtyListener?): Builder {
+            allowEditQty = `val`
+            editQtyListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun allowEditDescription(`val`: Boolean, listener: EditDescriptionListener?): Builder {
+            allowEditDescription = `val`
+            editDescriptionListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun showCheckBoxes(`val`: Boolean, listener: (Boolean) -> Unit): Builder {
+            showCheckBoxes = `val`
+            showCheckBoxesChanged = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun visibleStatus(`val`: ArrayList<ContentStatus>): Builder {
+            visibleStatus = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun filterOptions(`val`: FilterOptions): Builder {
+            filterOptions = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun dataSetChangedListener(listener: DataSetChangedListener?): Builder {
+            dataSetChangedListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun checkedChangedListener(listener: CheckedChangedListener?): Builder {
+            checkedChangedListener = listener
+            return this
+        }
     }
 }

@@ -64,8 +64,8 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.settings.SettingsRepository
+import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemRecyclerAdapter
-import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
 import com.dacosys.warehouseCounter.ui.fragments.item.ItemSelectFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -687,19 +687,19 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                     lastSelected = adapter?.currentItem()
                 }
 
-                adapter = ItemRecyclerAdapter(
-                    recyclerView = binding.recyclerView,
-                    fullList = completeList,
-                    checkedIdArray = checkedIdArray,
-                    multiSelect = multiSelect,
-                    showCheckBoxes = showCheckBoxes,
-                    showCheckBoxesChanged = { showCheckBoxes = it },
-                    showImages = showImages,
-                    showImagesChanged = { showImages = it },
-                    filterOptions = FilterOptions(searchText, true)
-                )
-
-                refreshAdapterListeners()
+                adapter = ItemRecyclerAdapter.Builder()
+                    .recyclerView(binding.recyclerView)
+                    .fullList(completeList)
+                    .checkedIdArray(checkedIdArray)
+                    .multiSelect(multiSelect)
+                    .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
+                    .showImages(`val` = showImages, listener = { showImages = it })
+                    .filterOptions(FilterOptions(searchText))
+                    .checkedChangedListener(this)
+                    .dataSetChangedListener(this)
+                    .addPhotoRequiredListener(this)
+                    .albumViewRequiredListener(this)
+                    .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
                 binding.recyclerView.adapter = adapter
@@ -722,19 +722,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 showProgressBar(false)
             }
         }
-    }
-
-    private fun refreshAdapterListeners() {
-        adapter?.refreshListeners(
-            checkedChangedListener = this,
-            dataSetChangedListener = this,
-            selectedItemChangedListener = null,
-            editItemRequiredListener = null
-        )
-        adapter?.refreshImageControlListeners(
-            addPhotoListener = this,
-            albumViewListener = this
-        )
     }
 
     private fun fillSummaryRow() {

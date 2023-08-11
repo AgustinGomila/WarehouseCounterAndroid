@@ -543,6 +543,9 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             return
         }
 
+        makeText(binding.root, getString(R.string.not_implmented_yet), SnackBarType.ERROR)
+        return
+
         var sendThis = ""
         isDone = false
         for ((index, item) in items.withIndex()) {

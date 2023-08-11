@@ -791,16 +791,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     lastSelected = adapter?.currentItem()
                 }
 
-                adapter = OrcAdapter(
-                    recyclerView = binding.recyclerView,
-                    fullList = completeList,
-                    allowEditQty = true,
-                    allowEditDescription = true,
-                    checkedIdArray = checkedIdArray,
-                    orType = orderRequest.orderRequestType,
-                )
-
-                refreshAdapterListeners()
+                adapter = OrcAdapter.Builder()
+                    .recyclerView(binding.recyclerView)
+                    .fullList(completeList)
+                    .allowEditQty(true, this)
+                    .allowEditDescription(true, this)
+                    .checkedIdArray(checkedIdArray)
+                    .orType(orderRequest.orderRequestType)
+                    .dataSetChangedListener(this)
+                    .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
                 binding.recyclerView.adapter = adapter
@@ -824,15 +823,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 gentlyReturn()
             }
         }
-    }
-
-    private fun refreshAdapterListeners() {
-        adapter?.refreshListeners(
-            checkedChangedListener = null,
-            dataSetChangedListener = this,
-            editQtyListener = this,
-            editDescriptionListener = this
-        )
     }
 
     private fun fillSummaryRow() {

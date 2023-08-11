@@ -29,29 +29,31 @@ import com.dacosys.warehouseCounter.databinding.PtlOrderRowExpandedBinding
 import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlOrder
 import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlOrderType
 import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlOrderType.*
+import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
 import java.util.*
 
-class PtlOrderAdapter(
-    private val recyclerView: RecyclerView,
-    var fullList: ArrayList<PtlOrder> = ArrayList(),
-    var checkedIdArray: ArrayList<Long> = ArrayList(),
-    private var multiSelect: Boolean = false,
-    var showCheckBoxes: Boolean = false,
-    private var showCheckBoxesChanged: (Boolean) -> Unit = { },
-    private var visibleStatus: ArrayList<PtlOrderType> = ArrayList(PtlOrderType.values().toList()),
-    private var filterOptions: FilterOptions
-) : ListAdapter<PtlOrder, ViewHolder>(PtlOrderDiffUtilCallback), Filterable {
+class PtlOrderAdapter private constructor(builder: Builder) :
+    ListAdapter<PtlOrder, ViewHolder>(PtlOrderDiffUtilCallback), Filterable {
 
-    // Posición del ítem seleccionado
-    private var currentIndex = NO_POSITION
+    private val recyclerView: RecyclerView
+    var fullList: ArrayList<PtlOrder> = ArrayList()
+    var checkedIdArray: ArrayList<Long> = ArrayList()
+    private var multiSelect: Boolean = false
+    var showCheckBoxes: Boolean = false
+    private var showCheckBoxesChanged: (Boolean) -> Unit = { }
+    private var visibleStatus: ArrayList<PtlOrderType> = ArrayList(PtlOrderType.values().toList())
+    private var filterOptions: FilterOptions
 
     // Este Listener debe usarse para los cambios de cantidad o de ítems marcados de la lista,
     // ya que se utiliza para actualizar los valores sumarios en la actividad.
     private var dataSetChangedListener: DataSetChangedListener? = null
     private var checkedChangedListener: CheckedChangedListener? = null
+
+    // Posición del ítem seleccionado
+    private var currentIndex = NO_POSITION
 
     // Clase para distinguir actualizaciones parciales
     private enum class PAYLOADS {
@@ -815,16 +817,22 @@ class PtlOrderAdapter(
             // Title color
             lightgray = getColor(context.resources, R.color.lightgray, null)
         }
-
         // endregion
-        // Parámetros del filtro
-        data class FilterOptions(
-            var filterString: String = "",
-            var showAllOnFilterEmpty: Boolean = false,
-        )
     }
 
     init {
+        // Set values from Builder
+        recyclerView = builder.recyclerView
+        fullList = builder.fullList
+        checkedIdArray = builder.checkedIdArray
+        multiSelect = builder.multiSelect
+        showCheckBoxes = builder.showCheckBoxes
+        showCheckBoxesChanged = builder.showCheckBoxesChanged
+        visibleStatus = builder.visibleStatus
+        filterOptions = builder.filterOptions
+        dataSetChangedListener = builder.dataSetChangedListener
+        checkedChangedListener = builder.checkedChangedListener
+
         // Configuramos variables de estilo que se van a reutilizar.
         setupColors()
 
@@ -866,5 +874,78 @@ class PtlOrderAdapter(
 
     override fun submitList(list: MutableList<PtlOrder>?, commitCallback: Runnable?) {
         super.submitList(sortedVisibleList(list), commitCallback)
+    }
+
+    class Builder {
+        fun build(): PtlOrderAdapter {
+            return PtlOrderAdapter(this)
+        }
+
+        internal lateinit var recyclerView: RecyclerView
+        internal var fullList: ArrayList<PtlOrder> = ArrayList()
+        internal var checkedIdArray: ArrayList<Long> = ArrayList()
+        internal var multiSelect: Boolean = false
+        internal var showCheckBoxes: Boolean = false
+        internal var showCheckBoxesChanged: (Boolean) -> Unit = { }
+        internal var visibleStatus: ArrayList<PtlOrderType> = ArrayList(PtlOrderType.values().toList())
+        internal var filterOptions: FilterOptions = FilterOptions()
+        internal var dataSetChangedListener: DataSetChangedListener? = null
+        internal var checkedChangedListener: CheckedChangedListener? = null
+
+        // Setter methods for variables with chained methods
+        @Suppress("unused")
+        fun recyclerView(`val`: RecyclerView): Builder {
+            recyclerView = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun fullList(`val`: ArrayList<PtlOrder>): Builder {
+            fullList = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun checkedIdArray(`val`: ArrayList<Long>): Builder {
+            checkedIdArray = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun multiSelect(`val`: Boolean): Builder {
+            multiSelect = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun showCheckBoxes(`val`: Boolean, listener: (Boolean) -> Unit): Builder {
+            showCheckBoxes = `val`
+            showCheckBoxesChanged = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun visibleStatus(`val`: ArrayList<PtlOrderType>): Builder {
+            visibleStatus = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun filterOptions(`val`: FilterOptions): Builder {
+            filterOptions = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun dataSetChangedListener(listener: DataSetChangedListener?): Builder {
+            dataSetChangedListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun checkedChangedListener(listener: CheckedChangedListener?): Builder {
+            checkedChangedListener = listener
+            return this
+        }
     }
 }

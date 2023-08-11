@@ -270,7 +270,7 @@ class WarehouseAreaSelectActivity : AppCompatActivity(),
         val adapter = WarehouseAreaAdapter(
             activity = this,
             resource = R.layout.warehouse_area_row,
-            warehouseAreas = ArrayList(waArray),
+            warehouseAreaArray = ArrayList(waArray),
             suggestedList = ArrayList()
         )
 

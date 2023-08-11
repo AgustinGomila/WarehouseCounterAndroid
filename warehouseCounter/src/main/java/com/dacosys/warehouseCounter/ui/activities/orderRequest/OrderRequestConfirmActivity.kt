@@ -483,13 +483,12 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                     }
                     .map { completeList[it] })
 
-                adapter = OrcAdapter(
-                    recyclerView = binding.recyclerView,
-                    fullList = filteredList,
-                    orType = orderRequest.orderRequestType,
-                )
-
-                refreshAdapterListeners()
+                adapter = OrcAdapter.Builder()
+                    .recyclerView(binding.recyclerView)
+                    .fullList(filteredList)
+                    .orType(orderRequest.orderRequestType)
+                    .dataSetChangedListener(this)
+                    .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
                 binding.recyclerView.adapter = adapter
@@ -512,15 +511,6 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 showProgressBar(false)
             }
         }
-    }
-
-    private fun refreshAdapterListeners() {
-        adapter?.refreshListeners(
-            checkedChangedListener = null,
-            dataSetChangedListener = this,
-            editQtyListener = null,
-            editDescriptionListener = null
-        )
     }
 
     private fun confirm() {

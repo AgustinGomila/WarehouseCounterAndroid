@@ -112,7 +112,6 @@ class WarehouseCounterApp : Application(), KoinComponent {
                 }
                 install(ContentNegotiation) {
                     json(json)
-
                 }
                 install(Auth) {
                     basic {

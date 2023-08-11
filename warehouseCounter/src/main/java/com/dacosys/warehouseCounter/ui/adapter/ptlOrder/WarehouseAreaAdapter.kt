@@ -20,30 +20,17 @@ import java.util.*
  */
 
 @Suppress("SpellCheckingInspection")
-class WarehouseAreaAdapter : ArrayAdapter<WarehouseArea>, Filterable {
-    private var resource: Int = 0
-    private var activity: AppCompatActivity
+class WarehouseAreaAdapter(
+    private var activity: AppCompatActivity,
+    private var resource: Int,
+    private var warehouseAreaArray: ArrayList<WarehouseArea>,
+    private var suggestedList: ArrayList<WarehouseArea>
+) : ArrayAdapter<WarehouseArea>(WarehouseCounterApp.context, resource, suggestedList), Filterable {
 
     private var dataSetChangedListener: DataSetChangedListener? = null
     private var checkedChangedListener: CheckedChangedListener? = null
-
     private var multiSelect: Boolean = false
-
-    private var warehouseAreaArray: ArrayList<WarehouseArea> = ArrayList()
-    private var suggestedList: ArrayList<WarehouseArea> = ArrayList()
     private var checkedIdArray: ArrayList<Long> = ArrayList()
-
-    constructor(
-        activity: AppCompatActivity,
-        resource: Int,
-        warehouseAreas: ArrayList<WarehouseArea>,
-        suggestedList: ArrayList<WarehouseArea>,
-    ) : super(WarehouseCounterApp.context, resource, suggestedList) {
-        this.activity = activity
-        this.resource = resource
-        this.warehouseAreaArray = warehouseAreas
-        this.suggestedList = suggestedList
-    }
 
     fun refreshListeners(
         checkedChangedListener: CheckedChangedListener?,

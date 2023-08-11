@@ -177,6 +177,12 @@ class ApiRequest {
             }
         }
 
+        val urlComplete = "${url.path}/$VERSION_PATH/$objPath/"
+        if (BuildConfig.DEBUG) {
+            println("URL: $urlComplete")
+            println("PARAMS: $params")
+        }
+
         /** HTTP Get function */
         val response = httpClient.get {
             /** Set a Basic auth */
@@ -188,7 +194,7 @@ class ApiRequest {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS
                 host = url.host
-                path("${url.path}/$VERSION_PATH/$objPath/")
+                path(urlComplete)
                 parameters.appendAll(params)
             }
         }
@@ -526,11 +532,12 @@ class ApiRequest {
                 val col = it.columnName
                 val like = if (it.like) "[$ACTION_FILTER_LIKE]" else ""
                 val value = it.value
-                if (col.isNotEmpty()) append("[$col]$like", value)
+                if (col.isNotEmpty())
+                    this.append("$ACTION_FILTER[${col}]${like}", value)
             }
         }
 
-        val urlComplete = "${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?$ACTION_FILTER"
+        val urlComplete = "${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH"
         if (BuildConfig.DEBUG) {
             println("URL: $urlComplete")
             println("PARAMS: $params")

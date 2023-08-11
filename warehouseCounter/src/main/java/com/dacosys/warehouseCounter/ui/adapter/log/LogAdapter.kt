@@ -25,25 +25,27 @@ import com.dacosys.warehouseCounter.ktor.v2.dto.order.Log
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.LogStatus
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
+import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
 import java.util.*
 
-class LogAdapter(
-    private val recyclerView: RecyclerView,
-    var fullList: ArrayList<Log> = ArrayList(),
-    private var visibleStatus: ArrayList<LogStatus> = ArrayList(LogStatus.values().toList()),
-    private var filterOptions: FilterOptions = FilterOptions("", true),
-) : ListAdapter<Log, ViewHolder>(LogContentDiffUtilCallback), Filterable {
+class LogAdapter private constructor(builder: Builder) :
+    ListAdapter<Log, ViewHolder>(LogContentDiffUtilCallback), Filterable {
 
-    // Posición del ítem seleccionado
-    private var currentIndex = NO_POSITION
+    private val recyclerView: RecyclerView
+    var fullList: ArrayList<Log> = ArrayList()
+    private var visibleStatus: ArrayList<LogStatus> = ArrayList(LogStatus.values().toList())
+    private var filterOptions: FilterOptions = FilterOptions("", true)
 
     // Este Listener debe usarse para los cambios de cantidad o de ítems marcados de la lista,
     // ya que se utiliza para actualizar los valores sumarios en la actividad.
     private var dataSetChangedListener: DataSetChangedListener? = null
     private var checkedChangedListener: CheckedChangedListener? = null
+
+    // Posición del ítem seleccionado
+    private var currentIndex = NO_POSITION
 
     fun clear() {
         fullList.clear()
@@ -405,14 +407,17 @@ class LogAdapter(
         }
 
         // endregion
-        // Parámetros del filtro
-        data class FilterOptions(
-            var filterString: String = "",
-            var showAllOnFilterEmpty: Boolean = false,
-        )
     }
 
     init {
+        // Set values from Builder
+        recyclerView = builder.recyclerView
+        fullList = builder.fullList
+        visibleStatus = builder.visibleStatus
+        filterOptions = builder.filterOptions
+        dataSetChangedListener = builder.dataSetChangedListener
+        checkedChangedListener = builder.checkedChangedListener
+
         // Configuramos variables de estilo que se van a reutilizar.
         setupColors()
 
@@ -454,5 +459,55 @@ class LogAdapter(
 
     override fun submitList(list: MutableList<Log>?, commitCallback: Runnable?) {
         super.submitList(sortedVisibleList(list), commitCallback)
+    }
+
+    class Builder() {
+        fun build(): LogAdapter {
+            return LogAdapter(this)
+        }
+
+        internal lateinit var recyclerView: RecyclerView
+        internal var fullList: ArrayList<Log> = ArrayList()
+        internal var visibleStatus: ArrayList<LogStatus> = ArrayList(LogStatus.values().toList())
+        internal var filterOptions: FilterOptions = FilterOptions("", true)
+        internal var dataSetChangedListener: DataSetChangedListener? = null
+        internal var checkedChangedListener: CheckedChangedListener? = null
+
+        // Setter methods for variables with chained methods
+        @Suppress("unused")
+        fun recyclerView(`val`: RecyclerView): Builder {
+            recyclerView = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun fullList(`val`: ArrayList<Log>): Builder {
+            fullList = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun visibleStatus(`val`: ArrayList<LogStatus>): Builder {
+            visibleStatus = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun filterOptions(`val`: FilterOptions): Builder {
+            filterOptions = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun dataSetChangedListener(listener: DataSetChangedListener?): Builder {
+            dataSetChangedListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun checkedChangedListener(listener: CheckedChangedListener?): Builder {
+            checkedChangedListener = listener
+            return this
+        }
     }
 }

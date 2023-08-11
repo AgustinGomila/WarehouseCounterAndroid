@@ -39,27 +39,25 @@ import com.dacosys.warehouseCounter.databinding.ItemRowExpandedBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.table.Table
 import com.dacosys.warehouseCounter.room.entity.item.Item
-import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
+import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
 import java.util.*
 
-class ItemRecyclerAdapter(
-    private val recyclerView: RecyclerView,
-    var fullList: ArrayList<Item> = ArrayList(),
-    var checkedIdArray: ArrayList<Long> = ArrayList(),
-    private var multiSelect: Boolean = false,
-    var showCheckBoxes: Boolean = false,
-    private var showCheckBoxesChanged: (Boolean) -> Unit = { },
-    private var showImages: Boolean = false,
-    private var showImagesChanged: (Boolean) -> Unit = { },
-    private var visibleStatus: ArrayList<ItemStatus> = ArrayList(ItemStatus.values().toList()),
-    private var filterOptions: FilterOptions = FilterOptions("", true)
-) : ListAdapter<Item, ViewHolder>(ItemDiffUtilCallback), Filterable {
+class ItemRecyclerAdapter private constructor(builder: Builder) :
+    ListAdapter<Item, ViewHolder>(ItemDiffUtilCallback), Filterable {
 
-    // Posición del ítem seleccionado
-    private var currentIndex = NO_POSITION
+    private val recyclerView: RecyclerView
+    var fullList: ArrayList<Item> = ArrayList()
+    var checkedIdArray: ArrayList<Long> = ArrayList()
+    private var multiSelect: Boolean = false
+    var showCheckBoxes: Boolean = false
+    private var showCheckBoxesChanged: (Boolean) -> Unit = { }
+    private var showImages: Boolean = false
+    private var showImagesChanged: (Boolean) -> Unit = { }
+    private var visibleStatus: ArrayList<ItemStatus> = ArrayList(ItemStatus.values().toList())
+    private var filterOptions: FilterOptions = FilterOptions("", true)
 
     // Este Listener debe usarse para los cambios de cantidad o de ítems marcados de la lista,
     // ya que se utiliza para actualizar los valores sumarios en la actividad.
@@ -72,6 +70,9 @@ class ItemRecyclerAdapter(
     // Listeners para los eventos de ImageControl.
     private var addPhotoRequiredListener: AddPhotoRequiredListener? = null
     private var albumViewRequiredListener: AlbumViewRequiredListener? = null
+
+    // Posición del ítem seleccionado
+    private var currentIndex = NO_POSITION
 
     // Clase para distinguir actualizaciones parciales
     private enum class PAYLOADS {
@@ -1104,6 +1105,18 @@ class ItemRecyclerAdapter(
     }
 
     init {
+        // Set values from Builder
+        recyclerView = builder.recyclerView
+        fullList = builder.fullList
+        checkedIdArray = builder.checkedIdArray
+        multiSelect = builder.multiSelect
+        showCheckBoxes = builder.showCheckBoxes
+        showCheckBoxesChanged = builder.showCheckBoxesChanged
+        showImages = builder.showImages
+        showImagesChanged = builder.showImagesChanged
+        visibleStatus = builder.visibleStatus
+        filterOptions = builder.filterOptions
+
         // Configuramos variables de estilo que se van a reutilizar.
         setupColors()
 
@@ -1150,6 +1163,116 @@ class ItemRecyclerAdapter(
     override fun submitList(list: MutableList<Item>?, commitCallback: Runnable?) {
         super.submitList(sortedVisibleList(list), commitCallback)
     }
+
+    class Builder {
+        fun build(): ItemRecyclerAdapter {
+            return ItemRecyclerAdapter(this)
+        }
+
+        internal lateinit var recyclerView: RecyclerView
+        internal var fullList: ArrayList<Item> = ArrayList()
+        internal var checkedIdArray: ArrayList<Long> = ArrayList()
+        internal var multiSelect: Boolean = false
+        internal var showCheckBoxes: Boolean = false
+        internal var showCheckBoxesChanged: (Boolean) -> Unit = { }
+        internal var showImages: Boolean = false
+        internal var showImagesChanged: (Boolean) -> Unit = { }
+        internal var visibleStatus: ArrayList<ItemStatus> = ArrayList(ItemStatus.values().toList())
+        internal var filterOptions: FilterOptions = FilterOptions("", true)
+
+        internal var dataSetChangedListener: DataSetChangedListener? = null
+        internal var selectedItemChangedListener: SelectedItemChangedListener? = null
+        internal var checkedChangedListener: CheckedChangedListener? = null
+        internal var editItemRequiredListener: EditItemRequiredListener? = null
+        internal var addPhotoRequiredListener: AddPhotoRequiredListener? = null
+        internal var albumViewRequiredListener: AlbumViewRequiredListener? = null
+
+        // Setter methods for variables with chained methods
+        @Suppress("unused")
+        fun recyclerView(`val`: RecyclerView): Builder {
+            recyclerView = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun fullList(`val`: ArrayList<Item>): Builder {
+            fullList = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun checkedIdArray(`val`: ArrayList<Long>): Builder {
+            checkedIdArray = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun multiSelect(`val`: Boolean): Builder {
+            multiSelect = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun showCheckBoxes(`val`: Boolean, listener: (Boolean) -> Unit): Builder {
+            showCheckBoxes = `val`
+            showCheckBoxesChanged = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun showImages(`val`: Boolean, listener: (Boolean) -> Unit): Builder {
+            showImages = `val`
+            showImagesChanged = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun visibleStatus(`val`: ArrayList<ItemStatus>): Builder {
+            visibleStatus = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun filterOptions(`val`: FilterOptions): Builder {
+            filterOptions = `val`
+            return this
+        }
+
+        // Setter methods for variables with chained methods
+        @Suppress("unused")
+        fun dataSetChangedListener(listener: DataSetChangedListener?): Builder {
+            dataSetChangedListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun selectedItemChangedListener(listener: SelectedItemChangedListener?): Builder {
+            selectedItemChangedListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun checkedChangedListener(listener: CheckedChangedListener?): Builder {
+            checkedChangedListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun editItemRequiredListener(listener: EditItemRequiredListener?): Builder {
+            editItemRequiredListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun addPhotoRequiredListener(listener: AddPhotoRequiredListener?): Builder {
+            addPhotoRequiredListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun albumViewRequiredListener(listener: AlbumViewRequiredListener?): Builder {
+            albumViewRequiredListener = listener
+            return this
+        }
+    }
 }
-
-

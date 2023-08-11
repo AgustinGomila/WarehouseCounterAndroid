@@ -688,4 +688,5 @@
     <string name="enter_warehouse">Ingresar depósito</string>
     <string name="enter_area">Ingresar área</string>
     <string name="enter_rack">Ingresar rack</string>
+    <string name="not_implmented_yet">Aún no implementado</string>
 </resources>

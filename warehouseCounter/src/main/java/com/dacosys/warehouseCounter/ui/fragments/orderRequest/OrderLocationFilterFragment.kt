@@ -287,7 +287,6 @@ class OrderLocationFilterFragment : Fragment() {
                     false
                 }
             }
-
             dialog.show()
         }
     }

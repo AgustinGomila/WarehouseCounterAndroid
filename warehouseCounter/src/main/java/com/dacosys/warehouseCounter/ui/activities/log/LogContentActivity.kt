@@ -149,10 +149,10 @@ class LogContentActivity :
                     lastSelected = adapter?.currentItem()
                 }
 
-                adapter = LogAdapter(
-                    recyclerView = binding.recyclerView,
-                    fullList = completeList
-                )
+                adapter = LogAdapter.Builder()
+                    .recyclerView(binding.recyclerView)
+                    .fullList(completeList)
+                    .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
                 binding.recyclerView.adapter = adapter

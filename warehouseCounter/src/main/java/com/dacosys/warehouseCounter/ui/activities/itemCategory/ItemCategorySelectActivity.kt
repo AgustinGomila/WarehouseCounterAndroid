@@ -240,7 +240,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
                 val adapter = ItemCategoryAdapter(
                     activity = this,
                     resource = R.layout.item_category_row,
-                    itemCategorys = it,
+                    itemCategoryArray = it,
                     suggestedList = ArrayList()
                 )
 

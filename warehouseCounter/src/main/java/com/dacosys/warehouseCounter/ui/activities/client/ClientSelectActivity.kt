@@ -228,7 +228,7 @@ class ClientSelectActivity : AppCompatActivity(),
                 val adapter = ClientAdapter(
                     activity = this,
                     resource = R.layout.client_row,
-                    clients = it,
+                    clientArray = it,
                     suggestedList = ArrayList()
                 )
 
