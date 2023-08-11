@@ -37,7 +37,7 @@ class LogAdapter private constructor(builder: Builder) :
     private val recyclerView: RecyclerView
     var fullList: ArrayList<Log> = ArrayList()
     private var visibleStatus: ArrayList<LogStatus> = ArrayList(LogStatus.values().toList())
-    private var filterOptions: FilterOptions = FilterOptions("", true)
+    private var filterOptions: FilterOptions = FilterOptions()
 
     // Este Listener debe usarse para los cambios de cantidad o de ítems marcados de la lista,
     // ya que se utiliza para actualizar los valores sumarios en la actividad.
@@ -469,7 +469,7 @@ class LogAdapter private constructor(builder: Builder) :
         internal lateinit var recyclerView: RecyclerView
         internal var fullList: ArrayList<Log> = ArrayList()
         internal var visibleStatus: ArrayList<LogStatus> = ArrayList(LogStatus.values().toList())
-        internal var filterOptions: FilterOptions = FilterOptions("", true)
+        internal var filterOptions: FilterOptions = FilterOptions()
         internal var dataSetChangedListener: DataSetChangedListener? = null
         internal var checkedChangedListener: CheckedChangedListener? = null
 

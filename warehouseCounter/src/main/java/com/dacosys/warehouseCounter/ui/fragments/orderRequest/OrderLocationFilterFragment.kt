@@ -1,12 +1,15 @@
 package com.dacosys.warehouseCounter.ui.fragments.orderRequest
 
+import android.content.Context
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.OnFocusChangeListener
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
@@ -15,6 +18,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingReposit
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.OrderLocationSelectFilterFragmentBinding
 import com.dacosys.warehouseCounter.settings.Preference
+
 
 /**
  * A simple [Fragment] subclass.
@@ -247,20 +251,35 @@ class OrderLocationFilterFragment : Fragment() {
         return view
     }
 
+    private fun showKeyboard(editText: View) {
+        val inputMethodManager =
+            requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
+    }
+
     private fun enterText(title: String, text: String, hint: String, onResult: (String) -> Unit) {
+
         with(requireContext()) {
             val dialogView = LayoutInflater.from(this).inflate(R.layout.custom_dialog_layout, null)
             val editText = dialogView.findViewById<EditText>(R.id.editText)
             editText.setText(text)
             editText.hint = hint
+            editText.onFocusChangeListener = OnFocusChangeListener { v, hasFocus ->
+                editText.post {
+                    if (hasFocus) {
+                        showKeyboard(editText)
+                    }
+                }
+            }
             editText.requestFocus()
 
             val dialog = AlertDialog.Builder(this)
                 .setView(dialogView)
                 .setTitle(title)
-                .setPositiveButton(getString(R.string.ok)) { _, _ ->
+                .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
                     val t = editText.text.toString()
                     onResult.invoke(t)
+                    dialog.dismiss()
                 }
                 .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
                     dialog.dismiss()

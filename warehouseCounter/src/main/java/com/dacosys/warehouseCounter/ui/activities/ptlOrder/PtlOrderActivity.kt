@@ -431,7 +431,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         ViewCompat.setWindowInsetsAnimationCallback(
             rootView,
-            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
                 override fun onEnd(animation: WindowInsetsAnimationCompat) {
                     val isIme = animation.typeMask and WindowInsetsCompat.Type.ime() != 0
                     if (!isIme) return

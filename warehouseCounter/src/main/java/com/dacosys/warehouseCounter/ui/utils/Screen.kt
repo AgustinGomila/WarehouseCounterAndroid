@@ -181,14 +181,6 @@ class Screen {
             return imm != null && imm.isActive
         }
 
-        fun showKeyboard(activity: FragmentActivity) {
-            if (!KeyboardVisibilityEvent.isKeyboardVisible(activity)) {
-                val imm =
-                    activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.showSoftInput(activity.window.decorView.rootView, 0)
-            }
-        }
-
         fun showKeyboard(activity: AppCompatActivity) {
             if (!KeyboardVisibilityEvent.isKeyboardVisible(activity)) {
                 val imm =

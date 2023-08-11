@@ -57,7 +57,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
     private var showImages: Boolean = false
     private var showImagesChanged: (Boolean) -> Unit = { }
     private var visibleStatus: ArrayList<ItemStatus> = ArrayList(ItemStatus.values().toList())
-    private var filterOptions: FilterOptions = FilterOptions("", true)
+    private var filterOptions: FilterOptions = FilterOptions()
 
     // Este Listener debe usarse para los cambios de cantidad o de ítems marcados de la lista,
     // ya que se utiliza para actualizar los valores sumarios en la actividad.
@@ -1178,7 +1178,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
         internal var showImages: Boolean = false
         internal var showImagesChanged: (Boolean) -> Unit = { }
         internal var visibleStatus: ArrayList<ItemStatus> = ArrayList(ItemStatus.values().toList())
-        internal var filterOptions: FilterOptions = FilterOptions("", true)
+        internal var filterOptions: FilterOptions = FilterOptions()
 
         internal var dataSetChangedListener: DataSetChangedListener? = null
         internal var selectedItemChangedListener: SelectedItemChangedListener? = null

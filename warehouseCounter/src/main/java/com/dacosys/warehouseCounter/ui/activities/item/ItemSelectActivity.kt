@@ -293,7 +293,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 before: Int, count: Int,
             ) {
                 searchText = s.toString()
-                adapter?.refreshFilter(FilterOptions(searchText, true))
+                adapter?.refreshFilter(FilterOptions(searchText))
             }
         })
         binding.searchEditText.setText(searchText, TextView.BufferType.EDITABLE)
@@ -376,7 +376,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         ViewCompat.setWindowInsetsAnimationCallback(
             rootView,
-            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
                 override fun onEnd(animation: WindowInsetsAnimationCompat) {
                     val isIme = animation.typeMask and WindowInsetsCompat.Type.ime() != 0
                     if (!isIme) return

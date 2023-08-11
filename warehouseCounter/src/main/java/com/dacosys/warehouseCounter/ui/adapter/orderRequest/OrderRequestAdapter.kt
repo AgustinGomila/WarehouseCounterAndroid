@@ -44,7 +44,7 @@ class OrderRequestAdapter private constructor(builder: Builder) :
     var showCheckBoxes: Boolean = false
     private var showCheckBoxesChanged: (Boolean) -> Unit = { }
     var visibleStatus: ArrayList<OrderRequestType> = OrderRequestType.getAll()
-    private var filterOptions: FilterOptions = FilterOptions("", true)
+    private var filterOptions: FilterOptions = FilterOptions()
 
     // Este Listener debe usarse para los cambios de cantidad o de pedidos marcados de la lista,
     // ya que se utiliza para actualizar los valores sumarios en la actividad.
@@ -951,7 +951,7 @@ class OrderRequestAdapter private constructor(builder: Builder) :
         internal var showCheckBoxes: Boolean = false
         internal var showCheckBoxesChanged: (Boolean) -> Unit = { }
         internal var visibleStatus: ArrayList<OrderRequestType> = OrderRequestType.getAll()
-        internal var filterOptions: FilterOptions = FilterOptions("", true)
+        internal var filterOptions: FilterOptions = FilterOptions()
 
         internal var dataSetChangedListener: DataSetChangedListener? = null
         internal var checkedChangedListener: CheckedChangedListener? = null

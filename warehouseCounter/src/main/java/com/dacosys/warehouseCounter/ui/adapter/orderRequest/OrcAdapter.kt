@@ -58,7 +58,7 @@ class OrcAdapter private constructor(builder: Builder) :
     var showCheckBoxes: Boolean = false
     private var showCheckBoxesChanged: (Boolean) -> Unit = { }
     var visibleStatus: ArrayList<ContentStatus> = ArrayList(ContentStatus.values().toList())
-    private var filterOptions: FilterOptions = FilterOptions("", true)
+    private var filterOptions: FilterOptions = FilterOptions()
 
     private var dataSetChangedListener: DataSetChangedListener? = null
     private var checkedChangedListener: CheckedChangedListener? = null
@@ -1104,7 +1104,7 @@ class OrcAdapter private constructor(builder: Builder) :
         internal var showCheckBoxes: Boolean = false
         internal var showCheckBoxesChanged: (Boolean) -> Unit = { }
         internal var visibleStatus: ArrayList<ContentStatus> = ArrayList(ContentStatus.values().toList())
-        internal var filterOptions: FilterOptions = FilterOptions("", true)
+        internal var filterOptions: FilterOptions = FilterOptions()
 
         internal var dataSetChangedListener: DataSetChangedListener? = null
         internal var checkedChangedListener: CheckedChangedListener? = null
