@@ -27,6 +27,7 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.ui.activities.client.ClientSelectActivity
+import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderRequestTypeSpinnerFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
@@ -34,7 +35,8 @@ import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import org.parceler.Parcels
 import kotlin.concurrent.thread
 
-class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
+class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener,
+    OrderRequestTypeSpinnerFragment.OnItemSelectedListener {
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -52,20 +54,23 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, SnackBarType.INFO)
 
         runOnUiThread {
-            binding.countCodeEditText.setText(scanCode)
+            binding.descEditText.setText(scanCode)
         }
     }
 
     private var client: Client? = null
-
+    private var orderRequestType: OrderRequestType = OrderRequestType.stockAuditFromDevice
     private var tempTitle: String = ""
     private var tempDescription: String = ""
+
+    private var orderRequestTypeSpinnerFragment: OrderRequestTypeSpinnerFragment? = null
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString(ARG_DESCRIPTION, binding.countCodeEditText.text.toString())
+        savedInstanceState.putString(ARG_DESCRIPTION, binding.descEditText.text.toString())
         savedInstanceState.putParcelable(ARG_CLIENT, client)
+        savedInstanceState.putParcelable(ARG_ORDER_REQUEST_TYPE, orderRequestType)
     }
 
     private fun loadBundleValues(b: Bundle) {
@@ -75,6 +80,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
         tempDescription = b.getString(ARG_DESCRIPTION) ?: ""
         client = b.getParcelable(ARG_CLIENT)
+        orderRequestType = b.getParcelable(ARG_ORDER_REQUEST_TYPE) ?: OrderRequestType.stockAuditFromDevice
     }
 
     private fun loadExtraBundleValues(b: Bundle) {
@@ -104,6 +110,17 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             if (extras != null) loadExtraBundleValues(extras)
         }
 
+        // Order request type spinner
+        orderRequestTypeSpinnerFragment =
+            OrderRequestTypeSpinnerFragment.Builder()
+                .orderRequestType(OrderRequestType.prepareOrder)
+                .allOrderRequestType(OrderRequestType.getAll())
+                .callback(this)
+                .build()
+
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.orderRequestTypeSpinnerFragment, orderRequestTypeSpinnerFragment!!).commit()
+
         title = tempTitle
 
         binding.continueButton.setOnClickListener { attemptSetupNewCount() }
@@ -122,15 +139,15 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             setClientText()
         }
 
-        binding.countCodeEditText.clearFocus()
-        binding.countCodeEditText.setOnFocusChangeListener { _, hasFocus ->
+        binding.descEditText.clearFocus()
+        binding.descEditText.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus && !KeyboardVisibilityEvent.isKeyboardVisible(this)) {
                 Screen.showKeyboard(this)
             } else {
                 Screen.closeKeyboard(this)
             }
         }
-        binding.countCodeEditText.setOnKeyListener { _, keyCode, keyEvent ->
+        binding.descEditText.setOnKeyListener { _, keyCode, keyEvent ->
             if (keyEvent.action == KeyEvent.ACTION_UP && (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 attemptSetupNewCount()
                 true
@@ -138,7 +155,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 false
             }
         }
-        binding.countCodeEditText.setOnEditorActionListener { _, actionId, _ ->
+        binding.descEditText.setOnEditorActionListener { _, actionId, _ ->
             return@setOnEditorActionListener when (actionId) {
                 EditorInfo.IME_ACTION_DONE -> {
                     binding.continueButton.performClick()
@@ -149,26 +166,24 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             }
         }
 
-        binding.countCodeEditText.isCursorVisible = true
-        binding.countCodeEditText.isFocusable = true
-        binding.countCodeEditText.isFocusableInTouchMode = true
-        binding.countCodeEditText.requestFocus()
+        binding.descEditText.isCursorVisible = true
+        binding.descEditText.isFocusable = true
+        binding.descEditText.isFocusableInTouchMode = true
+        binding.descEditText.requestFocus()
     }
 
-    private val resultForClientSelect =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            val data = it?.data
-            try {
-                if (it?.resultCode == RESULT_OK && data != null) {
-                    client =
-                        data.getParcelableExtra(ClientSelectActivity.ARG_CLIENT) ?: return@registerForActivityResult
-                    setClientText()
-                }
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+    private val resultForClientSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                client = data.getParcelableExtra(ClientSelectActivity.ARG_CLIENT) ?: return@registerForActivityResult
+                setClientText()
             }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         }
+    }
 
     private fun selectDefaultClient() {
         if (isFinishing) return
@@ -194,18 +209,18 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private fun attemptSetupNewCount() {
         // Reset errors.
         //clientSpinnerFragment.setError(null);
-        binding.countCodeEditText.error = null
+        binding.descEditText.error = null
 
         // Store values at the time of the setupnewcount attempt.
-        val description = binding.countCodeEditText.text.toString()
+        val description = binding.descEditText.text.toString()
 
         var cancel = false
         var focusView: View? = null
 
         // Check for a valid data.
         if (!TextUtils.isEmpty(description) && !isDescriptionValid(description)) {
-            binding.countCodeEditText.error = context.getString(R.string.invalid_description)
-            focusView = binding.countCodeEditText
+            binding.descEditText.error = context.getString(R.string.invalid_description)
+            focusView = binding.descEditText
             cancel = true
         }
 
@@ -226,8 +241,8 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
             val data = Intent()
             data.putExtra(ARG_DESCRIPTION, description.trim())
+            data.putExtra(ARG_ORDER_REQUEST_TYPE, Parcels.wrap(orderRequestType))
             if (client != null) data.putExtra(ARG_CLIENT, Parcels.wrap<Client>(client))
-            data.putExtra(ARG_ORDER_REQUEST_TYPE, Parcels.wrap(OrderRequestType.stockAuditFromDevice))
 
             setResult(RESULT_OK, data)
             finish()
@@ -249,7 +264,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             selectDefaultClient()
 
             if (tempDescription.isNotEmpty()) {
-                binding.countCodeEditText.setText(tempDescription)
+                binding.descEditText.setText(tempDescription)
             }
         }
     }
@@ -325,5 +340,9 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         fun equals(a: Any?, b: Any?): Boolean {
             return a != null && a == b
         }
+    }
+
+    override fun onItemSelected(orderRequestType: OrderRequestType?) {
+        if (orderRequestType != null) this.orderRequestType = orderRequestType
     }
 }

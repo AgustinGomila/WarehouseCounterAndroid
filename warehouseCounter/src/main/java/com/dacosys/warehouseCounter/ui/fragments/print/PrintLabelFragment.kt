@@ -543,7 +543,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             return
         }
 
-        makeText(binding.root, getString(R.string.not_implmented_yet), SnackBarType.ERROR)
+        makeText(binding.root, getString(R.string.not_implemented_yet), SnackBarType.ERROR)
         return
 
         var sendThis = ""

@@ -688,5 +688,8 @@
     <string name="enter_warehouse">Ingresar depósito</string>
     <string name="enter_area">Ingresar área</string>
     <string name="enter_rack">Ingresar rack</string>
-    <string name="not_implmented_yet">Aún no implementado</string>
+    <string name="not_implemented_yet">Aún no implementado</string>
+    <string name="order_request_type">Tipo de pedido</string>
+    <string name="search_order_request_type">Tipo de pedido…</string>
+    <string name="packaging">Empaquetado</string>
 </resources>

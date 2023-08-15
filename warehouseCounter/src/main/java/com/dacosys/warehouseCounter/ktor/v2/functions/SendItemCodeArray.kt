@@ -1,6 +1,6 @@
 package com.dacosys.warehouseCounter.ktor.v2.functions
 
-import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.ktor.v2.dto.item.ItemCodePayload
 import com.dacosys.warehouseCounter.ktor.v2.dto.item.ItemCodeResponse
 import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
@@ -49,8 +49,9 @@ class SendItemCodeArray
 
         val startTime = System.currentTimeMillis()
         while (!isDone) {
-            if (System.currentTimeMillis() - startTime == WarehouseCounterApp.settingViewModel.connectionTimeout.toLong())
+            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong()) {
                 isDone = true
+            }
         }
 
         onFinish(allResp)

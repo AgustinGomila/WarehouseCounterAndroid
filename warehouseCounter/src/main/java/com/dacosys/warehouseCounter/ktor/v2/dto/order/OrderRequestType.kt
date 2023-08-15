@@ -27,6 +27,11 @@ data class OrderRequestType(
         return 0
     }
 
+    /** For fragment adapter */
+    override fun toString(): String {
+        return description
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -42,8 +47,8 @@ data class OrderRequestType(
 
     @Suppress("MemberVisibilityCanBePrivate")
     companion object CREATOR : Parcelable.Creator<OrderRequestType> {
-        const val ORDER_TYPE_ID_KEY = "orderTypeId"
-        const val DESCRIPTION_KEY = "orderTypeDescription"
+        const val ORDER_TYPE_ID_KEY = "order_type_id"
+        const val DESCRIPTION_KEY = "order_type_description"
 
         override fun createFromParcel(parcel: Parcel): OrderRequestType {
             return OrderRequestType(parcel)
@@ -59,6 +64,7 @@ data class OrderRequestType(
         var receptionAudit = OrderRequestType(3, context.getString(R.string.reception_control))
         var deliveryAudit = OrderRequestType(4, context.getString(R.string.delivery_control))
         var stockAuditFromDevice = OrderRequestType(5, context.getString(R.string.warehouse_counter_from_device))
+        var packaging = OrderRequestType(6, context.getString(R.string.packaging))
 
         fun getAll(): ArrayList<OrderRequestType> {
             val allSections = ArrayList<OrderRequestType>()
@@ -68,7 +74,8 @@ data class OrderRequestType(
                 stockAudit,
                 receptionAudit,
                 deliveryAudit,
-                stockAuditFromDevice
+                stockAuditFromDevice,
+                packaging
             )
 
             Collections.sort(allSections, CustomComparator())
@@ -82,7 +89,8 @@ data class OrderRequestType(
                 stockAudit,
                 receptionAudit,
                 deliveryAudit,
-                stockAuditFromDevice
+                stockAuditFromDevice,
+                packaging
             )
 
             Collections.sort(allSections, CustomComparator())
@@ -108,7 +116,8 @@ data class OrderRequestType(
                 stockAudit.id.toString(),
                 receptionAudit.id.toString(),
                 deliveryAudit.id.toString(),
-                stockAuditFromDevice.id.toString()
+                stockAuditFromDevice.id.toString(),
+                packaging.id.toString()
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it }))

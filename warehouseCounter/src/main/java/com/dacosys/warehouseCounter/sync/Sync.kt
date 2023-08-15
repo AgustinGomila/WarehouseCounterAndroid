@@ -96,7 +96,7 @@ class Sync {
 
             thread {
                 try {
-                    // TODO: Hacer una función que permita descargar órdenes.
+                    // TODO: Hacer una función que permita descargar nuevas órdenes.
                     // GetNewOrder(
                     //     onEvent = { },
                     //     onFinish = { onNewOrders.invoke(it) }
