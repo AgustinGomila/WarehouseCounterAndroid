@@ -692,4 +692,7 @@
     <string name="order_request_type">Tipo de pedido</string>
     <string name="search_order_request_type">Tipo de pedido…</string>
     <string name="packaging">Empaquetado</string>
+    <string name="location_catalog">Catálogo de ubicaciones</string>
+    <string name="items_catalog">Catálogo de ítems</string>
+    <string name="items_and_location_catalog">Ítems y ubicaciones</string>
 </resources>

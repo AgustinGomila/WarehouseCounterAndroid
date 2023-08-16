@@ -72,227 +72,55 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"/>
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipeRefreshItem"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_marginTop="1dp"
-                android:layout_marginBottom="1dp"
-                app:layout_constraintBottom_toTopOf="@+id/expandBottomPanelButton"
+                android:layout_marginStart="1dp"
+                android:layout_marginEnd="1dp"
+                app:layout_constraintBottom_toTopOf="@+id/summaryFragment"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:srl_direction="bottom" app:layout_constraintTop_toBottomOf="@+id/expandTopPanelButton"
+                android:layout_marginTop="1dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="2dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginRight="2dp"
+                    android:layout_marginBottom="2dp"
+                    android:background="@drawable/listview_border"
+                    android:choiceMode="singleChoice"
+                    android:divider="@null"
+                    android:dividerHeight="0dp"
+                    android:padding="2dp"/>
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/summaryFragment"
+                android:name="com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                tools:layout="@layout/summary_fragment"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/expandTopPanelButton">
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/fixedLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent">
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                        android:id="@+id/summaryConstraintLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="2dp"
-                        android:layout_marginEnd="2dp"
-                        android:background="@drawable/layout_thin_border_yellow"
-                        app:layout_constraintBottom_toTopOf="@+id/textInputLayout"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent">
-
-                    <View
-                            android:id="@+id/summaryDividerVert2"
-                            android:layout_width="1dp"
-                            android:layout_height="0dp"
-                            android:background="?android:attr/listDivider"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toStartOf="@+id/guidelineSum66"
-                            app:layout_constraintStart_toStartOf="@+id/guidelineSum66"
-                            app:layout_constraintTop_toTopOf="parent"/>
-
-                    <View
-                            android:id="@+id/summaryDividerVert1"
-                            android:layout_width="1dp"
-                            android:layout_height="0dp"
-                            android:background="?android:attr/listDivider"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toStartOf="@+id/guidelineSum33"
-                            app:layout_constraintStart_toStartOf="@+id/guidelineSum33"
-                            app:layout_constraintTop_toTopOf="parent"/>
-
-                    <TextView
-                            android:id="@+id/totalLabelTextView"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="@string/total"
-                            android:textSize="12sp"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"/>
-
-                    <TextView
-                            android:id="@+id/selectedLabelTextView"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="@string/checked"
-                            android:textSize="12sp"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintStart_toStartOf="@+id/guidelineSum33"
-                            app:layout_constraintTop_toTopOf="parent"/>
-
-                    <TextView
-                            android:id="@+id/qtyReqLabelTextView"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="@string/cant"
-                            android:textSize="12sp"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintStart_toStartOf="@+id/guidelineSum66"
-                            app:layout_constraintTop_toTopOf="parent"/>
-
-                    <androidx.constraintlayout.widget.Guideline
-                            android:id="@+id/guidelineSum33"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            app:layout_constraintGuide_percent="0.33"/>
-
-                    <androidx.constraintlayout.widget.Guideline
-                            android:id="@+id/guidelineSum66"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            app:layout_constraintGuide_percent="0.66"/>
-
-                    <TextView
-                            android:id="@+id/totalTextView"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginEnd="4dp"
-                            android:textSize="12sp"
-                            android:textStyle="bold"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toStartOf="@+id/guidelineSum33"
-                            app:layout_constraintStart_toEndOf="@+id/totalLabelTextView"
-                            app:layout_constraintTop_toTopOf="parent"/>
-
-                    <TextView
-                            android:id="@+id/selectedTextView"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginEnd="4dp"
-                            android:textSize="12sp"
-                            android:textStyle="bold"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toStartOf="@+id/guidelineSum66"
-                            app:layout_constraintStart_toEndOf="@+id/selectedLabelTextView"
-                            app:layout_constraintTop_toTopOf="parent"/>
-
-                    <TextView
-                            android:id="@+id/qtyReqTextView"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginEnd="4dp"
-                            android:textSize="12sp"
-                            android:textStyle="bold"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toEndOf="@+id/qtyReqLabelTextView"
-                            app:layout_constraintTop_toTopOf="parent"/>
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/textInputLayout"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:hint="@string/search_"
-                        app:hintEnabled="false"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@+id/searchTextClearImageView"
-                        app:layout_constraintStart_toEndOf="@+id/searchTextImageView"
-                        app:passwordToggleEnabled="false">
-
-                    <EditText
-                            android:id="@+id/searchEditText"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:layout_marginStart="4dp"
-                            android:layout_marginEnd="4dp"
-                            android:hint="@string/search_"
-                            android:imeOptions="actionDone"
-                            android:inputType="text"
-                            android:lines="1"
-                            android:maxLines="1"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toStartOf="parent"
-                            app:layout_constraintStart_toEndOf="parent"/>
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <androidx.appcompat.widget.AppCompatImageView
-                        android:id="@+id/searchTextClearImageView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="0dp"
-                        android:layout_marginEnd="2dp"
-                        android:alpha="0.5"
-                        android:scaleType="fitCenter"
-                        app:layout_constraintBottom_toBottomOf="@+id/textInputLayout"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="@+id/textInputLayout"
-                        app:srcCompat="@drawable/ic_close_black"/>
-
-                <androidx.appcompat.widget.AppCompatImageView
-                        android:id="@+id/searchTextImageView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="0dp"
-                        android:layout_marginStart="2dp"
-                        android:alpha="0.5"
-                        android:scaleType="fitCenter"
-                        app:layout_constraintBottom_toBottomOf="@+id/textInputLayout"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="@+id/textInputLayout"
-                        app:srcCompat="@drawable/ic_search_black"/>
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-                    android:id="@+id/swipeRefreshItem"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_marginStart="1dp"
-                    android:layout_marginEnd="1dp"
-                    app:layout_constraintBottom_toTopOf="@+id/fixedLayout"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintHorizontal_bias="0.0"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srl_direction="bottom">
-
-                <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/recyclerView"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_marginLeft="2dp"
-                        android:layout_marginTop="2dp"
-                        android:layout_marginRight="2dp"
-                        android:layout_marginBottom="2dp"
-                        android:background="@drawable/listview_border"
-                        android:choiceMode="singleChoice"
-                        android:divider="@null"
-                        android:dividerHeight="0dp"
-                        android:padding="2dp"/>
-
-            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
+                app:layout_constraintBottom_toTopOf="@+id/searchTextFragment" android:layout_marginStart="1dp"
+                android:layout_marginEnd="1dp"/>
+        <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/searchTextFragment"
+                android:name="com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                tools:layout="@layout/search_text_fragment"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/expandBottomPanelButton" android:layout_marginStart="1dp"
+                android:layout_marginEnd="1dp"/>
         <Button
                 android:id="@+id/expandBottomPanelButton"
                 android:layout_width="0dp"

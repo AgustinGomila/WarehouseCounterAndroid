@@ -61,16 +61,17 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.sync.*
 import com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity
-import com.dacosys.warehouseCounter.ui.activities.item.ItemSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.NewCountActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderLocationSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity
+import com.dacosys.warehouseCounter.ui.activities.print.PrintLabelActivity
 import com.dacosys.warehouseCounter.ui.activities.ptlOrder.NewPtlOrdersActivity
 import com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderActivity
 import com.dacosys.warehouseCounter.ui.activities.sync.InboxActivity
 import com.dacosys.warehouseCounter.ui.activities.sync.OutboxActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
@@ -99,7 +100,20 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         if (orders.isNotEmpty() && settingViewModel.autoSend) {
             try {
                 thread {
-                    CreateOrder(orderArray = orders, onEvent = { }, onFinish = { }).execute()
+
+                    CreateOrder(
+                        orderArray = orders,
+                        onEvent = { showSnackBar(it) },
+                        onFinish = { successFiles ->
+
+                            /** We delete the files of the orders sent */
+                            OrderRequest.removeCountFiles(
+                                successFiles = successFiles,
+                                sendEvent = { eventData -> showSnackBar(eventData) }
+                            )
+                        }
+
+                    ).execute()
                 }
             } catch (ex: Exception) {
                 ErrorLog.writeLog(
@@ -177,7 +191,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
 
         JotterListener.lockScanner(this, true)
         JotterListener.hideWindow(this)
@@ -191,12 +205,16 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             }
             */
         } catch (ex: Exception) {
-            makeText(binding.root, ex.message.toString(), ERROR)
+            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
             ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
         } finally {
             // Unless is blocked, unlock the partial
             JotterListener.lockScanner(this, false)
         }
+    }
+
+    private fun showSnackBar(it: SnackBarEventData) {
+        makeText(binding.root, it.text, it.snackBarType)
     }
 
     private var rejectNewInstances = false
@@ -390,7 +408,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                     intent.putExtra(LinkCodeActivity.ARG_TITLE, getString(R.string.link_code))
                     startActivity(intent)
                 } catch (ex: Exception) {
-                    makeText(binding.root, "Error:" + ex.message, ERROR)
+                    showSnackBar(SnackBarEventData("Error:" + ex.message, ERROR))
                 }
             }
 
@@ -401,18 +419,17 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                 startNewPtlOrderActivity()
             }
 
-            MainButton.PrintItemLabel -> {
+            MainButton.PrintLabels -> {
                 if (rejectNewInstances) return
                 rejectNewInstances = true
                 JotterListener.lockScanner(this, true)
 
                 try {
-                    val intent = Intent(context, ItemSelectActivity::class.java)
-                    intent.putExtra(ItemSelectActivity.ARG_TITLE, getString(R.string.print_code))
-                    intent.putExtra(ItemSelectActivity.ARG_MULTI_SELECT, true)
+                    val intent = Intent(baseContext, PrintLabelActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                     startActivity(intent)
                 } catch (ex: Exception) {
-                    makeText(binding.root, "Error:" + ex.message, ERROR)
+                    showSnackBar(SnackBarEventData("Error:" + ex.message, ERROR))
                 }
             }
 
@@ -427,7 +444,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                     intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, true)
                     startActivity(intent)
                 } catch (ex: Exception) {
-                    makeText(binding.root, "Error:" + ex.message, ERROR)
+                    showSnackBar(SnackBarEventData("Error:" + ex.message, ERROR))
                 }
             }
 
@@ -455,13 +472,15 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                         return@registerForActivityResult
                     }
 
-                    makeText(
-                        binding.root, String.format(
-                            getString(R.string.area),
-                            warehouseArea.description,
-                            lineSeparator,
-                            "(${warehouseArea.warehouseDescription})"
-                        ), INFO
+                    showSnackBar(
+                        SnackBarEventData(
+                            String.format(
+                                getString(R.string.area),
+                                warehouseArea.description,
+                                lineSeparator,
+                                "(${warehouseArea.warehouseDescription})"
+                            ), INFO
+                        )
                     )
 
                     val intent = Intent(context, PtlOrderActivity::class.java)
@@ -498,13 +517,15 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                     val orderRequestType =
                         Parcels.unwrap<OrderRequestType>(data.getParcelableExtra<OrderRequestType>(NewCountActivity.ARG_ORDER_REQUEST_TYPE))
 
-                    makeText(
-                        binding.root, String.format(
-                            getString(R.string.client_description),
-                            client?.name ?: getString(R.string.no_client),
-                            lineSeparator,
-                            description
-                        ), INFO
+                    showSnackBar(
+                        SnackBarEventData(
+                            String.format(
+                                getString(R.string.client_description),
+                                client?.name ?: getString(R.string.no_client),
+                                lineSeparator,
+                                description
+                            ), INFO
+                        )
                     )
 
                     val orderRequest = OrderRequestRoom(
@@ -553,15 +574,17 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
                     try {
                         val or = orArray[0]
-                        makeText(
-                            binding.root, String.format(
-                                getString(R.string.requested_count_state_),
-                                if (equals(or.description, "")) getString(R.string.no_description)
-                                else or.description,
-                                if (or.completed == true) getString(R.string.completed) else getString(
-                                    R.string.pending
-                                )
-                            ), INFO
+                        showSnackBar(
+                            SnackBarEventData(
+                                String.format(
+                                    getString(R.string.requested_count_state_),
+                                    if (equals(or.description, "")) getString(R.string.no_description)
+                                    else or.description,
+                                    if (or.completed == true) getString(R.string.completed) else getString(
+                                        R.string.pending
+                                    )
+                                ), INFO
+                            )
                         )
 
                         val intent = Intent(context, OrderRequestContentActivity::class.java)
@@ -571,7 +594,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                     } catch (ex: Exception) {
                         val res =
                             getString(R.string.an_error_occurred_while_trying_to_load_the_order)
-                        makeText(binding.root, res, ERROR)
+                        showSnackBar(SnackBarEventData(res, ERROR))
                         android.util.Log.e(this::class.java.simpleName, res)
                     }
                 }
@@ -644,7 +667,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             }
             isReturnedFromSettings = true
         } else {
-            makeText(binding.root, getString(R.string.invalid_password), ERROR)
+            showSnackBar(SnackBarEventData(getString(R.string.invalid_password), ERROR))
         }
     }
 
@@ -707,7 +730,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         if (freshSessionReq) {
             // Inicializar la actividad
             if (settingViewModel.urlPanel.isEmpty()) {
-                makeText(binding.root, getString(R.string.server_is_not_configured), ERROR)
+                showSnackBar(SnackBarEventData(getString(R.string.server_is_not_configured), ERROR))
                 setupInitConfig()
             } else {
                 login()
@@ -730,12 +753,12 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
             ProgressStatus.crashed.id, ProgressStatus.canceled.id -> {
                 showImageProgressBar(false)
-                makeText(this, msg, ERROR)
+                showSnackBar(SnackBarEventData(msg, ERROR))
             }
 
             ProgressStatus.success.id -> {
                 showImageProgressBar(false)
-                makeText(this, getString(R.string.upload_images_success), SnackBarType.SUCCESS)
+                showSnackBar(SnackBarEventData(getString(R.string.upload_images_success), SnackBarType.SUCCESS))
             }
         }
     }
@@ -769,7 +792,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             try {
                 if (settingViewModel.urlPanel.isEmpty()) {
-                    makeText(binding.root, getString(R.string.server_is_not_configured), ERROR)
+                    showSnackBar(SnackBarEventData(getString(R.string.server_is_not_configured), ERROR))
                     setupInitConfig()
                 } else {
                     login()
@@ -811,9 +834,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             try {
                 clickButton(button)
             } catch (ex: Exception) {
-                makeText(
-                    binding.root, "${getString(R.string.exception_error)}: " + ex.message, ERROR
-                )
+                showSnackBar(SnackBarEventData("${getString(R.string.exception_error)}: " + ex.message, ERROR))
             }
         }
         button.setOnTouchListener(View.OnTouchListener { view, motionEvent ->
@@ -982,11 +1003,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             REQUEST_EXTERNAL_STORAGE -> {
                 // If the request is canceled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    makeText(
-                        binding.root,
-                        getString(R.string.cannot_write_to_external_storage),
-                        ERROR
-                    )
+                    showSnackBar(SnackBarEventData(getString(R.string.cannot_write_to_external_storage), ERROR))
                 } else {
                     writeNewOrderRequest(newOrArray)
                 }
@@ -1046,11 +1063,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         if (isOk) {
             val res = getString(R.string.new_counts_saved)
-            makeText(binding.root, res, SnackBarType.SUCCESS)
+            showSnackBar(SnackBarEventData(res, SnackBarType.SUCCESS))
             android.util.Log.d(this::class.java.simpleName, res)
         } else {
             val res = getString(R.string.an_error_occurred_while_trying_to_save_the_count)
-            makeText(binding.root, res, ERROR)
+            showSnackBar(SnackBarEventData(res, ERROR))
             android.util.Log.e(this::class.java.simpleName, res)
         }
     }

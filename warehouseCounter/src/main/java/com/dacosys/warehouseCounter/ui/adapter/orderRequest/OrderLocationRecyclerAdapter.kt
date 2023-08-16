@@ -34,6 +34,7 @@ import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
 import java.util.*
 
+
 class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
     ListAdapter<OrderLocation, ViewHolder>(ItemDiffUtilCallback), Filterable {
 

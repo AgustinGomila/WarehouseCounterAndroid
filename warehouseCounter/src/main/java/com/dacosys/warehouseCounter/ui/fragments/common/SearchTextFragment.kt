@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ui.fragments.orderRequest
+package com.dacosys.warehouseCounter.ui.fragments.common
 
 import android.os.Bundle
 import android.text.Editable

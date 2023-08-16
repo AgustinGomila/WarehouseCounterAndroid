@@ -7,20 +7,16 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.text.Editable
 import android.text.InputType
-import android.text.TextWatcher
 import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.util.Log
-import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.View.GONE
 import android.widget.EditText
-import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -66,6 +62,8 @@ import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemRecyclerAdapter
+import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
+import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.fragments.item.ItemSelectFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -82,7 +80,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
     ItemSelectFilterFragment.OnFilterChangedListener, ItemRecyclerAdapter.CheckedChangedListener,
     PrintLabelFragment.FragmentListener, ItemRecyclerAdapter.DataSetChangedListener,
-    ItemRecyclerAdapter.AddPhotoRequiredListener, ItemRecyclerAdapter.AlbumViewRequiredListener {
+    ItemRecyclerAdapter.AddPhotoRequiredListener, ItemRecyclerAdapter.AlbumViewRequiredListener,
+    SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -152,8 +151,25 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             settingViewModel.itemSelectShowCheckBoxes = value
         }
 
+    private val countChecked: Int
+        get() {
+            return adapter?.countChecked() ?: 0
+        }
+
+    private val allChecked: ArrayList<Item>
+        get() {
+            return adapter?.getAllChecked() ?: arrayListOf()
+        }
+
+    private val currentItem: Item?
+        get() {
+            return adapter?.currentItem()
+        }
+
     private var itemSelectFilterFragment: ItemSelectFilterFragment? = null
     private var printLabelFragment: PrintLabelFragment? = null
+    private lateinit var summaryFragment: SummaryFragment
+    private lateinit var searchTextFragment: SearchTextFragment
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
@@ -168,10 +184,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
 
         if (adapter != null) {
-            b.putParcelable("lastSelected", (adapter ?: return).currentItem())
-            b.putInt("firstVisiblePos", (adapter ?: return).firstVisiblePos())
+            b.putParcelable("lastSelected", currentItem)
+            b.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: -1)
             b.putParcelableArrayList("completeList", adapter?.fullList)
-            b.putLongArray("checkedIdArray", adapter?.getAllChecked()?.map { it.itemId }?.toLongArray())
+            b.putLongArray("checkedIdArray", allChecked.map { it.itemId }.toLongArray())
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
@@ -202,8 +218,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
         itemSelectFilterFragment?.itemCode = b.getString(ARG_ITEM_CODE) ?: ""
-        itemSelectFilterFragment?.itemCategory =
-            Parcels.unwrap<ItemCategory>(b.getParcelable(ARG_ITEM_CATEGORY))
+        itemSelectFilterFragment?.itemCategory = Parcels.unwrap<ItemCategory>(b.getParcelable(ARG_ITEM_CATEGORY))
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
@@ -234,6 +249,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         itemSelectFilterFragment =
             supportFragmentManager.findFragmentById(R.id.filterFragment) as ItemSelectFilterFragment
         printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
+        summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
+        searchTextFragment = supportFragmentManager.findFragmentById(R.id.searchTextFragment) as SearchTextFragment
 
         if (savedInstanceState != null) {
             loadBundleValues(savedInstanceState)
@@ -262,56 +279,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         binding.okButton.setOnClickListener { itemSelect() }
 
-        binding.searchEditText.setOnFocusChangeListener { _, b ->
-            searchTextIsFocused = b
-            if (b) {
-                /*
-                TODO: Transición suave de teclado.
-                Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
-                Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
-                el teclado cambiará de tipo y puede tener una altura diferente.
-                Esto no dispara los eventos de animación del teclado.
-                Colapsar los paneles y reajustar el Layout al final es la solución temporal.
-                */
-                panelBottomIsExpanded = false
-                panelTopIsExpanded = false
-                runOnUiThread { setPanels(true) }
-            }
-        }
-        binding.searchEditText.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable) {
-            }
-
-            override fun beforeTextChanged(
-                s: CharSequence, start: Int,
-                count: Int, after: Int,
-            ) {
-            }
-
-            override fun onTextChanged(
-                s: CharSequence, start: Int,
-                before: Int, count: Int,
-            ) {
-                searchText = s.toString()
-                adapter?.refreshFilter(FilterOptions(searchText))
-            }
-        })
-        binding.searchEditText.setText(searchText, TextView.BufferType.EDITABLE)
-        binding.searchEditText.setOnKeyListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        closeKeyboard(this)
-                    }
-                }
-            }
-            false
-        }
-        binding.searchEditText.setRawInputType(InputType.TYPE_CLASS_TEXT)
-
-        binding.searchTextImageView.setOnClickListener { binding.searchEditText.requestFocus() }
-        binding.searchTextClearImageView.setOnClickListener { binding.searchEditText.setText("") }
-
         // OCULTAR PANEL DE CONTROLES DE FILTRADO
         if (hideFilterPanel) {
             if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
@@ -324,8 +291,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 }
             }
         }
-
-        setPanels()
 
         Screen.setupUI(binding.root, this)
     }
@@ -467,8 +432,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         if (adapter != null) {
             val data = Intent()
 
-            val item = adapter?.currentItem()
-            val countChecked = adapter?.countChecked() ?: 0
+            val item = currentItem
+            val countChecked = countChecked
             var itemArray: ArrayList<Item> = ArrayList()
 
             if (!multiSelect && item != null) {
@@ -476,7 +441,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 setResult(RESULT_OK, data)
             } else if (multiSelect) {
                 if (countChecked > 0 || item != null) {
-                    if (countChecked > 0) itemArray = adapter?.getAllChecked() ?: ArrayList()
+                    if (countChecked > 0) itemArray = allChecked
                     else if (adapter?.showCheckBoxes == false) {
                         itemArray = arrayListOf(item!!)
                     }
@@ -498,39 +463,31 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         finish()
     }
 
-    private fun setPanels(adjustAtEnd: Boolean = false) {
-        val currentLayout = ConstraintSet()
-        if (panelBottomIsExpanded) {
-            if (panelTopIsExpanded) currentLayout.load(this, R.layout.item_print_label_activity)
-            else currentLayout.load(this, R.layout.item_print_label_activity_top_panel_collapsed)
-        } else {
-            if (panelTopIsExpanded) currentLayout.load(this, R.layout.item_print_label_activity_bottom_panel_collapsed)
-            else currentLayout.load(this, R.layout.item_print_label_activity_both_panels_collapsed)
-        }
-
-        val transition = ChangeBounds()
-        transition.interpolator = FastOutSlowInInterpolator()
-        transition.addListener(object : Transition.TransitionListener {
-            override fun onTransitionResume(transition: Transition?) {}
-            override fun onTransitionPause(transition: Transition?) {}
-            override fun onTransitionStart(transition: Transition?) {}
-            override fun onTransitionEnd(transition: Transition?) {
-                refreshTextViews()
-                if (adjustAtEnd) adjustRootLayout()
+    private fun setPanels() {
+        runOnUiThread {
+            val currentLayout = ConstraintSet()
+            if (panelBottomIsExpanded) {
+                if (panelTopIsExpanded) currentLayout.load(this, R.layout.item_print_label_activity)
+                else currentLayout.load(this, R.layout.item_print_label_activity_top_panel_collapsed)
+            } else {
+                if (panelTopIsExpanded) currentLayout.load(
+                    this,
+                    R.layout.item_print_label_activity_bottom_panel_collapsed
+                )
+                else currentLayout.load(this, R.layout.item_print_label_activity_both_panels_collapsed)
             }
 
-            override fun onTransitionCancel(transition: Transition?) {}
-        })
+            currentLayout.applyTo(binding.itemPrintLabel)
 
-        TransitionManager.beginDelayedTransition(binding.itemPrintLabel, transition)
+            if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text =
+                context.getString(R.string.collapse_panel)
+            else binding.expandBottomPanelButton?.text = context.getString(R.string.search_options)
 
-        currentLayout.applyTo(binding.itemPrintLabel)
+            if (panelTopIsExpanded) binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
+            else binding.expandTopPanelButton.text = context.getString(R.string.print_labels)
 
-        if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text = context.getString(R.string.collapse_panel)
-        else binding.expandBottomPanelButton?.text = context.getString(R.string.search_options)
-
-        if (panelTopIsExpanded) binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
-        else binding.expandTopPanelButton.text = context.getString(R.string.print_labels)
+            refreshTextViews()
+        }
     }
 
     private fun setBottomPanelAnimation() {
@@ -684,7 +641,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                     // Si el adapter es NULL es porque aún no fue creado.
                     // Por lo tanto, puede ser que los valores de [lastSelected]
                     // sean valores guardados de la instancia anterior y queremos preservarlos.
-                    lastSelected = adapter?.currentItem()
+                    lastSelected = currentItem
                 }
 
                 adapter = ItemRecyclerAdapter.Builder()
@@ -708,7 +665,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                     // Horrible wait for a full load
                 }
 
-                // Estas variables locales evitar posteriores cambios de estado.
+                // Variables locales para evitar cambios posteriores de estado.
                 val ls = lastSelected
                 val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
@@ -724,41 +681,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    private fun fillSummaryRow() {
-        Log.d(this::class.java.simpleName, "fillSummaryRow")
-        runOnUiThread {
-            if (multiSelect) {
-                binding.totalLabelTextView.text = context.getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context.getString(R.string.cant)
-                binding.selectedLabelTextView.text = context.getString(R.string.checked)
-
-                if (adapter != null) {
-                    binding.totalTextView.text = adapter?.totalVisible().toString()
-                    binding.qtyReqTextView.text = "0"
-                    binding.selectedTextView.text = adapter?.countChecked().toString()
-                }
-            } else {
-                binding.totalLabelTextView.text = context.getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
-                binding.selectedLabelTextView.text = context.getString(R.string.items)
-
-                if (adapter != null) {
-                    val cont = 0
-                    val t = adapter?.totalVisible() ?: 0
-                    binding.totalTextView.text = t.toString()
-                    binding.qtyReqTextView.text = cont.toString()
-                    binding.selectedTextView.text = (t - cont).toString()
-                }
-            }
-
-            if (adapter == null) {
-                binding.totalTextView.text = 0.toString()
-                binding.qtyReqTextView.text = 0.toString()
-                binding.selectedTextView.text = 0.toString()
-            }
-        }
-    }
-
     public override fun onStart() {
         super.onStart()
         rejectNewInstances = false
@@ -766,11 +688,47 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         closeKeyboard(this)
         JotterListener.resumeReaderDevices(this)
 
+        setSearchTextFragment()
+        setPanels()
         refreshTextViews()
+
         if (fillRequired) {
             fillRequired = false
             fillAdapter(completeList)
         }
+    }
+
+    private fun setSearchTextFragment() {
+        searchTextFragment
+            .focusChangedCallback(this)
+            .searchTextChangedCallback(this)
+            .searchText(searchText)
+    }
+
+    override fun onFocusChange(hasFocus: Boolean) {
+        searchTextIsFocused = hasFocus
+        if (hasFocus) {
+            /*
+            TODO Transición suave de teclado.
+            Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
+            Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
+            el teclado cambiará de tipo y puede tener una altura diferente.
+            Esto no dispara los eventos de animación del teclado.
+            Colapsar los paneles y reajustar el Layout al final es la solución temporal.
+            */
+            panelBottomIsExpanded = false
+            panelTopIsExpanded = false
+            setPanels()
+        } else {
+            Handler(Looper.getMainLooper()).postDelayed({
+                closeKeyboard(this)
+            }, 100)
+        }
+    }
+
+    override fun onSearchTextChanged(searchText: String) {
+        this.searchText = searchText
+        adapter?.refreshFilter(FilterOptions(searchText))
     }
 
     override fun onRequestPermissionsResult(
@@ -995,7 +953,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
         runOnUiThread {
-            binding.selectedTextView.text = adapter?.countChecked().toString()
+            summaryFragment
+                .totalChecked(countChecked)
+                .fill()
         }
     }
 
@@ -1035,15 +995,15 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
          *
          **/
 
-        val item = adapter?.currentItem()
-        val countChecked = adapter?.countChecked() ?: 0
+        val item = currentItem
+        val countChecked = countChecked
         var itemArray: ArrayList<Item> = ArrayList()
 
         if (!multiSelect && item != null) {
             itemArray = arrayListOf(item)
         } else if (multiSelect) {
             if (countChecked > 0 || item != null) {
-                if (countChecked > 0) itemArray = adapter?.getAllChecked() ?: ArrayList()
+                if (countChecked > 0) itemArray = allChecked
                 else if (adapter?.showCheckBoxes == false) {
                     itemArray = arrayListOf(item!!)
                 }
@@ -1058,9 +1018,15 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun onDataSetChanged() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            fillSummaryRow()
-        }, 100)
+        runOnUiThread {
+            Handler(Looper.getMainLooper()).postDelayed({
+                summaryFragment
+                    .multiSelect(multiSelect)
+                    .totalVisible(adapter?.totalVisible() ?: 0)
+                    .totalChecked(countChecked)
+                    .fill()
+            }, 100)
+        }
     }
 
     // region READERS Reception
@@ -1103,7 +1069,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val item = adapter?.currentItem() ?: return@registerForActivityResult
+                    val item = currentItem ?: return@registerForActivityResult
                     adapter?.updateItem(item, true)
                 }
             } catch (ex: Exception) {

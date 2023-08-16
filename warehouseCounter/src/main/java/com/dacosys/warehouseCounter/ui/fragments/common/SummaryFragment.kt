@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ui.fragments.orderRequest
+package com.dacosys.warehouseCounter.ui.fragments.common
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -6,20 +6,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.databinding.OrderSummaryFragmentBinding
+import com.dacosys.warehouseCounter.databinding.SummaryFragmentBinding
 
 /**
  * A simple [Fragment] subclass.
- * Use the [OrderSummaryFragment.newInstance] factory method to
+ * Use the [SummaryFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class OrderSummaryFragment : Fragment() {
+class SummaryFragment : Fragment() {
     private var multiSelect: Boolean = false
     private var totalVisible: Int = 0
     private var totalRequired: Int = 0
     private var totalChecked: Int = 0
 
-    private var _binding: OrderSummaryFragmentBinding? = null
+    private var _binding: SummaryFragmentBinding? = null
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -35,7 +35,7 @@ class OrderSummaryFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        _binding = OrderSummaryFragmentBinding.inflate(inflater, container, false)
+        _binding = SummaryFragmentBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -52,25 +52,25 @@ class OrderSummaryFragment : Fragment() {
     }
 
     @Suppress("unused")
-    fun multiSelect(`val`: Boolean): OrderSummaryFragment {
+    fun multiSelect(`val`: Boolean): SummaryFragment {
         multiSelect = `val`
         return this
     }
 
     @Suppress("unused")
-    fun totalVisible(`val`: Int): OrderSummaryFragment {
+    fun totalVisible(`val`: Int): SummaryFragment {
         totalVisible = `val`
         return this
     }
 
     @Suppress("unused")
-    fun totalChecked(`val`: Int): OrderSummaryFragment {
+    fun totalChecked(`val`: Int): SummaryFragment {
         totalChecked = `val`
         return this
     }
 
     @Suppress("unused")
-    fun totalRequired(`val`: Int): OrderSummaryFragment {
+    fun totalRequired(`val`: Int): SummaryFragment {
         totalRequired = `val`
         return this
     }
@@ -106,8 +106,8 @@ class OrderSummaryFragment : Fragment() {
             totalVisible: Int,
             totalChecked: Int,
             totalRequired: Int
-        ): OrderSummaryFragment {
-            val fragment = OrderSummaryFragment()
+        ): SummaryFragment {
+            val fragment = SummaryFragment()
 
             val args = Bundle()
             args.putBoolean(ARG_MULTISELECT, multiSelect)

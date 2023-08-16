@@ -39,15 +39,6 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.databinding.OrderLocationActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderLocation
 import com.dacosys.warehouseCounter.ktor.v2.functions.GetOrderLocation
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam.Companion.EXTENSION_ITEM_CODE
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam.Companion.EXTENSION_ITEM_DESCRIPTION
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam.Companion.EXTENSION_ITEM_EAN
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam.Companion.EXTENSION_ORDER_EXTERNAL_ID
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam.Companion.EXTENSION_ORDER_ID
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam.Companion.EXTENSION_ORDER_LOCATION_AREA_ID
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam.Companion.EXTENSION_ORDER_LOCATION_RACK_ID
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam.Companion.EXTENSION_ORDER_LOCATION_WAREHOUSE_ID
 import com.dacosys.warehouseCounter.misc.ParcelLong
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -59,9 +50,9 @@ import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderLocationRecyclerAdapter
+import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
+import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderLocationFilterFragment
-import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderSummaryFragment
-import com.dacosys.warehouseCounter.ui.fragments.orderRequest.SearchTextFragment
 import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
@@ -139,9 +130,24 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             settingViewModel.itemSelectShowCheckBoxes = value
         }
 
+    private val countChecked: Int
+        get() {
+            return adapter?.countChecked() ?: 0
+        }
+
+    private val allChecked: ArrayList<OrderLocation>
+        get() {
+            return adapter?.getAllChecked() ?: arrayListOf()
+        }
+
+    private val currentItem: OrderLocation?
+        get() {
+            return adapter?.currentItem()
+        }
+
     private lateinit var orderLocationFilterFragment: OrderLocationFilterFragment
     private lateinit var printLabelFragment: PrintLabelFragment
-    private lateinit var summaryFragment: OrderSummaryFragment
+    private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
@@ -160,7 +166,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             b.putParcelable("lastSelected", (adapter ?: return).currentItem())
             b.putInt("firstVisiblePos", (adapter ?: return).firstVisiblePos())
             b.putParcelableArrayList("completeList", adapter?.fullList)
-            b.putLongArray("checkedIdArray", adapter?.getAllChecked()?.map { it.uniqueId }?.toLongArray())
+            b.putLongArray("checkedIdArray", allChecked.map { it.uniqueId }.toLongArray())
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
@@ -231,7 +237,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         orderLocationFilterFragment =
             supportFragmentManager.findFragmentById(R.id.filterFragment) as OrderLocationFilterFragment
         printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
-        summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as OrderSummaryFragment
+        summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
         searchTextFragment = supportFragmentManager.findFragmentById(R.id.searchTextFragment) as SearchTextFragment
 
         if (savedInstanceState != null) {
@@ -390,8 +396,8 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         if (adapter != null) {
             val data = Intent()
 
-            val item = adapter?.currentItem()
-            val countChecked = adapter?.countChecked() ?: 0
+            val item = currentItem
+            val countChecked = countChecked
             var itemArray: ArrayList<OrderLocation> = ArrayList()
 
             if (!multiSelect && item != null) {
@@ -399,10 +405,12 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 setResult(RESULT_OK, data)
             } else if (multiSelect) {
                 if (countChecked > 0 || item != null) {
-                    if (countChecked > 0) itemArray = adapter?.getAllChecked() ?: ArrayList()
-                    else if (adapter?.showCheckBoxes == false) {
+                    if (countChecked > 0) {
+                        itemArray = allChecked
+                    } else if (adapter?.showCheckBoxes == false) {
                         itemArray = arrayListOf(item!!)
                     }
+
                     data.putParcelableArrayListExtra(
                         ARG_IDS,
                         itemArray.map { ParcelLong(it.uniqueId) } as ArrayList<ParcelLong>)
@@ -593,39 +601,14 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         // Limpiamos los ítems marcados
         checkedIdArray.clear()
 
-        val fr = orderLocationFilterFragment
-
-        val itemCode = fr.itemCode
-        val itemDescription = fr.itemDescription
-        val itemEan = fr.itemEan
-        val orderId = fr.orderId
-        val orderExternalId = fr.orderExternalId
-        val warehouse = fr.warehouse
-        val warehouseArea = fr.warehouseArea
-        val rack = fr.rack
-
-        if (itemCode.isEmpty() &&
-            itemDescription.isEmpty() &&
-            itemEan.isEmpty() &&
-            orderId.isEmpty() &&
-            orderExternalId.isEmpty() &&
-            warehouse.isEmpty() &&
-            warehouseArea.isEmpty() &&
-            rack.isEmpty()
-        ) {
+        val filter = orderLocationFilterFragment.getFilters()
+        if (!filter.any()) {
             showProgressBar(false)
             return
         }
 
-        val filter: ArrayList<ApiFilterParam> = arrayListOf()
-        if (itemCode.isNotEmpty()) filter.add(ApiFilterParam(EXTENSION_ITEM_CODE, itemCode))
-        if (itemDescription.isNotEmpty()) filter.add(ApiFilterParam(EXTENSION_ITEM_DESCRIPTION, itemDescription))
-        if (itemEan.isNotEmpty()) filter.add(ApiFilterParam(EXTENSION_ITEM_EAN, itemEan))
-        if (orderId.isNotEmpty()) filter.add(ApiFilterParam(EXTENSION_ORDER_ID, orderId))
-        if (orderExternalId.isNotEmpty()) filter.add(ApiFilterParam(EXTENSION_ORDER_EXTERNAL_ID, orderExternalId))
-        if (warehouse.isNotEmpty()) filter.add(ApiFilterParam(EXTENSION_ORDER_LOCATION_WAREHOUSE_ID, warehouse))
-        if (warehouseArea.isNotEmpty()) filter.add(ApiFilterParam(EXTENSION_ORDER_LOCATION_AREA_ID, warehouseArea))
-        if (rack.isNotEmpty()) filter.add(ApiFilterParam(EXTENSION_ORDER_LOCATION_RACK_ID, rack))
+        // TODO Usar pageNum y pageTotal
+        // filter.add(ApiFilterParam(EXTENSION_PAGE_NUMBER, pageNum.toString()))
 
         try {
             Log.d(this::class.java.simpleName, "Selecting items...")
@@ -660,7 +643,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                     // Si el adapter es NULL es porque aún no fue creado.
                     // Por lo tanto, puede ser que los valores de [lastSelected]
                     // sean valores guardados de la instancia anterior y queremos preservarlos.
-                    lastSelected = adapter?.currentItem()
+                    lastSelected = currentItem
                 }
 
                 adapter = OrderLocationRecyclerAdapter.Builder()
@@ -681,7 +664,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                     // Horrible wait for a full load
                 }
 
-                // Estas variables locales evitar posteriores cambios de estado.
+                // Variables locales para evitar cambios posteriores de estado.
                 val ls = lastSelected
                 val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
@@ -945,7 +928,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
         runOnUiThread {
             summaryFragment
-                .totalChecked(adapter?.countChecked() ?: 0)
+                .totalChecked(countChecked)
                 .fill()
         }
     }
@@ -968,16 +951,17 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
          *
          **/
 
-        val item = adapter?.currentItem()
-        val countChecked = adapter?.countChecked() ?: 0
+        val item = currentItem
+        val countChecked = countChecked
         var itemArray: ArrayList<OrderLocation> = ArrayList()
 
         if (!multiSelect && item != null) {
             itemArray = arrayListOf(item)
         } else if (multiSelect) {
             if (countChecked > 0 || item != null) {
-                if (countChecked > 0) itemArray = adapter?.getAllChecked() ?: ArrayList()
-                else if (adapter?.showCheckBoxes == false) {
+                if (countChecked > 0) {
+                    itemArray = allChecked
+                } else if (adapter?.showCheckBoxes == false) {
                     itemArray = arrayListOf(item!!)
                 }
             }
@@ -996,7 +980,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 summaryFragment
                     .multiSelect(multiSelect)
                     .totalVisible(adapter?.totalVisible() ?: 0)
-                    .totalChecked(adapter?.countChecked() ?: 0)
+                    .totalChecked(countChecked)
                     .fill()
             }, 100)
         }

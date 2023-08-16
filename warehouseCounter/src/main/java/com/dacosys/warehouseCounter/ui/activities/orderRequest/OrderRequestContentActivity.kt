@@ -808,7 +808,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     // Horrible wait for a full load
                 }
 
-                // Estas variables locales evitar posteriores cambios de estado.
+                // Variables locales para evitar cambios posteriores de estado.
                 val ls = lastSelected
                 val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({

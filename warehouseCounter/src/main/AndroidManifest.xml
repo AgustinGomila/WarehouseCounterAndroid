@@ -261,7 +261,9 @@
                   android:configChanges="keyboardHidden"
                   android:exported="false"
                   android:windowSoftInputMode="stateHidden|adjustResize"/>
-
+        <activity android:name="com.dacosys.warehouseCounter.ui.activities.print.PrintLabelActivity"
+                  android:windowSoftInputMode="adjustResize"
+                  android:exported="false"/>
         <meta-data
                 android:name="com.google.android.gms.vision.DEPENDENCIES"
                 android:value="barcode"/>

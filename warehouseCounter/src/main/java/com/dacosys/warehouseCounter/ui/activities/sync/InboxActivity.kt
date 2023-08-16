@@ -33,7 +33,8 @@ import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderRequestAdapter
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.io.File
@@ -61,6 +62,21 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
             settingViewModel.inboxShowCheckBoxes = value
         }
 
+    private val countChecked: Int
+        get() {
+            return adapter?.countChecked() ?: 0
+        }
+
+    private val allChecked: ArrayList<OrderRequest>
+        get() {
+            return adapter?.getAllChecked() ?: arrayListOf()
+        }
+
+    private val currentItem: OrderRequest?
+        get() {
+            return adapter?.currentItem()
+        }
+
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -70,19 +86,20 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         adapter?.refreshListeners(checkedChangedListener = null, dataSetChangedListener = null)
     }
 
+    private fun showSnackBar(it: SnackBarEventData) {
+        makeText(binding.root, it.text, it.snackBarType)
+    }
+
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
         savedInstanceState.putString(ARG_TITLE, title.toString())
         savedInstanceState.putBoolean(ARG_MULTISELECT, multiSelect)
         if (adapter != null) {
-            savedInstanceState.putParcelable("lastSelected", (adapter ?: return).currentItem())
-            savedInstanceState.putInt("firstVisiblePos", (adapter ?: return).firstVisiblePos())
+            savedInstanceState.putParcelable("lastSelected", currentItem)
+            savedInstanceState.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: -1)
             savedInstanceState.putParcelableArrayList("completeList", adapter?.fullList)
-            savedInstanceState.putLongArray(
-                "checkedIdArray",
-                adapter?.getAllChecked()?.mapNotNull { it.orderRequestId }?.toLongArray()
-            )
+            savedInstanceState.putLongArray("checkedIdArray", allChecked.mapNotNull { it.orderRequestId }.toLongArray())
             savedInstanceState.putInt("currentScrollPosition", currentScrollPosition)
         }
     }
@@ -237,19 +254,18 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
     // endregion
 
     private fun showDetail() {
-        val orderRequest = adapter?.currentItem() ?: return
         val intent = Intent(context, OrderRequestDetailActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra(OrderRequestDetailActivity.ARG_ID, orderRequest.orderRequestId)
+        intent.putExtra(OrderRequestDetailActivity.ARG_ID, currentItem?.orderRequestId)
         startActivity(intent)
     }
 
     private fun removeDialog() {
-        val checked = adapter?.countChecked() ?: 0
-        val orderRequest = adapter?.currentItem()
+        val checked = countChecked
+        val orderRequest = currentItem
 
         val toRemove = when {
-            checked > 0 -> adapter?.getAllChecked() ?: ArrayList()
+            checked > 0 -> allChecked
             orderRequest != null -> arrayListOf(orderRequest)
             else -> return
         }
@@ -287,10 +303,11 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         }
 
         if (!isOk) {
-            MakeText.makeText(
-                binding.root,
-                getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
-                SnackBarType.ERROR
+            showSnackBar(
+                SnackBarEventData(
+                    getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
+                    SnackBarType.ERROR
+                )
             )
         }
 
@@ -298,8 +315,8 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
     }
 
     private fun continueOrder() {
-        val currentItem = adapter?.currentItem()
-        val allChecked = adapter?.getAllChecked() ?: arrayListOf()
+        val currentItem = currentItem
+        val allChecked = allChecked
 
         if (!multiSelect && currentItem != null) {
             Screen.closeKeyboard(this)
@@ -334,7 +351,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         if (!temp.any()) {
             temp = OrderRequest.getPendingOrders()
             if (temp.isEmpty()) {
-                MakeText.makeText(binding.root, getString(R.string.there_are_no_pending_counts), SnackBarType.INFO)
+                showSnackBar(SnackBarEventData(getString(R.string.there_are_no_pending_counts), SnackBarType.INFO))
             }
         }
         completeList = temp
@@ -347,7 +364,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
                     // Si el adapter es NULL es porque aún no fue creado.
                     // Por lo tanto, puede ser que los valores de [lastSelected]
                     // sean valores guardados de la instancia anterior y queremos preservarlos.
-                    lastSelected = adapter?.currentItem()
+                    lastSelected = currentItem
                 }
 
                 adapter = OrderRequestAdapter.Builder()
@@ -365,7 +382,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
                     // Horrible wait for a full load
                 }
 
-                // Estas variables locales evitar posteriores cambios de estado.
+                // Variables locales para evitar cambios posteriores de estado.
                 val ls = lastSelected
                 val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({

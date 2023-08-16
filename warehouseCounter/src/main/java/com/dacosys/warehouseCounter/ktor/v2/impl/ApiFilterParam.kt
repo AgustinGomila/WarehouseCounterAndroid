@@ -9,6 +9,8 @@ data class ApiFilterParam(
         const val ACTION_FILTER = "filter"
         const val ACTION_FILTER_LIKE = "like"
 
+       const val EXTENSION_PAGE_NUMBER = "pageNum"
+
         const val EXTENSION_ORDER_ID = "order_id"
         const val EXTENSION_ORDER_EXTERNAL_ID = "order.external_id"
         const val EXTENSION_ITEM_ID = "item_id"
@@ -19,5 +21,7 @@ data class ApiFilterParam(
         const val EXTENSION_ORDER_LOCATION_RACK_ID = "order_location.rack_id"
         const val EXTENSION_ORDER_LOCATION_AREA_ID = "order_location.warehouse_area_id"
         const val EXTENSION_ORDER_LOCATION_WAREHOUSE_ID = "order_location.warehouse_id"
+
+
     }
 }

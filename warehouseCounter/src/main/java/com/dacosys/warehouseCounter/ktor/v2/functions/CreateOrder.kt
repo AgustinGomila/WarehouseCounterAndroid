@@ -12,7 +12,7 @@ import kotlinx.coroutines.*
 class CreateOrder(
     private val orderArray: ArrayList<OrderRequest>,
     private val onEvent: (SnackBarEventData) -> Unit = { },
-    private val onFinish: () -> Unit = { },
+    private val onFinish: (successFiles: ArrayList<String>) -> Unit = { },
 ) {
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
@@ -59,20 +59,7 @@ class CreateOrder(
             )
         }
 
-        if (successFiles.any()) removeCountFiles()
-        onFinish()
-    }
-
-    private fun removeCountFiles() {
-        val isOk = OrderRequest.removeOrders(successFiles)
-        if (isOk) {
-            sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
-        } else {
-            sendEvent(
-                context.getString(R.string.an_error_occurred_while_deleting_counts),
-                SnackBarType.ERROR
-            )
-        }
+        onFinish(successFiles)
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {

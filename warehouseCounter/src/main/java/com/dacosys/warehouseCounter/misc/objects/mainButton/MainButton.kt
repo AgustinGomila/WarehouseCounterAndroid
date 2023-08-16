@@ -36,7 +36,7 @@ class MainButton(mainButton: Long, description: String, iconResource: Int?) {
             MainButton(5, context.getString(R.string.ptl_order), R.drawable.ic_order)
         var LinkItemCodes =
             MainButton(6, context.getString(R.string.code_link), R.drawable.ic_barcode_link)
-        var PrintItemLabel =
+        var PrintLabels =
             MainButton(7, context.getString(R.string.print_code), R.drawable.ic_printer)
         var OrderLocationLabel =
             MainButton(8, context.getString(R.string.order_location), R.drawable.ic_order_location)
@@ -53,7 +53,7 @@ class MainButton(mainButton: Long, description: String, iconResource: Int?) {
                 CodeRead,
                 PtlOrder,
                 LinkItemCodes,
-                PrintItemLabel,
+                PrintLabels,
                 OrderLocationLabel,
                 Configuration
             )
@@ -71,7 +71,7 @@ class MainButton(mainButton: Long, description: String, iconResource: Int?) {
                 PtlOrder,
                 CodeRead,
                 LinkItemCodes,
-                PrintItemLabel,
+                PrintLabels,
                 OrderLocationLabel
             )
 

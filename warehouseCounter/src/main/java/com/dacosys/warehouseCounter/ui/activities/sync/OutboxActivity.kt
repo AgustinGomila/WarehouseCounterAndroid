@@ -72,6 +72,21 @@ class OutboxActivity : AppCompatActivity() {
             settingViewModel.outboxShowCheckBoxes = value
         }
 
+    private val countChecked: Int
+        get() {
+            return adapter?.countChecked() ?: 0
+        }
+
+    private val allChecked: ArrayList<OrderRequest>
+        get() {
+            return adapter?.getAllChecked() ?: arrayListOf()
+        }
+
+    private val currentItem: OrderRequest?
+        get() {
+            return adapter?.currentItem()
+        }
+
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -87,13 +102,10 @@ class OutboxActivity : AppCompatActivity() {
         savedInstanceState.putString(ARG_TITLE, title.toString())
         savedInstanceState.putBoolean(ARG_MULTISELECT, multiSelect)
         if (adapter != null) {
-            savedInstanceState.putParcelable("lastSelected", (adapter ?: return).currentItem())
-            savedInstanceState.putInt("firstVisiblePos", (adapter ?: return).firstVisiblePos())
+            savedInstanceState.putParcelable("lastSelected", currentItem)
+            savedInstanceState.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: -1)
             savedInstanceState.putParcelableArrayList("completeList", adapter?.fullList)
-            savedInstanceState.putLongArray(
-                "checkedIdArray",
-                adapter?.getAllChecked()?.mapNotNull { it.orderRequestId }?.toLongArray()
-            )
+            savedInstanceState.putLongArray("checkedIdArray", allChecked.mapNotNull { it.orderRequestId }.toLongArray())
             savedInstanceState.putInt("currentScrollPosition", currentScrollPosition)
         }
     }
@@ -241,19 +253,18 @@ class OutboxActivity : AppCompatActivity() {
     // endregion
 
     private fun showDetail() {
-        val orderRequest = adapter?.currentItem() ?: return
         val intent = Intent(context, OrderRequestDetailActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra(OrderRequestDetailActivity.ARG_ID, orderRequest.orderRequestId)
+        intent.putExtra(OrderRequestDetailActivity.ARG_ID, currentItem?.orderRequestId)
         startActivity(intent)
     }
 
     private fun sendDialog() {
-        val checked = adapter?.countChecked() ?: 0
-        val orderRequest = adapter?.currentItem()
+        val checked = countChecked
+        val orderRequest = currentItem
 
         val toSend = when {
-            checked > 0 -> adapter?.getAllChecked() ?: ArrayList()
+            checked > 0 -> allChecked
             orderRequest != null -> arrayListOf(orderRequest)
             else -> return
         }
@@ -279,15 +290,26 @@ class OutboxActivity : AppCompatActivity() {
     private fun sendSelected(orArray: ArrayList<OrderRequest>) {
         try {
             thread {
+
                 CreateOrder(
                     orderArray = orArray,
                     onEvent = { showSnackBar(it) },
-                    onFinish = {
+                    onFinish = { successFiles ->
+
+                        /** We delete the files of the orders sent */
+                        OrderRequest.removeCountFiles(
+                            successFiles = successFiles,
+                            sendEvent = { eventData -> showSnackBar(eventData) }
+                        )
+
+                        /** We remove the reference to the order in room database,
+                         * and we fill the list adapter at the end. */
                         OrderRequestCoroutines.removeById(
-                            idList = orArray.mapNotNull { it.orderRequestId },
+                            idList = orArray.mapNotNull { orderRequest -> orderRequest.orderRequestId },
                             onResult = {
                                 fillAdapter(ArrayList())
                             })
+
                     }).execute()
             }
         } catch (ex: Exception) {
@@ -300,19 +322,20 @@ class OutboxActivity : AppCompatActivity() {
     }
 
     private fun removeResetDialog() {
+        val or = currentItem
         val toRemoveReset = when {
-            (adapter?.countChecked() ?: 0) > 0 -> adapter?.getAllChecked()!!
-            adapter?.currentItem() != null -> arrayListOf(adapter!!.currentItem()!!)
+            countChecked > 0 -> allChecked
+            or != null -> arrayListOf(or)
             else -> return
         }
 
         val toRemove: ArrayList<OrderRequest> = ArrayList()
         val toReset: ArrayList<OrderRequest> = ArrayList()
-        for (or in toRemoveReset) {
-            if (or.orderRequestType == OrderRequestType.stockAuditFromDevice) {
-                toRemove.add(or)
+        for (remOrder in toRemoveReset) {
+            if (remOrder.orderRequestType == OrderRequestType.stockAuditFromDevice) {
+                toRemove.add(remOrder)
             } else {
-                toReset.add(or)
+                toReset.add(remOrder)
             }
         }
 
@@ -359,10 +382,11 @@ class OutboxActivity : AppCompatActivity() {
         }
 
         if (!isOk) {
-            makeText(
-                binding.root,
-                getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
-                ERROR
+            showSnackBar(
+                SnackBarEventData(
+                    getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
+                    ERROR
+                )
             )
         }
 
@@ -421,10 +445,11 @@ class OutboxActivity : AppCompatActivity() {
         }
 
         if (!isOk) {
-            makeText(
-                binding.root,
-                getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
-                ERROR
+            showSnackBar(
+                SnackBarEventData(
+                    getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
+                    ERROR
+                )
             )
         }
 
@@ -437,7 +462,7 @@ class OutboxActivity : AppCompatActivity() {
             finish()
         } else {
             val res = getString(R.string.an_error_occurred_while_trying_to_save_the_count)
-            makeText(binding.root, res, ERROR)
+            showSnackBar(SnackBarEventData(res, ERROR))
             android.util.Log.e(this::class.java.simpleName, res)
         }
     }
@@ -458,10 +483,11 @@ class OutboxActivity : AppCompatActivity() {
         if (!temp.any()) {
             temp = getCompletedOrders()
             if (temp.isEmpty()) {
-                makeText(
-                    binding.root,
-                    this.getString(R.string.there_are_no_completed_counts),
-                    SnackBarType.INFO
+                showSnackBar(
+                    SnackBarEventData(
+                        this.getString(R.string.there_are_no_completed_counts),
+                        SnackBarType.INFO
+                    )
                 )
             }
         }
@@ -475,7 +501,7 @@ class OutboxActivity : AppCompatActivity() {
                     // Si el adapter es NULL es porque aún no fue creado.
                     // Por lo tanto, puede ser que los valores de [lastSelected]
                     // sean valores guardados de la instancia anterior y queremos preservarlos.
-                    lastSelected = adapter?.currentItem()
+                    lastSelected = currentItem
                 }
 
                 adapter = OrderRequestAdapter.Builder()
@@ -493,7 +519,7 @@ class OutboxActivity : AppCompatActivity() {
                     // Horrible wait for a full load
                 }
 
-                // Estas variables locales evitar posteriores cambios de estado.
+                // Variables locales para evitar cambios posteriores de estado.
                 val ls = lastSelected
                 val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
@@ -594,41 +620,41 @@ class OutboxActivity : AppCompatActivity() {
         when (id) {
             OrderRequestType.deliveryAudit.id.toInt() -> {
                 if (item.isChecked && !visibleStatus.contains(OrderRequestType.deliveryAudit)) {
-                    adapter!!.addVisibleStatus(OrderRequestType.deliveryAudit)
+                    adapter?.addVisibleStatus(OrderRequestType.deliveryAudit)
                 } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.deliveryAudit)) {
-                    adapter!!.removeVisibleStatus(OrderRequestType.deliveryAudit)
+                    adapter?.removeVisibleStatus(OrderRequestType.deliveryAudit)
                 }
             }
 
             OrderRequestType.prepareOrder.id.toInt() -> {
                 if (item.isChecked && !visibleStatus.contains(OrderRequestType.prepareOrder)) {
-                    adapter!!.addVisibleStatus(OrderRequestType.prepareOrder)
+                    adapter?.addVisibleStatus(OrderRequestType.prepareOrder)
                 } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.prepareOrder)) {
-                    adapter!!.removeVisibleStatus(OrderRequestType.prepareOrder)
+                    adapter?.removeVisibleStatus(OrderRequestType.prepareOrder)
                 }
             }
 
             OrderRequestType.receptionAudit.id.toInt() -> {
                 if (item.isChecked && !visibleStatus.contains(OrderRequestType.receptionAudit)) {
-                    adapter!!.addVisibleStatus(OrderRequestType.receptionAudit)
+                    adapter?.addVisibleStatus(OrderRequestType.receptionAudit)
                 } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.receptionAudit)) {
-                    adapter!!.removeVisibleStatus(OrderRequestType.receptionAudit)
+                    adapter?.removeVisibleStatus(OrderRequestType.receptionAudit)
                 }
             }
 
             OrderRequestType.stockAudit.id.toInt() -> {
                 if (item.isChecked && !visibleStatus.contains(OrderRequestType.stockAudit)) {
-                    adapter!!.addVisibleStatus(OrderRequestType.stockAudit)
+                    adapter?.addVisibleStatus(OrderRequestType.stockAudit)
                 } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAudit)) {
-                    adapter!!.removeVisibleStatus(OrderRequestType.stockAudit)
+                    adapter?.removeVisibleStatus(OrderRequestType.stockAudit)
                 }
             }
 
             OrderRequestType.stockAuditFromDevice.id.toInt() -> {
                 if (item.isChecked && !visibleStatus.contains(OrderRequestType.stockAuditFromDevice)) {
-                    adapter!!.addVisibleStatus(OrderRequestType.stockAuditFromDevice)
+                    adapter?.addVisibleStatus(OrderRequestType.stockAuditFromDevice)
                 } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAuditFromDevice)) {
-                    adapter!!.removeVisibleStatus(OrderRequestType.stockAuditFromDevice)
+                    adapter?.removeVisibleStatus(OrderRequestType.stockAuditFromDevice)
                 }
             }
 
@@ -656,8 +682,8 @@ class OutboxActivity : AppCompatActivity() {
             REQUEST_EXTERNAL_STORAGE -> {
                 // If the request is canceled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    makeText(
-                        binding.root, getString(R.string.cannot_write_to_external_storage), ERROR
+                    showSnackBar(
+                        SnackBarEventData(getString(R.string.cannot_write_to_external_storage), ERROR)
                     )
                 } else {
                     write(orFileName, orJson)

@@ -2,11 +2,15 @@ package com.dacosys.warehouseCounter.ktor.v2.dto.order
 
 import android.os.Parcel
 import android.os.Parcelable
+import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.Log.CREATOR.LOG_LIST_KEY
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestContent.CREATOR.CONTENT_LIST_KEY
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.Package.CREATOR.PACKAGE_LIST_KEY
 import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.io.File
@@ -239,6 +243,20 @@ data class OrderRequest(
                 }
             }
             return orArray
+        }
+
+        fun removeCountFiles(successFiles: ArrayList<String>, sendEvent: (SnackBarEventData) -> Unit) {
+            val isOk = removeOrders(successFiles)
+            if (isOk) {
+                sendEvent(SnackBarEventData(context.getString(R.string.ok), SnackBarType.SUCCESS))
+            } else {
+                sendEvent(
+                    SnackBarEventData(
+                        context.getString(R.string.an_error_occurred_while_deleting_counts),
+                        SnackBarType.ERROR
+                    )
+                )
+            }
         }
 
         fun removeOrders(files: ArrayList<String>): Boolean {

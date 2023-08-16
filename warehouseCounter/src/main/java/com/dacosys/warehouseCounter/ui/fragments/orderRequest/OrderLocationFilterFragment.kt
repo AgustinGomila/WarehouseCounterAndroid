@@ -17,6 +17,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.OrderLocationSelectFilterFragmentBinding
+import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam
 import com.dacosys.warehouseCounter.settings.Preference
 
 
@@ -552,6 +553,65 @@ class OrderLocationFilterFragment : Fragment() {
         settingViewModel.orderLocationSearchByOnlyActive = visibility == View.VISIBLE
     }
     // endregion Visibility functions
+
+    private fun validFilter(): Boolean {
+        return itemCode.isNotEmpty() ||
+                itemDescription.isNotEmpty() ||
+                itemEan.isNotEmpty() ||
+                orderId.isNotEmpty() ||
+                orderExternalId.isNotEmpty() ||
+                warehouse.isNotEmpty() ||
+                warehouseArea.isNotEmpty() ||
+                rack.isNotEmpty()
+    }
+
+    fun getFilters(): ArrayList<ApiFilterParam> {
+        val filter: ArrayList<ApiFilterParam> = arrayListOf()
+
+        if (validFilter()) {
+            if (itemCode.isNotEmpty())
+                filter.add(
+                    ApiFilterParam(
+                        columnName = ApiFilterParam.EXTENSION_ITEM_CODE,
+                        value = itemCode,
+                        like = true
+                    )
+                )
+            if (itemDescription.isNotEmpty())
+                filter.add(
+                    ApiFilterParam(
+                        columnName = ApiFilterParam.EXTENSION_ITEM_DESCRIPTION,
+                        value = itemDescription,
+                        like = true
+                    )
+                )
+            if (itemEan.isNotEmpty())
+                filter.add(
+                    ApiFilterParam(
+                        columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
+                        value = itemEan,
+                        like = true
+                    )
+                )
+            if (orderId.isNotEmpty())
+                filter.add(ApiFilterParam(ApiFilterParam.EXTENSION_ORDER_ID, orderId))
+            if (orderExternalId.isNotEmpty())
+                filter.add(
+                    ApiFilterParam(
+                        columnName = ApiFilterParam.EXTENSION_ORDER_EXTERNAL_ID,
+                        value = orderExternalId,
+                        like = true
+                    )
+                )
+            if (warehouse.isNotEmpty())
+                filter.add(ApiFilterParam(ApiFilterParam.EXTENSION_ORDER_LOCATION_WAREHOUSE_ID, warehouse))
+            if (warehouseArea.isNotEmpty())
+                filter.add(ApiFilterParam(ApiFilterParam.EXTENSION_ORDER_LOCATION_AREA_ID, warehouseArea))
+            if (rack.isNotEmpty())
+                filter.add(ApiFilterParam(ApiFilterParam.EXTENSION_ORDER_LOCATION_RACK_ID, rack))
+        }
+        return filter
+    }
 
     companion object {
 
