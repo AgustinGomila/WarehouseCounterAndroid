@@ -252,7 +252,7 @@
                 android:label="@string/setup_new_ptl"
                 android:windowSoftInputMode="stateHidden|adjustResize"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.ptlOrder.WarehouseAreaSelectActivity"
+                android:name="com.dacosys.warehouseCounter.ui.activities.ptlOrder.LocationSelectActivity"
                 android:configChanges="keyboardHidden|orientation|screenSize"
                 android:excludeFromRecents="true"
                 android:theme="@style/Theme.AppCompat.Translucent"

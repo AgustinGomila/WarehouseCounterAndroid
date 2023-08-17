@@ -37,6 +37,9 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.OrderLocationActivityTopPanelCollapsedBinding
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderLocation
 import com.dacosys.warehouseCounter.ktor.v2.functions.GetOrderLocation
 import com.dacosys.warehouseCounter.misc.ParcelLong
@@ -203,9 +206,9 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         orderLocationFilterFragment.orderId = b.getString(OrderLocationFilterFragment.ARG_ORDER_ID) ?: ""
         orderLocationFilterFragment.orderExternalId =
             b.getString(OrderLocationFilterFragment.ARG_ORDER_EXTERNAL_ID) ?: ""
-        orderLocationFilterFragment.warehouse = b.getString(OrderLocationFilterFragment.ARG_WAREHOUSE) ?: ""
-        orderLocationFilterFragment.warehouseArea = b.getString(OrderLocationFilterFragment.ARG_WAREHOUSE_AREA) ?: ""
-        orderLocationFilterFragment.rack = b.getString(OrderLocationFilterFragment.ARG_RACK) ?: ""
+        orderLocationFilterFragment.warehouse = b.getParcelable(OrderLocationFilterFragment.ARG_WAREHOUSE)
+        orderLocationFilterFragment.warehouseArea = b.getParcelable(OrderLocationFilterFragment.ARG_WAREHOUSE_AREA)
+        orderLocationFilterFragment.rack = b.getParcelable(OrderLocationFilterFragment.ARG_RACK)
         orderLocationFilterFragment.onlyActive = true
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
@@ -617,8 +620,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 filter = filter,
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
                 onFinish = {
-                    if (it.any()) fillAdapter(ArrayList(it))
-                    else showProgressBar(false)
+                    fillAdapter(ArrayList(it))
                 }
             ).execute()
         } catch (ex: java.lang.Exception) {
@@ -629,11 +631,6 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
     private fun fillAdapter(t: ArrayList<OrderLocation>) {
         showProgressBar(true)
-
-        if (!t.any()) {
-            getItems()
-            return
-        }
 
         completeList = t
 
@@ -893,13 +890,16 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         ean: String,
         orderId: String,
         orderExternalId: String,
-        warehouse: String,
-        warehouseArea: String,
-        rack: String,
+        warehouse: Warehouse?,
+        warehouseArea: WarehouseArea?,
+        rack: Rack?,
         onlyActive: Boolean
     ) {
         Handler(Looper.getMainLooper()).postDelayed({
             closeKeyboard(this)
+
+            panelBottomIsExpanded = false
+            setPanels()
         }, 100)
 
         thread {

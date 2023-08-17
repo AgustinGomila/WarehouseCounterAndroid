@@ -11,7 +11,7 @@ data class OrderLocation(
     @SerialName(ORDER_EXTERNAL_ID_KEY) var orderExternalId: String = "",
     @SerialName(ORDER_DESCRIPTION_KEY) var orderDescription: String = "",
     @SerialName(QTY_COLLECTED_KEY) var qtyCollected: Double? = null,
-    @SerialName(ITEM_EXTERNAL_ID_KEY) var itemExternalId: String = "",
+    @SerialName(ITEM_EXTERNAL_ID_KEY) var itemExternalId: String? = null,
     @SerialName(ITEM_DESCRIPTION_KEY) var itemDescription: String = "",
     @SerialName(ITEM_EAN_KEY) var itemEan: String = "",
     @SerialName(WAREHOUSE_ID_KEY) var warehouseId: Long? = null,

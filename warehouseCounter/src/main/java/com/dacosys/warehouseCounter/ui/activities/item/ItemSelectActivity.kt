@@ -117,6 +117,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private var printQtyIsFocused = false
     private var searchTextIsFocused = false
 
+    private var showSelectButton = true
+
     private var multiSelect = false
     private var adapter: ItemRecyclerAdapter? = null
     private var lastSelected: Item? = null
@@ -178,6 +180,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private fun saveBundleValues(b: Bundle) {
         b.putString(ARG_TITLE, title.toString())
+
+        b.putBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
+
         b.putBoolean(ARG_MULTI_SELECT, multiSelect)
         b.putBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
@@ -197,6 +202,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private fun loadBundleValues(b: Bundle) {
         tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
+
+        showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
 
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, multiSelect)
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
@@ -222,6 +229,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
+
+        showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, true)
     }
 
     private lateinit var binding: ItemPrintLabelActivityTopPanelCollapsedBinding
@@ -589,6 +598,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             if (panelBottomIsExpanded) {
                 itemSelectFilterFragment?.refreshTextViews()
             }
+
+            // TODO:  Ocultar el botón de selección.
+            // if (showSelectButton) binding.okButton.visibility = VISIBLE
+            // else binding.okButton.visibility = GONE
         }
     }
 
@@ -1161,6 +1174,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         const val ARG_ITEM_CODE = "itemCode"
         const val ARG_ITEM_CATEGORY = "itemCategory"
         const val ARG_MULTI_SELECT = "multiSelect"
+        const val ARG_SHOW_SELECT_BUTTON = "showSelectButton"
         const val ARG_HIDE_FILTER_PANEL = "hideFilterPanel"
         const val ARG_IDS = "ids"
     }

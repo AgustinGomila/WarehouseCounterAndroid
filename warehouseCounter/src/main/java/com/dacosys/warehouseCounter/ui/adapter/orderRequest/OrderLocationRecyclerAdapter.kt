@@ -370,7 +370,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
             fun isFilterable(filterableItem: OrderLocation, filterString: String): Boolean =
                 (filterableItem.itemDescription.contains(filterString, true) ||
                         filterableItem.itemEan.contains(filterString, true) ||
-                        filterableItem.itemExternalId.contains(filterString, true) ||
+                        filterableItem.itemExternalId.toString().contains(filterString, true) ||
                         filterableItem.orderExternalId.contains(filterString, true) ||
                         filterableItem.orderDescription.contains(filterString, true))
 

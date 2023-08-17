@@ -695,4 +695,6 @@
     <string name="location_catalog">Catálogo de ubicaciones</string>
     <string name="items_catalog">Catálogo de ítems</string>
     <string name="items_and_location_catalog">Ítems y ubicaciones</string>
+    <string name="select_rack">Seleccionar rack</string>
+    <string name="select_warehouse">Seleccionar depósito</string>
 </resources>

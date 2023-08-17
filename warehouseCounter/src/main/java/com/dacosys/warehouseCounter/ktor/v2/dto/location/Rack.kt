@@ -17,7 +17,12 @@ data class Rack(
     @SerialName(MODIFICATION_DATE_KEY) var modificationDate: String = "",
 
     @SerialName(WAREHOUSE_AREA_KEY) var warehouseArea: WarehouseArea? = null,
-) : Parcelable {
+) : Parcelable, Location() {
+
+    override var locId: Long = id
+    override var desc: String = code
+    override var locationType: LocationType = LocationType.RACK
+
     constructor(parcel: Parcel) : this(
         id = parcel.readLong(),
         extId = parcel.readString() ?: "",
@@ -30,6 +35,11 @@ data class Rack(
 
         warehouseArea = parcel.readParcelable(WarehouseArea::class.java.classLoader)
     )
+
+    val warehouseAreaDescription: String
+        get() {
+            return warehouseArea?.description ?: ""
+        }
 
     companion object CREATOR : Parcelable.Creator<Rack> {
         override fun createFromParcel(parcel: Parcel): Rack {

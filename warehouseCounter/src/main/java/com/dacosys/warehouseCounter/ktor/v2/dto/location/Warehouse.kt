@@ -16,7 +16,12 @@ data class Warehouse(
     @SerialName(STATUS_ID_KEY) var statusId: Int = 0,
     @SerialName(WAREHOUSE_AREA_LIST_KEY) var areas: List<WarehouseArea>? = null,
     @SerialName(STATUS_KEY) var status: Status? = null,
-) : Parcelable {
+) : Parcelable, Location() {
+
+    override var locId: Long = id
+    override var desc: String = description
+    override var locationType: LocationType = LocationType.WAREHOUSE
+
     constructor(parcel: Parcel) : this(
         id = parcel.readLong(),
         acronym = parcel.readString() ?: "",

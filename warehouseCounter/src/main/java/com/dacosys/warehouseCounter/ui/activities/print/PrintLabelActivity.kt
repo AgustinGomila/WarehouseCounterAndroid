@@ -42,6 +42,7 @@ class PrintLabelActivity : AppCompatActivity() {
                 val intent = Intent(context, ItemSelectActivity::class.java)
                 intent.putExtra(ItemSelectActivity.ARG_TITLE, getString(R.string.print_code))
                 intent.putExtra(ItemSelectActivity.ARG_MULTI_SELECT, true)
+                intent.putExtra(ItemSelectActivity.ARG_SHOW_SELECT_BUTTON, false)
                 startActivity(intent)
             }
         }

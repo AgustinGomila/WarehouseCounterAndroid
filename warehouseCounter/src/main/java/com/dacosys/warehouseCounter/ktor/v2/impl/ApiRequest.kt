@@ -516,7 +516,7 @@ class ApiRequest {
         val url = URL(apiUrl)
 
         /** Examples:
-         * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[order_id]=123
+         * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[order_location.order_id]=123
          * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[order.external_id][like]=10
          * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[item_id]=10
          * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[item.external_id][like]=40

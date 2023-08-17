@@ -20,7 +20,12 @@ data class WarehouseArea(
     @SerialName(STATUS_KEY) var status: Status? = null,
     @SerialName(PTL_LIST_KEY) var ptlList: List<String>? = null,
 
-    ) : Parcelable {
+    ) : Parcelable, Location() {
+
+    override var locId: Long = id
+    override var desc: String = description
+    override var locationType: LocationType = LocationType.WAREHOUSE_AREA
+
     constructor(parcel: Parcel) : this(
         id = parcel.readLong(),
         externalId = parcel.readString() ?: "",

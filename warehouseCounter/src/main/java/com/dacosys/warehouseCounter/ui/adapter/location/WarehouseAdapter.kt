@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ui.adapter.ptlOrder
+package com.dacosys.warehouseCounter.ui.adapter.location
 
 import android.annotation.SuppressLint
 import android.util.Log
@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
 
@@ -20,12 +20,12 @@ import java.util.*
  */
 
 @Suppress("SpellCheckingInspection")
-class WarehouseAreaAdapter(
+class WarehouseAdapter(
     private var activity: AppCompatActivity,
     private var resource: Int,
-    private var warehouseAreaArray: ArrayList<WarehouseArea>,
-    private var suggestedList: ArrayList<WarehouseArea>
-) : ArrayAdapter<WarehouseArea>(WarehouseCounterApp.context, resource, suggestedList), Filterable {
+    private var warehouseArray: ArrayList<Warehouse>,
+    private var suggestedList: ArrayList<Warehouse>
+) : ArrayAdapter<Warehouse>(WarehouseCounterApp.context, resource, suggestedList), Filterable {
 
     private var dataSetChangedListener: DataSetChangedListener? = null
     private var checkedChangedListener: CheckedChangedListener? = null
@@ -58,10 +58,10 @@ class WarehouseAreaAdapter(
         }
     }
 
-    private fun getIndex(warehouseArea: WarehouseArea): Int {
+    private fun getIndex(warehouse: Warehouse): Int {
         for (i in 0 until count) {
-            val t = (getItem(i) as WarehouseArea)
-            if (t == warehouseArea) {
+            val t = (getItem(i) as Warehouse)
+            if (t == warehouse) {
                 return i
             }
         }
@@ -83,8 +83,8 @@ class WarehouseAreaAdapter(
         return r
     }
 
-    fun getAll(): ArrayList<WarehouseArea> {
-        val r: ArrayList<WarehouseArea> = ArrayList()
+    fun getAll(): ArrayList<Warehouse> {
+        val r: ArrayList<Warehouse> = ArrayList()
         for (i in 0 until count) {
             val t = getItem(i) ?: continue
             r.add(t)
@@ -101,11 +101,11 @@ class WarehouseAreaAdapter(
     }
 
     private var isFilling = false
-    fun setChecked(warehouseAreas: ArrayList<WarehouseArea>, isChecked: Boolean) {
+    fun setChecked(warehouses: ArrayList<Warehouse>, isChecked: Boolean) {
         if (isFilling) return
         isFilling = true
 
-        for (i in warehouseAreas) {
+        for (i in warehouses) {
             setChecked(i, isChecked)
         }
 
@@ -114,17 +114,17 @@ class WarehouseAreaAdapter(
     }
 
     fun setChecked(
-        warehouseArea: WarehouseArea,
+        warehouse: Warehouse,
         isChecked: Boolean,
         suspendRefresh: Boolean = false,
     ) {
-        val position = getIndex(warehouseArea)
+        val position = getIndex(warehouse)
         if (isChecked) {
-            if (!checkedIdArray.contains(warehouseArea.id)) {
-                checkedIdArray.add(warehouseArea.id)
+            if (!checkedIdArray.contains(warehouse.id)) {
+                checkedIdArray.add(warehouse.id)
             }
         } else {
-            checkedIdArray.remove(warehouseArea.id)
+            checkedIdArray.remove(warehouse.id)
         }
 
         if (checkedChangedListener != null) {
@@ -136,12 +136,12 @@ class WarehouseAreaAdapter(
         }
     }
 
-    override fun sort(comparator: Comparator<in WarehouseArea>) {
+    override fun sort(comparator: Comparator<in Warehouse>) {
         super.sort(customComparator)
     }
 
-    private val customComparator = Comparator { o1: WarehouseArea?, o2: WarehouseArea? ->
-        WarehouseAreaComparator().compareNullable(o1, o2)
+    private val customComparator = Comparator { o1: Warehouse?, o2: Warehouse? ->
+        WarehouseComparator().compareNullable(o1, o2)
     }
 
     fun refresh() {
@@ -149,7 +149,7 @@ class WarehouseAreaAdapter(
         dataSetChangedListener?.onDataSetChanged()
     }
 
-    fun setChecked(checkedItems: ArrayList<WarehouseArea>) {
+    fun setChecked(checkedItems: ArrayList<Warehouse>) {
         checkedItems.clear()
         setChecked(checkedItems, true)
     }
@@ -165,7 +165,7 @@ class WarehouseAreaAdapter(
         // Seleccionamos el layout dependiendo si es
         // un row visible u oculto según su AsseStatus.
 
-        val currentLayout: Int = R.layout.warehouse_area_row
+        val currentLayout: Int = R.layout.warehouse_row
 
         if (v == null || v.tag == null) {
             // El view todavía no fue creado, crearlo con el layout correspondiente.
@@ -177,7 +177,7 @@ class WarehouseAreaAdapter(
             // El view ya existe, comprobar que no necesite cambiar de layout.
             if (
             // Row null cambiando...
-                v.tag is String && currentLayout == R.layout.warehouse_area_row) {
+                v.tag is String && currentLayout == R.layout.warehouse_row) {
                 // Ya fue creado, si es un row normal que está siendo seleccionada
                 // o un row expandido que está siendo deseleccionado
                 // debe cambiar de layout, por lo tanto, volver a crearse.
@@ -195,8 +195,8 @@ class WarehouseAreaAdapter(
     private fun createSimpleViewHolder(v: View, holder: SimpleViewHolder) {
         // Holder para los rows de dropdown.
         holder.checkBox = v.findViewById(R.id.checkBox)
-        holder.areaTextView = v.findViewById(R.id.area)
         holder.warehouseTextView = v.findViewById(R.id.warehouse)
+        holder.extIdTextView = v.findViewById(R.id.extId)
 
         if (multiSelect) {
             holder.checkBox?.visibility = View.VISIBLE
@@ -221,25 +221,23 @@ class WarehouseAreaAdapter(
         }
 
         if (position >= 0) {
-            val warehouseArea = getItem(position)
+            val warehouse = getItem(position)
 
-            if (warehouseArea != null) {
-                holder.areaTextView?.text = warehouseArea.description
-                holder.warehouseTextView?.text = warehouseArea.warehouseDescription
+            if (warehouse != null) {
+                holder.warehouseTextView?.text = warehouse.description
+                holder.extIdTextView?.text = warehouse.externalId
 
                 if (holder.checkBox != null) {
                     var isSpeakButtonLongPressed = false
 
-                    val checkChangeListener =
-                        CompoundButton.OnCheckedChangeListener { _, isChecked ->
-                            this.setChecked(warehouseArea, isChecked, true)
-                        }
+                    val checkChangeListener = CompoundButton.OnCheckedChangeListener { _, isChecked ->
+                        this.setChecked(warehouse, isChecked, true)
+                    }
 
-                    val pressHoldListener =
-                        View.OnLongClickListener { // Do something when your hold starts here.
-                            isSpeakButtonLongPressed = true
-                            true
-                        }
+                    val pressHoldListener = View.OnLongClickListener { // Do something when your hold starts here.
+                        isSpeakButtonLongPressed = true
+                        true
+                    }
 
                     val pressTouchListener = View.OnTouchListener { pView, pEvent ->
                         pView.onTouchEvent(pEvent)
@@ -261,7 +259,7 @@ class WarehouseAreaAdapter(
 
                     //Important to remove previous checkedChangedListener before calling setChecked
                     holder.checkBox?.setOnCheckedChangeListener(null)
-                    holder.checkBox?.isChecked = checkedIdArray.contains(warehouseArea.id)
+                    holder.checkBox?.isChecked = checkedIdArray.contains(warehouse.id)
 
                     holder.checkBox?.tag = position
                     holder.checkBox?.setOnLongClickListener(pressHoldListener)
@@ -280,8 +278,8 @@ class WarehouseAreaAdapter(
                 )
 
                 v.setBackgroundColor(white)
-                holder.areaTextView?.setTextColor(black)
                 holder.warehouseTextView?.setTextColor(black)
+                holder.extIdTextView?.setTextColor(black)
             }
         }
 
@@ -296,16 +294,16 @@ class WarehouseAreaAdapter(
         return object : Filter() {
             override fun performFiltering(constraint: CharSequence?): FilterResults {
                 val results = FilterResults()
-                val r: ArrayList<WarehouseArea> = ArrayList()
+                val r: ArrayList<Warehouse> = ArrayList()
 
                 if (constraint != null) {
                     val filterString = constraint.toString().lowercase(Locale.getDefault())
-                    var filterableItem: WarehouseArea
+                    var filterableItem: Warehouse
 
-                    for (i in 0 until warehouseAreaArray.size) {
-                        filterableItem = warehouseAreaArray[i]
+                    for (i in 0 until warehouseArray.size) {
+                        filterableItem = warehouseArray[i]
                         if (filterableItem.description.lowercase(Locale.getDefault())
-                                .contains(filterString) || (filterableItem.warehouseDescription.lowercase(
+                                .contains(filterString) || (filterableItem.externalId.lowercase(
                                 Locale.getDefault()
                             ).contains(filterString))
                         ) {
@@ -324,7 +322,7 @@ class WarehouseAreaAdapter(
                 constraint: CharSequence?, results: FilterResults?,
             ) {
                 suggestedList.clear()
-                suggestedList.addAll(results?.values as ArrayList<WarehouseArea>)
+                suggestedList.addAll(results?.values as ArrayList<Warehouse>)
                 if (results.count > 0) {
                     notifyDataSetChanged()
                 } else {
@@ -338,8 +336,8 @@ class WarehouseAreaAdapter(
 
         var viewHeight = if (Screen.isTablet()) 202 else 153
 
-        class WarehouseAreaComparator : Comparator<WarehouseArea> {
-            fun compareNullable(o1: WarehouseArea?, o2: WarehouseArea?): Int {
+        class WarehouseComparator : Comparator<Warehouse> {
+            fun compareNullable(o1: Warehouse?, o2: Warehouse?): Int {
                 return if (o1 == null || o2 == null) {
                     -1
                 } else {
@@ -347,17 +345,17 @@ class WarehouseAreaAdapter(
                 }
             }
 
-            override fun compare(o1: WarehouseArea, o2: WarehouseArea): Int {
+            override fun compare(o1: Warehouse, o2: Warehouse): Int {
                 return try {
-                    val nameComp = o1.description.compareTo(o2.description, true)
-                    val warehouseDescriptionComp = o1.warehouseDescription.compareTo(
-                        o2.warehouseDescription, true
+                    val descComp = o1.description.compareTo(o2.description, true)
+                    val extIdComp = o1.externalId.compareTo(
+                        o2.externalId, true
                     )
 
-                    // Orden natural: name, warehouseDescription, contactName
-                    when (nameComp) {
-                        0 -> warehouseDescriptionComp
-                        else -> nameComp
+                    // Orden natural: code, externalId
+                    when (descComp) {
+                        0 -> extIdComp
+                        else -> descComp
                     }
                 } catch (ex: Exception) {
                     0
@@ -367,8 +365,8 @@ class WarehouseAreaAdapter(
     }
 
     internal inner class SimpleViewHolder {
-        var areaTextView: CheckedTextView? = null
         var warehouseTextView: CheckedTextView? = null
+        var extIdTextView: CheckedTextView? = null
         var checkBox: CheckBox? = null
     }
 }

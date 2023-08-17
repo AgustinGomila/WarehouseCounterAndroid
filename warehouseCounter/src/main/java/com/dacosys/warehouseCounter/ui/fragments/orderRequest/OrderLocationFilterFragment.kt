@@ -1,6 +1,8 @@
 package com.dacosys.warehouseCounter.ui.fragments.orderRequest
 
+import android.app.Activity.RESULT_OK
 import android.content.Context
+import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.KeyEvent
@@ -11,14 +13,21 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.OrderLocationSelectFilterFragmentBinding
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.LocationType
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam
+import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.settings.Preference
+import com.dacosys.warehouseCounter.ui.activities.ptlOrder.LocationSelectActivity
 
 
 /**
@@ -38,9 +47,9 @@ class OrderLocationFilterFragment : Fragment() {
     var itemEan: String = ""
     var orderId: String = ""
     var orderExternalId: String = ""
-    var warehouse: String = ""
-    var warehouseArea: String = ""
-    var rack: String = ""
+    var warehouse: Warehouse? = null
+    var warehouseArea: WarehouseArea? = null
+    var rack: Rack? = null
     var onlyActive: Boolean = true
 
     // Container Activity must implement this interface
@@ -51,9 +60,9 @@ class OrderLocationFilterFragment : Fragment() {
             ean: String,
             orderId: String,
             orderExternalId: String,
-            warehouse: String,
-            warehouseArea: String,
-            rack: String,
+            warehouse: Warehouse?,
+            warehouseArea: WarehouseArea?,
+            rack: Rack?,
             onlyActive: Boolean,
         )
     }
@@ -79,9 +88,9 @@ class OrderLocationFilterFragment : Fragment() {
         savedInstanceState.putString(ARG_ITEM_EAN, itemEan)
         savedInstanceState.putString(ARG_ORDER_ID, orderId)
         savedInstanceState.putString(ARG_ORDER_EXTERNAL_ID, orderExternalId)
-        savedInstanceState.putString(ARG_WAREHOUSE, warehouse)
-        savedInstanceState.putString(ARG_WAREHOUSE_AREA, warehouseArea)
-        savedInstanceState.putString(ARG_RACK, rack)
+        savedInstanceState.putParcelable(ARG_WAREHOUSE, warehouse)
+        savedInstanceState.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
+        savedInstanceState.putParcelable(ARG_RACK, rack)
         savedInstanceState.putBoolean(ARG_ONLY_ACTIVE, onlyActive)
     }
 
@@ -100,9 +109,9 @@ class OrderLocationFilterFragment : Fragment() {
         itemEan = b.getString(ARG_ITEM_EAN) ?: ""
         orderId = b.getString(ARG_ORDER_ID) ?: ""
         orderExternalId = b.getString(ARG_ORDER_EXTERNAL_ID) ?: ""
-        warehouse = b.getString(ARG_WAREHOUSE) ?: ""
-        warehouseArea = b.getString(ARG_WAREHOUSE_AREA) ?: ""
-        rack = b.getString(ARG_RACK) ?: ""
+        warehouse = b.getParcelable(ARG_WAREHOUSE)
+        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
+        rack = b.getParcelable(ARG_RACK)
         onlyActive = b.getBoolean(ARG_ONLY_ACTIVE)
     }
 
@@ -130,6 +139,7 @@ class OrderLocationFilterFragment : Fragment() {
             loadSavedValues(savedInstanceState)
         }
 
+        // ONLY ACTIVE
         binding.onlyActiveCheckBox.setOnCheckedChangeListener(null)
         binding.onlyActiveCheckBox.setOnCheckedChangeListener { _, isChecked ->
             settingViewModel.orderLocationOnlyActive = isChecked
@@ -137,6 +147,7 @@ class OrderLocationFilterFragment : Fragment() {
             onFilterChanged()
         }
 
+        // CODE
         binding.codeTextView.setOnClickListener {
             enterText(getString(R.string.enter_code), itemCode, getString(R.string.code)) {
                 itemCode = it
@@ -151,6 +162,7 @@ class OrderLocationFilterFragment : Fragment() {
             onFilterChanged()
         }
 
+        // DESCRIPTION
         binding.descriptionTextView.setOnClickListener {
             enterText(getString(R.string.enter_description), itemDescription, getString(R.string.description)) {
                 itemDescription = it
@@ -165,6 +177,7 @@ class OrderLocationFilterFragment : Fragment() {
             onFilterChanged()
         }
 
+        // EAN
         binding.eanTextView.setOnClickListener {
             enterText(getString(R.string.enter_ean), itemEan, getString(R.string.ean)) {
                 itemEan = it
@@ -179,6 +192,7 @@ class OrderLocationFilterFragment : Fragment() {
             onFilterChanged()
         }
 
+        // ORDER ID
         binding.orderTextView.setOnClickListener {
             enterText(getString(R.string.enter_order_id), orderId, getString(R.string.order)) {
                 orderId = it
@@ -193,6 +207,7 @@ class OrderLocationFilterFragment : Fragment() {
             onFilterChanged()
         }
 
+        // ORDER EXTERNAL ID
         binding.orderExternalIdTextView.setOnClickListener {
             enterText(getString(R.string.enter_order_external_id), orderExternalId, getString(R.string.external_id)) {
                 orderExternalId = it
@@ -207,49 +222,98 @@ class OrderLocationFilterFragment : Fragment() {
             onFilterChanged()
         }
 
+        // WAREHOUSE
         binding.warehouseTextView.setOnClickListener {
-            enterText(getString(R.string.enter_warehouse), warehouse, getString(R.string.warehouse)) {
-                warehouse = it
-                setWarehouseText()
-                onFilterChanged()
-            }
+            val intent = Intent(requireActivity(), LocationSelectActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            intent.putExtra(LocationSelectActivity.ARG_LOCATION, warehouse)
+            intent.putExtra(LocationSelectActivity.ARG_LOCATION_TYPE, LocationType.WAREHOUSE)
+            intent.putExtra(LocationSelectActivity.ARG_TITLE, requireContext().getString(R.string.select_warehouse))
+            resultForWarehouseSelect.launch(intent)
         }
         binding.warehouseSearchImageView.setOnClickListener { binding.warehouseTextView.performClick() }
         binding.warehouseClearImageView.setOnClickListener {
-            warehouse = ""
+            warehouse = null
             setWarehouseText()
             onFilterChanged()
         }
 
+        // WAREHOUSE AREA
         binding.areaTextView.setOnClickListener {
-            enterText(getString(R.string.enter_area), warehouseArea, getString(R.string.area)) {
-                warehouseArea = it
-                setAreaText()
-                onFilterChanged()
-            }
+            val intent = Intent(requireActivity(), LocationSelectActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            intent.putExtra(LocationSelectActivity.ARG_LOCATION, warehouseArea)
+            intent.putExtra(LocationSelectActivity.ARG_LOCATION_TYPE, LocationType.WAREHOUSE_AREA)
+            intent.putExtra(LocationSelectActivity.ARG_TITLE, requireContext().getString(R.string.select_area))
+            resultForAreaSelect.launch(intent)
         }
+
         binding.areaSearchImageView.setOnClickListener { binding.areaTextView.performClick() }
         binding.areaClearImageView.setOnClickListener {
-            warehouseArea = ""
+            warehouseArea = null
             setAreaText()
             onFilterChanged()
         }
 
+        // RACK
         binding.rackTextView.setOnClickListener {
-            enterText(getString(R.string.enter_rack), rack, getString(R.string.rack)) {
-                rack = it
-                setRackText()
-                onFilterChanged()
-            }
+            val intent = Intent(requireActivity(), LocationSelectActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            intent.putExtra(LocationSelectActivity.ARG_LOCATION, rack)
+            intent.putExtra(LocationSelectActivity.ARG_LOCATION_TYPE, LocationType.RACK)
+            intent.putExtra(LocationSelectActivity.ARG_TITLE, requireContext().getString(R.string.select_rack))
+            resultForRackSelect.launch(intent)
         }
         binding.rackSearchImageView.setOnClickListener { binding.rackTextView.performClick() }
         binding.rackClearImageView.setOnClickListener {
-            rack = ""
+            rack = null
             setRackText()
             onFilterChanged()
         }
 
         return view
+    }
+
+    private val resultForAreaSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                warehouseArea = data.getParcelableExtra(LocationSelectActivity.ARG_LOCATION)
+                setAreaText()
+                onFilterChanged()
+            }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(requireActivity(), this::class.java.simpleName, ex)
+        }
+    }
+
+    private val resultForRackSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                rack = data.getParcelableExtra(LocationSelectActivity.ARG_LOCATION)
+                setRackText()
+                onFilterChanged()
+            }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(requireActivity(), this::class.java.simpleName, ex)
+        }
+    }
+
+    private val resultForWarehouseSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                warehouse = data.getParcelableExtra(LocationSelectActivity.ARG_LOCATION)
+                setWarehouseText()
+                onFilterChanged()
+            }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(requireActivity(), this::class.java.simpleName, ex)
+        }
     }
 
     private fun showKeyboard(editText: View) {
@@ -409,36 +473,36 @@ class OrderLocationFilterFragment : Fragment() {
 
     private fun setWarehouseText() {
         activity?.runOnUiThread {
-            if (warehouse.isEmpty()) {
+            if (warehouse == null) {
                 binding.warehouseTextView.typeface = Typeface.DEFAULT
                 binding.warehouseTextView.text = getString(R.string.order_location_search_by_warehouse)
             } else {
                 binding.warehouseTextView.typeface = Typeface.DEFAULT_BOLD
-                binding.warehouseTextView.text = itemEan
+                binding.warehouseTextView.text = warehouse?.description
             }
         }
     }
 
     private fun setAreaText() {
         activity?.runOnUiThread {
-            if (warehouseArea.isEmpty()) {
+            if (warehouseArea == null) {
                 binding.areaTextView.typeface = Typeface.DEFAULT
                 binding.areaTextView.text = getString(R.string.order_location_search_by_area)
             } else {
                 binding.areaTextView.typeface = Typeface.DEFAULT_BOLD
-                binding.areaTextView.text = itemEan
+                binding.areaTextView.text = warehouseArea?.description
             }
         }
     }
 
     private fun setRackText() {
         activity?.runOnUiThread {
-            if (rack.isEmpty()) {
+            if (rack == null) {
                 binding.rackTextView.typeface = Typeface.DEFAULT
                 binding.rackTextView.text = getString(R.string.order_location_search_by_rack)
             } else {
                 binding.rackTextView.typeface = Typeface.DEFAULT_BOLD
-                binding.rackTextView.text = itemEan
+                binding.rackTextView.text = rack?.code
             }
         }
     }
@@ -560,9 +624,9 @@ class OrderLocationFilterFragment : Fragment() {
                 itemEan.isNotEmpty() ||
                 orderId.isNotEmpty() ||
                 orderExternalId.isNotEmpty() ||
-                warehouse.isNotEmpty() ||
-                warehouseArea.isNotEmpty() ||
-                rack.isNotEmpty()
+                warehouse != null ||
+                warehouseArea != null ||
+                rack != null
     }
 
     fun getFilters(): ArrayList<ApiFilterParam> {
@@ -572,7 +636,7 @@ class OrderLocationFilterFragment : Fragment() {
             if (itemCode.isNotEmpty())
                 filter.add(
                     ApiFilterParam(
-                        columnName = ApiFilterParam.EXTENSION_ITEM_CODE,
+                        columnName = ApiFilterParam.EXTENSION_ITEM_EXTERNAL_ID,
                         value = itemCode,
                         like = true
                     )
@@ -594,7 +658,12 @@ class OrderLocationFilterFragment : Fragment() {
                     )
                 )
             if (orderId.isNotEmpty())
-                filter.add(ApiFilterParam(ApiFilterParam.EXTENSION_ORDER_ID, orderId))
+                filter.add(
+                    ApiFilterParam(
+                        columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_ORDER_ID,
+                        value = orderId
+                    )
+                )
             if (orderExternalId.isNotEmpty())
                 filter.add(
                     ApiFilterParam(
@@ -603,12 +672,27 @@ class OrderLocationFilterFragment : Fragment() {
                         like = true
                     )
                 )
-            if (warehouse.isNotEmpty())
-                filter.add(ApiFilterParam(ApiFilterParam.EXTENSION_ORDER_LOCATION_WAREHOUSE_ID, warehouse))
-            if (warehouseArea.isNotEmpty())
-                filter.add(ApiFilterParam(ApiFilterParam.EXTENSION_ORDER_LOCATION_AREA_ID, warehouseArea))
-            if (rack.isNotEmpty())
-                filter.add(ApiFilterParam(ApiFilterParam.EXTENSION_ORDER_LOCATION_RACK_ID, rack))
+            if (warehouse != null)
+                filter.add(
+                    ApiFilterParam(
+                        columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_WAREHOUSE_ID,
+                        value = warehouse?.id.toString()
+                    )
+                )
+            if (warehouseArea != null)
+                filter.add(
+                    ApiFilterParam(
+                        columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_AREA_ID,
+                        value = warehouseArea?.id.toString()
+                    )
+                )
+            if (rack != null)
+                filter.add(
+                    ApiFilterParam(
+                        columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_RACK_ID,
+                        value = rack?.id.toString()
+                    )
+                )
         }
         return filter
     }
@@ -636,9 +720,9 @@ class OrderLocationFilterFragment : Fragment() {
             itemEan: String = "",
             orderId: String = "",
             orderExternalId: String = "",
-            warehouse: String = "",
-            warehouseArea: String = "",
-            rack: String = "",
+            warehouse: Warehouse? = null,
+            warehouseArea: WarehouseArea? = null,
+            rack: Rack? = null,
             onlyActive: Boolean = true
         ): OrderLocationFilterFragment {
             val fragment = OrderLocationFilterFragment()
@@ -649,9 +733,9 @@ class OrderLocationFilterFragment : Fragment() {
             if (itemEan.isNotEmpty()) args.putString(ARG_ITEM_EAN, itemEan)
             if (orderId.isNotEmpty()) args.putString(ARG_ORDER_ID, orderId)
             if (orderExternalId.isNotEmpty()) args.putString(ARG_ORDER_EXTERNAL_ID, orderId)
-            if (warehouse.isNotEmpty()) args.putString(ARG_WAREHOUSE, warehouse)
-            if (warehouseArea.isNotEmpty()) args.putString(ARG_WAREHOUSE_AREA, warehouseArea)
-            if (rack.isNotEmpty()) args.putString(ARG_RACK, rack)
+            if (warehouse != null) args.putParcelable(ARG_WAREHOUSE, warehouse)
+            if (warehouseArea != null) args.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
+            if (rack != null) args.putParcelable(ARG_RACK, rack)
             args.putBoolean(ARG_ONLY_ACTIVE, onlyActive)
 
             fragment.arguments = args

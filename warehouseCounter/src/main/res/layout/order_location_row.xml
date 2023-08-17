@@ -18,7 +18,7 @@
             android:layout_height="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toTopOf="parent" android:visibility="visible">
 
         <CheckBox
                 android:id="@+id/checkBox"
@@ -97,7 +97,7 @@
         <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/qtyTextView"
                 android:layout_width="0dp"
-                android:layout_height="24dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
                 android:layout_weight="1"
                 android:gravity="start"
@@ -111,7 +111,8 @@
                 app:autoSizeStepGranularity="1sp"
                 app:autoSizeTextType="uniform"
                 app:layout_constraintTop_toTopOf="parent" app:layout_constraintEnd_toStartOf="@+id/guideline8"
-                android:layout_marginEnd="4dp"/>
+                android:layout_marginEnd="4dp"
+                app:layout_constraintBottom_toTopOf="@+id/descriptionTextView" android:layout_marginBottom="1dp"/>
         <View
                 android:id="@+id/dividerInternalVert"
                 android:layout_width="1dp"
