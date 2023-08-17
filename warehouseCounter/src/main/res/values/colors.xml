@@ -57,6 +57,7 @@
     <color name="status_stock_audit">#FF2196F3</color>
     <color name="status_reception_audit">#FFFF5722</color>
     <color name="status_delivery_audit">#FF4CAF50</color>
+    <color name="status_packaging">#8E24AA</color>
 
     <color name="status_some_qty">#FFF44336</color>
     <color name="status_qty_zero">#FFDFDFDF</color>

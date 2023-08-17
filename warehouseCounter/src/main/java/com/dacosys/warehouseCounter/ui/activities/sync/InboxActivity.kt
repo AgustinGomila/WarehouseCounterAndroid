@@ -434,6 +434,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         colors.add(getColor(R.color.status_stock_audit))
         colors.add(getColor(R.color.status_reception_audit))
         colors.add(getColor(R.color.status_delivery_audit))
+        colors.add(getColor(R.color.status_packaging))
         //endregion Icon colors
 
         for (i in OrderRequestType.getAll()) {
@@ -481,44 +482,52 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         item.isChecked = !item.isChecked
         val visibleStatus = adapter?.visibleStatus ?: ArrayList()
 
-        when (id) {
-            OrderRequestType.deliveryAudit.id.toInt() -> {
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.deliveryAudit)) {
-                    adapter?.addVisibleStatus(OrderRequestType.deliveryAudit)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.deliveryAudit)) {
-                    adapter?.removeVisibleStatus(OrderRequestType.deliveryAudit)
+        when (val ort = OrderRequestType.getById(id.toLong())) {
+            OrderRequestType.deliveryAudit -> {
+                if (item.isChecked && !visibleStatus.contains(ort)) {
+                    adapter?.addVisibleStatus(ort)
+                } else if (!item.isChecked && visibleStatus.contains(ort)) {
+                    adapter?.removeVisibleStatus(ort)
                 }
             }
 
-            OrderRequestType.prepareOrder.id.toInt() -> {
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.prepareOrder)) {
-                    adapter?.addVisibleStatus(OrderRequestType.prepareOrder)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.prepareOrder)) {
-                    adapter?.removeVisibleStatus(OrderRequestType.prepareOrder)
+            OrderRequestType.prepareOrder -> {
+                if (item.isChecked && !visibleStatus.contains(ort)) {
+                    adapter?.addVisibleStatus(ort)
+                } else if (!item.isChecked && visibleStatus.contains(ort)) {
+                    adapter?.removeVisibleStatus(ort)
                 }
             }
 
-            OrderRequestType.receptionAudit.id.toInt() -> {
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.receptionAudit)) {
-                    adapter?.addVisibleStatus(OrderRequestType.receptionAudit)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.receptionAudit)) {
-                    adapter?.removeVisibleStatus(OrderRequestType.receptionAudit)
+            OrderRequestType.receptionAudit -> {
+                if (item.isChecked && !visibleStatus.contains(ort)) {
+                    adapter?.addVisibleStatus(ort)
+                } else if (!item.isChecked && visibleStatus.contains(ort)) {
+                    adapter?.removeVisibleStatus(ort)
                 }
             }
 
-            OrderRequestType.stockAudit.id.toInt() -> {
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.stockAudit)) {
-                    adapter?.addVisibleStatus(OrderRequestType.stockAudit)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAudit)) {
-                    adapter?.removeVisibleStatus(OrderRequestType.stockAudit)
+            OrderRequestType.stockAudit -> {
+                if (item.isChecked && !visibleStatus.contains(ort)) {
+                    adapter?.addVisibleStatus(ort)
+                } else if (!item.isChecked && visibleStatus.contains(ort)) {
+                    adapter?.removeVisibleStatus(ort)
                 }
             }
 
-            OrderRequestType.stockAuditFromDevice.id.toInt() -> {
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.stockAuditFromDevice)) {
-                    adapter?.addVisibleStatus(OrderRequestType.stockAuditFromDevice)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAuditFromDevice)) {
-                    adapter?.removeVisibleStatus(OrderRequestType.stockAuditFromDevice)
+            OrderRequestType.stockAuditFromDevice -> {
+                if (item.isChecked && !visibleStatus.contains(ort)) {
+                    adapter?.addVisibleStatus(ort)
+                } else if (!item.isChecked && visibleStatus.contains(ort)) {
+                    adapter?.removeVisibleStatus(ort)
+                }
+            }
+
+            OrderRequestType.packaging -> {
+                if (item.isChecked && !visibleStatus.contains(ort)) {
+                    adapter?.addVisibleStatus(ort)
+                } else if (!item.isChecked && visibleStatus.contains(ort)) {
+                    adapter?.removeVisibleStatus(ort)
                 }
             }
 
