@@ -253,9 +253,11 @@ class OutboxActivity : AppCompatActivity() {
     // endregion
 
     private fun showDetail() {
+        val id = currentItem?.orderRequestId ?: return
+
         val intent = Intent(context, OrderRequestDetailActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra(OrderRequestDetailActivity.ARG_ID, currentItem?.orderRequestId)
+        intent.putExtra(OrderRequestDetailActivity.ARG_ID, id)
         startActivity(intent)
     }
 
