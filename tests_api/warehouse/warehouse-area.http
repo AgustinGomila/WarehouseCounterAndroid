@@ -1,0 +1,90 @@
+### INDEX
+GET {{server}}/v2/warehouse-area?expand=warehouse,status,ptls
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### VIEW
+GET {{server}}/v2/warehouse-area/view?id=15
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### CREATE
+POST {{server}}/v2/warehouse-area/create
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "external_id": "id 13",
+  "description": "test",
+  "acronym": "A",
+  "status_id": 12,
+  "warehouse_id": 1
+}
+
+### CREATE BAD
+POST {{server}}/v2/warehouse-area/create
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "external_id": "id 13",
+  "description": "test",
+  "acronym": "A",
+  "status_id": 12
+}
+
+### UPDATE
+PUT {{server}}/v2/warehouse-area/update?id=15
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "id": 15,
+  "external_id": "id 1134123531241241",
+  "description": "test",
+  "acronym": "B",
+  "status_id": 12,
+  "warehouse_id": 1
+}
+
+### Barcode defined Fields
+POST {{server}}/v2/warehouse-area/barcode
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "ids": [
+    2
+  ],
+  "barcodeLabelTemplateId": 1,
+  "barcodePrintOps": {
+    "colOffset": 0,
+    "lineEndChar": "\n",
+    "printerName": "my printer",
+    "printerPower": 10,
+    "printerQty": 1,
+    "printerSpeed": 4,
+    "rowOffset": 0
+  }
+}
+
+### Barcode defined Fields
+POST {{server}}/v2/warehouse-area/barcode-code
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "code": "1",
+  "barcodeLabelTemplateId": 1,
+  "barcodePrintOps": {
+    "colOffset": 0,
+    "lineEndChar": "\n",
+    "printerName": "my printer",
+    "printerPower": 10,
+    "printerQty": 1,
+    "printerSpeed": 4,
+    "rowOffset": 0
+  }
+}
+
+###

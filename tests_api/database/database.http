@@ -1,0 +1,13 @@
+# Location
+###
+GET {{server}}/v2/database/location
+Accept: application/json
+
+###
+
+# LocationV2
+###
+GET {{server}}/v2/database/location-v2
+Accept: application/json
+
+###

@@ -1,0 +1,49 @@
+### Index
+GET {{server}}/v2/order-location
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### Index Filter order external
+GET {{server}}/v2/order-location?filter[order.external_id][like]=1234
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### Index Filter order id
+GET {{server}}/v2/order-location?filter[order_location.order_id]=1312
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### Index Filter item description
+GET {{server}}/v2/order-location?filter[item.description][like]=si
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+
+### Index Filter item id
+GET {{server}}/v2/order-location?filter[item_id]=209296
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+
+### Index Filter external_id
+GET {{server}}/v2/order-location?filter[item.external_id][like]=40
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### Index Filter description
+GET {{server}}/v2/order-location?filter[item.description][like]=sie
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+
+### Index Filter rack id
+GET {{server}}/v2/order-location?filter[order_location.rack_id]=1
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### Index Filter warehouse area id
+GET {{server}}/v2/order-location?filter[order_location.warehouse_area_id]=7
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+

@@ -1,0 +1,84 @@
+### INDEX
+GET {{server}}/v2/order-package?expand=status,order
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### INDEX CLEAN
+GET {{server}}/v2/order-package
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### VIEW
+GET {{server}}/v2/order-package/view?id=16
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### CREATE
+POST {{server}}/v2/order-package/create
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "external_id": "6198461893461",
+  "order_id": 14,
+  "code": "CODE123472",
+  "acronym": "A",
+  "status_id": 1
+}
+
+
+### UPDATE
+PUT {{server}}/v2/order-package/update?id=87
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "id": 87,
+  "external_id": "423423423423",
+  "order_id": 14,
+  "code": "CODE12347123122",
+  "acronym": "A",
+  "status_id": 1
+}
+
+### Barcode defined Fields
+POST {{server}}/v2/order-package/barcode
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "ids": [
+    2,
+    3
+  ],
+  "barcodeLabelTemplateId": 1,
+  "barcodePrintOps": {
+    "colOffset": 0,
+    "lineEndChar": "\n",
+    "printerName": "my printer",
+    "printerPower": 10,
+    "printerQty": 1,
+    "printerSpeed": 4,
+    "rowOffset": 0
+  }
+}
+
+
+### Barcode defined Fields
+POST {{server}}/v2/order-package/barcode-code
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "code": "code",
+  "barcodeLabelTemplateId": 1,
+  "barcodePrintOps": {
+    "colOffset": 0,
+    "lineEndChar": "\n",
+    "printerName": "my printer",
+    "printerPower": 10,
+    "printerQty": 1,
+    "printerSpeed": 4,
+    "rowOffset": 0
+  }
+}

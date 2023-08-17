@@ -1,0 +1,49 @@
+
+
+# INDEX
+###
+GET {{server}}/v2/warehouse?expand=warehouseAreas,status
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+###
+
+# VIEW
+###
+GET {{server}}/v2/warehouse/view?id=1
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+# CREATE
+###
+POST {{server}}/v2/warehouse/create
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "external_id": "id 13",
+  "description": "test",
+  "acronym": "A",
+  "status_id": 12,
+  "row_creation_date": "2023-07-14 01:37:58",
+  "row_modification_date": "2023-07-14 01:37:58"
+}
+
+###
+
+# UPDATE
+###
+PUT {{server}}/v2/warehouse/update?id=2
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "id": 2,
+  "external_id": "id 13",
+  "description": "testing modify",
+  "acronym": "A",
+  "status_id": 12,
+  "row_creation_date": "2023-07-14 01:37:58",
+  "row_modification_date": "2023-07-14 01:37:58"
+}
+
+###

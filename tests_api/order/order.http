@@ -1,0 +1,189 @@
+# INDEX
+###
+GET {{server}}/v2/order?expand=orderContents,orderScanLogs,location
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+###
+
+# VIEW
+###
+GET {{server}}/v2/order/view?id=1&expand=orderContents,orderScanLogs,location
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+# CREATE
+###
+POST {{server}}/v2/order/create
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "clientId": 1,
+  "completed": true,
+  "creationDate": "2023-07-13 09:09:58",
+  "description": "Arqueo zona 1",
+  "externalId": "1234",
+  "finishDate": "2023-07-13 09:10:07",
+  "orderRequestId": 64635,
+  "orderTypeDescription": "Arqueo de bodega (desde dispositivo)",
+  "orderTypeId": 5,
+  "resultAllowDiff": true,
+  "resultAllowMod": true,
+  "resultDiffProduct": true,
+  "resultDiffQty": true,
+  "startDate": "2023-07-13 09:09:58",
+  "userId": 7,
+  "zone": "JFJ#*SH",
+  "contents": [
+    {
+      "itemId": 92234,
+      "itemDescription": "Antihumedad Pennsylvania x 5 kg",
+      "itemCodeRead": "7792261006701",
+      "itemEan": "7792261006701",
+      "itemPrice": 1.0,
+      "itemActive": true,
+      "itemExternalId": "2500",
+      "itemCategoryId": 0,
+      "itemLotEnabled": true,
+      "lotId": 2323,
+      "lotCode": "7792261006701",
+      "lotActive": true,
+      "qtyRequested": 0.0,
+      "qtyCollected": 1.0
+    },
+    {
+      "itemId": 92234,
+      "itemDescription": "Item desconocido",
+      "itemCodeRead": "00",
+      "itemEan": "00",
+      "itemPrice": 1.0,
+      "itemActive": true,
+      "itemExternalId": null,
+      "itemCategoryId": 0,
+      "itemLotEnabled": false,
+      "lotId": null,
+      "lotCode": null,
+      "lotActive": true,
+      "qtyRequested": 0.0,
+      "qtyCollected": 4.0
+    }
+  ],
+  "logs": [
+    {
+      "clientId": 1,
+      "userId": 7,
+      "itemId": 92234,
+      "itemDescription": "Antihumedad Pennsylvania x 5 kg",
+      "itemCode": "7792261006701",
+      "scannedCode": "7792261006701",
+      "variationQty": 1.0,
+      "finalQty": 1.0,
+      "date": "13-Jul-2023 21:10:02 +0000"
+    }
+  ],
+  "packages": [
+    {
+      "externalId": "17287481743121",
+      "code": "paquete 1"
+    },
+    {
+      "externalId": "17287481743121",
+      "code": "paquete 2"
+    },
+    {
+      "externalId": "17287481743121",
+      "code": "paquete 3"
+    }
+  ]
+}
+
+###
+
+# UPDATE
+###
+PUT {{server}}/v2/order/update?id=229418
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "id": 2,
+  "external_id": "id 13",
+  "description": "testing modify",
+  "acronym": "A",
+  "status_id": 12,
+  "row_creation_date": "2023-07-14 01:37:58",
+  "row_modification_date": "2023-07-14 01:37:58"
+}
+
+###
+
+
+
+### MOVE
+POST {{server}}/v2/order/move
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "orderRequestId": 75,
+  "warehouseAreaId": 2
+}
+
+###
+
+### MOVE
+POST {{server}}/v2/order/move
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "orderRequestId": 76,
+  "rackId": 5
+}
+
+###
+
+### MOVE
+POST {{server}}/v2/order/move
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "orderRequestId": 1302,
+  "rackId": 3
+}
+
+###
+
+
+
+###
+# Barcode Defined Fields
+###
+GET {{server}}/v2/order/defined-fields
+Authorization: Basic {{username}} {{password}}
+
+###
+# Barcode
+###
+POST {{server}}/v2/order/barcode
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "ids": [
+    2,
+    3
+  ],
+  "barcodeLabelTemplateId": 1,
+  "barcodePrintOps": {
+    "colOffset": 0,
+    "lineEndChar": "\n",
+    "printerName": "my printer",
+    "printerPower": 10,
+    "printerQty": 1,
+    "printerSpeed": 4,
+    "rowOffset": 0
+  }
+}
