@@ -48,8 +48,13 @@ class CreateOrder(
 
         val startTime = System.currentTimeMillis()
         while (!isDone) {
-            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong())
+            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong()) {
+                sendEvent(
+                    context.getString(R.string.connection_timeout),
+                    SnackBarType.ERROR
+                )
                 isDone = true
+            }
         }
 
         if (errorOccurred) {

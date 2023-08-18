@@ -179,15 +179,18 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         if (all.any()) {
             var founded = false
             for (a in all) {
-                if (a.desc.startsWith(binding.autoCompleteTextView.text.toString().trim(), true)) {
+                val desc = a.description()
+                if (desc.startsWith(binding.autoCompleteTextView.text.toString().trim(), true)) {
                     location = a
                     founded = true
                     break
                 }
             }
+
             if (!founded) {
                 for (a in all) {
-                    if (a.desc.contains(binding.autoCompleteTextView.text.toString().trim(), true)) {
+                    val desc = a.description()
+                    if (desc.contains(binding.autoCompleteTextView.text.toString().trim(), true)) {
                         location = a
                         break
                     }
@@ -220,7 +223,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
                         binding.autoCompleteTextView.text.toString()
                     }
                 } else {
-                    location?.desc ?: ""
+                    location?.description() ?: ""
                 }
             )
 

@@ -22,9 +22,9 @@ data class WarehouseArea(
 
     ) : Parcelable, Location() {
 
-    override var locId: Long = id
-    override var desc: String = description
-    override var locationType: LocationType = LocationType.WAREHOUSE_AREA
+    override fun id(): Long = id
+    override fun description(): String = description
+    override fun locationType(): LocationType = LocationType.WAREHOUSE_AREA
 
     constructor(parcel: Parcel) : this(
         id = parcel.readLong(),

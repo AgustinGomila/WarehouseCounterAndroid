@@ -19,9 +19,9 @@ data class Rack(
     @SerialName(WAREHOUSE_AREA_KEY) var warehouseArea: WarehouseArea? = null,
 ) : Parcelable, Location() {
 
-    override var locId: Long = id
-    override var desc: String = code
-    override var locationType: LocationType = LocationType.RACK
+    override fun id(): Long = id
+    override fun description(): String = code
+    override fun locationType(): LocationType = LocationType.RACK
 
     constructor(parcel: Parcel) : this(
         id = parcel.readLong(),

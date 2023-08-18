@@ -18,9 +18,9 @@ data class Warehouse(
     @SerialName(STATUS_KEY) var status: Status? = null,
 ) : Parcelable, Location() {
 
-    override var locId: Long = id
-    override var desc: String = description
-    override var locationType: LocationType = LocationType.WAREHOUSE
+    override fun id(): Long = id
+    override fun description(): String = description
+    override fun locationType(): LocationType = LocationType.WAREHOUSE
 
     constructor(parcel: Parcel) : this(
         id = parcel.readLong(),

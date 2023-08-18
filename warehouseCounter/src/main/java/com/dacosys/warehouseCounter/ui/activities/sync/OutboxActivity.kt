@@ -617,68 +617,24 @@ class OutboxActivity : AppCompatActivity() {
             return true
         }
 
+        val it = OrderRequestType.getById(id.toLong())
+        if (it == OrderRequestType.notDefined) {
+            return false
+        }
+
         item.isChecked = !item.isChecked
-        val visibleStatus = adapter?.visibleStatus ?: ArrayList()
+        var visibleStatus = adapter?.visibleStatus ?: ArrayList()
 
-        when (val ort = OrderRequestType.getById(id.toLong())) {
-            OrderRequestType.deliveryAudit -> {
-                if (item.isChecked && !visibleStatus.contains(ort)) {
-                    adapter?.addVisibleStatus(ort)
-                } else if (!item.isChecked && visibleStatus.contains(ort)) {
-                    adapter?.removeVisibleStatus(ort)
-                }
-            }
-
-            OrderRequestType.prepareOrder -> {
-                if (item.isChecked && !visibleStatus.contains(ort)) {
-                    adapter?.addVisibleStatus(ort)
-                } else if (!item.isChecked && visibleStatus.contains(ort)) {
-                    adapter?.removeVisibleStatus(ort)
-                }
-            }
-
-            OrderRequestType.receptionAudit -> {
-                if (item.isChecked && !visibleStatus.contains(ort)) {
-                    adapter?.addVisibleStatus(ort)
-                } else if (!item.isChecked && visibleStatus.contains(ort)) {
-                    adapter?.removeVisibleStatus(ort)
-                }
-            }
-
-            OrderRequestType.stockAudit -> {
-                if (item.isChecked && !visibleStatus.contains(ort)) {
-                    adapter?.addVisibleStatus(ort)
-                } else if (!item.isChecked && visibleStatus.contains(ort)) {
-                    adapter?.removeVisibleStatus(ort)
-                }
-            }
-
-            OrderRequestType.stockAuditFromDevice -> {
-                if (item.isChecked && !visibleStatus.contains(ort)) {
-                    adapter?.addVisibleStatus(ort)
-                } else if (!item.isChecked && visibleStatus.contains(ort)) {
-                    adapter?.removeVisibleStatus(ort)
-                }
-            }
-
-            OrderRequestType.packaging -> {
-                if (item.isChecked && !visibleStatus.contains(ort)) {
-                    adapter?.addVisibleStatus(ort)
-                } else if (!item.isChecked && visibleStatus.contains(ort)) {
-                    adapter?.removeVisibleStatus(ort)
-                }
-            }
-
-            else -> {
-                return super.onOptionsItemSelected(item)
-            }
+        if (item.isChecked && !visibleStatus.contains(it)) {
+            adapter?.addVisibleStatus(it)
+        } else if (!item.isChecked && visibleStatus.contains(it)) {
+            adapter?.removeVisibleStatus(it)
         }
 
         // Guardar los valores en las preferencias
+        visibleStatus = adapter?.visibleStatus ?: ArrayList()
         val set = HashSet<String>()
-        for (i in visibleStatus) {
-            set.add(i.id.toString())
-        }
+        visibleStatus.mapTo(set) { it.id.toString() }
         settingViewModel.orderRequestVisibleStatus = set
 
         return true

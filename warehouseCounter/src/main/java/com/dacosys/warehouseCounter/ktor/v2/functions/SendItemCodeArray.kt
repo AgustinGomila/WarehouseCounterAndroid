@@ -1,11 +1,14 @@
 package com.dacosys.warehouseCounter.ktor.v2.functions
 
+import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.ktor.v2.dto.item.ItemCodePayload
 import com.dacosys.warehouseCounter.ktor.v2.dto.item.ItemCodeResponse
 import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 
 class SendItemCodeArray
 /**
@@ -50,6 +53,12 @@ class SendItemCodeArray
         val startTime = System.currentTimeMillis()
         while (!isDone) {
             if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong()) {
+                onEvent(
+                    SnackBarEventData(
+                        WarehouseCounterApp.context.getString(R.string.connection_timeout),
+                        SnackBarType.ERROR
+                    )
+                )
                 isDone = true
             }
         }
