@@ -248,10 +248,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val itemId = orc.itemId ?: 0
         if (itemId <= 0 || orc.lotEnabled != true) return
 
-        val tLot = lastRegexResult?.lot ?: orc.lotId?.toString() ?: ""
-        if (tLot.isNotEmpty()) {
+        val lotIdStr = lastRegexResult?.lot ?: orc.lotId?.toString() ?: ""
+        if (lotIdStr.isNotEmpty()) {
             lastRegexResult = null
-            setLotCode(orc = orc, lotId = tLot)
+            setLotCode(orc = orc, lotCode = lotIdStr)
         } else {
             lotCodeDialog(orc)
         }
@@ -958,7 +958,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         val intent = Intent(context, ItemSelectActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-
         intent.putExtra(ARG_TITLE, context.getString(R.string.select_item))
         intent.putExtra(ItemSelectActivity.ARG_MULTI_SELECT, false)
         resultForItemSelect.launch(intent)
@@ -970,38 +969,31 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val items: ArrayList<ParcelLong> =
-                        data.getParcelableArrayListExtra(ItemSelectActivity.ARG_IDS) ?: return@registerForActivityResult
+                        data.getParcelableArrayListExtra(ItemSelectActivity.ARG_IDS) ?: arrayListOf()
 
-                    if (items.isEmpty()) return@registerForActivityResult
-
-                    ItemCoroutines.getById(items.first().value) { it2 ->
-                        if (it2 == null) return@getById
-
-                        try {
-                            addOrc(OrderRequestContent().apply {
-                                itemId = it2.itemId
-                                itemDescription = it2.description
-                                ean = it2.ean
-                                price = it2.price?.toDouble()
-                                itemActive = it2.active == 1
-                                externalId = it2.externalId
-                                itemCategoryId = it2.itemCategoryId
-                                lotEnabled = it2.lotEnabled == 1
-                                qtyCollected = 0.toDouble()
-                                qtyRequested = 0.toDouble()
-                            })
-                        } catch (ex: Exception) {
-                            val res =
-                                context.getString(R.string.an_error_occurred_while_trying_to_add_the_item)
-                            showSnackBar(SnackBarEventData(res, ERROR))
-                            android.util.Log.e(this::class.java.simpleName, res)
+                    if (items.isNotEmpty()) {
+                        ItemCoroutines.getById(items.first().value) { it2 ->
+                            if (it2 != null) {
+                                addOrc(OrderRequestContent().apply {
+                                    itemId = it2.itemId
+                                    itemDescription = it2.description
+                                    ean = it2.ean
+                                    price = it2.price?.toDouble()
+                                    itemActive = it2.active == 1
+                                    externalId = it2.externalId
+                                    itemCategoryId = it2.itemCategoryId
+                                    lotEnabled = it2.lotEnabled == 1
+                                    qtyCollected = 0.toDouble()
+                                    qtyRequested = 0.toDouble()
+                                })
+                            }
                         }
+                        gentlyReturn()
                     }
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex)
-            } finally {
                 gentlyReturn()
             }
         }
@@ -1376,7 +1368,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val code = data.getStringExtra(EnterCodeActivity.ARG_CODE) ?: ""
                     val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(EnterCodeActivity.ARG_ORC))
-                    setLotCode(orc = orc, lotId = code)
+                    setLotCode(orc = orc, lotCode = code)
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -1540,34 +1532,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
         }
 
-    private fun setLotCode(orc: OrderRequestContent, lotId: String) {
-        val lotCode = orc.codeRead
-        if (lotCode.isEmpty()) {
-            return
-        }
-
-        val longLotId: Long
-        try {
-            longLotId = lotId.toLong()
-        } catch (ex: Exception) {
-            return
-        }
-
-        if (longLotId < 0) return
+    private fun setLotCode(orc: OrderRequestContent, lotCode: String) {
+        if (lotCode.isEmpty()) return
 
         val itemId = orc.itemId ?: return
-        val t = adapter?.fullList?.firstOrNull { it.itemId == itemId } ?: return
 
-        if (equals(t.lotId, longLotId)) {
-            // ¡Encontrado, volver!
-            return
-        }
-
-        if (equals(t, orc)) {
-            t.lotId = longLotId
-            t.lotCode = lotCode
-            t.lotActive = true
-        }
+        adapter?.updateLotCode(itemId, lotCode)
     }
 
     private fun setDescription(

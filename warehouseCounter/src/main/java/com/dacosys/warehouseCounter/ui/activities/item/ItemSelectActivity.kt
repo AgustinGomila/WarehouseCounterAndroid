@@ -98,7 +98,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         adapter?.refreshListeners()
         adapter?.refreshImageControlListeners()
-        itemSelectFilterFragment?.onDestroy()
+        filterFragment?.onDestroy()
         printLabelFragment?.onDestroy()
     }
 
@@ -125,6 +125,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private var firstVisiblePos: Int? = null
     private var currentScrollPosition: Int = 0
 
+    private var completeList: ArrayList<Item> = ArrayList()
+    private var checkedIdArray: ArrayList<Long> = ArrayList()
+
     // Se usa para saber si estamos en onStart luego de onCreate
     private var fillRequired = false
 
@@ -132,11 +135,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private var panelTopIsExpanded = false
 
     private var hideFilterPanel = false
-
     private var searchText: String = ""
-
-    private var completeList: ArrayList<Item> = ArrayList()
-    private var checkedIdArray: ArrayList<Long> = ArrayList()
 
     private val menuItemShowImages = 9999
     private var showImages
@@ -168,7 +167,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             return adapter?.currentItem()
         }
 
-    private var itemSelectFilterFragment: ItemSelectFilterFragment? = null
+    private var filterFragment: ItemSelectFilterFragment? = null
     private var printLabelFragment: PrintLabelFragment? = null
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
@@ -224,8 +223,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
-        itemSelectFilterFragment?.itemCode = b.getString(ARG_ITEM_CODE) ?: ""
-        itemSelectFilterFragment?.itemCategory = Parcels.unwrap<ItemCategory>(b.getParcelable(ARG_ITEM_CATEGORY))
+        filterFragment?.itemCode = b.getString(ARG_ITEM_CODE) ?: ""
+        filterFragment?.itemCategory = Parcels.unwrap<ItemCategory>(b.getParcelable(ARG_ITEM_CATEGORY))
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
@@ -255,8 +254,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         // Para el llenado en el onStart siguiente de onCreate
         fillRequired = true
 
-        itemSelectFilterFragment =
-            supportFragmentManager.findFragmentById(R.id.filterFragment) as ItemSelectFilterFragment
+        filterFragment = supportFragmentManager.findFragmentById(R.id.filterFragment) as ItemSelectFilterFragment
         printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
         summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
         searchTextFragment = supportFragmentManager.findFragmentById(R.id.searchTextFragment) as SearchTextFragment
@@ -271,7 +269,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         title = tempTitle
 
-        itemSelectFilterFragment?.setListener(this)
+        filterFragment?.setListener(this)
         printLabelFragment?.setListener(this)
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
@@ -617,7 +615,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             }
 
             if (panelBottomIsExpanded) {
-                itemSelectFilterFragment?.refreshTextViews()
+                filterFragment?.refreshTextViews()
             }
 
             // TODO:  Ocultar el botón de selección.
@@ -633,7 +631,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     private fun getItems() {
-        val fr = itemSelectFilterFragment ?: return
+        val fr = filterFragment ?: return
 
         val itemCode = fr.itemCode
         val itemCategory = fr.itemCategory
@@ -850,7 +848,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         // Opciones de visibilidad del menú
         val allControls = SettingsRepository.getAllSelectItemVisibleControls()
-        val visibleFilters = itemSelectFilterFragment?.getVisibleFilters() ?: ArrayList()
+        val visibleFilters = filterFragment?.getVisibleFilters() ?: ArrayList()
         allControls.forEach { p ->
             menu.add(0, p.key.hashCode(), menu.size(), p.description)
                 .setChecked(visibleFilters.contains(p)).isCheckable = true
@@ -947,11 +945,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             }
 
             settingRepository.selectItemSearchByItemEan.key.hashCode() -> {
-                itemSelectFilterFragment?.setEanDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment?.setEanDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
 
             settingRepository.selectItemSearchByItemCategory.key.hashCode() -> {
-                itemSelectFilterFragment?.setCategoryVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment?.setCategoryVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
 
             else -> return super.onOptionsItemSelected(item)
@@ -1002,7 +1000,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         if (pos != NO_POSITION) {
             adapter?.selectItem(item)
         } else {
-            itemSelectFilterFragment?.itemCode = item.ean
+            filterFragment?.itemCode = item.ean
             thread {
                 completeList = arrayListOf(item)
                 checkedIdArray.clear()

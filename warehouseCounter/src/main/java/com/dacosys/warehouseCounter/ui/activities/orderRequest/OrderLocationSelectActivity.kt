@@ -87,7 +87,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         }
 
         adapter?.refreshListeners()
-        orderLocationFilterFragment.onDestroy()
+        filterFragment.onDestroy()
         printLabelFragment.onDestroy()
     }
 
@@ -148,7 +148,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             return adapter?.currentItem()
         }
 
-    private lateinit var orderLocationFilterFragment: OrderLocationFilterFragment
+    private lateinit var filterFragment: OrderLocationFilterFragment
     private lateinit var printLabelFragment: PrintLabelFragment
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
@@ -199,17 +199,15 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.order_location)
 
-        orderLocationFilterFragment.itemCode = b.getString(OrderLocationFilterFragment.ARG_ITEM_CODE) ?: ""
-        orderLocationFilterFragment.itemDescription =
-            b.getString(OrderLocationFilterFragment.ARG_ITEM_DESCRIPTION) ?: ""
-        orderLocationFilterFragment.itemEan = b.getString(OrderLocationFilterFragment.ARG_ITEM_EAN) ?: ""
-        orderLocationFilterFragment.orderId = b.getString(OrderLocationFilterFragment.ARG_ORDER_ID) ?: ""
-        orderLocationFilterFragment.orderExternalId =
-            b.getString(OrderLocationFilterFragment.ARG_ORDER_EXTERNAL_ID) ?: ""
-        orderLocationFilterFragment.warehouse = b.getParcelable(OrderLocationFilterFragment.ARG_WAREHOUSE)
-        orderLocationFilterFragment.warehouseArea = b.getParcelable(OrderLocationFilterFragment.ARG_WAREHOUSE_AREA)
-        orderLocationFilterFragment.rack = b.getParcelable(OrderLocationFilterFragment.ARG_RACK)
-        orderLocationFilterFragment.onlyActive = true
+        filterFragment.itemCode = b.getString(OrderLocationFilterFragment.ARG_ITEM_CODE) ?: ""
+        filterFragment.itemDescription = b.getString(OrderLocationFilterFragment.ARG_ITEM_DESCRIPTION) ?: ""
+        filterFragment.itemEan = b.getString(OrderLocationFilterFragment.ARG_ITEM_EAN) ?: ""
+        filterFragment.orderId = b.getString(OrderLocationFilterFragment.ARG_ORDER_ID) ?: ""
+        filterFragment.orderExternalId = b.getString(OrderLocationFilterFragment.ARG_ORDER_EXTERNAL_ID) ?: ""
+        filterFragment.warehouse = b.getParcelable(OrderLocationFilterFragment.ARG_WAREHOUSE)
+        filterFragment.warehouseArea = b.getParcelable(OrderLocationFilterFragment.ARG_WAREHOUSE_AREA)
+        filterFragment.rack = b.getParcelable(OrderLocationFilterFragment.ARG_RACK)
+        filterFragment.onlyActive = true
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
@@ -237,8 +235,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         // Para el llenado en el onStart siguiente de onCreate
         fillRequired = true
 
-        orderLocationFilterFragment =
-            supportFragmentManager.findFragmentById(R.id.filterFragment) as OrderLocationFilterFragment
+        filterFragment = supportFragmentManager.findFragmentById(R.id.filterFragment) as OrderLocationFilterFragment
         printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
         summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
         searchTextFragment = supportFragmentManager.findFragmentById(R.id.searchTextFragment) as SearchTextFragment
@@ -253,7 +250,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
         title = tempTitle
 
-        orderLocationFilterFragment.setListener(this)
+        filterFragment.setListener(this)
         printLabelFragment.setListener(this)
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
@@ -465,18 +462,35 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         adapter?.refreshFilter(FilterOptions(searchText))
     }
 
+    private val layoutBothPanelsExpanded: Int
+        get() {
+            return R.layout.order_location_activity
+        }
+
+    private val layoutBothPanelsCollapsed: Int
+        get() {
+            return R.layout.order_location_activity_both_panels_collapsed
+        }
+
+    private val layoutTopPanelCollapsed: Int
+        get() {
+            return R.layout.order_location_activity_top_panel_collapsed
+        }
+
+    private val layoutBottomPanelCollapsed: Int
+        get() {
+            return R.layout.order_location_activity_bottom_panel_collapsed
+        }
+
     private fun setPanels() {
         runOnUiThread {
             val currentLayout = ConstraintSet()
             if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) currentLayout.load(this, R.layout.order_location_activity)
-                else currentLayout.load(this, R.layout.order_location_activity_top_panel_collapsed)
+                if (panelTopIsExpanded) currentLayout.load(this, layoutBothPanelsExpanded)
+                else currentLayout.load(this, layoutTopPanelCollapsed)
             } else {
-                if (panelTopIsExpanded) currentLayout.load(
-                    this,
-                    R.layout.order_location_activity_bottom_panel_collapsed
-                )
-                else currentLayout.load(this, R.layout.order_location_activity_both_panels_collapsed)
+                if (panelTopIsExpanded) currentLayout.load(this, layoutBottomPanelCollapsed)
+                else currentLayout.load(this, layoutBothPanelsCollapsed)
             }
 
             currentLayout.applyTo(binding.orderLocation)
@@ -507,11 +521,11 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
             val nextLayout = ConstraintSet()
             if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_location_activity_bottom_panel_collapsed)
-                else nextLayout.load(this, R.layout.order_location_activity_both_panels_collapsed)
+                if (panelTopIsExpanded) nextLayout.load(this, layoutBottomPanelCollapsed)
+                else nextLayout.load(this, layoutBothPanelsCollapsed)
             } else {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_location_activity)
-                else nextLayout.load(this, R.layout.order_location_activity_top_panel_collapsed)
+                if (panelTopIsExpanded) nextLayout.load(this, layoutBothPanelsExpanded)
+                else nextLayout.load(this, layoutTopPanelCollapsed)
             }
 
             panelBottomIsExpanded = !panelBottomIsExpanded
@@ -551,11 +565,11 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
             val nextLayout = ConstraintSet()
             if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_location_activity_top_panel_collapsed)
-                else nextLayout.load(this, R.layout.order_location_activity)
+                if (panelTopIsExpanded) nextLayout.load(this, layoutTopPanelCollapsed)
+                else nextLayout.load(this, layoutBothPanelsExpanded)
             } else {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_location_activity_both_panels_collapsed)
-                else nextLayout.load(this, R.layout.order_location_activity_bottom_panel_collapsed)
+                if (panelTopIsExpanded) nextLayout.load(this, layoutBothPanelsCollapsed)
+                else nextLayout.load(this, layoutBottomPanelCollapsed)
             }
 
             panelTopIsExpanded = !panelTopIsExpanded
@@ -589,7 +603,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             }
 
             if (panelBottomIsExpanded) {
-                orderLocationFilterFragment.refreshTextViews()
+                filterFragment.refreshTextViews()
             }
         }
     }
@@ -604,7 +618,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         // Limpiamos los ítems marcados
         checkedIdArray.clear()
 
-        val filter = orderLocationFilterFragment.getFilters()
+        val filter = filterFragment.getFilters()
         if (!filter.any()) {
             showProgressBar(false)
             return
@@ -703,9 +717,8 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
@@ -719,7 +732,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             return
         }
 
-        orderLocationFilterFragment.itemEan = scanCode
+        filterFragment.itemEan = scanCode
         getItems()
     }
 
@@ -763,7 +776,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
         // Opciones de visibilidad del menú
         val allControls = SettingsRepository.getAllSelectOrderLocationVisibleControls()
-        val visibleFilters = orderLocationFilterFragment.getVisibleFilters()
+        val visibleFilters = filterFragment.getVisibleFilters()
         allControls.forEach { p ->
             menu.add(0, p.key.hashCode(), menu.size(), p.description)
                 .setChecked(visibleFilters.contains(p)).isCheckable = true
@@ -848,35 +861,35 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         item.isChecked = !item.isChecked
         when (id) {
             settingRepository.orderLocationSearchByItemDescription.key.hashCode() -> {
-                orderLocationFilterFragment.setDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment.setDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
 
             settingRepository.orderLocationSearchByItemEan.key.hashCode() -> {
-                orderLocationFilterFragment.setEanVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment.setEanVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
 
             settingRepository.orderLocationSearchByItemCode.key.hashCode() -> {
-                orderLocationFilterFragment.setCodeVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment.setCodeVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
 
             settingRepository.orderLocationSearchByOrderId.key.hashCode() -> {
-                orderLocationFilterFragment.setOrderIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment.setOrderIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
 
             settingRepository.orderLocationSearchByOrderExtId.key.hashCode() -> {
-                orderLocationFilterFragment.setOrderExtIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment.setOrderExtIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
 
             settingRepository.orderLocationSearchByWarehouse.key.hashCode() -> {
-                orderLocationFilterFragment.setWarehouseVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment.setWarehouseVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
 
             settingRepository.orderLocationSearchByArea.key.hashCode() -> {
-                orderLocationFilterFragment.setAreaVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment.setAreaVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
 
             settingRepository.orderLocationSearchByRack.key.hashCode() -> {
-                orderLocationFilterFragment.setRackVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment.setRackVisibility(if (item.isChecked) View.VISIBLE else GONE)
             }
 
             else -> return super.onOptionsItemSelected(item)

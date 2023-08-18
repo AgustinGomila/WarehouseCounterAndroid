@@ -33,7 +33,7 @@ class PrintLabelActivity : AppCompatActivity() {
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        title = getString(R.string.items_and_location_catalog)
+        title = getString(R.string.print_labels)
 
         binding.itemButton.setOnClickListener {
             if (!rejectNewInstances) {
@@ -48,6 +48,18 @@ class PrintLabelActivity : AppCompatActivity() {
         }
 
         binding.locationButton.setOnClickListener {
+            if (!rejectNewInstances) {
+                // TODO:  Impresión de etiquetas de áreas y racks
+                // rejectNewInstances = true
+
+                // val intent = Intent(baseContext, WarehouseAreaPrintLabelActivity::class.java)
+                // intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                // intent.putExtra("multiSelect", true)
+                // startActivity(intent)
+            }
+        }
+
+        binding.orderButton.setOnClickListener {
             if (!rejectNewInstances) {
                 // TODO:  Impresión de etiquetas de áreas y racks
                 // rejectNewInstances = true

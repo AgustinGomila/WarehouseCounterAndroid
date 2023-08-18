@@ -698,4 +698,6 @@
     <string name="select_rack">Seleccionar rack</string>
     <string name="select_warehouse">Seleccionar depósito</string>
     <string name="connection_timeout">Tiempo de espera superado</string>
+    <string name="order_catalog">Pedidos</string>
+    <string name="locations">Ubicaciones</string>
 </resources>

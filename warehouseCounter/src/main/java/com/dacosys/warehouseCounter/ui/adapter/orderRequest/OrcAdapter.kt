@@ -640,6 +640,28 @@ class OrcAdapter private constructor(builder: Builder) :
         }
     }
 
+    fun updateLotCode(itemId: Long, lotCode: String) {
+        val content = fullList.firstOrNull { it.itemId == itemId } ?: return
+        val index = getIndexById(content.itemId ?: -1)
+
+        val longLotId = try {
+            lotCode.toLong()
+        } catch (ex: Exception) {
+            0L
+        }
+
+        content.lotCode = lotCode
+        content.lotId = longLotId
+        content.lotActive = true
+
+        submitList(fullList) {
+            notifyItemChanged(index)
+
+            // Seleccionamos el ítem y hacemos scroll hasta él.
+            selectItem(content)
+        }
+    }
+
     fun updateQtyCollected(tempOrc: OrderRequestContent?, qtyCollected: Double) {
         val orc = tempOrc ?: return
         val content = fullList.firstOrNull { it == orc } ?: return
