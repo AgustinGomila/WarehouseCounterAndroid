@@ -472,18 +472,39 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         finish()
     }
 
+    private val layoutBothPanelsExpanded: Int
+        get() {
+            return if (showSelectButton) R.layout.item_print_label_activity
+            else R.layout.item_print_label_activity_wo_select_button
+        }
+
+    private val layoutBothPanelsCollapsed: Int
+        get() {
+            return if (showSelectButton) R.layout.item_print_label_activity_both_panels_collapsed
+            else R.layout.item_print_label_activity_both_panels_collapsed_wo_select_button
+        }
+
+    private val layoutTopPanelCollapsed: Int
+        get() {
+            return if (showSelectButton) R.layout.item_print_label_activity_top_panel_collapsed
+            else R.layout.item_print_label_activity_top_panel_collapsed_wo_select_button
+        }
+
+    private val layoutBottomPanelCollapsed: Int
+        get() {
+            return if (showSelectButton) R.layout.item_print_label_activity_bottom_panel_collapsed
+            else R.layout.item_print_label_activity_bottom_panel_collapsed_wo_select_button
+        }
+
     private fun setPanels() {
         runOnUiThread {
             val currentLayout = ConstraintSet()
             if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) currentLayout.load(this, R.layout.item_print_label_activity)
-                else currentLayout.load(this, R.layout.item_print_label_activity_top_panel_collapsed)
+                if (panelTopIsExpanded) currentLayout.load(this, layoutBothPanelsExpanded)
+                else currentLayout.load(this, layoutTopPanelCollapsed)
             } else {
-                if (panelTopIsExpanded) currentLayout.load(
-                    this,
-                    R.layout.item_print_label_activity_bottom_panel_collapsed
-                )
-                else currentLayout.load(this, R.layout.item_print_label_activity_both_panels_collapsed)
+                if (panelTopIsExpanded) currentLayout.load(this, layoutBottomPanelCollapsed)
+                else currentLayout.load(this, layoutBothPanelsCollapsed)
             }
 
             currentLayout.applyTo(binding.itemPrintLabel)
@@ -514,11 +535,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
             val nextLayout = ConstraintSet()
             if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.item_print_label_activity_bottom_panel_collapsed)
-                else nextLayout.load(this, R.layout.item_print_label_activity_both_panels_collapsed)
+                if (panelTopIsExpanded) nextLayout.load(this, layoutBottomPanelCollapsed)
+                else nextLayout.load(this, layoutBothPanelsCollapsed)
             } else {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.item_print_label_activity)
-                else nextLayout.load(this, R.layout.item_print_label_activity_top_panel_collapsed)
+                if (panelTopIsExpanded) nextLayout.load(this, layoutBothPanelsExpanded)
+                else nextLayout.load(this, layoutTopPanelCollapsed)
             }
 
             panelBottomIsExpanded = !panelBottomIsExpanded
@@ -558,11 +579,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
             val nextLayout = ConstraintSet()
             if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.item_print_label_activity_top_panel_collapsed)
-                else nextLayout.load(this, R.layout.item_print_label_activity)
+                if (panelTopIsExpanded) nextLayout.load(this, layoutTopPanelCollapsed)
+                else nextLayout.load(this, layoutBothPanelsExpanded)
             } else {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.item_print_label_activity_both_panels_collapsed)
-                else nextLayout.load(this, R.layout.item_print_label_activity_bottom_panel_collapsed)
+                if (panelTopIsExpanded) nextLayout.load(this, layoutBothPanelsCollapsed)
+                else nextLayout.load(this, layoutBottomPanelCollapsed)
             }
 
             panelTopIsExpanded = !panelTopIsExpanded

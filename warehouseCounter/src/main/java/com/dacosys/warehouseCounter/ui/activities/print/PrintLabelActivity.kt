@@ -49,6 +49,7 @@ class PrintLabelActivity : AppCompatActivity() {
 
         binding.locationButton.setOnClickListener {
             if (!rejectNewInstances) {
+                // TODO:  Impresión de etiquetas de áreas y racks
                 // rejectNewInstances = true
 
                 // val intent = Intent(baseContext, WarehouseAreaPrintLabelActivity::class.java)
