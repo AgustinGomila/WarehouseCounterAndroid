@@ -6,10 +6,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 class DatabaseData(
     @SerialName(DB_FILE_KEY) var dbFile: String = "",
-    @SerialName(DB_DATA_KEY) var dbDate: String = ""
+    @SerialName(DB_DATE_KEY) var dbDate: String = ""
 ) {
     companion object {
         const val DB_FILE_KEY = "dbFile"
-        const val DB_DATA_KEY = "dbFileDate"
+        const val DB_DATE_KEY = "dbFileDate"
     }
 }
