@@ -368,6 +368,9 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         val pInfo = packageManager.getPackageInfo(packageName, 0)
         val str = "${getString(R.string.app_milestone)} ${pInfo.versionName}"
         binding.versionTextView.text = str
+
+        // Cliente
+        binding.clientTextView.text = settingViewModel.installationCode
         // endregion
 
         // region Mostar la imagen de cabecera

@@ -332,7 +332,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         /// USUARIO
         Statics.getCurrentUser {
             if (it != null) {
-                binding.userTextView.text =
+                binding.clientTextView.text =
                     String.format("%s - %s", settingViewModel.installationCode, it.name)
             }
         }

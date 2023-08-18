@@ -1,7 +1,9 @@
 package com.dacosys.warehouseCounter.ktor.v2.functions
 
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
@@ -35,13 +37,12 @@ class CreateOrder(
         var isDone = false
         var errorOccurred = false
         for ((index, order) in orderArray.withIndex()) {
+            if (BuildConfig.DEBUG) println(json.encodeToString(OrderRequest.serializer(), order))
+
             ktorApiServiceV2.createOrder(payload = order, callback = {
                 val id = it.id ?: 0L
-                if (id > 0) {
-                    successFiles.add(order.filename)
-                } else {
-                    errorOccurred = true
-                }
+                if (id > 0) successFiles.add(order.filename)
+                else errorOccurred = true
                 isDone = index == orderArray.lastIndex
             })
         }
@@ -49,19 +50,13 @@ class CreateOrder(
         val startTime = System.currentTimeMillis()
         while (!isDone) {
             if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong()) {
-                sendEvent(
-                    context.getString(R.string.connection_timeout),
-                    SnackBarType.ERROR
-                )
+                sendEvent(context.getString(R.string.connection_timeout), SnackBarType.ERROR)
                 isDone = true
             }
         }
 
         if (errorOccurred) {
-            sendEvent(
-                context.getString(R.string.an_error_occurred_while_trying_to_send_the_order),
-                SnackBarType.ERROR
-            )
+            sendEvent(context.getString(R.string.an_error_occurred_while_trying_to_send_the_order), SnackBarType.ERROR)
         }
 
         onFinish(successFiles)

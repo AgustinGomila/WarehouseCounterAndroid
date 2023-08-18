@@ -1,19 +1,14 @@
-# INDEX
-###
+### INDEX
 GET {{server}}/v2/order?expand=orderContents,orderScanLogs,location
 Authorization: Basic {{username}} {{password}}
 Accept: application/json
 
-###
-
-# VIEW
-###
+### VIEW
 GET {{server}}/v2/order/view?id=1&expand=orderContents,orderScanLogs,location
 Authorization: Basic {{username}} {{password}}
 Accept: application/json
 
-# CREATE
-###
+### CREATE
 POST {{server}}/v2/order/create
 Authorization: Basic {{username}} {{password}}
 Content-Type: application/json
@@ -98,10 +93,94 @@ Content-Type: application/json
   ]
 }
 
-###
+### CREATE TEST
+POST {{server}}/v2/order/create
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
 
-# UPDATE
-###
+{
+  "clientId": 1,
+  "completed": true,
+  "creationDate": "2023-08-18 12:06:52",
+  "description": "",
+  "externalId": "",
+  "finishDate": "2023-08-18 12:07:05",
+  "orderRequestId": 64635,
+  "orderTypeDescription": "Control de despacho",
+  "orderTypeId": 4,
+  "resultAllowDiff": true,
+  "resultAllowMod": true,
+  "resultDiffProduct": true,
+  "resultDiffQty": true,
+  "startDate": "2023-08-18 12:06:52",
+  "userId": 7,
+  "zone": "",
+  "contents": [
+    {
+      "itemId": 92351,
+      "itemDescription": "Latex Dess Frentes NEUTRO x 1.75k",
+      "itemCodeRead": "7792261008668",
+      "itemEan": "7792261008668",
+      "itemPrice": 1.0,
+      "itemActive": true,
+      "itemExternalId": null,
+      "itemCategoryId": 0,
+      "itemLotEnabled": true,
+      "lotId": null,
+      "lotCode": "",
+      "lotActive": null,
+      "qtyRequested": 0.0,
+      "qtyCollected": 4.0
+    },
+    {
+      "itemId": 94028,
+      "itemDescription": "Laca Transp. al agua Mate    1 LT",
+      "itemCodeRead": "7792261027942",
+      "itemEan": "7792261027942",
+      "itemPrice": 1.0,
+      "itemActive": true,
+      "itemExternalId": "7675",
+      "itemCategoryId": 0,
+      "itemLotEnabled": false,
+      "lotId": null,
+      "lotCode": "",
+      "lotActive": null,
+      "qtyRequested": 0.0,
+      "qtyCollected": 1.0
+    }
+  ],
+  "logs": [
+    {
+      "clientId": 1,
+      "userId": 7,
+      "itemId": 92351,
+      "itemDescription": "Latex Dess Frentes NEUTRO x 1.75k",
+      "itemCode": "7792261008668",
+      "scannedCode": "7792261008668",
+      "variationQty": 4.0,
+      "finalQty": 4.0,
+      "date": "18-Aug-2023 12:06:58 +0000",
+      "filename": ""
+    },
+    {
+      "clientId": 1,
+      "userId": 7,
+      "itemId": 94028,
+      "itemDescription": "Laca Transp. al agua Mate    1 LT",
+      "itemCode": "7792261027942",
+      "scannedCode": "7792261027942",
+      "variationQty": 1.0,
+      "finalQty": 1.0,
+      "date": "18-Aug-2023 12:07:00 +0000",
+      "filename": ""
+    }
+  ],
+  "packages": [
+  ],
+  "filename": "230818120705+0000.json"
+}
+
+### UPDATE
 PUT {{server}}/v2/order/update?id=229418
 Authorization: Basic {{username}} {{password}}
 Content-Type: application/json
@@ -117,8 +196,6 @@ Content-Type: application/json
 }
 
 ###
-
-
 
 ### MOVE
 POST {{server}}/v2/order/move
@@ -155,8 +232,6 @@ Content-Type: application/json
 }
 
 ###
-
-
 
 ###
 # Barcode Defined Fields
