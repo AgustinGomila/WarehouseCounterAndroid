@@ -416,6 +416,18 @@
     <string name="search_by_category">Buscar por categoría…</string>
     <string name="search_by_ean_description">Buscar por EAN, descripción…</string>
     <string name="search_by_code">Buscar por código…</string>
+    <string name="search_by_order">Buscar por número de pedido…</string>
+    <string name="search_by_description">Buscar por descripción…</string>
+    <string name="search_by_ean">Buscar por EAN…</string>
+    <string name="search_by_location">Buscar por ubicación…</string>
+    <string name="search_by_order_id">Buscar por número de pedido…</string>
+    <string name="search_by_order_external_id">Buscar por número externo de pedido…</string>
+    <string name="search_by_warehouse">Buscar por depósito…</string>
+    <string name="search_by_area">Buscar por área…</string>
+    <string name="search_by_rack">Buscar por rack…</string>
+    <string name="search_by_item_ean">Buscar por EAN del ítem…</string>
+    <string name="search_by_item_code">Buscar por código del ítem…</string>
+    <string name="search_by_item_description">Buscar por descripción del ítem…</string>
     <string name="searching_rfid_reader">Buscando lector RFID…</string>
     <string name="action_rfid_connect">Reconectar lector RFID</string>
     <string name="invalid_user">Usuario inválido</string>
@@ -676,10 +688,6 @@
     <string name="amount_of_labels">Cantidad de etiquetas</string>
     <string name="not_defined">No definido</string>
     <string name="item_not_exists">El ítem no existe</string>
-    <string name="search_by_order">Buscar por número de pedido…</string>
-    <string name="search_by_description">Buscar por descripción…</string>
-    <string name="search_by_ean">Buscar por EAN…</string>
-    <string name="search_by_location">Buscar por ubicación…</string>
     <string name="rack">Rack</string>
     <string name="order_location">Ubicación de pedidos</string>
     <string name="enter_ean">Ingresar EAN</string>
@@ -700,4 +708,7 @@
     <string name="connection_timeout">Tiempo de espera superado</string>
     <string name="order_catalog">Pedidos</string>
     <string name="locations">Ubicaciones</string>
+    <string name="parent_location">Ubicación padre</string>
+    <string name="print_location_labels">Imprimir etiquetas de ubicaciones</string>
+    <string name="status">Estado</string>
 </resources>

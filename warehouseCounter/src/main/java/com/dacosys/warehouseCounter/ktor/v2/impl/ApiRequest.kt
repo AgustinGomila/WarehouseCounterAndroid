@@ -418,6 +418,12 @@ class ApiRequest {
             append(columnName, id.toString())
         }
 
+        val urlComplete = "${url.path}/$VERSION_PATH/$objPath/$VIEW_PATH"
+        if (BuildConfig.DEBUG) {
+            println("URL: $urlComplete")
+            println("PARAMS: $params")
+        }
+
         /** HTTP Get function */
         val response = httpClient.get {
             /** Set a Basic auth */
@@ -429,7 +435,7 @@ class ApiRequest {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS
                 host = url.host
-                path("${url.path}/$VERSION_PATH/$objPath/$VIEW_PATH")
+                path(urlComplete)
                 parameters.appendAll(params)
             }
         }

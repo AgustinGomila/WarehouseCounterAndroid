@@ -494,24 +494,6 @@ class SettingsViewModel : ViewModel() {
             settingRepository.symbologyUPCEANExt.value = value
         }
 
-    var selectItemSearchByItemCategory: Boolean
-        get() = settingRepository.selectItemSearchByItemCategory.value as Boolean
-        set(value) {
-            settingRepository.selectItemSearchByItemCategory.value = value
-        }
-
-    var selectItemSearchByItemEan: Boolean
-        get() = settingRepository.selectItemSearchByItemEan.value as Boolean
-        set(value) {
-            settingRepository.selectItemSearchByItemEan.value = value
-        }
-
-    var selectItemOnlyActive: Boolean
-        get() = settingRepository.selectItemOnlyActive.value as Boolean
-        set(value) {
-            settingRepository.selectItemOnlyActive.value = value
-        }
-
     var orderLocationSearchByOrderId: Boolean
         get() = settingRepository.orderLocationSearchByOrderId.value as Boolean
         set(value) {
@@ -576,6 +558,100 @@ class SettingsViewModel : ViewModel() {
         get() = settingRepository.finishOrder.value as Boolean
         set(value) {
             settingRepository.finishOrder.value = value
+        }
+
+    var itemSearchByOrderId: Boolean
+        get() = settingRepository.itemSearchByOrderId.value as Boolean
+        set(value) {
+            settingRepository.itemSearchByOrderId.value = value
+        }
+
+    var itemSearchByCategory: Boolean
+        get() = settingRepository.itemSearchByCategory.value as Boolean
+        set(value) {
+            settingRepository.itemSearchByCategory.value = value
+        }
+
+    var itemSearchByOrderExtId: Boolean
+        get() = settingRepository.itemSearchByOrderExtId.value as Boolean
+        set(value) {
+            settingRepository.itemSearchByOrderExtId.value = value
+        }
+
+    var itemSearchByWarehouse: Boolean
+        get() = settingRepository.itemSearchByWarehouse.value as Boolean
+        set(value) {
+            settingRepository.itemSearchByWarehouse.value = value
+        }
+
+    var itemSearchByArea: Boolean
+        get() = settingRepository.itemSearchByArea.value as Boolean
+        set(value) {
+            settingRepository.itemSearchByArea.value = value
+        }
+
+    var itemSearchByRack: Boolean
+        get() = settingRepository.itemSearchByRack.value as Boolean
+        set(value) {
+            settingRepository.itemSearchByRack.value = value
+        }
+
+    var itemSearchByItemCode: Boolean
+        get() = settingRepository.itemSearchByItemCode.value as Boolean
+        set(value) {
+            settingRepository.itemSearchByItemCode.value = value
+        }
+
+    var itemSearchByItemDescription: Boolean
+        get() = settingRepository.itemSearchByItemDescription.value as Boolean
+        set(value) {
+            settingRepository.itemSearchByItemDescription.value = value
+        }
+
+    var itemSearchByItemEan: Boolean
+        get() = settingRepository.itemSearchByItemEan.value as Boolean
+        set(value) {
+            settingRepository.itemSearchByItemEan.value = value
+        }
+
+    var itemSearchByOnlyActive: Boolean
+        get() = settingRepository.itemSearchByOnlyActive.value as Boolean
+        set(value) {
+            settingRepository.itemSearchByOnlyActive.value = value
+        }
+
+    var linkCodeSearchByCategory: Boolean
+        get() = settingRepository.linkCodeSearchByCategory.value as Boolean
+        set(value) {
+            settingRepository.linkCodeSearchByCategory.value = value
+        }
+    var linkCodeSearchByItemEan: Boolean
+        get() = settingRepository.linkCodeSearchByItemEan.value as Boolean
+        set(value) {
+            settingRepository.linkCodeSearchByItemEan.value = value
+        }
+
+    var linkCodeSearchByItemDescription: Boolean
+        get() = settingRepository.linkCodeSearchByItemDescription.value as Boolean
+        set(value) {
+            settingRepository.linkCodeSearchByItemDescription.value = value
+        }
+
+    var locationSearchByWarehouse: Boolean
+        get() = settingRepository.locationSearchByWarehouse.value as Boolean
+        set(value) {
+            settingRepository.locationSearchByWarehouse.value = value
+        }
+    var locationSearchByArea: Boolean
+        get() = settingRepository.locationSearchByArea.value as Boolean
+        set(value) {
+            settingRepository.locationSearchByArea.value = value
+        }
+
+    var locationSearchByRack: Boolean
+        get() = settingRepository.locationSearchByRack.value as Boolean
+        set(value) {
+            settingRepository.locationSearchByRack.value = value
         }
 
     @Suppress("UNCHECKED_CAST")

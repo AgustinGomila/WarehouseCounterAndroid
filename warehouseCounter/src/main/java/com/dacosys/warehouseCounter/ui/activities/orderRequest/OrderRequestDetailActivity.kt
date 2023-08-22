@@ -34,7 +34,9 @@ import org.parceler.Parcels
 class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     OrcAdapter.DataSetChangedListener {
 
-    private var panelTopIsExpanded = true
+    private var panelIsExpanded = true
+
+    private var tempTitle: String = ""
 
     // Header que depende del tipo de arqueo
     private var headerFragment: androidx.fragment.app.Fragment? = null
@@ -84,6 +86,8 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
+        savedInstanceState.putBoolean("panelTopIsExpanded", panelIsExpanded)
+
         if (adapter != null) {
             savedInstanceState.putParcelable("lastSelected", adapter?.currentItem())
             savedInstanceState.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
@@ -91,6 +95,29 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         }
         savedInstanceState.putLong(ARG_ID, orderRequestId)
         savedInstanceState.putParcelable(ARG_CLIENT, client)
+    }
+
+    private fun loadExtrasBundleValues(b: Bundle) {
+        tempTitle = b.getString(ARG_TITLE) ?: ""
+        if (tempTitle.isEmpty()) tempTitle = getString(R.string.detail_count)
+
+        client = Parcels.unwrap<Client>(b.getParcelable(ARG_CLIENT))
+        orderRequestId = b.getLong(ARG_ID)
+    }
+
+    private fun loadBundleValues(b: Bundle) {
+        tempTitle = b.getString(ARG_TITLE) ?: ""
+        if (tempTitle.isNotEmpty()) tempTitle = getString(R.string.detail_count)
+
+        orderRequestId = b.getLong(ARG_ID)
+        client = b.getParcelable(ARG_CLIENT)
+        checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
+        lastSelected = b.getParcelable("lastSelected")
+        firstVisiblePos =
+            if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos")
+            else -1
+        currentScrollPosition = b.getInt("currentScrollPosition")
+        panelIsExpanded = b.getBoolean("panelIsExpanded")
     }
 
     private lateinit var binding: OrderRequestDetailActivityBinding
@@ -115,37 +142,15 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         // Para el llenado en el onStart siguiente de onCreate
         fillRequired = true
 
-        var tempTitle = getString(R.string.detail_count)
-
         if (savedInstanceState != null) {
-            // region Recuperar el título de la ventana
-            val t2 = savedInstanceState.getString(ARG_TITLE)
-            if (!t2.isNullOrEmpty()) tempTitle = t2
-            // endregion
-
-            orderRequestId = savedInstanceState.getLong(ARG_ID)
-            client = savedInstanceState.getParcelable(ARG_CLIENT)
-            checkedIdArray =
-                (savedInstanceState.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
-            lastSelected = savedInstanceState.getParcelable("lastSelected")
-            firstVisiblePos =
-                if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos")
-                else -1
-            currentScrollPosition = savedInstanceState.getInt("currentScrollPosition")
+            loadBundleValues(savedInstanceState)
         } else {
-            // Nueva instancia de la actividad
-
+            // Inicializar la actividad
             val extras = intent.extras
-            if (extras != null) {
-                val t1 = extras.getString(ARG_TITLE)
-                if (!t1.isNullOrEmpty()) tempTitle = t1
-
-                client = Parcels.unwrap<Client>(extras.getParcelable(ARG_CLIENT))
-                orderRequestId = extras.getLong(ARG_ID)
-            }
+            if (extras != null) loadExtrasBundleValues(extras)
         }
 
-        title = tempTitle
+        binding.topAppbar.title = tempTitle
 
         binding.swipeRefreshOrc.setOnRefreshListener(this)
         binding.swipeRefreshOrc.setColorSchemeResources(
@@ -156,16 +161,18 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         )
 
         // Para expandir y colapsar el panel inferior
-        setTopPanelAnimation()
-
-        // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        Screen.setupUI(binding.orderRequestContentDetail, this)
+        setPanelAnimation()
 
         showProgressBar(false)
+
+        // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
+        Screen.setupUI(binding.root, this)
     }
 
     override fun onStart() {
         super.onStart()
+
+        setPanels()
 
         if (fillRequired) {
             fillRequired = false
@@ -197,6 +204,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
                 OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
                 OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
+                OrderRequestType.packaging -> OrderRequestType.packaging.description
                 else -> getString(R.string.counted)
             }
         }
@@ -215,7 +223,8 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 orType == OrderRequestType.prepareOrder ||
                 orType == OrderRequestType.stockAudit ||
                 orType == OrderRequestType.receptionAudit ||
-                orType == OrderRequestType.stockAuditFromDevice
+                orType == OrderRequestType.stockAuditFromDevice ||
+                orType == OrderRequestType.packaging
             ) {
                 OrderRequestHeader.newInstance(orderRequestId)
             } else {
@@ -254,15 +263,47 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         headerFragment = newFragment
     }
 
-    private fun setTopPanelAnimation() {
+    private val requiredLayout: Int
+        get() {
+            val orientation = resources.configuration.orientation
+            return if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                if (panelIsExpanded) layoutPanelCollapsed
+                else layoutPanelExpanded
+            } else layoutPanelExpanded
+        }
+
+    private val layoutPanelExpanded: Int
+        get() {
+            return R.layout.order_request_detail_activity
+        }
+
+    private val layoutPanelCollapsed: Int
+        get() {
+            return R.layout.order_request_detail_activity_top_panel_collapsed
+        }
+
+
+    private fun setPanels() {
+        runOnUiThread {
+            val currentLayout = ConstraintSet()
+            currentLayout.load(this, requiredLayout)
+            currentLayout.applyTo(binding.root)
+
+            val orientation = resources.configuration.orientation
+            if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                if (panelIsExpanded) binding.expandTopPanelButton.text = getString(R.string.collapse_panel)
+                else binding.expandTopPanelButton.text = getString(R.string.expand_panel)
+            }
+        }
+    }
+
+    private fun setPanelAnimation() {
         if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
         binding.expandTopPanelButton.setOnClickListener {
+            panelIsExpanded = !panelIsExpanded
             val nextLayout = ConstraintSet()
-            if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_detail_activity_top_panel_collapsed)
-            else nextLayout.load(this, R.layout.order_request_detail_activity)
-
-            panelTopIsExpanded = !panelTopIsExpanded
+            nextLayout.load(this, requiredLayout)
 
             val transition = ChangeBounds()
             transition.interpolator = FastOutSlowInInterpolator()
@@ -274,20 +315,14 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 override fun onTransitionCancel(transition: Transition?) {}
             })
 
-            TransitionManager.beginDelayedTransition(
-                binding.orderRequestContentDetail,
-                transition
-            )
+            TransitionManager.beginDelayedTransition(binding.root, transition)
+            nextLayout.applyTo(binding.root)
 
-            if (panelTopIsExpanded) binding.expandTopPanelButton.text = getString(R.string.collapse_panel)
+            if (panelIsExpanded) binding.expandTopPanelButton.text = getString(R.string.collapse_panel)
             else binding.expandTopPanelButton.text = getString(R.string.expand_panel)
-
-            nextLayout.applyTo(binding.orderRequestContentDetail)
         }
-
-        if (panelTopIsExpanded) binding.expandTopPanelButton.text = getString(R.string.collapse_panel)
-        else binding.expandTopPanelButton.text = getString(R.string.expand_panel)
     }
+
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({

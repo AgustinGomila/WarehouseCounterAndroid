@@ -165,7 +165,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             if (extras != null) loadExtrasBundleValues(extras)
         }
 
-        title = tempTitle
+        binding.topAppbar.title = tempTitle
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
         binding.swipeRefreshItem.setColorSchemeResources(

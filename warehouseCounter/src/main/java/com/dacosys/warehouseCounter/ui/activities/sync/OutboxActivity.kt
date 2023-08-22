@@ -162,14 +162,14 @@ class OutboxActivity : AppCompatActivity() {
             }
         }
 
-        title = tempTitle
+        binding.topAppbar.title = tempTitle
 
         binding.sendButton.setOnClickListener { sendDialog() }
         binding.detailButton.setOnClickListener { showDetail() }
         binding.removeResetButton.setOnClickListener { removeResetDialog() }
 
         // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        Screen.setupUI(binding.outbox, this)
+        Screen.setupUI(binding.root, this)
     }
 
     override fun onStart() {

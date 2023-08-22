@@ -225,7 +225,7 @@ class WarehouseAreaAdapter(
 
             if (warehouseArea != null) {
                 holder.areaTextView?.text = warehouseArea.description
-                holder.warehouseTextView?.text = warehouseArea.warehouseDescription
+                holder.warehouseTextView?.text = warehouseArea.locationParentStr
 
                 if (holder.checkBox != null) {
                     var isSpeakButtonLongPressed = false
@@ -303,7 +303,7 @@ class WarehouseAreaAdapter(
                     for (i in 0 until warehouseAreaArray.size) {
                         filterableItem = warehouseAreaArray[i]
                         if (filterableItem.description.lowercase(Locale.getDefault())
-                                .contains(filterString) || (filterableItem.warehouseDescription.lowercase(
+                                .contains(filterString) || (filterableItem.locationParentStr.lowercase(
                                 Locale.getDefault()
                             ).contains(filterString))
                         ) {
@@ -348,8 +348,8 @@ class WarehouseAreaAdapter(
             override fun compare(o1: WarehouseArea, o2: WarehouseArea): Int {
                 return try {
                     val nameComp = o1.description.compareTo(o2.description, true)
-                    val warehouseDescriptionComp = o1.warehouseDescription.compareTo(
-                        o2.warehouseDescription, true
+                    val warehouseDescriptionComp = o1.locationParentStr.compareTo(
+                        o2.locationParentStr, true
                     )
 
                     // Orden natural: name, warehouseDescription, contactName

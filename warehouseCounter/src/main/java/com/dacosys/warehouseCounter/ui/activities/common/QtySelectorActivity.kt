@@ -127,7 +127,8 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         binding.multiplierTextView.text = String.format("%sX", multiplier)
 
         // Esta clase controla el comportamiento de los botones (+) y (-)
-        ch = CounterHandler.Builder().incrementalView(binding.moreButton)
+        ch = CounterHandler.Builder()
+            .incrementalView(binding.moreButton)
             .decrementalView(binding.lessButton).minRange(minValue) // cant go any less than -50
             .maxRange(maxValue) // cant go any further than 50
             .isCycle(true) // 49,50,-50,-49 and so on

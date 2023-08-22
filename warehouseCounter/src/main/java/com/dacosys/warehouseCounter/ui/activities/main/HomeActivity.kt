@@ -62,8 +62,8 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.sync.*
 import com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity
 import com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
+import com.dacosys.warehouseCounter.ui.activities.orderLocation.OrderLocationSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.NewCountActivity
-import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderLocationSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity
 import com.dacosys.warehouseCounter.ui.activities.print.PrintLabelActivity
 import com.dacosys.warehouseCounter.ui.activities.ptlOrder.NewPtlOrdersActivity
@@ -442,6 +442,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                     val intent = Intent(context, OrderLocationSelectActivity::class.java)
                     intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.order_location))
                     intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, true)
+                    intent.putExtra(OrderLocationSelectActivity.ARG_SHOW_SELECT_BUTTON, false)
                     startActivity(intent)
                 } catch (ex: Exception) {
                     showSnackBar(SnackBarEventData("Error:" + ex.message, ERROR))
@@ -478,7 +479,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
                                 getString(R.string.area),
                                 warehouseArea.description,
                                 lineSeparator,
-                                "(${warehouseArea.warehouseDescription})"
+                                "(${warehouseArea.locationParentStr})"
                             ), INFO
                         )
                     )

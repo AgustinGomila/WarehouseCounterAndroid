@@ -55,6 +55,7 @@ class MultiplierSelectActivity : AppCompatActivity() {
         title = tempTitle
 
         binding.selectButton.setOnClickListener { multiplierSelect() }
+
         binding.multiplierSeekBar.setOnSeekBarChangeListener(object :
             SeekBar.OnSeekBarChangeListener {
             override fun onStopTrackingTouch(seekBar: SeekBar) {}
@@ -82,7 +83,7 @@ class MultiplierSelectActivity : AppCompatActivity() {
         binding.multiplierSelect.setOnClickListener { onBackPressed() }
 
         // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        Screen.setupUI(binding.multiplierSelect, this)
+        Screen.setupUI(binding.root, this)
     }
 
     private fun multiplierSelect() {

@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ui.activities.item
+package com.dacosys.warehouseCounter.ui.activities.location
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -33,7 +33,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.imageControl.dto.DocumentContent
 import com.dacosys.imageControl.dto.DocumentContentRequestResult
@@ -49,28 +48,28 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
-import com.dacosys.warehouseCounter.misc.ParcelLong
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.*
+import com.dacosys.warehouseCounter.ktor.v2.functions.*
+import com.dacosys.warehouseCounter.ktor.v2.impl.ApiActionParam
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.settings.SettingsRepository
+import com.dacosys.warehouseCounter.ui.activities.item.CheckItemCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
-import com.dacosys.warehouseCounter.ui.adapter.item.ItemRecyclerAdapter
+import com.dacosys.warehouseCounter.ui.adapter.location.LocationAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
@@ -78,11 +77,11 @@ import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import java.util.*
 import kotlin.concurrent.thread
 
-class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
+class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
-    SelectFilterFragment.OnFilterChangedListener, ItemRecyclerAdapter.CheckedChangedListener,
-    PrintLabelFragment.FragmentListener, ItemRecyclerAdapter.DataSetChangedListener,
-    ItemRecyclerAdapter.AddPhotoRequiredListener, ItemRecyclerAdapter.AlbumViewRequiredListener,
+    SelectFilterFragment.OnFilterChangedListener, LocationAdapter.CheckedChangedListener,
+    PrintLabelFragment.FragmentListener, LocationAdapter.DataSetChangedListener,
+    LocationAdapter.AddPhotoRequiredListener, LocationAdapter.AlbumViewRequiredListener,
     SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
     override fun onDestroy() {
         destroyLocals()
@@ -125,13 +124,13 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private var showSelectButton = true
 
     private var multiSelect = false
-    private var adapter: ItemRecyclerAdapter? = null
-    private var lastSelected: Item? = null
+    private var adapter: LocationAdapter? = null
+    private var lastSelected: Location? = null
     private var firstVisiblePos: Int? = null
     private var currentScrollPosition: Int = 0
 
-    private var completeList: ArrayList<Item> = ArrayList()
-    private var checkedIdArray: ArrayList<Long> = ArrayList()
+    private var completeList: ArrayList<Location> = ArrayList()
+    private var checkedHashArray: ArrayList<Int> = ArrayList()
 
     // Se usa para saber si estamos en onStart luego de onCreate
     private var fillRequired = false
@@ -161,12 +160,12 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             return adapter?.countChecked() ?: 0
         }
 
-    private val allChecked: ArrayList<Item>
+    private val allChecked: ArrayList<Location>
         get() {
             return adapter?.getAllChecked() ?: arrayListOf()
         }
 
-    private val currentItem: Item?
+    private val currentItem: Location?
         get() {
             return adapter?.currentItem()
         }
@@ -185,9 +184,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         b.putString(ARG_TITLE, title.toString())
 
         b.putBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
-
         b.putBoolean(ARG_MULTI_SELECT, multiSelect)
         b.putBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
+
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
         b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
 
@@ -195,7 +194,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             b.putParcelable("lastSelected", currentItem)
             b.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: -1)
             b.putParcelableArrayList("completeList", adapter?.fullList)
-            b.putLongArray("checkedIdArray", allChecked.map { it.itemId }.toLongArray())
+            b.putIntArray("checkedHashArray", allChecked.map { it.hashCode }.toIntArray())
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
     }
@@ -205,14 +204,14 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
         showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
-
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, multiSelect)
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
+
         panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
         panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
 
         // Adapter
-        checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
+        checkedHashArray = (b.getIntArray("checkedHashArray") ?: intArrayOf()).toCollection(ArrayList())
         completeList = b.getParcelableArrayList("completeList") ?: ArrayList()
         lastSelected = b.getParcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
@@ -225,7 +224,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
-
         showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, true)
     }
 
@@ -268,7 +266,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         setupFilterFragment()
         setupSearchTextFragment()
-        setupPrintFragment()
+        setupPrintLabelFragment()
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
         binding.swipeRefreshItem.setColorSchemeResources(
@@ -300,11 +298,12 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         Screen.setupUI(binding.root, this)
     }
 
-    private fun setupPrintFragment() {
+    private fun setupPrintLabelFragment() {
         printLabelFragment.setListener(this)
     }
 
     private fun setupSearchTextFragment() {
+        // Set up the search text fragment
         searchTextFragment =
             SearchTextFragment.Builder()
                 .focusChangedCallback(this)
@@ -318,9 +317,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         val sr = settingRepository
         filterFragment =
             SelectFilterFragment.Builder()
-                .searchByItemDescription(sv.itemSearchByItemDescription, sr.itemSearchByItemDescription)
-                .searchByItemEan(sv.itemSearchByItemEan, sr.itemSearchByItemEan)
-                .searchByCategory(sv.itemSearchByCategory, sr.itemSearchByCategory)
+                .searchByRack(sv.locationSearchByRack, sr.locationSearchByRack)
+                .searchByArea(sv.locationSearchByArea, sr.locationSearchByArea)
+                .searchByWarehouse(sv.locationSearchByWarehouse, sr.locationSearchByWarehouse)
                 .filterChangedListener(this)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
@@ -593,10 +592,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
             val item = currentItem
             val countChecked = countChecked
-            var itemArray: ArrayList<Item> = ArrayList()
+            var itemArray: ArrayList<Location> = ArrayList()
 
             if (!multiSelect && item != null) {
-                data.putParcelableArrayListExtra(ARG_IDS, arrayListOf(ParcelLong(item.itemId)))
+                data.putParcelableArrayListExtra(ARG_LOCATIONS, arrayListOf(item))
                 setResult(RESULT_OK, data)
             } else if (multiSelect) {
                 if (countChecked > 0 || item != null) {
@@ -604,9 +603,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                     else if (adapter?.showCheckBoxes == false) {
                         itemArray = arrayListOf(item!!)
                     }
-                    data.putParcelableArrayListExtra(
-                        ARG_IDS,
-                        itemArray.map { ParcelLong(it.itemId) } as ArrayList<ParcelLong>)
+
+                    data.putParcelableArrayListExtra(ARG_LOCATIONS, itemArray.map { it } as ArrayList<Location>)
                     setResult(RESULT_OK, data)
                 } else {
                     setResult(RESULT_CANCELED)
@@ -622,24 +620,55 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         finish()
     }
 
-    private fun getItems() {
-        val itemEan = filterFragment.itemEan.trim()
-        val itemDescription = filterFragment.itemDescription.trim()
-        val itemCategory = filterFragment.itemCategory
-
-        if (itemEan.isEmpty() && itemDescription.isEmpty() && itemCategory == null) {
-            showProgressBar(false)
+    private fun getLocations() {
+        if (!filterFragment.validFilter()) {
+            fillAdapter(ArrayList())
             return
         }
 
+        // TODO Usar pageNum y pageTotal
+        // filter.add(ApiFilterParam(EXTENSION_PAGE_NUMBER, pageNum.toString()))
+
         try {
-            Log.d(this::class.java.simpleName, "Selecting items...")
-            ItemCoroutines.getByQuery(
-                ean = itemEan,
-                description = itemDescription,
-                itemCategoryId = itemCategory?.itemCategoryId
-            ) {
-                if (it.any()) fillAdapter(it)
+            Log.d(this::class.java.simpleName, "Selecting racks...")
+
+            val rack = filterFragment.rack
+            val wa = filterFragment.warehouseArea
+            val w = filterFragment.warehouse
+            if (rack != null) {
+                ViewRack(
+                    id = rack.locationId,
+                    action = action(LocationType.RACK),
+                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                    onFinish = {
+                        val list: ArrayList<Location> = arrayListOf()
+                        if (it != null) list.add(it)
+                        fillAdapter(list)
+                    }
+                ).execute()
+            } else if (wa != null) {
+                ViewWarehouseArea(
+                    id = wa.locationId,
+                    action = action(LocationType.WAREHOUSE_AREA),
+                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                    onFinish = {
+                        val list: ArrayList<Location> = arrayListOf()
+                        if (it != null) list.add(it)
+                        fillAdapter(list)
+                    }
+                ).execute()
+            } else if (w != null) {
+                ViewWarehouse(
+                    id = w.locationId,
+                    action = action(LocationType.WAREHOUSE),
+                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                    onFinish = {
+                        val list: ArrayList<Location> = arrayListOf()
+                        if (it != null) list.add(it)
+                        fillAdapter(list)
+                    }
+                ).execute()
+            } else {
                 showProgressBar(false)
             }
         } catch (ex: java.lang.Exception) {
@@ -648,14 +677,52 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    private fun fillAdapter(t: ArrayList<Item>) {
+    private fun action(locationType: LocationType): ArrayList<ApiActionParam> {
+        return when (locationType) {
+            LocationType.WAREHOUSE -> warehouseParam
+
+            LocationType.WAREHOUSE_AREA -> warehouseAreaParam
+
+            LocationType.RACK -> rackParam
+        }
+    }
+
+    private val warehouseParam: ArrayList<ApiActionParam>
+        get() {
+            return arrayListOf(
+                ApiActionParam(
+                    action = ApiActionParam.ACTION_EXPAND, extension = setOf(
+                        ApiActionParam.EXTENSION_WAREHOUSE_AREA_LIST, ApiActionParam.EXTENSION_STATUS
+                    )
+                )
+            )
+        }
+
+    private val warehouseAreaParam: ArrayList<ApiActionParam>
+        get() {
+            return arrayListOf(
+                ApiActionParam(
+                    action = ApiActionParam.ACTION_EXPAND, extension = setOf(
+                        ApiActionParam.EXTENSION_WAREHOUSE, ApiActionParam.EXTENSION_STATUS
+                    )
+                )
+            )
+        }
+
+    private val rackParam: ArrayList<ApiActionParam>
+        get() {
+            return arrayListOf(
+                ApiActionParam(
+                    action = ApiActionParam.ACTION_EXPAND, extension = setOf(
+                        ApiActionParam.EXTENSION_STATUS
+                    )
+                )
+            )
+        }
+
+    private fun fillAdapter(t: ArrayList<Location>) {
         showProgressBar(true)
 
-        if (!t.any()) {
-            checkedIdArray.clear()
-            getItems()
-            return
-        }
         completeList = t
 
         runOnUiThread {
@@ -667,10 +734,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                     lastSelected = currentItem
                 }
 
-                adapter = ItemRecyclerAdapter.Builder()
+                adapter = LocationAdapter.Builder()
                     .recyclerView(binding.recyclerView)
                     .fullList(completeList)
-                    .checkedIdArray(checkedIdArray)
+                    .checkedHashArray(checkedHashArray)
                     .multiSelect(multiSelect)
                     .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
                     .showImages(`val` = showImages, listener = { showImages = it })
@@ -764,10 +831,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         JotterListener.lockScanner(this, true)
 
-        CheckItemCode(callback = { onCheckCodeEnded(it) },
-            scannedCode = scanCode,
-            list = adapter?.fullList ?: ArrayList(),
-            onEventData = { showSnackBar(it) }).execute()
+        // TODO: Escaneado para racks y áreas
+        // CheckItemCode(callback = { onCheckCodeEnded(it) },
+        //     scannedCode = scanCode,
+        //     list = adapter?.fullList ?: ArrayList(),
+        //     onEventData = { showSnackBar(it) }).execute()
     }
 
     private fun showSnackBar(it: SnackBarEventData) {
@@ -824,7 +892,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         binding.topAppbar.overflowIcon = drawable
 
         // Opciones de visibilidad del menú
-        val allControls = SettingsRepository.getAllSelectItemVisibleControls()
+        val allControls = SettingsRepository.getAllSelectLocationVisibleControls()
         val visibleFilters = filterFragment.getVisibleFilters()
         allControls.forEach { p ->
             menu.add(0, p.key.hashCode(), menu.size(), p.description)
@@ -889,7 +957,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
             menuItemRandomOnListL -> {
                 val codes: ArrayList<String> = ArrayList()
-                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.ean }
+                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.locationExternalId }
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
@@ -922,19 +990,19 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                     )
             }
 
-            settingRepository.itemSearchByItemEan.key.hashCode() -> {
-                filterFragment.setEanVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.itemSearchByItemEan = item.isChecked
+            settingRepository.locationSearchByWarehouse.key.hashCode() -> {
+                filterFragment.setWarehouseVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                sv.locationSearchByWarehouse = item.isChecked
             }
 
-            settingRepository.itemSearchByCategory.key.hashCode() -> {
-                filterFragment.setCategoryVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.itemSearchByCategory = item.isChecked
+            settingRepository.locationSearchByArea.key.hashCode() -> {
+                filterFragment.setAreaVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                sv.locationSearchByArea = item.isChecked
             }
 
-            settingRepository.itemSearchByItemDescription.key.hashCode() -> {
-                filterFragment.setDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.itemSearchByItemDescription = item.isChecked
+            settingRepository.locationSearchByRack.key.hashCode() -> {
+                filterFragment.setRackVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                sv.locationSearchByRack = item.isChecked
             }
 
             else -> return super.onOptionsItemSelected(item)
@@ -974,8 +1042,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     ) {
         closeKeyboard(this)
         thread {
-            checkedIdArray.clear()
-            getItems()
+            checkedHashArray.clear()
+            getLocations()
         }
     }
 
@@ -990,19 +1058,20 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private fun onCheckCodeEnded(it: CheckItemCode.CheckCodeEnded) {
         JotterListener.lockScanner(this, false)
 
-        val item: Item = it.item ?: return
-        val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION
+        // TODO: Filter fragment
+        // val item: Location = it.item ?: return
+        // val pos = adapter?.getIndexByHashCode(item.hashCode) ?: NO_POSITION
 
-        if (pos != NO_POSITION) {
-            adapter?.selectItem(item)
-        } else {
-            filterFragment.itemCode = item.ean
-            thread {
-                completeList = arrayListOf(item)
-                checkedIdArray.clear()
-                fillAdapter(completeList)
-            }
-        }
+        // if (pos != NO_POSITION) {
+        //     adapter?.selectItem(item)
+        // } else {
+        //     filterFragment.itemCode = item.ean
+        //     thread {
+        //         completeList = arrayListOf(item)
+        //         checkedHashArray.clear()
+        //         fillAdapter(completeList)
+        //     }
+        // }
     }
 
     override fun onFilterChanged(printer: String, qty: Int?) {}
@@ -1025,7 +1094,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         val item = currentItem
         val countChecked = countChecked
-        var itemArray: ArrayList<Item> = ArrayList()
+        var itemArray: ArrayList<Location> = ArrayList()
 
         if (!multiSelect && item != null) {
             itemArray = arrayListOf(item)
@@ -1038,7 +1107,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             }
         }
 
-        printLabelFragment.printItemById(ArrayList(itemArray.map { it.itemId }))
+        // TODO: Imprimir etiquetas
+        // printLabelFragment.printItemById(ArrayList(itemArray.map { it.itemId }))
     }
 
     override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {
@@ -1202,6 +1272,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         const val ARG_MULTI_SELECT = "multiSelect"
         const val ARG_SHOW_SELECT_BUTTON = "showSelectButton"
         const val ARG_HIDE_FILTER_PANEL = "hideFilterPanel"
-        const val ARG_IDS = "ids"
+        const val ARG_LOCATIONS = "locations"
     }
 }

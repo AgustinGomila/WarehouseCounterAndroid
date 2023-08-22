@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.imageControl.ui.fragments.ImageControlButtonsFragment
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.OrderRequestConfirmActivityBinding
@@ -42,7 +43,7 @@ import org.parceler.Parcels
 class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     OrcAdapter.DataSetChangedListener {
 
-    private var panelTopIsExpanded = true
+    private var panelIsExpanded = true
     private var finishOrder: Boolean = true
 
     // Header que depende del tipo de conteo
@@ -86,16 +87,17 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
+        savedInstanceState.putLong(ARG_ID, orderRequestId)
+        savedInstanceState.putParcelable(ARG_CLIENT, client)
+
         if (adapter != null) {
             savedInstanceState.putParcelable("lastSelected", adapter?.currentItem())
             savedInstanceState.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
             savedInstanceState.putInt("currentScrollPosition", currentScrollPosition)
         }
-        savedInstanceState.putLong(ARG_ID, orderRequestId)
 
         savedInstanceState.putBoolean("finishOrder", finishOrder)
-        savedInstanceState.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
-        savedInstanceState.putParcelable(ARG_CLIENT, client)
+        savedInstanceState.putBoolean("panelIsExpanded", panelIsExpanded)
 
         supportFragmentManager.putFragment(
             savedInstanceState, "imageControlFragment", imageControlFragment as Fragment
@@ -142,16 +144,16 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         var tempTitle = getString(R.string.confirm_count)
 
         if (savedInstanceState != null) {
-            finishOrder = savedInstanceState.getBoolean("finishOrder")
-
             // region Recuperar el título de la ventana
             val t2 = savedInstanceState.getString(ARG_TITLE)
             if (!t2.isNullOrEmpty()) tempTitle = t2
             // endregion
 
+            finishOrder = savedInstanceState.getBoolean("finishOrder")
+
             orderRequestId = savedInstanceState.getLong(ARG_ID)
             client = savedInstanceState.getParcelable(ARG_CLIENT)
-            panelTopIsExpanded = savedInstanceState.getBoolean("panelTopIsExpanded")
+            panelIsExpanded = savedInstanceState.getBoolean("panelIsExpanded")
             lastSelected = savedInstanceState.getParcelable("lastSelected")
             firstVisiblePos =
                 if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos") else -1
@@ -176,7 +178,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             finishOrder = settingViewModel.finishOrder
         }
 
-        title = tempTitle
+        binding.topAppbar.title = tempTitle
 
         binding.finishCheckBox.isChecked = finishOrder
 
@@ -198,16 +200,16 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             binding.imageControlLayout.visibility = View.GONE
         }
 
-        setPanels()
-
         // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        Screen.setupUI(binding.orderRequestContentConfirm, this)
+        Screen.setupUI(binding.root, this)
 
         showProgressBar(false)
     }
 
     override fun onStart() {
         super.onStart()
+
+        setPanels()
 
         if (fillRequired) {
             fillRequired = false
@@ -240,6 +242,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
                 OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
                 OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
+                OrderRequestType.packaging -> OrderRequestType.packaging.description
                 else -> getString(R.string.counted)
             }
         }
@@ -258,7 +261,8 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 orType == OrderRequestType.prepareOrder ||
                 orType == OrderRequestType.stockAudit ||
                 orType == OrderRequestType.receptionAudit ||
-                orType == OrderRequestType.stockAuditFromDevice
+                orType == OrderRequestType.stockAuditFromDevice ||
+                orType == OrderRequestType.packaging
             ) {
                 OrderRequestHeader.newInstance(orderRequestId)
             } else {
@@ -333,36 +337,39 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         }
     }
 
-    private fun setPanels() {
-        val currentLayout = ConstraintSet()
-        if (panelTopIsExpanded) {
-            currentLayout.load(this, R.layout.order_request_confirm_activity)
-        } else {
-            currentLayout.load(this, R.layout.order_request_confirm_activity_top_panel_collapsed)
+    private val requiredLayout: Int
+        get() {
+            val r = if (panelIsExpanded) layoutPanelExpanded
+            else layoutPanelCollapsed
+
+            if (BuildConfig.DEBUG) {
+                when (r) {
+                    layoutPanelExpanded -> println("SELECTED LAYOUT: Panel Expanded")
+                    layoutPanelCollapsed -> println("SELECTED LAYOUT: Panel Collapsed")
+                }
+            }
+
+            return r
         }
 
-        val transition = ChangeBounds()
-        transition.interpolator = FastOutSlowInInterpolator()
-        transition.addListener(object : Transition.TransitionListener {
-            override fun onTransitionResume(transition: Transition?) {}
-            override fun onTransitionPause(transition: Transition?) {}
-            override fun onTransitionStart(transition: Transition?) {}
-            override fun onTransitionEnd(transition: Transition?) {}
-            override fun onTransitionCancel(transition: Transition?) {}
-        })
+    private val layoutPanelExpanded: Int
+        get() {
+            return R.layout.order_request_confirm_activity
+        }
 
-        TransitionManager.beginDelayedTransition(binding.orderRequestContentConfirm, transition)
+    private val layoutPanelCollapsed: Int
+        get() {
+            return R.layout.order_request_confirm_activity_top_panel_collapsed
+        }
 
-        currentLayout.applyTo(binding.orderRequestContentConfirm)
+    private fun setPanels() {
+        runOnUiThread {
+            val currentLayout = ConstraintSet()
+            currentLayout.load(this, requiredLayout)
+            currentLayout.applyTo(binding.root)
 
-        when {
-            panelTopIsExpanded -> {
-                binding.expandTopPanelButton?.text = getString(R.string.collapse_panel)
-            }
-
-            else -> {
-                binding.expandTopPanelButton?.text = getString(R.string.client_and_description)
-            }
+            if (panelIsExpanded) binding.expandTopPanelButton?.text = getString(R.string.collapse_panel)
+            else binding.expandTopPanelButton?.text = getString(R.string.client_and_description)
         }
     }
 
@@ -370,14 +377,9 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
         binding.expandTopPanelButton!!.setOnClickListener {
+            panelIsExpanded = !panelIsExpanded
             val nextLayout = ConstraintSet()
-            if (panelTopIsExpanded) {
-                nextLayout.load(this, R.layout.order_request_confirm_activity_top_panel_collapsed)
-            } else {
-                nextLayout.load(this, R.layout.order_request_confirm_activity)
-            }
-
-            panelTopIsExpanded = !panelTopIsExpanded
+            nextLayout.load(this, requiredLayout)
 
             val transition = ChangeBounds()
             transition.interpolator = FastOutSlowInInterpolator()
@@ -389,19 +391,11 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 override fun onTransitionCancel(transition: Transition?) {}
             })
 
-            TransitionManager.beginDelayedTransition(binding.orderRequestContentConfirm, transition)
+            TransitionManager.beginDelayedTransition(binding.root, transition)
+            nextLayout.applyTo(binding.root)
 
-            when {
-                panelTopIsExpanded -> {
-                    binding.expandTopPanelButton?.text = getString(R.string.collapse_panel)
-                }
-
-                else -> {
-                    binding.expandTopPanelButton?.text = getString(R.string.client_and_description)
-                }
-            }
-
-            nextLayout.applyTo(binding.orderRequestContentConfirm)
+            if (panelIsExpanded) binding.expandTopPanelButton?.text = getString(R.string.collapse_panel)
+            else binding.expandTopPanelButton?.text = getString(R.string.client_and_description)
         }
     }
 

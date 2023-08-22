@@ -16,11 +16,16 @@ data class Warehouse(
     @SerialName(STATUS_ID_KEY) var statusId: Int = 0,
     @SerialName(WAREHOUSE_AREA_LIST_KEY) var areas: List<WarehouseArea>? = null,
     @SerialName(STATUS_KEY) var status: Status? = null,
-) : Parcelable, Location() {
-
-    override fun id(): Long = id
-    override fun description(): String = description
-    override fun locationType(): LocationType = LocationType.WAREHOUSE
+) : Parcelable, Location {
+    override val locationType: LocationType get() = LocationType.WAREHOUSE
+    override val locationId: Long get() = id
+    override val locationParentStr: String get() = ""
+    override val locationExternalId: String get() = externalId
+    override val locationDescription: String get() = description
+    override val locationStatus: Status? get() = status
+    override val locationActive: Boolean get() = true
+    override val hashCode: Int get() = hashCode()
+    override val location: Location get() = this
 
     constructor(parcel: Parcel) : this(
         id = parcel.readLong(),
@@ -48,6 +53,32 @@ data class Warehouse(
 
     override fun describeContents(): Int {
         return 0
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Warehouse
+
+        if (id != other.id) return false
+        if (acronym != other.acronym) return false
+        if (description != other.description) return false
+        if (externalId != other.externalId) return false
+        if (rowCreationDate != other.rowCreationDate) return false
+        if (rowModificationDate != other.rowModificationDate) return false
+        return statusId == other.statusId
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + acronym.hashCode()
+        result = 31 * result + description.hashCode()
+        result = 31 * result + externalId.hashCode()
+        result = 31 * result + rowCreationDate.hashCode()
+        result = 31 * result + rowModificationDate.hashCode()
+        result = 31 * result + statusId
+        return result
     }
 
     companion object CREATOR : Parcelable.Creator<Warehouse> {

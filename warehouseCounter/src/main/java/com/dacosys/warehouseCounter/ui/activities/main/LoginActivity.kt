@@ -425,7 +425,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         initialSetup()
 
         // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        Screen.setupUI(binding.login, this)
+        Screen.setupUI(binding.root, this)
     }
 
     private fun showProgressBar(msg: String = "", progress: Int? = null) {

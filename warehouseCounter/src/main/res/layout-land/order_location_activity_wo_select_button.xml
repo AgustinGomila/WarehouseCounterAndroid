@@ -2,7 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
                                                    xmlns:app="http://schemas.android.com/apk/res-auto"
                                                    xmlns:tools="http://schemas.android.com/tools"
-                                                   android:id="@+id/item_print_label"
+                                                   android:id="@+id/order_location"
                                                    android:layout_width="match_parent"
                                                    android:layout_height="match_parent"
                                                    android:focusable="true"
@@ -22,7 +22,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:menu="@menu/menu_read_activity"
-            app:title="@string/print_labels"/>
+            app:title="@string/order_location"/>
 
     <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guidelineGralVert"
@@ -32,32 +32,12 @@
             app:layout_constraintGuide_percent="0.7"/>
 
     <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/panelTop"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/guidelineGralVert"
-            app:layout_constraintStart_toStartOf="parent">
-
-        <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/printFragment"
-                android:name="com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:layout="@layout/print_label_fragment"/>
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="0dp"
             android:layout_height="0dp"
-            app:layout_constraintBottom_toTopOf="@+id/panelTop"
             app:layout_constraintEnd_toStartOf="@+id/guidelineGralVert"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/top_appbar" android:id="@+id/mainLayout">
+            app:layout_constraintTop_toBottomOf="@+id/top_appbar" android:id="@+id/mainLayout"
+            app:layout_constraintBottom_toBottomOf="parent">
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
                 android:id="@+id/swipeRefreshItem"
@@ -107,26 +87,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginStart="1dp"
                 android:layout_marginEnd="1dp"
-                app:layout_constraintBottom_toTopOf="@+id/expandTopPanelButton" android:layout_marginBottom="1dp"/>
-
-        <Button
-                android:id="@+id/expandTopPanelButton"
-                android:layout_width="0dp"
-                android:layout_height="30dp"
-                android:layout_marginStart="2dp"
-                android:layout_marginEnd="2dp"
-                android:layout_marginBottom="2dp"
-                android:background="@drawable/rounded_corner_button_coral"
-                android:clickable="true"
-                android:elevation="1dp"
-                android:focusable="true"
-                android:stateListAnimator="@null"
-                android:text="@string/collapse_panel"
-                android:textColor="@color/text_dark"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="1.0"
-                app:layout_constraintStart_toStartOf="parent"/>
+                app:layout_constraintBottom_toBottomOf="parent"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

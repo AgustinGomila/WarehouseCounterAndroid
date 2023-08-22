@@ -98,7 +98,7 @@ class LogContentActivity :
             }
         }
 
-        title = tempTitle
+        binding.topAppbar.title = tempTitle
 
         binding.swipeRefresh.setOnRefreshListener(this)
         binding.swipeRefresh.setColorSchemeResources(

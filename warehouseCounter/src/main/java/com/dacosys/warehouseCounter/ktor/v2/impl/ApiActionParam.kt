@@ -6,7 +6,7 @@ data class ApiActionParam(var action: String = "", var extension: Set<String> = 
 
     companion object {
         /**
-         * Collection of v2 API extensions and actions keys
+         * Collection of v2 API extensions and action keys
          */
 
         const val ACTION_EXPAND = "expand"
@@ -15,6 +15,7 @@ data class ApiActionParam(var action: String = "", var extension: Set<String> = 
         const val EXTENSION_PTL_LIST = "ptls"
         const val EXTENSION_WAREHOUSE_AREA = "warehouseArea"
         const val EXTENSION_WAREHOUSE_AREA_LIST = "warehouseAreas"
+
         const val EXTENSION_STATUS = "status"
 
         const val EXTENSION_ITEM_CATEGORY = "itemCategory"

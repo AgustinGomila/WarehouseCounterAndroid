@@ -25,6 +25,7 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.ui.activities.location.LocationSelectActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -93,7 +94,7 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
             if (extras != null) loadExtraBundleValues(extras)
         }
 
-        title = tempTitle
+        binding.topAppbar.title = tempTitle
 
         binding.continueButton.setOnClickListener { attemptSetupNewCount() }
 

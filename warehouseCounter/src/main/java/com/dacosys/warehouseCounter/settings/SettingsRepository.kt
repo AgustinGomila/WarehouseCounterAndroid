@@ -528,24 +528,6 @@ class SettingsRepository {
     )
     //endregion WarehouseCounter WebService */
 
-    //region Opciones de la actividad de selectora de Items
-    var selectItemSearchByItemEan = Preference(
-        key = "item_select_search_by_item_ean",
-        description = context.getString(R.string.item_select_search_by_item_ean),
-        default = true
-    )
-    var selectItemSearchByItemCategory = Preference(
-        key = "item_select_search_by_item_category",
-        description = context.getString(R.string.item_select_search_by_item_category),
-        default = true
-    )
-    var selectItemOnlyActive = Preference(
-        key = "item_select_only_active",
-        description = context.getString(R.string.only_active),
-        default = true
-    )
-    // endregion
-
     //region Actividad de búsqueda de pedidos
     var orderLocationSearchByOrderId = Preference(
         key = "order_location_search_by_order_id",
@@ -599,261 +581,396 @@ class SettingsRepository {
     )
     //endregion
 
+    //region Actividad de búsqueda de ítems
+    var itemSearchByOrderId = Preference(
+        key = "item_search_by_order_id",
+        description = context.getString(R.string.search_by_order_id),
+        default = true
+    )
+    var itemSearchByOrderExtId = Preference(
+        key = "item_search_by_order_external_id",
+        description = context.getString(R.string.search_by_order_external_id),
+        default = false
+    )
+    var itemSearchByCategory = Preference(
+        key = "item_search_by_category",
+        description = context.getString(R.string.search_by_category),
+        default = false
+    )
+    var itemSearchByWarehouse = Preference(
+        key = "item_search_by_warehouse",
+        description = context.getString(R.string.search_by_warehouse),
+        default = false
+    )
+    var itemSearchByArea = Preference(
+        key = "item_search_by_area",
+        description = context.getString(R.string.search_by_area),
+        default = true
+    )
+    var itemSearchByRack = Preference(
+        key = "item_search_by_rack",
+        description = context.getString(R.string.search_by_rack),
+        default = true
+    )
+    var itemSearchByItemDescription = Preference(
+        key = "item_search_by_item_description",
+        description = context.getString(R.string.search_by_item_description),
+        default = true
+    )
+    var itemSearchByItemCode = Preference(
+        key = "item_search_by_item_code",
+        description = context.getString(R.string.search_by_item_code),
+        default = true
+    )
+    var itemSearchByItemEan = Preference(
+        key = "item_search_by_item_ean",
+        description = context.getString(R.string.search_by_item_ean),
+        default = true
+    )
+    var itemSearchByOnlyActive = Preference(
+        key = "item_search_by_only_active",
+        description = context.getString(R.string.only_active),
+        default = true
+    )
+    var itemOnlyActive = Preference(
+        key = "item_only_active",
+        description = context.getString(R.string.only_active),
+        default = true
+    )
+    //endregion
+
+    var linkCodeSearchByCategory = Preference(
+        key = "link_code_search_by_category",
+        description = context.getString(R.string.search_by_category),
+        default = false
+    )
+    var linkCodeSearchByItemDescription = Preference(
+        key = "link_code_search_by_item_description",
+        description = context.getString(R.string.search_by_item_description),
+        default = true
+    )
+    var linkCodeSearchByItemEan = Preference(
+        key = "link_code_search_by_item_ean",
+        description = context.getString(R.string.search_by_item_ean),
+        default = true
+    )
+
+    var locationSearchByWarehouse = Preference(
+        key = "location_search_by_warehouse",
+        description = context.getString(R.string.search_by_warehouse),
+        default = false
+    )
+    var locationSearchByArea = Preference(
+        key = "location_search_by_area",
+        description = context.getString(R.string.search_by_area),
+        default = true
+    )
+    var locationSearchByRack = Preference(
+        key = "location_search_by_rack",
+        description = context.getString(R.string.search_by_rack),
+        default = true
+    )
+
     companion object {
         fun getAll(): ArrayList<Preference> {
-            val sp = settingRepository
+            val sr = settingRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
-                sp.autoSend,
-                sp.registryError,
-                sp.clientEmail,
-                sp.clientPassword,
-                sp.collectorType,
-                sp.confPassword,
-                sp.divisionChar,
-                sp.allowScreenRotation,
-                sp.showScannedCode,
-                sp.sendBarcodeCheckDigit,
+                sr.autoSend,
+                sr.registryError,
+                sr.clientEmail,
+                sr.clientPassword,
+                sr.collectorType,
+                sr.confPassword,
+                sr.divisionChar,
+                sr.allowScreenRotation,
+                sr.showScannedCode,
+                sr.sendBarcodeCheckDigit,
 
-                sp.connectionTimeout,
-                sp.colOffset,
-                sp.rowOffset,
-                sp.barcodeLabelTemplateId,
+                sr.connectionTimeout,
+                sr.colOffset,
+                sr.rowOffset,
+                sr.barcodeLabelTemplateId,
 
-                sp.useImageControl,
-                sp.icPass,
-                sp.icUser,
-                sp.icWsNamespace,
-                sp.icWsPass,
-                sp.icWsProxy,
-                sp.icWsProxyPort,
-                sp.icWsProxyUser,
-                sp.icWsProxyPass,
-                sp.icWsServer,
-                sp.icWsUseProxy,
-                sp.icWsUser,
+                sr.useImageControl,
+                sr.icPass,
+                sr.icUser,
+                sr.icWsNamespace,
+                sr.icWsPass,
+                sr.icWsProxy,
+                sr.icWsProxyPort,
+                sr.icWsProxyUser,
+                sr.icWsProxyPass,
+                sr.icWsServer,
+                sr.icWsUseProxy,
+                sr.icWsUser,
 
-                sp.orderRequestVisibleStatus,
-                sp.selectPtlOrderShowCheckBoxes,
-                sp.editItems,
-                sp.linkCodeShowImages,
-                sp.linkCodeShowCheckBoxes,
-                sp.itemSelectShowImages,
-                sp.itemSelectShowCheckBoxes,
-                sp.inboxShowCheckBoxes,
-                sp.outboxShowCheckBoxes,
+                sr.orderRequestVisibleStatus,
+                sr.selectPtlOrderShowCheckBoxes,
+                sr.editItems,
+                sr.linkCodeShowImages,
+                sr.linkCodeShowCheckBoxes,
+                sr.itemSelectShowImages,
+                sr.itemSelectShowCheckBoxes,
+                sr.inboxShowCheckBoxes,
+                sr.outboxShowCheckBoxes,
 
-                sp.printerBtAddress,
+                sr.printerBtAddress,
 
-                sp.proxy,
-                sp.proxyPass,
-                sp.proxyPort,
-                sp.proxyUser,
+                sr.proxy,
+                sr.proxyPass,
+                sr.proxyPort,
+                sr.proxyUser,
 
-                sp.requiredDescription,
+                sr.requiredDescription,
 
-                sp.rfidBtAddress,
-                sp.rfidPlaySoundOnRead,
-                sp.rfidReadPower,
-                sp.rfidShockOnRead,
-                sp.rfidSkipSameRead,
-                sp.rfidWritePower,
+                sr.rfidBtAddress,
+                sr.rfidPlaySoundOnRead,
+                sr.rfidReadPower,
+                sr.rfidShockOnRead,
+                sr.rfidSkipSameRead,
+                sr.rfidWritePower,
 
-                sp.scanModeMovement,
-                sp.scanModeCount,
-                sp.scanMultiplier,
+                sr.scanModeMovement,
+                sr.scanModeCount,
+                sr.scanMultiplier,
 
-                sp.finishOrder,
+                sr.finishOrder,
 
-                sp.allowUnknownCodes,
+                sr.allowUnknownCodes,
 
-                sp.icPhotoMaxHeightOrWidth,
+                sr.icPhotoMaxHeightOrWidth,
 
-                sp.useBtPrinter,
-                sp.printerBtAddress,
-                sp.useNetPrinter,
-                sp.ipNetPrinter,
-                sp.portNetPrinter,
-                sp.printerPower,
-                sp.printerSpeed,
-                sp.printerQty,
+                sr.useBtPrinter,
+                sr.printerBtAddress,
+                sr.useNetPrinter,
+                sr.ipNetPrinter,
+                sr.portNetPrinter,
+                sr.printerPower,
+                sr.printerSpeed,
+                sr.printerQty,
 
-                sp.selectItemSearchByItemCategory,
-                sp.selectItemSearchByItemEan,
-                sp.selectItemOnlyActive,
+                sr.shakeOnPendingOrders,
+                sr.showConfButton,
+                sr.signMandatory,
+                sr.soundOnPendingOrders,
 
-                sp.shakeOnPendingOrders,
-                sp.showConfButton,
-                sp.signMandatory,
-                sp.soundOnPendingOrders,
+                sr.clientPackage,
+                sr.installationCode,
+                sr.urlPanel,
 
-                sp.clientPackage,
-                sp.installationCode,
-                sp.urlPanel,
+                sr.useBtPrinter,
+                sr.useBtRfid,
+                sr.useNfc,
+                sr.useProxy,
 
-                sp.useBtPrinter,
-                sp.useBtRfid,
-                sp.useNfc,
-                sp.useProxy,
+                sr.wcSyncInterval,
+                sr.wcSyncRefreshOrder,
 
-                sp.wcSyncInterval,
-                sp.wcSyncRefreshOrder,
+                sr.flCameraPortraitLocX,
+                sr.flCameraPortraitLocY,
+                sr.flCameraPortraitWidth,
+                sr.flCameraPortraitHeight,
+                sr.flCameraLandscapeLocX,
+                sr.flCameraLandscapeLocY,
+                sr.flCameraLandscapeWidth,
+                sr.flCameraLandscapeHeight,
+                sr.flCameraContinuousMode,
+                sr.flCameraFilterRepeatedReads,
 
-                sp.flCameraPortraitLocX,
-                sp.flCameraPortraitLocY,
-                sp.flCameraPortraitWidth,
-                sp.flCameraPortraitHeight,
-                sp.flCameraLandscapeLocX,
-                sp.flCameraLandscapeLocY,
-                sp.flCameraLandscapeWidth,
-                sp.flCameraLandscapeHeight,
-                sp.flCameraContinuousMode,
-                sp.flCameraFilterRepeatedReads,
+                sr.symbologyPDF417,
+                sr.symbologyAztec,
+                sr.symbologyQRCode,
+                sr.symbologyCODABAR,
+                sr.symbologyCode128,
+                sr.symbologyCode39,
+                sr.symbologyCode93,
+                sr.symbologyDataMatrix,
+                sr.symbologyEAN13,
+                sr.symbologyEAN8,
+                sr.symbologyMaxiCode,
+                sr.symbologyRSS14,
+                sr.symbologyRSSExpanded,
+                sr.symbologyUPCA,
+                sr.symbologyUPCE,
 
-                sp.symbologyPDF417,
-                sp.symbologyAztec,
-                sp.symbologyQRCode,
-                sp.symbologyCODABAR,
-                sp.symbologyCode128,
-                sp.symbologyCode39,
-                sp.symbologyCode93,
-                sp.symbologyDataMatrix,
-                sp.symbologyEAN13,
-                sp.symbologyEAN8,
-                sp.symbologyMaxiCode,
-                sp.symbologyRSS14,
-                sp.symbologyRSSExpanded,
-                sp.symbologyUPCA,
-                sp.symbologyUPCE
+                sr.orderLocationSearchByOrderId,
+                sr.orderLocationSearchByOrderExtId,
+                sr.orderLocationSearchByWarehouse,
+                sr.orderLocationSearchByArea,
+                sr.orderLocationSearchByRack,
+                sr.orderLocationSearchByItemDescription,
+                sr.orderLocationSearchByItemCode,
+                sr.orderLocationSearchByItemEan,
+                sr.orderLocationSearchByOnlyActive,
+                sr.orderLocationOnlyActive,
+
+                sr.itemSearchByOrderId,
+                sr.itemSearchByOrderExtId,
+                sr.itemSearchByWarehouse,
+                sr.itemSearchByArea,
+                sr.itemSearchByRack,
+                sr.itemSearchByItemDescription,
+                sr.itemSearchByItemCode,
+                sr.itemSearchByItemEan,
+                sr.itemSearchByOnlyActive,
+                sr.itemOnlyActive,
+
+                sr.linkCodeSearchByItemEan,
+                sr.linkCodeSearchByItemDescription,
+                sr.linkCodeSearchByCategory,
+
+                sr.locationSearchByRack,
+                sr.locationSearchByArea,
+                sr.locationSearchByWarehouse
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))
         }
 
         fun getSymbology(): ArrayList<Preference> {
-            val sp = settingRepository
+            val sr = settingRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
-                sp.symbologyPDF417,
-                sp.symbologyAztec,
-                sp.symbologyQRCode,
-                sp.symbologyCODABAR,
-                sp.symbologyCode128,
-                sp.symbologyCode39,
-                sp.symbologyCode93,
-                sp.symbologyDataMatrix,
-                sp.symbologyEAN13,
-                sp.symbologyEAN8,
-                sp.symbologyMaxiCode,
-                sp.symbologyRSS14,
-                sp.symbologyRSSExpanded,
-                sp.symbologyUPCA,
-                sp.symbologyUPCE
+                sr.symbologyPDF417,
+                sr.symbologyAztec,
+                sr.symbologyQRCode,
+                sr.symbologyCODABAR,
+                sr.symbologyCode128,
+                sr.symbologyCode39,
+                sr.symbologyCode93,
+                sr.symbologyDataMatrix,
+                sr.symbologyEAN13,
+                sr.symbologyEAN8,
+                sr.symbologyMaxiCode,
+                sr.symbologyRSS14,
+                sr.symbologyRSSExpanded,
+                sr.symbologyUPCA,
+                sr.symbologyUPCE
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))
         }
 
         fun getAppConf(): ArrayList<Preference> {
-            val sp = settingRepository
+            val sr = settingRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
-                sp.soundOnPendingOrders,
-                sp.shakeOnPendingOrders,
-                sp.allowScreenRotation,
-                sp.showScannedCode,
-                sp.autoSend,
-                sp.sendBarcodeCheckDigit,
-                sp.collectorType,
-                sp.confPassword,
-                sp.registryError,
-                sp.showConfButton
+                sr.soundOnPendingOrders,
+                sr.shakeOnPendingOrders,
+                sr.allowScreenRotation,
+                sr.showScannedCode,
+                sr.autoSend,
+                sr.sendBarcodeCheckDigit,
+                sr.collectorType,
+                sr.confPassword,
+                sr.registryError,
+                sr.showConfButton
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))
         }
 
         fun getImageControl(): ArrayList<Preference> {
-            val sp = settingRepository
+            val sr = settingRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
-                sp.useImageControl,
-                sp.icPass,
-                sp.icUser,
-                sp.icWsNamespace,
-                sp.icWsPass,
-                sp.icWsProxy,
-                sp.icWsProxyPort,
-                sp.icWsProxyUser,
-                sp.icWsProxyPass,
-                sp.icWsServer,
-                sp.icWsUseProxy,
-                sp.icWsUser
+                sr.useImageControl,
+                sr.icPass,
+                sr.icUser,
+                sr.icWsNamespace,
+                sr.icWsPass,
+                sr.icWsProxy,
+                sr.icWsProxyPort,
+                sr.icWsProxyUser,
+                sr.icWsProxyPass,
+                sr.icWsServer,
+                sr.icWsUseProxy,
+                sr.icWsUser
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))
         }
 
         fun getClientPackage(): ArrayList<Preference> {
-            val sp = settingRepository
+            val sr = settingRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
-                sp.urlPanel,
-                sp.clientEmail,
-                sp.clientPassword,
-                sp.installationCode,
-                sp.clientPackage
+                sr.urlPanel,
+                sr.clientEmail,
+                sr.clientPassword,
+                sr.installationCode,
+                sr.clientPackage
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))
         }
 
         fun getClient(): ArrayList<Preference> {
-            val sp = settingRepository
+            val sr = settingRepository
             val allSections = ArrayList<Preference>()
-            Collections.addAll(allSections, sp.clientEmail, sp.clientPassword, sp.installationCode)
-
-            return ArrayList(allSections.sortedWith(compareBy { it.key }))
-        }
-
-        fun getAllSelectItemVisibleControls(): ArrayList<Preference> {
-            val sp = settingRepository
-            val allSections = ArrayList<Preference>()
-            Collections.addAll(
-                allSections, sp.selectItemSearchByItemCategory, sp.selectItemSearchByItemEan
-            )
+            Collections.addAll(allSections, sr.clientEmail, sr.clientPassword, sr.installationCode)
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))
         }
 
         fun getAllSelectOrderLocationVisibleControls(): ArrayList<Preference> {
-            val sp = settingRepository
+            val sr = settingRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
-                sp.orderLocationSearchByOrderId,
-                sp.orderLocationSearchByOrderExtId,
-                sp.orderLocationSearchByWarehouse,
-                sp.orderLocationSearchByArea,
-                sp.orderLocationSearchByRack,
-                sp.orderLocationSearchByItemDescription,
-                sp.orderLocationSearchByItemCode,
-                sp.orderLocationSearchByItemEan
+                sr.orderLocationSearchByOrderId,
+                sr.orderLocationSearchByOrderExtId,
+                sr.orderLocationSearchByWarehouse,
+                sr.orderLocationSearchByArea,
+                sr.orderLocationSearchByRack,
+                sr.orderLocationSearchByItemDescription,
+                sr.orderLocationSearchByItemCode,
+                sr.orderLocationSearchByItemEan
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))
         }
 
-        fun getAllSelectItemVisibleControlsIdAsString(): ArrayList<Preference> {
-            val sp = settingRepository
+        fun getAllSelectItemVisibleControls(): ArrayList<Preference> {
+            val sr = settingRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
-                allSections, sp.selectItemSearchByItemCategory, sp.selectItemSearchByItemEan
+                allSections,
+                sr.itemSearchByCategory,
+                sr.itemSearchByItemDescription,
+                sr.itemSearchByItemEan
+            )
+
+            return ArrayList(allSections.sortedWith(compareBy { it.key }))
+        }
+
+        fun getAllLinkCodeVisibleControls(): ArrayList<Preference> {
+            val sr = settingRepository
+            val allSections = ArrayList<Preference>()
+            Collections.addAll(
+                allSections,
+                sr.linkCodeSearchByItemEan,
+                sr.linkCodeSearchByItemDescription,
+                sr.linkCodeSearchByCategory
+            )
+
+            return ArrayList(allSections.sortedWith(compareBy { it.key }))
+        }
+
+        fun getAllSelectLocationVisibleControls(): ArrayList<Preference> {
+            val sr = settingRepository
+            val allSections = ArrayList<Preference>()
+            Collections.addAll(
+                allSections,
+                sr.locationSearchByWarehouse,
+                sr.locationSearchByArea,
+                sr.locationSearchByRack
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))

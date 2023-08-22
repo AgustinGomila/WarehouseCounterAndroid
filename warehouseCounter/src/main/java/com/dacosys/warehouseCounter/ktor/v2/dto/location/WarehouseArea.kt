@@ -20,11 +20,16 @@ data class WarehouseArea(
     @SerialName(STATUS_KEY) var status: Status? = null,
     @SerialName(PTL_LIST_KEY) var ptlList: List<String>? = null,
 
-    ) : Parcelable, Location() {
-
-    override fun id(): Long = id
-    override fun description(): String = description
-    override fun locationType(): LocationType = LocationType.WAREHOUSE_AREA
+    ) : Parcelable, Location {
+    override val locationType: LocationType get() = LocationType.WAREHOUSE_AREA
+    override val locationId: Long get() = id
+    override val locationParentStr: String get() = warehouse?.description ?: ""
+    override val locationExternalId: String get() = externalId
+    override val locationDescription: String get() = description
+    override val locationStatus: Status? get() = status
+    override val locationActive: Boolean get() = true
+    override val hashCode: Int get() = hashCode()
+    override val location: Location get() = this
 
     constructor(parcel: Parcel) : this(
         id = parcel.readLong(),
@@ -40,11 +45,6 @@ data class WarehouseArea(
         status = parcel.readParcelable(Status::class.java.classLoader),
         ptlList = parcel.createStringArrayList()
     )
-
-    val warehouseDescription: String
-        get() {
-            return warehouse?.description ?: ""
-        }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeLong(id)
@@ -63,6 +63,34 @@ data class WarehouseArea(
 
     override fun describeContents(): Int {
         return 0
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as WarehouseArea
+
+        if (id != other.id) return false
+        if (externalId != other.externalId) return false
+        if (description != other.description) return false
+        if (warehouseId != other.warehouseId) return false
+        if (acronym != other.acronym) return false
+        if (statusId != other.statusId) return false
+        if (creationDate != other.creationDate) return false
+        return modificationDate == other.modificationDate
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + externalId.hashCode()
+        result = 31 * result + description.hashCode()
+        result = 31 * result + warehouseId.hashCode()
+        result = 31 * result + acronym.hashCode()
+        result = 31 * result + statusId
+        result = 31 * result + creationDate.hashCode()
+        result = 31 * result + modificationDate.hashCode()
+        return result
     }
 
     companion object CREATOR : Parcelable.Creator<WarehouseArea> {

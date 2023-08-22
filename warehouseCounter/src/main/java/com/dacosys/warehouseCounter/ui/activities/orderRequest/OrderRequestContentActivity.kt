@@ -567,57 +567,76 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
         }
 
-        setPanels()
-
         setupPartial()
         setupDivided()
         setMultiplierButtonText()
     }
 
-    private fun setPanels() {
-        val currentLayout = ConstraintSet()
-        if (panelBottomIsExpanded) {
-            if (panelTopIsExpanded) currentLayout.load(this, R.layout.order_request_activity)
-            else currentLayout.load(this, R.layout.order_request_activity_top_panel_collapsed)
-        } else {
-            if (panelTopIsExpanded) currentLayout.load(this, R.layout.order_request_activity_bottom_panel_collapsed)
-            else currentLayout.load(this, R.layout.order_request_activity_both_panels_collapsed)
+    private val requiredLayout: Int
+        get() {
+            val r = if (panelBottomIsExpanded) {
+                if (panelTopIsExpanded) layoutBothPanelsExpanded
+                else layoutTopPanelCollapsed
+            } else {
+                if (panelTopIsExpanded) layoutBottomPanelCollapsed
+                else layoutBothPanelsCollapsed
+            }
+
+            if (BuildConfig.DEBUG) {
+                when (r) {
+                    layoutBothPanelsExpanded -> println("SELECTED LAYOUT: Both Panels Expanded")
+                    layoutBothPanelsCollapsed -> println("SELECTED LAYOUT: Both Panels Collapsed")
+                    layoutTopPanelCollapsed -> println("SELECTED LAYOUT: Top Panel Collapsed")
+                    layoutBottomPanelCollapsed -> println("SELECTED LAYOUT: Bottom Panel Collapsed")
+                }
+            }
+
+            return r
         }
 
-        val transition = ChangeBounds()
-        transition.interpolator = FastOutSlowInInterpolator()
-        transition.addListener(object : Transition.TransitionListener {
-            override fun onTransitionResume(transition: Transition?) {}
-            override fun onTransitionPause(transition: Transition?) {}
-            override fun onTransitionStart(transition: Transition?) {}
-            override fun onTransitionEnd(transition: Transition?) {}
-            override fun onTransitionCancel(transition: Transition?) {}
-        })
+    private val layoutBothPanelsExpanded: Int
+        get() {
+            return R.layout.order_request_activity
+        }
 
-        TransitionManager.beginDelayedTransition(binding.orderRequestContent, transition)
-        currentLayout.applyTo(binding.orderRequestContent)
+    private val layoutBothPanelsCollapsed: Int
+        get() {
+            return R.layout.order_request_activity_both_panels_collapsed
+        }
 
-        if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text = context.getString(R.string.collapse_panel)
-        else binding.expandBottomPanelButton?.text = context.getString(R.string.scan_options)
+    private val layoutTopPanelCollapsed: Int
+        get() {
+            return R.layout.order_request_activity_top_panel_collapsed
+        }
 
-        if (panelTopIsExpanded) binding.expandTopPanelButton?.text = context.getString(R.string.collapse_panel)
-        else binding.expandTopPanelButton?.text = context.getString(R.string.item_operations)
+    private val layoutBottomPanelCollapsed: Int
+        get() {
+            return R.layout.order_request_activity_bottom_panel_collapsed
+        }
+
+    private fun setPanels() {
+        runOnUiThread {
+            val currentLayout = ConstraintSet()
+            currentLayout.load(this, requiredLayout)
+            currentLayout.applyTo(binding.root)
+
+            if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text =
+                context.getString(R.string.collapse_panel)
+            else binding.expandBottomPanelButton?.text = context.getString(R.string.scan_options)
+
+            if (panelTopIsExpanded) binding.expandTopPanelButton?.text = context.getString(R.string.collapse_panel)
+            else binding.expandTopPanelButton?.text = context.getString(R.string.item_operations)
+        }
     }
 
     private fun setBottomPanelAnimation() {
         if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
         binding.expandBottomPanelButton!!.setOnClickListener {
-            val nextLayout = ConstraintSet()
-            if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_activity_bottom_panel_collapsed)
-                else nextLayout.load(this, R.layout.order_request_activity_both_panels_collapsed)
-            } else {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_activity)
-                else nextLayout.load(this, R.layout.order_request_activity_top_panel_collapsed)
-            }
-
             panelBottomIsExpanded = !panelBottomIsExpanded
+            val nextLayout = ConstraintSet()
+            nextLayout.load(this, requiredLayout)
+
             val transition = ChangeBounds()
             transition.interpolator = FastOutSlowInInterpolator()
             transition.addListener(object : Transition.TransitionListener {
@@ -631,13 +650,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 override fun onTransitionCancel(transition: Transition?) {}
             })
 
-            TransitionManager.beginDelayedTransition(binding.orderRequestContent, transition)
+            TransitionManager.beginDelayedTransition(binding.root, transition)
+            nextLayout.applyTo(binding.root)
 
             if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text =
                 context.getString(R.string.collapse_panel)
             else binding.expandBottomPanelButton?.text = context.getString(R.string.scan_options)
-
-            nextLayout.applyTo(binding.orderRequestContent)
         }
     }
 
@@ -645,16 +663,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
         binding.expandTopPanelButton!!.setOnClickListener {
-            val nextLayout = ConstraintSet()
-            if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_activity_top_panel_collapsed)
-                else nextLayout.load(this, R.layout.order_request_activity)
-            } else {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_activity_both_panels_collapsed)
-                else nextLayout.load(this, R.layout.order_request_activity_bottom_panel_collapsed)
-            }
-
             panelTopIsExpanded = !panelTopIsExpanded
+            val nextLayout = ConstraintSet()
+            nextLayout.load(this, requiredLayout)
 
             val transition = ChangeBounds()
             transition.interpolator = FastOutSlowInInterpolator()
@@ -669,12 +680,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 override fun onTransitionCancel(transition: Transition?) {}
             })
 
-            TransitionManager.beginDelayedTransition(binding.orderRequestContent, transition)
+            TransitionManager.beginDelayedTransition(binding.root, transition)
+            nextLayout.applyTo(binding.root)
 
             if (panelTopIsExpanded) binding.expandTopPanelButton?.text = context.getString(R.string.collapse_panel)
             else binding.expandTopPanelButton?.text = context.getString(R.string.item_operations)
-
-            nextLayout.applyTo(binding.orderRequestContent)
         }
     }
 
@@ -1396,6 +1406,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     public override fun onStart() {
         super.onStart()
 
+        setPanels()
+
         if (fillRequired) {
             fillRequired = false
 
@@ -1421,7 +1433,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     else -> context.getString(R.string.counted)
                 }
             }
-            title = tempTitle
+            binding.topAppbar.title = tempTitle
         }
     }
 

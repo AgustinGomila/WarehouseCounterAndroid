@@ -13,30 +13,17 @@ import com.dacosys.warehouseCounter.databinding.SearchTextFragmentBinding
 
 /**
  * A simple [Fragment] subclass.
- * Use the [SearchTextFragment.newInstance] factory method to
- * create an instance of this fragment.
  */
-class SearchTextFragment : Fragment() {
-    private var searchText: String = ""
+class SearchTextFragment private constructor(builder: Builder) : Fragment() {
 
-    private var mSearchTextChangedCallback: OnSearchTextChangedListener? = null
-    private var mFocusChangedCallback: OnSearchTextFocusChangedListener? = null
+    /**
+     * Required constructor for Fragments
+     */
+    constructor() : this(Builder())
 
-    fun searchTextChangedCallback(`val`: OnSearchTextChangedListener): SearchTextFragment {
-        mSearchTextChangedCallback = `val`
-        return this
-    }
-
-    fun focusChangedCallback(`val`: OnSearchTextFocusChangedListener): SearchTextFragment {
-        mFocusChangedCallback = `val`
-        return this
-    }
-
-    fun searchText(`val`: String): SearchTextFragment {
-        searchText = `val`
-        setText()
-        return this
-    }
+    var searchText: String
+    private var textChangedCallback: OnSearchTextChangedListener?
+    private var focusChangedCallback: OnSearchTextFocusChangedListener?
 
     interface OnSearchTextChangedListener {
         fun onSearchTextChanged(
@@ -45,17 +32,17 @@ class SearchTextFragment : Fragment() {
     }
 
     interface OnSearchTextFocusChangedListener {
-        fun onFocusChange(
+        fun onSearchTextFocusChange(
             hasFocus: Boolean
         )
     }
 
-    private fun onSearchTextChanged(searchText: String) {
-        mSearchTextChangedCallback?.onSearchTextChanged(searchText)
+    private fun onTextChanged(searchText: String) {
+        textChangedCallback?.onSearchTextChanged(searchText)
     }
 
     private fun onFocusChanged(hasFocus: Boolean) {
-        mFocusChangedCallback?.onFocusChange(hasFocus)
+        focusChangedCallback?.onSearchTextFocusChange(hasFocus)
     }
 
     private var _binding: SearchTextFragmentBinding? = null
@@ -69,23 +56,36 @@ class SearchTextFragment : Fragment() {
         _binding = null
     }
 
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+
+        savedInstanceState.putString(ARG_SEARCH_TEXT, searchText)
+    }
+
+    private fun loadSavedValues(b: Bundle) {
+        searchText = b.getString(ARG_SEARCH_TEXT) ?: ""
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
         _binding = SearchTextFragmentBinding.inflate(inflater, container, false)
-        return binding.root
+        val view = binding.root
+
+        if (savedInstanceState != null) {
+            loadSavedValues(savedInstanceState)
+        }
+
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        if (arguments != null) {
-            searchText = requireArguments().getString(ARG_SEARCH_TEXT) ?: ""
-        }
 
-        setText()
         setPanel()
+        refreshViews()
     }
 
     internal class CustomTextWatcher(private val onTextChangedCallback: (String) -> Unit) : TextWatcher {
@@ -107,7 +107,7 @@ class SearchTextFragment : Fragment() {
 
     private val customWatcher: CustomTextWatcher by lazy {
         CustomTextWatcher { searchText ->
-            onSearchTextChanged(searchText)
+            onTextChanged(searchText)
         }
     }
 
@@ -122,27 +122,48 @@ class SearchTextFragment : Fragment() {
         binding.searchTextClearImageView.setOnClickListener { binding.searchEditText.setText("") }
     }
 
-    private fun setText() {
+    @Suppress("unused", "MemberVisibilityCanBePrivate")
+    fun refreshViews() {
         binding.searchEditText.removeTextChangedListener(customWatcher)
         binding.searchEditText.setText(searchText, TextView.BufferType.EDITABLE)
         binding.searchEditText.addTextChangedListener(customWatcher)
     }
 
+    init {
+        searchText = builder.searchText
+        this.textChangedCallback = builder.textChangedCallback
+        this.focusChangedCallback = builder.focusChangedCallback
+    }
+
+    class Builder {
+        fun build(): SearchTextFragment {
+            return SearchTextFragment(this)
+        }
+
+        internal var searchText: String = ""
+        internal var textChangedCallback: OnSearchTextChangedListener? = null
+        internal var focusChangedCallback: OnSearchTextFocusChangedListener? = null
+
+        @Suppress("unused")
+        fun setSearchText(searchText: String): Builder {
+            this.searchText = searchText
+            return this
+        }
+
+        @Suppress("unused")
+        fun searchTextChangedCallback(callback: OnSearchTextChangedListener?): Builder {
+            this.textChangedCallback = callback
+            return this
+        }
+
+        @Suppress("unused")
+        fun focusChangedCallback(callback: OnSearchTextFocusChangedListener?): Builder {
+            this.focusChangedCallback = callback
+            return this
+        }
+    }
+
     companion object {
         const val ARG_SEARCH_TEXT = "searchText"
-
-        fun newInstance(searchText: String): SearchTextFragment {
-            val fragment = SearchTextFragment()
-
-            val args = Bundle()
-            args.putString(ARG_SEARCH_TEXT, searchText)
-            fragment.arguments = args
-
-            return fragment
-        }
-
-        fun equals(a: Any?, b: Any?): Boolean {
-            return a != null && a == b
-        }
     }
 }

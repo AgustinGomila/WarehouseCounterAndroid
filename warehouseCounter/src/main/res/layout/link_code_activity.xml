@@ -522,14 +522,14 @@
 
         <androidx.fragment.app.FragmentContainerView
                 android:id="@+id/filterFragment"
-                android:name="com.dacosys.warehouseCounter.ui.fragments.item.ItemSelectFilterFragment"
+                android:name="com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:layout="@layout/item_select_filter_fragment"/>
+                tools:layout="@layout/select_filter_fragment"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

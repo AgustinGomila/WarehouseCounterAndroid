@@ -155,7 +155,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
             }
         }
 
-        title = tempTitle
+        binding.topAppbar.title = tempTitle
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
         binding.swipeRefreshItem.setColorSchemeResources(
@@ -170,7 +170,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         binding.detailButton.setOnClickListener { showDetail() }
 
         // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        Screen.setupUI(binding.inbox, this)
+        Screen.setupUI(binding.root, this)
     }
 
     override fun onStart() {

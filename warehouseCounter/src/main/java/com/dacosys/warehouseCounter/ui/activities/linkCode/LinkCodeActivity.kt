@@ -54,6 +54,9 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.LinkCodeActivityBottomPanelCollapsedBinding
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.ktor.v2.functions.SendItemCodeArray
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
@@ -73,20 +76,19 @@ import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.ui.activities.item.CheckItemCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemRecyclerAdapter
-import com.dacosys.warehouseCounter.ui.fragments.item.ItemSelectFilterFragment
+import com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import org.parceler.Parcels
 import java.util.*
 import kotlin.concurrent.thread
 
 class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener,
     ItemRecyclerAdapter.SelectedItemChangedListener, ItemRecyclerAdapter.CheckedChangedListener,
-    CounterHandler.CounterListener, ItemSelectFilterFragment.OnFilterChangedListener,
+    CounterHandler.CounterListener, SelectFilterFragment.OnFilterChangedListener,
     SwipeRefreshLayout.OnRefreshListener, ItemRecyclerAdapter.DataSetChangedListener,
     ItemRecyclerAdapter.AddPhotoRequiredListener, ItemRecyclerAdapter.AlbumViewRequiredListener {
     override fun onDestroy() {
@@ -97,7 +99,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private fun destroyLocals() {
         adapter?.refreshListeners()
         adapter?.refreshImageControlListeners()
-        itemSelectFilterFragment!!.onDestroy()
+
+        filterFragment.onDestroy()
     }
 
     override fun onSelectedItemChanged(item: Item?) {
@@ -193,7 +196,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     private var panelIsExpanded = false
 
-    private var itemSelectFilterFragment: ItemSelectFilterFragment? = null
+    private lateinit var filterFragment: SelectFilterFragment
 
     private var linkCode: String = ""
 
@@ -275,8 +278,6 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.link_code)
 
-        itemSelectFilterFragment?.itemCode = b.getString(ARG_ITEM_CODE) ?: ""
-        itemSelectFilterFragment?.itemCategory = Parcels.unwrap<ItemCategory>(b.getParcelable(ARG_ITEM_CATEGORY))
         multiSelect = b.getBoolean(ARG_MULTISELECT, false)
     }
 
@@ -303,8 +304,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         fillRequired = true
 
         //// INICIALIZAR CONTROLES
-        itemSelectFilterFragment =
-            supportFragmentManager.findFragmentById(R.id.filterFragment) as ItemSelectFilterFragment
+        filterFragment =
+            supportFragmentManager.findFragmentById(R.id.filterFragment) as SelectFilterFragment
 
         if (savedInstanceState != null) {
             loadBundleValues(savedInstanceState)
@@ -314,12 +315,13 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             if (extras != null) loadExtrasBundleValues(extras)
         }
 
-        title = tempTitle
+        binding.topAppbar.title = tempTitle
 
-        itemSelectFilterFragment!!.setListener(this)
+        setupFilterFragment()
 
         // Esta clase controla el comportamiento de los botones (+) y (-)
-        ch = CounterHandler.Builder().incrementalView(binding.moreButton)
+        ch = CounterHandler.Builder()
+            .incrementalView(binding.moreButton)
             .decrementalView(binding.lessButton).minRange(1.0) // cant go any less than -50
             .maxRange(100.0) // cant go any further than 50
             .isCycle(true) // 49,50,-50,-49 and so on
@@ -431,13 +433,23 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         binding.unlinkButton.setOnClickListener { unlink() }
         binding.sendButton.setOnClickListener { sendDialog() }
 
-        setSendButtonText()
-        setPanels()
-
         // Ocultar panel de códigos vinculados al ítem seleccionado
         binding.moreCodesConstraintLayout.visibility = GONE
 
-        Screen.setupUI(binding.linkCode, this)
+        Screen.setupUI(binding.root, this)
+    }
+
+    private fun setupFilterFragment() {
+        val sv = settingViewModel
+        val sr = settingRepository
+        filterFragment =
+            SelectFilterFragment.Builder()
+                .searchByItemDescription(sv.linkCodeSearchByItemDescription, sr.linkCodeSearchByItemDescription)
+                .searchByItemEan(sv.linkCodeSearchByItemEan, sr.linkCodeSearchByItemEan)
+                .searchByCategory(sv.linkCodeSearchByCategory, sr.linkCodeSearchByCategory)
+                .filterChangedListener(this)
+                .build()
+        supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
 
     // region Inset animation
@@ -457,7 +469,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
      * animación. Si se ejecutara al mismo tiempo el cambio en los paneles y la animación del teclado la vista no
      * acompaña correctamente al teclado, ya que cambia durante la animación.
      */
-    private var changePanelStateAtFinish: Boolean = false
+    private var changePanelsStateAtFinish: Boolean = false
 
     private fun setupWindowInsetsAnimation() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -518,34 +530,27 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun postExecuteImeAnimation() {
-        // Si estamos mostrando el teclado, colapsamos los paneles.
-        if (isKeyboardVisible) {
-            when {
-                resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && !binding.codeEditText.isFocused -> {
-                    collapsePanel()
-                }
-
-                resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT && binding.codeEditText.isFocused -> {
-                    collapsePanel()
-                }
-
-                resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT && !binding.codeEditText.isFocused -> {
-                    collapsePanel()
-                }
-            }
-        }
-
         // Si estamos esperando que termine la animación para ejecutar un cambio de vista
-        if (changePanelStateAtFinish) {
-            changePanelStateAtFinish = false
-            binding.expandButton?.performClick()
-        }
-    }
+        if (changePanelsStateAtFinish) {
+            changePanelsStateAtFinish = false
+            setPanels()
+        } else if (isKeyboardVisible) {
+            val orientation = resources.configuration.orientation
+            when {
+                orientation == Configuration.ORIENTATION_PORTRAIT && !binding.codeEditText.isFocused -> {
+                    panelIsExpanded = false
+                    setPanels()
+                }
 
-    private fun collapsePanel() {
-        if (panelIsExpanded) {
-            runOnUiThread {
-                binding.expandButton?.performClick()
+                orientation == Configuration.ORIENTATION_PORTRAIT && binding.codeEditText.isFocused -> {
+                    panelIsExpanded = false
+                    setPanels()
+                }
+
+                orientation != Configuration.ORIENTATION_PORTRAIT && !binding.codeEditText.isFocused -> {
+                    panelIsExpanded = false
+                    setPanels()
+                }
             }
         }
     }
@@ -715,34 +720,47 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }
     }
 
-    private fun setPanels() {
-        val currentLayout = ConstraintSet()
-        if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            if (panelIsExpanded) currentLayout.load(this, R.layout.link_code_activity)
-            else currentLayout.load(this, R.layout.link_code_activity_bottom_panel_collapsed)
-        } else {
-            currentLayout.load(this, R.layout.link_code_activity)
-        }
-
-        val transition = ChangeBounds()
-        transition.interpolator = FastOutSlowInInterpolator()
-        transition.addListener(object : Transition.TransitionListener {
-            override fun onTransitionResume(transition: Transition?) {}
-            override fun onTransitionPause(transition: Transition?) {}
-            override fun onTransitionStart(transition: Transition?) {}
-            override fun onTransitionEnd(transition: Transition?) {
-                refreshTextViews()
+    private val requiredLayout: Int
+        get() {
+            val orientation = resources.configuration.orientation
+            val r = if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                if (panelIsExpanded) layoutBothPanelsExpanded
+                else layoutBottomPanelCollapsed
+            } else {
+                layoutBothPanelsExpanded
             }
 
-            override fun onTransitionCancel(transition: Transition?) {}
-        })
+            if (BuildConfig.DEBUG) {
+                when (r) {
+                    layoutBothPanelsExpanded -> println("SELECTED LAYOUT: Both Panels Expanded")
+                    layoutBottomPanelCollapsed -> println("SELECTED LAYOUT: Bottom Panel Collapsed")
+                }
+            }
 
-        TransitionManager.beginDelayedTransition(binding.linkCode, transition)
-        currentLayout.applyTo(binding.linkCode)
+            return r
+        }
 
-        if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            if (panelIsExpanded) binding.expandButton?.text = context.getString(R.string.collapse_panel)
-            else binding.expandButton?.text = context.getString(R.string.search_options)
+    private val layoutBothPanelsExpanded: Int
+        get() {
+            return R.layout.link_code_activity
+        }
+
+    private val layoutBottomPanelCollapsed: Int
+        get() {
+            return R.layout.link_code_activity_bottom_panel_collapsed
+        }
+
+    private fun setPanels() {
+        runOnUiThread {
+            val currentLayout = ConstraintSet()
+            currentLayout.load(this, requiredLayout)
+            currentLayout.applyTo(binding.root)
+
+            val orientation = resources.configuration.orientation
+            if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                if (panelIsExpanded) binding.expandButton?.text = context.getString(R.string.collapse_panel)
+                else binding.expandButton?.text = context.getString(R.string.search_options)
+            }
         }
     }
 
@@ -752,18 +770,16 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         binding.expandButton!!.setOnClickListener {
             val bottomVisible = panelIsExpanded
             val imeVisible = isKeyboardVisible
-
+            panelIsExpanded = !panelIsExpanded
             if (!bottomVisible && imeVisible) {
                 // Esperar que se cierre el teclado luego de perder el foco el TextView para expandir el panel
-                changePanelStateAtFinish = true
+                changePanelsStateAtFinish = true
                 return@setOnClickListener
             }
 
             val nextLayout = ConstraintSet()
-            if (panelIsExpanded) nextLayout.load(this, R.layout.link_code_activity_bottom_panel_collapsed)
-            else nextLayout.load(this, R.layout.link_code_activity)
+            nextLayout.load(this, requiredLayout)
 
-            panelIsExpanded = !panelIsExpanded
             val transition = ChangeBounds()
             transition.interpolator = FastOutSlowInInterpolator()
             transition.addListener(object : Transition.TransitionListener {
@@ -777,8 +793,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 override fun onTransitionCancel(transition: Transition?) {}
             })
 
-            TransitionManager.beginDelayedTransition(binding.linkCode, transition)
-            nextLayout.applyTo(binding.linkCode)
+            TransitionManager.beginDelayedTransition(binding.root, transition)
+            nextLayout.applyTo(binding.root)
 
             if (panelIsExpanded) binding.expandButton?.text = context.getString(R.string.collapse_panel)
             else binding.expandButton?.text = context.getString(R.string.search_options)
@@ -789,7 +805,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         if (!panelIsExpanded) return
 
         runOnUiThread {
-            itemSelectFilterFragment!!.refreshTextViews()
+            filterFragment.refreshViews()
             binding.moreCodesEditText.setText(binding.moreCodesEditText.text.toString())
             binding.qtyEditText.setText(
                 binding.qtyEditText.text.toString(),
@@ -903,16 +919,16 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         binding.topAppbar.overflowIcon = drawable
 
         // Opciones de visibilidad del menú
-        val allControls = SettingsRepository.getAllSelectItemVisibleControls()
+        val allControls = SettingsRepository.getAllLinkCodeVisibleControls()
         allControls.forEach { p ->
             menu.add(0, p.key.hashCode(), menu.size(), p.description).setChecked(
-                itemSelectFilterFragment!!.getVisibleFilters().contains(p)
+                filterFragment.getVisibleFilters().contains(p)
             ).isCheckable = true
         }
 
         for (y in allControls) {
             var tempIndex = 0
-            for (i in itemSelectFilterFragment!!.getVisibleFilters()) {
+            for (i in filterFragment.getVisibleFilters()) {
                 if (i != y) continue
 
                 val item = menu.getItem(tempIndex)
@@ -986,8 +1002,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             }
         }
 
-        val sp = settingRepository
         item.isChecked = !item.isChecked
+        val sv = settingViewModel
         when (id) {
             menuItemShowImages -> {
                 adapter?.showImages(item.isChecked)
@@ -1001,12 +1017,19 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     )
             }
 
-            sp.selectItemSearchByItemEan.key.hashCode() -> {
-                itemSelectFilterFragment!!.setEanDescriptionVisibility(if (item.isChecked) VISIBLE else GONE)
+            settingRepository.linkCodeSearchByItemEan.key.hashCode() -> {
+                filterFragment.setEanVisibility(if (item.isChecked) VISIBLE else GONE)
+                sv.linkCodeSearchByItemEan = item.isChecked
             }
 
-            sp.selectItemSearchByItemCategory.key.hashCode() -> {
-                itemSelectFilterFragment!!.setCategoryVisibility(if (item.isChecked) VISIBLE else GONE)
+            settingRepository.linkCodeSearchByCategory.key.hashCode() -> {
+                filterFragment.setCategoryVisibility(if (item.isChecked) VISIBLE else GONE)
+                sv.linkCodeSearchByCategory = item.isChecked
+            }
+
+            settingRepository.linkCodeSearchByItemDescription.key.hashCode() -> {
+                filterFragment.setDescriptionVisibility(if (item.isChecked) VISIBLE else GONE)
+                sv.linkCodeSearchByItemDescription = item.isChecked
             }
 
             else -> return super.onOptionsItemSelected(item)
@@ -1033,10 +1056,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun getItems() {
-        val fr = itemSelectFilterFragment ?: return
-
-        val itemCode = fr.itemCode
-        val itemCategory = fr.itemCategory
+        val itemCode = filterFragment.itemCode
+        val itemCategory = filterFragment.itemCategory
 
         if (itemCode.isEmpty() && itemCategory == null) {
             showProgressBar(false)
@@ -1070,6 +1091,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         rejectNewInstances = false
 
         JotterListener.resumeReaderDevices(this)
+
+        setSendButtonText()
+        setPanels()
 
         if (fillRequired) {
             fillRequired = false
@@ -1150,8 +1174,15 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     override fun onFilterChanged(
         code: String,
+        description: String,
+        ean: String,
         itemCategory: ItemCategory?,
-        onlyActive: Boolean,
+        orderId: String,
+        orderExternalId: String,
+        warehouse: Warehouse?,
+        warehouseArea: WarehouseArea?,
+        rack: Rack?,
+        onlyActive: Boolean
     ) {
         Screen.closeKeyboard(this)
         thread {
@@ -1169,7 +1200,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             if (pos != NO_POSITION) {
                 adapter?.selectItem(item)
             } else {
-                itemSelectFilterFragment!!.itemCode = item.ean
+                filterFragment.itemCode = item.ean
                 thread {
                     completeList = arrayListOf(item)
                     checkedIdArray.clear()
@@ -1365,8 +1396,6 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     companion object {
         const val ARG_TITLE = "title"
-        const val ARG_ITEM_CODE = "itemCode"
-        const val ARG_ITEM_CATEGORY = "itemCategory"
         const val ARG_MULTISELECT = "multiSelect"
     }
 }

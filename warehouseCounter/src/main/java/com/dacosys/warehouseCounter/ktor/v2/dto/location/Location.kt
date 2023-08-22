@@ -1,7 +1,15 @@
 package com.dacosys.warehouseCounter.ktor.v2.dto.location
 
-abstract class Location {
-    abstract fun id(): Long
-    abstract fun description(): String
-    abstract fun locationType(): LocationType
+import android.os.Parcelable
+
+interface Location : Parcelable {
+    val locationId: Long
+    val locationDescription: String
+    val locationParentStr: String
+    val locationExternalId: String
+    val locationType: LocationType
+    val locationActive: Boolean
+    val locationStatus: Status?
+    val hashCode: Int
+    val location: Location
 }

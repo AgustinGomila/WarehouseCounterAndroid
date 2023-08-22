@@ -17,11 +17,16 @@ data class Rack(
     @SerialName(MODIFICATION_DATE_KEY) var modificationDate: String = "",
 
     @SerialName(WAREHOUSE_AREA_KEY) var warehouseArea: WarehouseArea? = null,
-) : Parcelable, Location() {
-
-    override fun id(): Long = id
-    override fun description(): String = code
-    override fun locationType(): LocationType = LocationType.RACK
+) : Parcelable, Location {
+    override val locationType: LocationType get() = LocationType.RACK
+    override val locationId: Long get() = id
+    override val locationParentStr: String get() = warehouseArea?.description ?: ""
+    override val locationExternalId: String get() = extId
+    override val locationDescription: String get() = code
+    override val locationStatus: Status? get() = null
+    override val locationActive: Boolean get() = true
+    override val hashCode: Int get() = hashCode()
+    override val location: Location get() = this
 
     constructor(parcel: Parcel) : this(
         id = parcel.readLong(),
@@ -36,10 +41,50 @@ data class Rack(
         warehouseArea = parcel.readParcelable(WarehouseArea::class.java.classLoader)
     )
 
-    val warehouseAreaDescription: String
-        get() {
-            return warehouseArea?.description ?: ""
-        }
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeLong(id)
+        parcel.writeString(extId)
+        parcel.writeString(code)
+        parcel.writeInt(levels)
+        parcel.writeValue(active)
+        parcel.writeLong(warehouseAreaId)
+        parcel.writeString(creationDate)
+        parcel.writeString(modificationDate)
+
+        parcel.writeParcelable(warehouseArea, flags)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Rack
+
+        if (id != other.id) return false
+        if (extId != other.extId) return false
+        if (code != other.code) return false
+        if (levels != other.levels) return false
+        if (active != other.active) return false
+        if (warehouseAreaId != other.warehouseAreaId) return false
+        if (creationDate != other.creationDate) return false
+        return modificationDate == other.modificationDate
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + extId.hashCode()
+        result = 31 * result + code.hashCode()
+        result = 31 * result + levels
+        result = 31 * result + active.hashCode()
+        result = 31 * result + warehouseAreaId.hashCode()
+        result = 31 * result + creationDate.hashCode()
+        result = 31 * result + modificationDate.hashCode()
+        return result
+    }
 
     companion object CREATOR : Parcelable.Creator<Rack> {
         override fun createFromParcel(parcel: Parcel): Rack {
@@ -62,22 +107,5 @@ data class Rack(
         const val WAREHOUSE_AREA_KEY = "warehouseArea"
 
         const val RACK_LIST_KEY = "racks"
-    }
-
-    override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeLong(id)
-        parcel.writeString(extId)
-        parcel.writeString(code)
-        parcel.writeInt(levels)
-        parcel.writeValue(active)
-        parcel.writeLong(warehouseAreaId)
-        parcel.writeString(creationDate)
-        parcel.writeString(modificationDate)
-
-        parcel.writeParcelable(warehouseArea, flags)
-    }
-
-    override fun describeContents(): Int {
-        return 0
     }
 }

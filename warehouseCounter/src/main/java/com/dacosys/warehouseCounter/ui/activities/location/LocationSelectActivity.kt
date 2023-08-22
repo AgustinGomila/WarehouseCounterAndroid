@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ui.activities.ptlOrder
+package com.dacosys.warehouseCounter.ui.activities.location
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -103,6 +103,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         }
 
         title = tempTitle
+
         binding.locationSelect.setOnClickListener { onBackPressed() }
 
         binding.clearImageView.setOnClickListener {
@@ -127,7 +128,21 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         }
         binding.autoCompleteTextView.setOnContractsAvailability(this)
         binding.autoCompleteTextView.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
-            if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold && binding.autoCompleteTextView.adapter != null && (binding.autoCompleteTextView.adapter as WarehouseAreaAdapter).count > 0 && !binding.autoCompleteTextView.isPopupShowing) {
+            if (hasFocus &&
+                binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold &&
+                !binding.autoCompleteTextView.isPopupShowing
+            ) {
+                var count = 0
+                val adapter = binding.autoCompleteTextView.adapter ?: return@OnFocusChangeListener
+                when (adapter) {
+                    is WarehouseAdapter -> count = adapter.count()
+
+                    is WarehouseAreaAdapter -> count = adapter.count()
+
+                    is RackAdapter -> count = adapter.count()
+                }
+                if (count == 0) return@OnFocusChangeListener
+
                 // Display the suggestion dropdown on focus
                 Handler(Looper.getMainLooper()).post {
                     adjustAndShowDropDown()
@@ -179,7 +194,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         if (all.any()) {
             var founded = false
             for (a in all) {
-                val desc = a.description()
+                val desc = a.locationParentStr
                 if (desc.startsWith(binding.autoCompleteTextView.text.toString().trim(), true)) {
                     location = a
                     founded = true
@@ -189,7 +204,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
 
             if (!founded) {
                 for (a in all) {
-                    val desc = a.description()
+                    val desc = a.locationParentStr
                     if (desc.contains(binding.autoCompleteTextView.text.toString().trim(), true)) {
                         location = a
                         break
@@ -223,7 +238,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
                         binding.autoCompleteTextView.text.toString()
                     }
                 } else {
-                    location?.description() ?: ""
+                    location?.locationDescription
                 }
             )
 
@@ -398,7 +413,10 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
 
     private fun fillRack(it: ArrayList<Rack>) {
         val adapter = RackAdapter(
-            activity = this, resource = R.layout.rack_row, rackArray = ArrayList(it), suggestedList = ArrayList()
+            activity = this,
+            resource = R.layout.rack_row,
+            rackArray = ArrayList(it),
+            suggestedList = ArrayList()
         )
 
         runOnUiThread {

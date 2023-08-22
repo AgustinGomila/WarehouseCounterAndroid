@@ -32,42 +32,24 @@
             app:layout_constraintGuide_percent="0.7"/>
 
     <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/panelTop"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/guidelineGralVert"
-            app:layout_constraintStart_toStartOf="parent">
-
-        <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/printFragment"
-                android:name="com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:layout="@layout/print_label_fragment"/>
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:layout_constraintBottom_toTopOf="@+id/panelTop"
             app:layout_constraintEnd_toStartOf="@+id/guidelineGralVert"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/top_appbar" android:id="@+id/mainLayout">
+            app:layout_constraintTop_toBottomOf="@+id/top_appbar" android:id="@+id/mainLayout"
+            app:layout_constraintBottom_toBottomOf="parent">
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
                 android:id="@+id/swipeRefreshItem"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="0dp"
-                app:srl_direction="bottom"
+                android:layout_marginEnd="1dp"
+                app:layout_constraintBottom_toTopOf="@+id/summaryFragment"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toTopOf="@+id/summaryFragment" android:layout_marginStart="1dp"
-                android:layout_marginEnd="1dp">
+                app:srl_direction="bottom"
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginStart="1dp">
 
             <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recyclerView"
@@ -84,16 +66,7 @@
                     android:padding="2dp"/>
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-        <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/searchTextFragment"
-                android:name="com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                tools:layout="@layout/search_text_fragment"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintBottom_toTopOf="@+id/expandTopPanelButton" android:layout_marginStart="1dp"
-                android:layout_marginEnd="1dp"/>
+
         <androidx.fragment.app.FragmentContainerView
                 android:id="@+id/summaryFragment"
                 android:name="com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment"
@@ -104,25 +77,17 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintBottom_toTopOf="@+id/searchTextFragment" android:layout_marginStart="1dp"
                 android:layout_marginEnd="1dp"/>
-
-        <Button
-                android:id="@+id/expandTopPanelButton"
+        <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/searchTextFragment"
+                android:name="com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment"
                 android:layout_width="0dp"
-                android:layout_height="30dp"
-                android:layout_marginStart="2dp"
-                android:layout_marginEnd="2dp"
-                android:layout_marginBottom="2dp"
-                android:background="@drawable/rounded_corner_button_coral"
-                android:clickable="true"
-                android:elevation="1dp"
-                android:focusable="true"
-                android:stateListAnimator="@null"
-                android:text="@string/collapse_panel"
-                android:textColor="@color/text_dark"
-                app:layout_constraintBottom_toBottomOf="parent"
+                android:layout_height="wrap_content"
+                tools:layout="@layout/search_text_fragment"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="1.0"
-                app:layout_constraintStart_toStartOf="parent"/>
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginStart="1dp"
+                android:layout_marginEnd="1dp"
+                app:layout_constraintBottom_toBottomOf="parent"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -143,14 +108,14 @@
 
             <androidx.fragment.app.FragmentContainerView
                     android:id="@+id/filterFragment"
-                    android:name="com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderLocationFilterFragment"
+                    android:name="com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    tools:layout="@layout/order_location_select_filter_fragment"/>
+                    tools:layout="@layout/select_filter_fragment"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
 
@@ -170,6 +135,6 @@
             android:textColor="@color/text_light"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/guidelineGralVert"/>
+            app:layout_constraintStart_toStartOf="@+id/guidelineGralVert" android:visibility="gone"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

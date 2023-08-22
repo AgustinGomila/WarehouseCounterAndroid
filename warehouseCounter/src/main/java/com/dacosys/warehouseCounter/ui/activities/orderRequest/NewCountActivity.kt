@@ -121,7 +121,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         supportFragmentManager.beginTransaction()
             .replace(R.id.orderRequestTypeSpinnerFragment, orderRequestTypeSpinnerFragment!!).commit()
 
-        title = tempTitle
+        binding.topAppbar.title = tempTitle
 
         binding.continueButton.setOnClickListener { attemptSetupNewCount() }
 

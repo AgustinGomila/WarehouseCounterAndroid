@@ -61,4 +61,11 @@
 
     <color name="status_some_qty">#FFF44336</color>
     <color name="status_qty_zero">#FFDFDFDF</color>
+
+    <color name="status_w_active">#1E88E5</color>
+    <color name="status_w_inactive">#1976D2</color>
+    <color name="status_wa_active">#039BE5</color>
+    <color name="status_wa_inactive">#0288D1</color>
+    <color name="status_r_active">#00ACC1</color>
+    <color name="status_r_inactive">#0097A7</color>
 </resources>

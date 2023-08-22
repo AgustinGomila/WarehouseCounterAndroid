@@ -86,6 +86,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         fillRequired = true
 
         title = tempTitle
+
         binding.codeSelect.setOnClickListener { onBackPressed() }
 
         binding.codeClearImageView.setOnClickListener {

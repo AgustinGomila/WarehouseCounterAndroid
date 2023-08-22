@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ui.fragments.orderRequest
+package com.dacosys.warehouseCounter.ui.fragments.common
 
 import android.app.Activity.RESULT_OK
 import android.content.Context
@@ -17,40 +17,74 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.databinding.OrderLocationSelectFilterFragmentBinding
+import com.dacosys.warehouseCounter.databinding.SelectFilterFragmentBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.LocationType
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.settings.Preference
-import com.dacosys.warehouseCounter.ui.activities.ptlOrder.LocationSelectActivity
+import com.dacosys.warehouseCounter.ui.activities.itemCategory.ItemCategorySelectActivity
+import com.dacosys.warehouseCounter.ui.activities.location.LocationSelectActivity
 
 
 /**
  * A simple [Fragment] subclass.
  * Activities that contain this fragment must implement the
- * [OrderLocationFilterFragment.OnFilterChangedListener] interface
+ * [SelectFilterFragment.OnFilterChangedListener] interface
  * to handle interaction events.
- * Use the [OrderLocationFilterFragment.newInstance] factory method to
- * create an instance of this fragment.
  */
-class OrderLocationFilterFragment : Fragment() {
-    private var mCallback: OnFilterChangedListener? = null
+class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
-    // Configuración guardada de los controles que se ven o no se ven
-    var itemCode: String = ""
-    var itemDescription: String = ""
-    var itemEan: String = ""
-    var orderId: String = ""
-    var orderExternalId: String = ""
-    var warehouse: Warehouse? = null
-    var warehouseArea: WarehouseArea? = null
-    var rack: Rack? = null
-    var onlyActive: Boolean = true
+    /**
+     * Required constructor for Fragments
+     */
+    constructor() : this(Builder())
+
+    var itemCode: String
+    var itemDescription: String
+    var itemEan: String
+    var itemCategory: ItemCategory?
+    var orderId: String
+    var orderExternalId: String
+    var warehouse: Warehouse?
+    var warehouseArea: WarehouseArea?
+    var rack: Rack?
+    var onlyActive: Boolean
+
+    private var searchByItemCode: Boolean
+    private var pSearchByItemCode: Preference? = null
+
+    private var searchByItemDescription: Boolean
+    private var pSearchByItemDescription: Preference? = null
+
+    private var searchByItemEan: Boolean
+    private var pSearchByItemEan: Preference? = null
+
+    private var searchByCategory: Boolean
+    private var pSearchByCategory: Preference? = null
+
+    private var searchByOrderId: Boolean
+    private var pSearchByOrderId: Preference? = null
+
+    private var searchByOrderExtId: Boolean
+    private var pSearchByOrderExtId: Preference? = null
+
+    private var searchByWarehouse: Boolean
+    private var pSearchByWarehouse: Preference? = null
+
+    private var searchByArea: Boolean
+    private var pSearchByArea: Preference? = null
+
+    private var searchByRack: Boolean
+    private var pSearchByRack: Preference? = null
+
+    private var searchByOnlyActive: Boolean
+    private var pSearchByOnlyActive: Preference? = null
+
+    private var filterChangedListener: OnFilterChangedListener?
 
     // Container Activity must implement this interface
     interface OnFilterChangedListener {
@@ -58,6 +92,7 @@ class OrderLocationFilterFragment : Fragment() {
             code: String,
             description: String,
             ean: String,
+            itemCategory: ItemCategory?,
             orderId: String,
             orderExternalId: String,
             warehouse: Warehouse?,
@@ -73,11 +108,7 @@ class OrderLocationFilterFragment : Fragment() {
     }
 
     private fun destroyLocals() {
-        this.mCallback = null
-    }
-
-    fun setListener(listener: OnFilterChangedListener) {
-        this.mCallback = listener
+        this.filterChangedListener = null
     }
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
@@ -86,6 +117,7 @@ class OrderLocationFilterFragment : Fragment() {
         savedInstanceState.putString(ARG_ITEM_CODE, itemCode)
         savedInstanceState.putString(ARG_ITEM_DESCRIPTION, itemDescription)
         savedInstanceState.putString(ARG_ITEM_EAN, itemEan)
+        savedInstanceState.putParcelable(ARG_ITEM_CATEGORY, itemCategory)
         savedInstanceState.putString(ARG_ORDER_ID, orderId)
         savedInstanceState.putString(ARG_ORDER_EXTERNAL_ID, orderExternalId)
         savedInstanceState.putParcelable(ARG_WAREHOUSE, warehouse)
@@ -107,6 +139,7 @@ class OrderLocationFilterFragment : Fragment() {
         itemCode = b.getString(ARG_ITEM_CODE) ?: ""
         itemDescription = b.getString(ARG_ITEM_DESCRIPTION) ?: ""
         itemEan = b.getString(ARG_ITEM_EAN) ?: ""
+        itemCategory = b.getParcelable(ARG_ITEM_CATEGORY)
         orderId = b.getString(ARG_ORDER_ID) ?: ""
         orderExternalId = b.getString(ARG_ORDER_EXTERNAL_ID) ?: ""
         warehouse = b.getParcelable(ARG_WAREHOUSE)
@@ -115,7 +148,7 @@ class OrderLocationFilterFragment : Fragment() {
         onlyActive = b.getBoolean(ARG_ONLY_ACTIVE)
     }
 
-    private var _binding: OrderLocationSelectFilterFragmentBinding? = null
+    private var _binding: SelectFilterFragmentBinding? = null
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -132,7 +165,7 @@ class OrderLocationFilterFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        _binding = OrderLocationSelectFilterFragmentBinding.inflate(inflater, container, false)
+        _binding = SelectFilterFragmentBinding.inflate(inflater, container, false)
         val view = binding.root
 
         if (savedInstanceState != null) {
@@ -142,8 +175,7 @@ class OrderLocationFilterFragment : Fragment() {
         // ONLY ACTIVE
         binding.onlyActiveCheckBox.setOnCheckedChangeListener(null)
         binding.onlyActiveCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            settingViewModel.orderLocationOnlyActive = isChecked
-            onlyActive = binding.onlyActiveCheckBox.isChecked
+            onlyActive = isChecked
             onFilterChanged()
         }
 
@@ -189,6 +221,21 @@ class OrderLocationFilterFragment : Fragment() {
         binding.eanClearImageView.setOnClickListener {
             itemEan = ""
             setEanText()
+            onFilterChanged()
+        }
+
+        // ITEM CATEGORY
+        binding.categoryTextView.setOnClickListener {
+            val intent = Intent(requireContext(), ItemCategorySelectActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            intent.putExtra(ItemCategorySelectActivity.ARG_ITEM_CATEGORY, itemCategory)
+            intent.putExtra(ItemCategorySelectActivity.ARG_TITLE, getString(R.string.select_category))
+            resultForCategorySelect.launch(intent)
+        }
+        binding.categorySearchImageView.setOnClickListener { binding.categoryTextView.performClick() }
+        binding.categoryClearImageView.setOnClickListener {
+            itemCategory = null
+            setCategoryText()
             onFilterChanged()
         }
 
@@ -302,6 +349,20 @@ class OrderLocationFilterFragment : Fragment() {
         }
     }
 
+    private val resultForCategorySelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                itemCategory = data.getParcelableExtra(ItemCategorySelectActivity.ARG_ITEM_CATEGORY)
+                setCategoryText()
+                onFilterChanged()
+            }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(requireActivity(), this::class.java.simpleName, ex)
+        }
+    }
+
     private val resultForWarehouseSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         val data = it?.data
         try {
@@ -328,6 +389,7 @@ class OrderLocationFilterFragment : Fragment() {
             val dialogView = LayoutInflater.from(this).inflate(R.layout.custom_dialog_layout, null)
             val editText = dialogView.findViewById<EditText>(R.id.editText)
             editText.setText(text)
+            editText.isFocusable = true
             editText.hint = hint
             editText.onFocusChangeListener = OnFocusChangeListener { v, hasFocus ->
                 editText.post {
@@ -336,7 +398,6 @@ class OrderLocationFilterFragment : Fragment() {
                     }
                 }
             }
-            editText.requestFocus()
 
             val dialog = AlertDialog.Builder(this)
                 .setView(dialogView)
@@ -371,6 +432,7 @@ class OrderLocationFilterFragment : Fragment() {
                     false
                 }
             }
+            editText.requestFocus()
             dialog.show()
         }
     }
@@ -379,14 +441,15 @@ class OrderLocationFilterFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setVisibleFilters()
-        refreshTextViews()
+        refreshViews()
     }
 
     private fun onFilterChanged() {
-        mCallback?.onFilterChanged(
+        filterChangedListener?.onFilterChanged(
             code = itemCode,
             description = itemDescription,
             ean = itemEan,
+            itemCategory = itemCategory,
             orderId = orderId,
             orderExternalId = orderExternalId,
             warehouse = warehouse,
@@ -396,13 +459,15 @@ class OrderLocationFilterFragment : Fragment() {
         )
     }
 
-    fun refreshTextViews() {
+    @Suppress("unused", "MemberVisibilityCanBePrivate")
+    fun refreshViews() {
         activity?.runOnUiThread {
             binding.onlyActiveCheckBox.isChecked = onlyActive
 
             setCodeText()
             setDescriptionText()
             setEanText()
+            setCategoryText()
             setOrderIdText()
             setOrderExternalIdText()
             setWarehouseText()
@@ -415,7 +480,7 @@ class OrderLocationFilterFragment : Fragment() {
         activity?.runOnUiThread {
             if (itemCode.isEmpty()) {
                 binding.codeTextView.typeface = Typeface.DEFAULT
-                binding.codeTextView.text = getString(R.string.order_location_search_by_item_code)
+                binding.codeTextView.text = getString(R.string.search_by_item_code)
             } else {
                 binding.codeTextView.typeface = Typeface.DEFAULT_BOLD
                 binding.codeTextView.text = itemCode
@@ -427,7 +492,7 @@ class OrderLocationFilterFragment : Fragment() {
         activity?.runOnUiThread {
             if (itemEan.isEmpty()) {
                 binding.eanTextView.typeface = Typeface.DEFAULT
-                binding.eanTextView.text = getString(R.string.order_location_search_by_item_ean)
+                binding.eanTextView.text = getString(R.string.search_by_item_ean)
             } else {
                 binding.eanTextView.typeface = Typeface.DEFAULT_BOLD
                 binding.eanTextView.text = itemEan
@@ -439,10 +504,22 @@ class OrderLocationFilterFragment : Fragment() {
         activity?.runOnUiThread {
             if (itemDescription.isEmpty()) {
                 binding.descriptionTextView.typeface = Typeface.DEFAULT
-                binding.descriptionTextView.text = getString(R.string.order_location_search_by_item_description)
+                binding.descriptionTextView.text = getString(R.string.search_by_item_description)
             } else {
                 binding.descriptionTextView.typeface = Typeface.DEFAULT_BOLD
                 binding.descriptionTextView.text = itemDescription
+            }
+        }
+    }
+
+    private fun setCategoryText() {
+        activity?.runOnUiThread {
+            if (itemCategory == null) {
+                binding.categoryTextView.typeface = Typeface.DEFAULT
+                binding.categoryTextView.text = getString(R.string.search_by_category)
+            } else {
+                binding.categoryTextView.typeface = Typeface.DEFAULT_BOLD
+                binding.categoryTextView.text = itemCategory!!.description
             }
         }
     }
@@ -451,7 +528,7 @@ class OrderLocationFilterFragment : Fragment() {
         activity?.runOnUiThread {
             if (orderId.isEmpty()) {
                 binding.orderTextView.typeface = Typeface.DEFAULT
-                binding.orderTextView.text = getString(R.string.order_location_search_by_order_id)
+                binding.orderTextView.text = getString(R.string.search_by_order_id)
             } else {
                 binding.orderTextView.typeface = Typeface.DEFAULT_BOLD
                 binding.orderTextView.text = orderId
@@ -463,7 +540,7 @@ class OrderLocationFilterFragment : Fragment() {
         activity?.runOnUiThread {
             if (orderExternalId.isEmpty()) {
                 binding.orderExternalIdTextView.typeface = Typeface.DEFAULT
-                binding.orderExternalIdTextView.text = getString(R.string.order_location_search_by_order_external_id)
+                binding.orderExternalIdTextView.text = getString(R.string.search_by_order_external_id)
             } else {
                 binding.orderExternalIdTextView.typeface = Typeface.DEFAULT_BOLD
                 binding.orderExternalIdTextView.text = orderExternalId
@@ -475,7 +552,7 @@ class OrderLocationFilterFragment : Fragment() {
         activity?.runOnUiThread {
             if (warehouse == null) {
                 binding.warehouseTextView.typeface = Typeface.DEFAULT
-                binding.warehouseTextView.text = getString(R.string.order_location_search_by_warehouse)
+                binding.warehouseTextView.text = getString(R.string.search_by_warehouse)
             } else {
                 binding.warehouseTextView.typeface = Typeface.DEFAULT_BOLD
                 binding.warehouseTextView.text = warehouse?.description
@@ -487,7 +564,7 @@ class OrderLocationFilterFragment : Fragment() {
         activity?.runOnUiThread {
             if (warehouseArea == null) {
                 binding.areaTextView.typeface = Typeface.DEFAULT
-                binding.areaTextView.text = getString(R.string.order_location_search_by_area)
+                binding.areaTextView.text = getString(R.string.search_by_area)
             } else {
                 binding.areaTextView.typeface = Typeface.DEFAULT_BOLD
                 binding.areaTextView.text = warehouseArea?.description
@@ -499,7 +576,7 @@ class OrderLocationFilterFragment : Fragment() {
         activity?.runOnUiThread {
             if (rack == null) {
                 binding.rackTextView.typeface = Typeface.DEFAULT
-                binding.rackTextView.text = getString(R.string.order_location_search_by_rack)
+                binding.rackTextView.text = getString(R.string.search_by_rack)
             } else {
                 binding.rackTextView.typeface = Typeface.DEFAULT_BOLD
                 binding.rackTextView.text = rack?.code
@@ -511,117 +588,124 @@ class OrderLocationFilterFragment : Fragment() {
     // Obviamente, depende del método onStart() de la actividad para saber si la actividad se está mostrando.
     override fun onStart() {
         super.onStart()
-        if (mCallback is OnFilterChangedListener) {
-            mCallback = activity as OnFilterChangedListener
+        if (filterChangedListener is OnFilterChangedListener) {
+            filterChangedListener = activity as OnFilterChangedListener
         }
     }
 
     // Se llama cuando el fragmento ya no está asociado a la actividad anfitriona.
     override fun onDetach() {
         super.onDetach()
-        mCallback = null
+        filterChangedListener = null
     }
 
     // region Visibility functions
     fun getVisibleFilters(): ArrayList<Preference> {
-        val sv = settingViewModel
-        val sp = settingRepository
-
         val r: ArrayList<Preference> = ArrayList()
 
-        if (sv.orderLocationSearchByItemCode) r.add(sp.orderLocationSearchByItemCode)
-        if (sv.orderLocationSearchByItemDescription) r.add(sp.orderLocationSearchByItemDescription)
-        if (sv.orderLocationSearchByItemEan) r.add(sp.orderLocationSearchByItemEan)
-        if (sv.orderLocationSearchByOrderId) r.add(sp.orderLocationSearchByOrderId)
-        if (sv.orderLocationSearchByOrderExtId) r.add(sp.orderLocationSearchByOrderExtId)
-        if (sv.orderLocationSearchByWarehouse) r.add(sp.orderLocationSearchByWarehouse)
-        if (sv.orderLocationSearchByArea) r.add(sp.orderLocationSearchByArea)
-        if (sv.orderLocationSearchByRack) r.add(sp.orderLocationSearchByRack)
-        if (sv.orderLocationSearchByOnlyActive) r.add(sp.orderLocationSearchByOnlyActive)
+        if (searchByItemCode && pSearchByItemCode != null) r.add(pSearchByItemCode!!)
+        if (searchByItemDescription && pSearchByItemDescription != null) r.add(pSearchByItemDescription!!)
+        if (searchByItemEan && pSearchByItemEan != null) r.add(pSearchByItemEan!!)
+        if (searchByCategory && pSearchByCategory != null) r.add(pSearchByCategory!!)
+        if (searchByOrderId && pSearchByOrderId != null) r.add(pSearchByOrderId!!)
+        if (searchByOrderExtId && pSearchByOrderExtId != null) r.add(pSearchByOrderExtId!!)
+        if (searchByWarehouse && pSearchByWarehouse != null) r.add(pSearchByWarehouse!!)
+        if (searchByArea && pSearchByArea != null) r.add(pSearchByArea!!)
+        if (searchByRack && pSearchByRack != null) r.add(pSearchByRack!!)
+        if (searchByOnlyActive && pSearchByOnlyActive != null) r.add(pSearchByOnlyActive!!)
 
         return r
     }
 
     private fun setVisibleFilters() {
         //Retrieve the values
-        if (settingViewModel.orderLocationSearchByItemCode) setCodeVisibility(View.VISIBLE)
+        if (searchByItemCode) setCodeVisibility(View.VISIBLE)
         else setCodeVisibility(View.GONE)
 
-        if (settingViewModel.orderLocationSearchByItemDescription) setDescriptionVisibility(View.VISIBLE)
+        if (searchByItemDescription) setDescriptionVisibility(View.VISIBLE)
         else setDescriptionVisibility(View.GONE)
 
-        if (settingViewModel.orderLocationSearchByItemEan) setEanVisibility(View.VISIBLE)
+        if (searchByItemEan) setEanVisibility(View.VISIBLE)
         else setEanVisibility(View.GONE)
 
-        if (settingViewModel.orderLocationSearchByOrderId) setEanVisibility(View.VISIBLE)
+        if (searchByCategory) setCategoryVisibility(View.VISIBLE)
+        else setCategoryVisibility(View.GONE)
+
+        if (searchByOrderId) setOrderIdVisibility(View.VISIBLE)
         else setOrderIdVisibility(View.GONE)
 
-        if (settingViewModel.orderLocationSearchByOrderExtId) setEanVisibility(View.VISIBLE)
+        if (searchByOrderExtId) setOrderExtIdVisibility(View.VISIBLE)
         else setOrderExtIdVisibility(View.GONE)
 
-        if (settingViewModel.orderLocationSearchByWarehouse) setEanVisibility(View.VISIBLE)
+        if (searchByWarehouse) setWarehouseVisibility(View.VISIBLE)
         else setWarehouseVisibility(View.GONE)
 
-        if (settingViewModel.orderLocationSearchByArea) setEanVisibility(View.VISIBLE)
+        if (searchByArea) setAreaVisibility(View.VISIBLE)
         else setAreaVisibility(View.GONE)
 
-        if (settingViewModel.orderLocationSearchByRack) setEanVisibility(View.VISIBLE)
+        if (searchByRack) setRackVisibility(View.VISIBLE)
         else setRackVisibility(View.GONE)
 
-        if (settingViewModel.orderLocationSearchByOnlyActive) setOnlyActiveVisibility(View.VISIBLE)
+        if (searchByOnlyActive) setOnlyActiveVisibility(View.VISIBLE)
         else setOnlyActiveVisibility(View.GONE)
     }
 
     fun setCodeVisibility(visibility: Int) {
         binding.codePanel.visibility = visibility
-        settingViewModel.orderLocationSearchByItemCode = visibility == View.VISIBLE
+        searchByItemCode = visibility == View.VISIBLE
     }
 
     fun setDescriptionVisibility(visibility: Int) {
         binding.descriptionPanel.visibility = visibility
-        settingViewModel.orderLocationSearchByItemDescription = visibility == View.VISIBLE
+        searchByItemDescription = visibility == View.VISIBLE
     }
 
     fun setEanVisibility(visibility: Int) {
         binding.eanPanel.visibility = visibility
-        settingViewModel.orderLocationSearchByItemEan = visibility == View.VISIBLE
+        searchByItemEan = visibility == View.VISIBLE
+    }
+
+    fun setCategoryVisibility(visibility: Int) {
+        binding.categoryPanel.visibility = visibility
+        searchByCategory = visibility == View.VISIBLE
     }
 
     fun setOrderIdVisibility(visibility: Int) {
         binding.orderPanel.visibility = visibility
-        settingViewModel.orderLocationSearchByOrderId = visibility == View.VISIBLE
+        searchByOrderId = visibility == View.VISIBLE
     }
 
     fun setOrderExtIdVisibility(visibility: Int) {
         binding.orderExternalIdPanel.visibility = visibility
-        settingViewModel.orderLocationSearchByOrderExtId = visibility == View.VISIBLE
+        searchByOrderExtId = visibility == View.VISIBLE
     }
 
     fun setWarehouseVisibility(visibility: Int) {
         binding.warehousePanel.visibility = visibility
-        settingViewModel.orderLocationSearchByWarehouse = visibility == View.VISIBLE
+        searchByWarehouse = visibility == View.VISIBLE
     }
 
     fun setAreaVisibility(visibility: Int) {
         binding.areaPanel.visibility = visibility
-        settingViewModel.orderLocationSearchByArea = visibility == View.VISIBLE
+        searchByArea = visibility == View.VISIBLE
     }
 
     fun setRackVisibility(visibility: Int) {
         binding.rackPanel.visibility = visibility
-        settingViewModel.orderLocationSearchByRack = visibility == View.VISIBLE
+        searchByRack = visibility == View.VISIBLE
     }
 
     fun setOnlyActiveVisibility(visibility: Int) {
         binding.onlyActiveCheckBox.visibility = visibility
-        settingViewModel.orderLocationSearchByOnlyActive = visibility == View.VISIBLE
+        searchByOnlyActive = visibility == View.VISIBLE
     }
     // endregion Visibility functions
 
-    private fun validFilter(): Boolean {
+    fun validFilter(): Boolean {
         return itemCode.isNotEmpty() ||
                 itemDescription.isNotEmpty() ||
                 itemEan.isNotEmpty() ||
+                itemCategory != null ||
                 orderId.isNotEmpty() ||
                 orderExternalId.isNotEmpty() ||
                 warehouse != null ||
@@ -629,72 +713,338 @@ class OrderLocationFilterFragment : Fragment() {
                 rack != null
     }
 
+    @Suppress("MemberVisibilityCanBePrivate")
+    val filterItemExternalId: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ITEM_EXTERNAL_ID,
+                value = itemCode,
+                like = true
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val filterItemDescription: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ITEM_DESCRIPTION,
+                value = itemDescription,
+                like = true
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val filterItemEan: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
+                value = itemEan,
+                like = true
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val filterItemCategory: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ITEM_CATEGORY_ID,
+                value = itemCategory?.itemCategoryId.toString()
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val filterOrderId: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_ORDER_ID,
+                value = orderId
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val filterOrderExternalId: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ORDER_EXTERNAL_ID,
+                value = orderExternalId,
+                like = true
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val filterWarehouse: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_WAREHOUSE_ID,
+                value = warehouse?.id.toString()
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val filterWarehouseArea: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_AREA_ID,
+                value = warehouseArea?.id.toString()
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val filterRack: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_RACK_ID,
+                value = rack?.id.toString()
+            )
+        }
+
     fun getFilters(): ArrayList<ApiFilterParam> {
         val filter: ArrayList<ApiFilterParam> = arrayListOf()
 
         if (validFilter()) {
             if (itemCode.isNotEmpty())
-                filter.add(
-                    ApiFilterParam(
-                        columnName = ApiFilterParam.EXTENSION_ITEM_EXTERNAL_ID,
-                        value = itemCode,
-                        like = true
-                    )
-                )
+                filter.add(filterItemExternalId)
             if (itemDescription.isNotEmpty())
-                filter.add(
-                    ApiFilterParam(
-                        columnName = ApiFilterParam.EXTENSION_ITEM_DESCRIPTION,
-                        value = itemDescription,
-                        like = true
-                    )
-                )
+                filter.add(filterItemDescription)
             if (itemEan.isNotEmpty())
-                filter.add(
-                    ApiFilterParam(
-                        columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
-                        value = itemEan,
-                        like = true
-                    )
-                )
+                filter.add(filterItemEan)
+            if (itemCategory != null)
+                filter.add(filterItemCategory)
             if (orderId.isNotEmpty())
-                filter.add(
-                    ApiFilterParam(
-                        columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_ORDER_ID,
-                        value = orderId
-                    )
-                )
+                filter.add(filterOrderId)
             if (orderExternalId.isNotEmpty())
-                filter.add(
-                    ApiFilterParam(
-                        columnName = ApiFilterParam.EXTENSION_ORDER_EXTERNAL_ID,
-                        value = orderExternalId,
-                        like = true
-                    )
-                )
+                filter.add(filterOrderExternalId)
             if (warehouse != null)
-                filter.add(
-                    ApiFilterParam(
-                        columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_WAREHOUSE_ID,
-                        value = warehouse?.id.toString()
-                    )
-                )
+                filter.add(filterWarehouse)
             if (warehouseArea != null)
-                filter.add(
-                    ApiFilterParam(
-                        columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_AREA_ID,
-                        value = warehouseArea?.id.toString()
-                    )
-                )
+                filter.add(filterWarehouseArea)
             if (rack != null)
-                filter.add(
-                    ApiFilterParam(
-                        columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_RACK_ID,
-                        value = rack?.id.toString()
-                    )
-                )
+                filter.add(filterRack)
         }
         return filter
+    }
+
+    init {
+        itemCode = builder.itemCode
+        itemDescription = builder.itemDescription
+        itemEan = builder.itemEan
+        itemCategory = builder.itemCategory
+        orderId = builder.orderId
+        orderExternalId = builder.orderExternalId
+        warehouse = builder.warehouse
+        warehouseArea = builder.warehouseArea
+        rack = builder.rack
+        onlyActive = builder.onlyActive
+
+        filterChangedListener = builder.filterChangedListener
+
+        searchByItemCode = builder.searchByItemCode
+        searchByItemDescription = builder.searchByItemDescription
+        searchByItemEan = builder.searchByItemEan
+        searchByCategory = builder.searchByCategory
+        searchByOrderId = builder.searchByOrderId
+        searchByOrderExtId = builder.searchByOrderExtId
+        searchByWarehouse = builder.searchByWarehouse
+        searchByArea = builder.searchByArea
+        searchByRack = builder.searchByRack
+        searchByOnlyActive = builder.searchByOnlyActive
+
+        pSearchByItemCode = builder.pSearchByItemCode
+        pSearchByItemDescription = builder.pSearchByItemDescription
+        pSearchByItemEan = builder.pSearchByItemEan
+        pSearchByCategory = builder.pSearchByCategory
+        pSearchByOrderId = builder.pSearchByOrderId
+        pSearchByOrderExtId = builder.pSearchByOrderExtId
+        pSearchByWarehouse = builder.pSearchByWarehouse
+        pSearchByArea = builder.pSearchByArea
+        pSearchByRack = builder.pSearchByRack
+        pSearchByOnlyActive = builder.pSearchByOnlyActive
+    }
+
+    class Builder {
+        fun build(): SelectFilterFragment {
+            return SelectFilterFragment(this)
+        }
+
+        internal var itemCode: String = ""
+        internal var itemDescription: String = ""
+        internal var itemEan: String = ""
+        internal var itemCategory: ItemCategory? = null
+        internal var orderId: String = ""
+        internal var orderExternalId: String = ""
+        internal var warehouse: Warehouse? = null
+        internal var warehouseArea: WarehouseArea? = null
+        internal var rack: Rack? = null
+        internal var onlyActive: Boolean = true
+
+        internal var filterChangedListener: OnFilterChangedListener? = null
+
+        internal var searchByItemCode: Boolean = false
+        internal var pSearchByItemCode: Preference? = null
+
+        internal var searchByItemDescription: Boolean = false
+        internal var pSearchByItemDescription: Preference? = null
+
+        internal var searchByItemEan: Boolean = false
+        internal var pSearchByItemEan: Preference? = null
+
+        internal var searchByCategory: Boolean = false
+        internal var pSearchByCategory: Preference? = null
+
+        internal var searchByOrderId: Boolean = false
+        internal var pSearchByOrderId: Preference? = null
+
+        internal var searchByOrderExtId: Boolean = false
+        internal var pSearchByOrderExtId: Preference? = null
+
+        internal var searchByWarehouse: Boolean = false
+        internal var pSearchByWarehouse: Preference? = null
+
+        internal var searchByArea: Boolean = false
+        internal var pSearchByArea: Preference? = null
+
+        internal var searchByRack: Boolean = false
+        internal var pSearchByRack: Preference? = null
+
+        internal var searchByOnlyActive: Boolean = false
+        internal var pSearchByOnlyActive: Preference? = null
+
+        // Setter methods for variables with chained methods
+        @Suppress("unused")
+        fun itemCode(`val`: String): Builder {
+            itemCode = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun itemDescription(value: String): Builder {
+            itemDescription = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun itemEan(value: String): Builder {
+            itemEan = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun itemCategory(value: ItemCategory?): Builder {
+            itemCategory = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun orderId(value: String): Builder {
+            orderId = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun orderExternalId(value: String): Builder {
+            orderExternalId = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun warehouse(value: Warehouse?): Builder {
+            warehouse = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun warehouseArea(value: WarehouseArea?): Builder {
+            warehouseArea = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun rack(value: Rack?): Builder {
+            rack = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun onlyActive(value: Boolean): Builder {
+            onlyActive = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun filterChangedListener(value: OnFilterChangedListener?): Builder {
+            filterChangedListener = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun searchByItemCode(value: Boolean, pref: Preference? = null): Builder {
+            searchByItemCode = value
+            pSearchByItemCode = pref
+            return this
+        }
+
+        @Suppress("unused")
+        fun searchByItemDescription(value: Boolean, pref: Preference? = null): Builder {
+            searchByItemDescription = value
+            pSearchByItemDescription = pref
+            return this
+        }
+
+        @Suppress("unused")
+        fun searchByItemEan(value: Boolean, pref: Preference? = null): Builder {
+            searchByItemEan = value
+            pSearchByItemEan = pref
+            return this
+        }
+
+        @Suppress("unused")
+        fun searchByCategory(value: Boolean, pref: Preference? = null): Builder {
+            searchByCategory = value
+            pSearchByCategory = pref
+            return this
+        }
+
+        @Suppress("unused")
+        fun searchByOrderId(value: Boolean, pref: Preference? = null): Builder {
+            searchByOrderId = value
+            pSearchByOrderId = pref
+            return this
+        }
+
+        @Suppress("unused")
+        fun searchByOrderExtId(value: Boolean, pref: Preference? = null): Builder {
+            searchByOrderExtId = value
+            pSearchByOrderExtId = pref
+            return this
+        }
+
+        @Suppress("unused")
+        fun searchByWarehouse(value: Boolean, pref: Preference? = null): Builder {
+            searchByWarehouse = value
+            pSearchByWarehouse = pref
+            return this
+        }
+
+        @Suppress("unused")
+        fun searchByArea(value: Boolean, pref: Preference? = null): Builder {
+            searchByArea = value
+            pSearchByArea = pref
+            return this
+        }
+
+        @Suppress("unused")
+        fun searchByRack(value: Boolean, pref: Preference? = null): Builder {
+            searchByRack = value
+            pSearchByRack = pref
+            return this
+        }
+
+        @Suppress("unused")
+        fun searchByOnlyActive(value: Boolean, pref: Preference? = null): Builder {
+            searchByOnlyActive = value
+            pSearchByOnlyActive = pref
+            return this
+        }
     }
 
     companion object {
@@ -703,47 +1053,12 @@ class OrderLocationFilterFragment : Fragment() {
         const val ARG_ITEM_CODE = "itemCode"
         const val ARG_ITEM_DESCRIPTION = "itemDescription"
         const val ARG_ITEM_EAN = "itemEan"
+        const val ARG_ITEM_CATEGORY = "itemCategory"
         const val ARG_ORDER_ID = "orderId"
         const val ARG_ORDER_EXTERNAL_ID = "orderExternalId"
         const val ARG_WAREHOUSE = "warehouse"
         const val ARG_WAREHOUSE_AREA = "warehouseArea"
         const val ARG_RACK = "rack"
         const val ARG_ONLY_ACTIVE = "onlyActive"
-
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         */
-        fun newInstance(
-            itemCode: String = "",
-            itemDescription: String = "",
-            itemEan: String = "",
-            orderId: String = "",
-            orderExternalId: String = "",
-            warehouse: Warehouse? = null,
-            warehouseArea: WarehouseArea? = null,
-            rack: Rack? = null,
-            onlyActive: Boolean = true
-        ): OrderLocationFilterFragment {
-            val fragment = OrderLocationFilterFragment()
-
-            val args = Bundle()
-            if (itemCode.isNotEmpty()) args.putString(ARG_ITEM_CODE, itemCode)
-            if (itemDescription.isNotEmpty()) args.putString(ARG_ITEM_DESCRIPTION, itemDescription)
-            if (itemEan.isNotEmpty()) args.putString(ARG_ITEM_EAN, itemEan)
-            if (orderId.isNotEmpty()) args.putString(ARG_ORDER_ID, orderId)
-            if (orderExternalId.isNotEmpty()) args.putString(ARG_ORDER_EXTERNAL_ID, orderId)
-            if (warehouse != null) args.putParcelable(ARG_WAREHOUSE, warehouse)
-            if (warehouseArea != null) args.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
-            if (rack != null) args.putParcelable(ARG_RACK, rack)
-            args.putBoolean(ARG_ONLY_ACTIVE, onlyActive)
-
-            fragment.arguments = args
-            return fragment
-        }
-
-        fun equals(a: Any?, b: Any?): Boolean {
-            return a != null && a == b
-        }
     }
 }

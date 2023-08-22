@@ -82,6 +82,7 @@ class ClientSelectActivity : AppCompatActivity(),
         }
 
         title = tempTitle
+
         binding.codeSelect.setOnClickListener { onBackPressed() }
 
         binding.codeClearImageView.setOnClickListener {

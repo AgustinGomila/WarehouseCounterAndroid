@@ -1,6 +1,7 @@
 package com.dacosys.warehouseCounter.ui.fragments.print
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
@@ -62,8 +63,6 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
     private var ch: CounterHandler? = null
 
-    private var isReturnedFromSettings = false
-
     // Configuración guardada de los controles que se ven o no se ven
     private var printer: String = ""
     private var qty: Int = 1
@@ -85,24 +84,12 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         )
     }
 
-    override fun onResume() {
-        super.onResume()
-
-        if (isReturnedFromSettings) {
-            rejectNewInstances = false
-            isReturnedFromSettings = false
-
-            loadPrinterPreferences()
-
-            refreshViews()
-        }
-    }
-
     override fun onStart() {
         super.onStart()
         if (fragmentListener is FragmentListener) {
             fragmentListener = activity as FragmentListener
         }
+
         // VER ESTO, estamos enviando el mensaje cuando está lista la actividad
         sendMessage()
     }
@@ -173,12 +160,20 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
     private var mHandler = ConnectHandler(this)
 
+    @SuppressLint("MissingPermission")
     override fun run() {
         try {
             if (ActivityCompat.checkSelfPermission(
-                    WarehouseCounterApp.context, Manifest.permission.BLUETOOTH_CONNECT
-                ) != PackageManager.PERMISSION_GRANTED
+                    WarehouseCounterApp.context,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) == PackageManager.PERMISSION_GRANTED
             ) {
+                mBluetoothSocket =
+                    mBluetoothDevice!!.createRfcommSocketToServiceRecord(mBluetoothDevice!!.uuids[0].uuid)
+                mBluetoothAdapter!!.cancelDiscovery()
+                mBluetoothSocket!!.connect()
+                mHandler.sendEmptyMessage(0)
+            } else {
                 // Here to request the missing permissions, and then overriding
                 //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
                 //                                          int[] grantResults)
@@ -189,12 +184,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                 }
                 return
             }
-            mBluetoothSocket =
-                mBluetoothDevice!!.createRfcommSocketToServiceRecord(mBluetoothDevice!!.uuids[0].uuid)
-            mBluetoothAdapter!!.cancelDiscovery()
 
-            mBluetoothSocket!!.connect()
-            mHandler.sendEmptyMessage(0)
         } catch (eConnectException: IOException) {
             Log.d(this::class.java.simpleName, "CouldNotConnectToSocket", eConnectException)
             if (mBluetoothSocket != null) {
@@ -304,7 +294,8 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         binding.printerTextView.setOnClickListener { configApp() }
 
         // Esta clase controla el comportamiento de los botones (+) y (-)
-        ch = CounterHandler.Builder().incrementalView(binding.moreButton)
+        ch = CounterHandler.Builder()
+            .incrementalView(binding.moreButton)
             .decrementalView(binding.lessButton).minRange(1.0) // cant go any less than -50
             .maxRange(100.0) // cant go any further than 50
             .isCycle(true) // 49,50,-50,-49 and so on
@@ -384,9 +375,13 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             requestPrint()
         }
 
-        refreshViews()
-
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        refreshViews()
     }
 
     private fun configApp() {
@@ -467,6 +462,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         this.fragmentListener = listener
     }
 
+    @Suppress("unused", "MemberVisibilityCanBePrivate")
     fun refreshViews() {
         activity?.runOnUiThread {
             binding.qtyEditText.setText(qty.toString(), TextView.BufferType.EDITABLE)
