@@ -711,4 +711,10 @@
     <string name="parent_location">Ubicación padre</string>
     <string name="print_location_labels">Imprimir etiquetas de ubicaciones</string>
     <string name="status">Estado</string>
+    <string name="button_9">Botón 9</string>
+    <string name="button_10">Botón 10</string>
+    <string name="button_11">Botón 11</string>
+    <string name="button_12">Botón 12</string>
+    <string name="move_order">Mover pedido</string>
+    <string name="unpackaging">Desempaquetar</string>
 </resources>

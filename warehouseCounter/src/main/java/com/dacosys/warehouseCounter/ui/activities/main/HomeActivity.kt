@@ -5,12 +5,9 @@ import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.StateListDrawable
 import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
@@ -27,14 +24,12 @@ import android.widget.Button
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.BlendModeColorFilterCompat
-import androidx.core.graphics.BlendModeCompat
 import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import com.dacosys.imageControl.network.upload.UploadImagesProgress
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
@@ -70,12 +65,12 @@ import com.dacosys.warehouseCounter.ui.activities.ptlOrder.NewPtlOrdersActivity
 import com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderActivity
 import com.dacosys.warehouseCounter.ui.activities.sync.InboxActivity
 import com.dacosys.warehouseCounter.ui.activities.sync.OutboxActivity
+import com.dacosys.warehouseCounter.ui.fragments.main.ButtonPageFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
-import com.dacosys.warehouseCounter.ui.utils.Colors
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -83,13 +78,12 @@ import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_T
 import org.parceler.Parcels
 import java.io.File
 import java.io.UnsupportedEncodingException
-import java.lang.reflect.Field
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.concurrent.thread
 import com.dacosys.warehouseCounter.room.entity.orderRequest.OrderRequest as OrderRequestRoom
 
-class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
+class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFragment.ButtonClickedListener {
 
     private fun onCompletedOrder(orders: ArrayList<OrderRequest>) {
         android.util.Log.d(
@@ -122,17 +116,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             }
         }
 
-        buttonCollection
-            .filter { it.tag == MainButton.CompletedCounts.id }
-            .forEach {
-                runOnUiThread {
-                    val c = orders.count()
-                    var s = MainButton.CompletedCounts.description
-                    if (c > 0) s = "${s}:$lineSeparator$c"
-
-                    it.text = s
-                }
-            }
+        setTextButton(MainButton.CompletedCounts, orders.count())
     }
 
     private fun onNewOrder(itemArray: ArrayList<OrderRequest>) {
@@ -165,23 +149,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             writeNewOrderRequest(itemArray)
         }
 
-        buttonCollection
-            .filter { it.tag == MainButton.PendingCounts.id }
-            .forEach {
-                runOnUiThread {
-                    val c = countPending()
-                    var s = MainButton.PendingCounts.description
-                    if (c > 0) s = "${s}:$lineSeparator$c"
-
-                    it.text = s
-
-                    if (c > 0) {
-                        if (settingViewModel.shakeOnPendingOrders) shakeDevice()
-                        if (settingViewModel.soundOnPendingOrders) playNotification()
-                        shakeView(it, 20, 5)
-                    }
-                }
-            }
+        setTextButton(MainButton.PendingCounts, countPending())
     }
 
     private fun countPending(): Int {
@@ -346,8 +314,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
         draw = resize(draw!!)
         binding.imageViewHeader.setImageDrawable(draw)
 
-        /// SETUP BUTTONS
-        setupMainButton()
+        /// SETUP VIEW PAGER AND BUTTONS
+        setupViewPager()
     }
 
     override fun onPause() {
@@ -357,6 +325,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
 
     private fun pauseInboxOutboxListener() {
         Sync.stopSync()
+    }
+
+    override fun onButtonClicked(button: Button) {
+        clickButton(button)
     }
 
     private fun clickButton(clickedButton: Button) {
@@ -829,107 +801,78 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
             }
         }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private fun setupButton(button: Button) {
-        button.setOnClickListener {
-            try {
-                clickButton(button)
-            } catch (ex: Exception) {
-                showSnackBar(SnackBarEventData("${getString(R.string.exception_error)}: " + ex.message, ERROR))
-            }
-        }
-        button.setOnTouchListener(View.OnTouchListener { view, motionEvent ->
-            touchButton(motionEvent, view as Button)
-            return@OnTouchListener true
-        })
+    // region ViewPager
+    /**
+     * Así se construye el nombre de un fragmento en FragmentManager
+     */
+    private fun makeFragmentName(viewId: Long, id: Long): String {
+        return "android:switcher:$viewId:$id"
     }
 
-    private fun touchButton(motionEvent: MotionEvent, button: Button) {
-        when (motionEvent.action) {
-            MotionEvent.ACTION_UP -> {
-                button.isPressed = false
-                button.performClick()
+    private fun setTextButton(button: MainButton, newItems: Int) {
+        val name = makeFragmentName(
+            binding.buttonViewPager.id.toLong(),
+            (binding.buttonViewPager.adapter as ViewPagerAdapter).getItemId(0)
+        )
+
+        // Así se obtiene correctamente y de manera segura el fragmento
+        // que estamos buscando
+        val frag = supportFragmentManager.findFragmentByTag(name) as ButtonPageFragment
+        if (!frag.isAdded) return
+
+        runOnUiThread {
+            frag.setButtonSubText(button, newItems.toString())
+        }
+
+        if (newItems > 0) {
+            if (settingViewModel.shakeOnPendingOrders) {
+                shakeDevice()
+            }
+            if (settingViewModel.soundOnPendingOrders) {
+                playNotification()
             }
 
-            MotionEvent.ACTION_DOWN -> {
-                button.isPressed = true
+            val v = frag.getButton(button)
+            if (v != null) {
+                shakeView(v, 20, 5)
             }
         }
     }
 
-    @SuppressLint("DiscouragedPrivateApi") /// El campo mGradientState no es parte de la SDK
-    private fun setupMainButton() {
-        buttonCollection.add(binding.mainButton1)
-        buttonCollection.add(binding.mainButton2)
-        buttonCollection.add(binding.mainButton3)
-        buttonCollection.add(binding.mainButton4)
-        buttonCollection.add(binding.mainButton5)
-        buttonCollection.add(binding.mainButton6)
-        buttonCollection.add(binding.mainButton7)
-        buttonCollection.add(binding.mainButton8)
+    private fun setupViewPager() {
+        // Paginado de botones
+        val adapter = ViewPagerAdapter(supportFragmentManager)
+        binding.buttonViewPager.offscreenPageLimit = 2
+        binding.buttonViewPager.adapter = adapter
+    }
 
-        val allButtonMain = MainButton.getAllMain()
-        for (i in buttonCollection.indices) {
-            val b = buttonCollection[i]
-            if (i < allButtonMain.count()) {
-                val backColor: Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    ((b.background as StateListDrawable).current as GradientDrawable).color?.defaultColor
-                        ?: R.color.white
-                } else {
-                    // Use reflection below API level 23
-                    try {
-                        val drawable =
-                            (b.background as StateListDrawable).current as GradientDrawable
-                        var field: Field = drawable.javaClass.getDeclaredField("mGradientState")
-                        field.isAccessible = true
-                        val myObj = field.get(drawable)
-                        if (myObj == null) R.color.white
-                        else {
-                            field = myObj.javaClass.getDeclaredField("mSolidColors")
-                            field.isAccessible = true
-                            (field.get(myObj) as ColorStateList).defaultColor
-                        }
-                    } catch (e: NoSuchFieldException) {
-                        e.printStackTrace()
-                        R.color.white
-                    } catch (e: IllegalAccessException) {
-                        e.printStackTrace()
-                        R.color.white
-                    }
+    internal inner class ViewPagerAdapter(fragmentManager: FragmentManager) :
+        PersistentPagerAdapter<ButtonPageFragment>(fragmentManager) {
+        override fun getItem(position: Int): Fragment {
+            val allButtons = MainButton.getAll()
+            val firstPageButtons: ArrayList<MainButton> = ArrayList()
+            val secPageButtons: ArrayList<MainButton> = ArrayList()
+            for ((i, t) in allButtons.withIndex()) {
+                if (i < 6) {
+                    firstPageButtons.add(t)
+                } else if (i < 12) {
+                    secPageButtons.add(t)
                 }
+            }
 
-                val textColor = Colors.getBestContrastColor("#" + Integer.toHexString(backColor))
-
-                b.setTextColor(textColor)
-                b.visibility = View.VISIBLE
-                b.tag = allButtonMain[i].id
-                b.text = allButtonMain[i].description
-                b.textAlignment = View.TEXT_ALIGNMENT_VIEW_START
-
-                if (allButtonMain[i].iconResource != null) {
-                    b.setCompoundDrawablesWithIntrinsicBounds(
-                        AppCompatResources.getDrawable(
-                            this, allButtonMain[i].iconResource!!
-                        ), null, null, null
-                    )
-                    b.compoundDrawables.filterNotNull().forEach {
-                        it.colorFilter =
-                            BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                                ResourcesCompat.getColor(context.resources, R.color.white, null),
-                                BlendModeCompat.SRC_IN
-                            )
-                    }
-                }
-                b.compoundDrawablePadding = 15
-            } else {
-                b.visibility = View.GONE
+            return when (position) {
+                0 -> ButtonPageFragment.newInstance(firstPageButtons, position)
+                1 -> ButtonPageFragment.newInstance(secPageButtons, position)
+                else -> ButtonPageFragment()
             }
         }
 
-        for (a in buttonCollection) {
-            setupButton(a)
+        private val totalPages = 2
+        override fun getCount(): Int {
+            return totalPages
         }
     }
+    //endregion
 
     /**
      *
@@ -938,6 +881,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener {
      * @param offset    start offset of the animation
      * @return          returns the same view with animation properties
      */
+    @Suppress("SameParameterValue")
     private fun shakeView(view: View, duration: Int, offset: Int): View {
         val anim = TranslateAnimation(-offset.toFloat(), offset.toFloat(), 0.toFloat(), 0.toFloat())
 
