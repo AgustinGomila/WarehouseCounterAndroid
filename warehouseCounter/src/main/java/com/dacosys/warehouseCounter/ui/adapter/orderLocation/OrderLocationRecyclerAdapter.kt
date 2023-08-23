@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ui.adapter.orderRequest
+package com.dacosys.warehouseCounter.ui.adapter.orderLocation
 
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
@@ -621,7 +621,16 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
             binding.descriptionTextView.text = item.itemDescription
             binding.orderNbrTextView.text = item.orderExternalId
             binding.orderDescriptionTextView.text = item.orderDescription
-            binding.extIdTextView.text = item.itemExternalId
+
+            val extId = item.itemExternalId ?: ""
+            if (extId.isNotEmpty()) {
+                binding.extIdTextView.text = item.itemExternalId
+                binding.extIdPanel.visibility = VISIBLE
+            } else {
+                binding.extIdTextView.text = ""
+                binding.extIdPanel.visibility = GONE
+            }
+
             binding.warehouseTextView.text = item.warehouseDescription
             binding.warehouseAreaTextView.text = item.warehouseAreaDescription
             binding.rackTextView.text = item.rackId?.toString()
