@@ -18,7 +18,6 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Switch
-import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.fragment.app.FragmentActivity
@@ -87,7 +86,7 @@ class Screen {
             }
         }
 
-        fun getScreenWidth(@NonNull activity: Activity): Int {
+        fun getScreenWidth(activity: Activity): Int {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val windowMetrics = activity.windowManager.currentWindowMetrics
                 val bounds = windowMetrics.bounds
@@ -106,7 +105,7 @@ class Screen {
             }
         }
 
-        fun getScreenHeight(@NonNull activity: Activity): Int {
+        fun getScreenHeight(activity: Activity): Int {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val windowMetrics = activity.windowManager.currentWindowMetrics
                 val bounds = windowMetrics.bounds
@@ -125,7 +124,7 @@ class Screen {
             }
         }
 
-        fun getScreenSize(@NonNull activity: Activity): Size {
+        fun getScreenSize(activity: Activity): Size {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val windowMetrics = activity.windowManager.currentWindowMetrics
                 val bounds = windowMetrics.bounds

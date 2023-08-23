@@ -69,9 +69,8 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"/>
-
         <View
-                android:id="@+id/dividerInternal4"
+                android:id="@+id/dividerInternal2"
                 android:layout_width="0dp"
                 android:layout_height="1dp"
                 android:layout_marginStart="1dp"
@@ -80,7 +79,6 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/locationTextView"/>
-
         <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/parentTextView"
                 android:layout_width="0dp"
@@ -98,12 +96,11 @@
                 app:autoSizeMinTextSize="12dp"
                 app:autoSizeStepGranularity="1sp"
                 app:autoSizeTextType="uniform"
-                app:layout_constraintEnd_toEndOf="@+id/dividerInternal4"
+                app:layout_constraintEnd_toEndOf="@+id/dividerInternal2"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/dividerInternal4"/>
-
+                app:layout_constraintTop_toBottomOf="@+id/dividerInternal2"/>
         <View
-                android:id="@+id/dividerInternal5"
+                android:id="@+id/dividerInternal3"
                 android:layout_width="0dp"
                 android:layout_height="1dp"
                 android:layout_marginStart="1dp"
@@ -113,31 +110,36 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/parentTextView"/>
-
-        <TextView
-                android:id="@+id/extIdLabelTextView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
-                android:text="@string/external_id"
-                android:textColor="@color/darkslategray"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="@+id/extIdCheckedTextView"
-                app:layout_constraintTop_toBottomOf="@+id/dividerInternal5"/>
-
-        <CheckedTextView
-                android:id="@+id/extIdCheckedTextView"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:gravity="start"
-                android:text="@string/external_id"
-                android:textSize="14sp"
-                app:layout_constraintEnd_toEndOf="parent"
+        <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp" android:id="@+id/extIdPanel"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/extIdLabelTextView"/>
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/dividerInternal3">
+
+            <TextView
+                    android:id="@+id/extIdLabelTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/external_id"
+                    android:textColor="@color/darkslategray"
+                    android:textSize="8sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toTopOf="@+id/extIdCheckedTextView"
+                    app:layout_constraintStart_toStartOf="@+id/extIdCheckedTextView"
+                    app:layout_constraintTop_toTopOf="parent"/>
+            <CheckedTextView
+                    android:id="@+id/extIdCheckedTextView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="start"
+                    android:text="@string/external_id"
+                    android:textSize="14sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    android:layout_marginStart="8dp" android:layout_marginEnd="8dp"
+                    app:layout_constraintEnd_toEndOf="parent" app:layout_constraintBottom_toBottomOf="parent"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

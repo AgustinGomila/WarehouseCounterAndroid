@@ -828,8 +828,28 @@ class LocationAdapter private constructor(builder: Builder) :
             bindImageVisibility(imageVisibility = imageVisibility, changingState = false)
 
             binding.locationTextView.text = item.locationDescription
-            binding.parentTextView.text = item.locationParentStr
-            binding.extIdCheckedTextView.text = item.locationExternalId
+
+            val parentStr = item.locationParentStr
+            if (parentStr.isNotEmpty()) {
+                binding.parentTextView.text = parentStr
+                binding.parentTextView.visibility = VISIBLE
+                binding.dividerInternal2.visibility = VISIBLE
+            } else {
+                binding.parentTextView.text = ""
+                binding.parentTextView.visibility = GONE
+                binding.dividerInternal2.visibility = GONE
+            }
+
+            val extId = item.locationExternalId
+            if (extId.isNotEmpty()) {
+                binding.extIdCheckedTextView.text = item.locationExternalId
+                binding.extIdPanel.visibility = VISIBLE
+                binding.dividerInternal3.visibility = VISIBLE
+            } else {
+                binding.extIdCheckedTextView.text = ""
+                binding.extIdPanel.visibility = GONE
+                binding.dividerInternal3.visibility = GONE
+            }
 
             setStyle(item)
         }
@@ -945,7 +965,17 @@ class LocationAdapter private constructor(builder: Builder) :
             bindImageVisibility(imageVisibility = imageVisibility, changingState = false)
 
             binding.locationTextView.text = item.locationDescription
-            binding.parentTextView.text = item.locationParentStr
+
+            val parentStr = item.locationParentStr
+            if (parentStr.isNotEmpty()) {
+                binding.parentTextView.text = parentStr
+                binding.parentTextView.visibility = VISIBLE
+                binding.dividerInternal.visibility = VISIBLE
+            } else {
+                binding.parentTextView.text = ""
+                binding.parentTextView.visibility = GONE
+                binding.dividerInternal.visibility = GONE
+            }
 
             setStyle(item)
         }
