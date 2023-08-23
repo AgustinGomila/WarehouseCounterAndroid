@@ -768,4 +768,10 @@ class SettingsViewModel : ViewModel() {
         set(value) {
             settingRepository.outboxShowCheckBoxes.value = value
         }
+
+    var defaultTemplateId: Long
+        get() = settingRepository.defaultTemplateId.value as Long
+        set(value) {
+            settingRepository.defaultTemplateId.value = value
+        }
 }

@@ -324,6 +324,12 @@ class SettingsRepository {
         default = false
     )
 
+    var defaultTemplateId = Preference(
+        key = "default_template_id",
+        description = context.getString(R.string.default_template),
+        default = 0L
+    )
+
     //region FloatingCamera Position and Size
     var flCameraPortraitLocX = Preference(
         key = "fl_camera_portrait_loc_x",
@@ -715,6 +721,8 @@ class SettingsRepository {
                 sr.itemSelectShowCheckBoxes,
                 sr.inboxShowCheckBoxes,
                 sr.outboxShowCheckBoxes,
+
+                sr.defaultTemplateId,
 
                 sr.printerBtAddress,
 

@@ -267,6 +267,11 @@
         <activity android:name="com.dacosys.warehouseCounter.ui.activities.location.LocationPrintLabelActivity"
                   android:windowSoftInputMode="adjustResize"
                   android:exported="false"/>
+        <activity android:name="com.dacosys.warehouseCounter.ui.activities.barcodeLabel.TemplateSelectActivity"
+                  android:configChanges="keyboardHidden|orientation|screenSize"
+                  android:excludeFromRecents="true"
+                  android:theme="@style/Theme.AppCompat.Translucent"
+                  android:windowSoftInputMode="adjustResize"/>
         <meta-data
                 android:name="com.google.android.gms.vision.DEPENDENCIES"
                 android:value="barcode"/>

@@ -4,6 +4,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiRequest
 import com.dacosys.warehouseCounter.ktor.v2.dto.apiParam.ListResponse
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.Barcode
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeCodeParam
+import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.ktor.v2.dto.database.DatabaseData
 import com.dacosys.warehouseCounter.ktor.v2.dto.item.Item
@@ -13,6 +14,7 @@ import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.*
+import com.dacosys.warehouseCounter.ktor.v2.impl.ApiRequest.Companion.BARCODE_LABEL_TEMPLATE_PATH
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiRequest.Companion.ITEM_PATH
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiRequest.Companion.ORDER_PACKAGE_PATH
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiRequest.Companion.ORDER_PATH
@@ -186,6 +188,47 @@ class APIServiceImpl : APIService {
         callback(
             apiRequest.getListOf<Warehouse>(
                 objPath = WAREHOUSE_PATH, listName = Warehouse.WAREHOUSE_LIST_KEY, action = action
+            )
+        )
+    }
+
+    /**
+     * View a [BarcodeLabelTemplate] by ID
+     *
+     * @param id Object ID.
+     * @param action List of parameters.
+     * @param callback Desired [BarcodeLabelTemplate].
+     */
+    override suspend fun viewBarcodeLabelTemplate(
+        id: Long,
+        action: ArrayList<ApiActionParam>,
+        callback: (BarcodeLabelTemplate?) -> Unit
+    ) {
+        callback(
+            apiRequest.view<BarcodeLabelTemplate>(
+                objPath = BARCODE_LABEL_TEMPLATE_PATH, id = id, action = action
+            )
+        )
+    }
+
+    /**
+     * Get a [ListResponse]<[BarcodeLabelTemplate]> through a callback
+     *
+     * @param action List of parameters
+     * @param callback Request callback
+     *
+     * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/barcode-label-template)
+     * [POST](http://localhost:8002/v2/rack/barcode-label-template)
+     */
+    override suspend fun getBarcodeLabelTemplate(
+        action: ArrayList<ApiActionParam>,
+        callback: (ListResponse<BarcodeLabelTemplate>) -> Unit
+    ) {
+        callback(
+            apiRequest.getListOf<BarcodeLabelTemplate>(
+                objPath = BARCODE_LABEL_TEMPLATE_PATH,
+                listName = BarcodeLabelTemplate.BARCODE_LABEL_TEMPLATE_LIST_KEY,
+                action = action
             )
         )
     }

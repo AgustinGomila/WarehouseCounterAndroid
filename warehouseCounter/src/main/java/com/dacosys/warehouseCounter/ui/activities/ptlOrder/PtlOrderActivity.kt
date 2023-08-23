@@ -35,6 +35,7 @@ import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PickItem
 import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlContent
 import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlOrder
 import com.dacosys.warehouseCounter.ktor.v1.functions.*
+import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -1007,8 +1008,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         }
     }
 
-    override fun onFilterChanged(printer: String, qty: Int?) {
-    }
+    override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {}
 
     override fun onPrintRequested(printer: String, qty: Int) {
         printSelected()

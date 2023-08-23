@@ -49,6 +49,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
+import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
@@ -1005,7 +1006,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    override fun onFilterChanged(printer: String, qty: Int?) {}
+    override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {}
 
     override fun onPrintRequested(printer: String, qty: Int) {
         /** Acá seleccionamos siguiendo estos criterios:

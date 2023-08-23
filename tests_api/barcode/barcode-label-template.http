@@ -1,14 +1,9 @@
-
-
-# INDEX
-###
+### Index
 GET {{server}}/v2/barcode-label-template
 Authorization: Basic {{username}} {{password}}
 Accept: application/json
-###
 
-# VIEW
-###
+### View
 GET {{server}}/v2/barcode-label-template/view?id=1
 Authorization: Basic {{username}} {{password}}
 Accept: application/json

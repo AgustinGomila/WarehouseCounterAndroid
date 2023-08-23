@@ -48,6 +48,9 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
+import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
+import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeParam
+import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.PrintOps
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.*
 import com.dacosys.warehouseCounter.ktor.v2.functions.*
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiActionParam
@@ -1074,9 +1077,16 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         // }
     }
 
-    override fun onFilterChanged(printer: String, qty: Int?) {}
+    override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {}
 
     override fun onPrintRequested(printer: String, qty: Int) {
+        val template = printLabelFragment.template
+        if (template == null) {
+            showSnackBar(SnackBarEventData(context.getString(R.string.you_must_select_a_template), ERROR))
+            return
+        }
+        val printOps = PrintOps.getPrintOps()
+
         /** Acá seleccionamos siguiendo estos criterios:
          *
          * Si NO es multiSelect tomamos el ítem seleccionado de forma simple.
@@ -1091,7 +1101,6 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
          * devolvemos este ítem.
          *
          **/
-
         val item = currentItem
         val countChecked = countChecked
         var itemArray: ArrayList<Location> = ArrayList()
@@ -1099,16 +1108,42 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         if (!multiSelect && item != null) {
             itemArray = arrayListOf(item)
         } else if (multiSelect) {
-            if (countChecked > 0 || item != null) {
-                if (countChecked > 0) itemArray = allChecked
-                else if (adapter?.showCheckBoxes == false) {
-                    itemArray = arrayListOf(item!!)
-                }
+            if (countChecked > 0) itemArray = allChecked
+            else if (adapter?.showCheckBoxes == false && item != null) {
+                itemArray = arrayListOf(item)
             }
         }
 
-        // TODO: Imprimir etiquetas
-        // printLabelFragment.printItemById(ArrayList(itemArray.map { it.itemId }))
+        val rs = itemArray.mapNotNull { if (it.locationType == LocationType.RACK) it else null }.toList()
+        val was = itemArray.mapNotNull { if (it.locationType == LocationType.WAREHOUSE_AREA) it else null }.toList()
+
+        if (rs.any()) {
+            val ids = ArrayList(rs.map { it.locationId })
+            GetRackBarcode(
+                param = BarcodeParam(
+                    idList = ids,
+                    templateId = template.templateId,
+                    printOps = printOps
+                ),
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                onFinish = {
+                    printLabelFragment.printBarcodes(it)
+                }
+            )
+        } else if (was.any()) {
+            val ids = ArrayList(was.map { it.locationId })
+            GetWarehouseAreaBarcode(
+                param = BarcodeParam(
+                    idList = ids,
+                    templateId = template.templateId,
+                    printOps = printOps
+                ),
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                onFinish = {
+                    printLabelFragment.printBarcodes(it)
+                }
+            )
+        }
     }
 
     override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {

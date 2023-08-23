@@ -621,6 +621,7 @@ class ApiRequest {
 
         const val BARCODE_PATH = "barcode"
         const val BARCODE_CODE_PATH = "barcode-code"
+        const val BARCODE_LABEL_TEMPLATE_PATH = "barcode-label-template"
 
         const val VIEW_PATH = "view"
         const val MOVE_PATH = "move"

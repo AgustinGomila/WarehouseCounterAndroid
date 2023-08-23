@@ -3,6 +3,7 @@ package com.dacosys.warehouseCounter.ktor.v2.service
 import com.dacosys.warehouseCounter.ktor.v2.dto.apiParam.ListResponse
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.Barcode
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeCodeParam
+import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.ktor.v2.dto.database.DatabaseData
 import com.dacosys.warehouseCounter.ktor.v2.dto.item.Item
@@ -29,6 +30,17 @@ interface APIService {
 
     suspend fun viewWarehouse(id: Long, action: ArrayList<ApiActionParam>, callback: (Warehouse?) -> Unit)
     suspend fun getWarehouse(action: ArrayList<ApiActionParam>, callback: (ListResponse<Warehouse>) -> Unit)
+
+    suspend fun viewBarcodeLabelTemplate(
+        id: Long,
+        action: ArrayList<ApiActionParam>,
+        callback: (BarcodeLabelTemplate?) -> Unit
+    )
+
+    suspend fun getBarcodeLabelTemplate(
+        action: ArrayList<ApiActionParam>,
+        callback: (ListResponse<BarcodeLabelTemplate>) -> Unit
+    )
 
     suspend fun viewOrder(id: Long, action: ArrayList<ApiActionParam>, callback: (OrderResponse?) -> Unit)
     suspend fun createOrder(payload: OrderRequest, callback: (OrderResponse) -> Unit)

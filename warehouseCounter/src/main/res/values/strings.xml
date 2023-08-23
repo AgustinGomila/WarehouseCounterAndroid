@@ -716,5 +716,9 @@
     <string name="button_11">Botón 11</string>
     <string name="button_12">Botón 12</string>
     <string name="move_order">Mover pedido</string>
-    <string name="unpackaging">Desempaquetar</string>
+    <string name="unboxing">Desempaquetar</string>
+    <string name="search_label_template_">Buscar plantilla…</string>
+    <string name="select_label_template">Seleccionar plantilla</string>
+    <string name="search_by_template">Buscar plantilla</string>
+    <string name="you_must_select_a_template">Debe seleccionar una plantilla</string>
 </resources>
