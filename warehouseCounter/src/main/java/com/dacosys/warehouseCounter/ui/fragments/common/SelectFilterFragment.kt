@@ -5,11 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
-import android.view.KeyEvent
-import android.view.LayoutInflater
-import android.view.View
+import android.view.*
 import android.view.View.OnFocusChangeListener
-import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -384,12 +381,12 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     }
 
     private fun enterText(title: String, text: String, hint: String, onResult: (String) -> Unit) {
-
         with(requireContext()) {
             val dialogView = LayoutInflater.from(this).inflate(R.layout.custom_dialog_layout, null)
             val editText = dialogView.findViewById<EditText>(R.id.editText)
             editText.setText(text)
             editText.isFocusable = true
+            editText.isFocusableInTouchMode = true
             editText.hint = hint
             editText.onFocusChangeListener = OnFocusChangeListener { v, hasFocus ->
                 editText.post {
@@ -432,8 +429,12 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
                     false
                 }
             }
-            editText.requestFocus()
+
+            dialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            dialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
             dialog.show()
+            editText.requestFocus()
         }
     }
 
