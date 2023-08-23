@@ -187,36 +187,13 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
     private var rejectNewInstances = false
 
-    private val buttonCollection: ArrayList<Button> = ArrayList()
-
-    private var isReturnedFromSettings = false
-
     override fun onResume() {
         super.onResume()
+        rejectNewInstances = false
 
         Screen.closeKeyboard(this)
 
-        rejectNewInstances = false
-
-        // Parece que las actividades de tipo Setting no devuelven resultados
-        // así que de esta manera puedo volver a llenar el fragmento de usuarios
-        if (isReturnedFromSettings) {
-            isReturnedFromSettings = false
-
-            // Vamos a reconstruir el scanner por si cambió la configuración
-            JotterListener.autodetectDeviceModel(this)
-
-            setupImageControl()
-
-            // Permitir o no la rotación de pantalla
-            Screen.setScreenRotation(this)
-
-            // Todavía no está autentificado
-            if (Statics.currentUserId < 0L) {
-                login()
-            }
-        }
-
+        // Si ya está autentificado iniciar la sincronización
         if (Statics.currentUserId > 0L) {
             startSync()
         }
@@ -235,7 +212,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_main, menu)
 
-        if (!(settingViewModel.showConfButton)) {
+        if (!settingViewModel.showConfButton) {
             menu.removeItem(menu.findItem(R.id.action_settings).itemId)
         }
 
@@ -636,13 +613,31 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
                 val intent = Intent(context, SettingsActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                startActivity(intent)
+                resultForSettings.launch(intent)
             }
-            isReturnedFromSettings = true
         } else {
-            showSnackBar(SnackBarEventData(getString(R.string.invalid_password), ERROR))
+            makeText(binding.root, getString(R.string.invalid_password), ERROR)
         }
     }
+
+    private val resultForSettings =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            // Reconfiguración de parámetros
+
+            // Vamos a reconstruir el scanner por si cambió la configuración
+            JotterListener.autodetectDeviceModel(this)
+
+            // Reconfigurar ImageControl
+            setupImageControl()
+
+            // Permitir o no la rotación de pantalla
+            Screen.setScreenRotation(this)
+
+            // Todavía no está autentificado
+            if (Statics.currentUserId < 0L) {
+                login()
+            }
+        }
 
     private lateinit var splashScreen: SplashScreen
     private lateinit var binding: ActivityHomeBinding

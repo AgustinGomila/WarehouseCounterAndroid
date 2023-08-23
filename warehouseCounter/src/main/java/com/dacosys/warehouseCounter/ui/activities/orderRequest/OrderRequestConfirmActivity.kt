@@ -318,7 +318,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                     .replace(binding.imageControlLayout.id, imageControlFragment!!)
                     .commit()
 
-                if (!(settingViewModel.useImageControl)) {
+                if (!settingViewModel.useImageControl) {
                     fm.beginTransaction()
                         .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
                         .hide(imageControlFragment as Fragment)

@@ -15,6 +15,7 @@ import android.view.MenuItem
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -113,7 +114,6 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     private var rejectNewInstances = false
-    private var isReturnedFromSettings = false
 
     private var email: String = ""
     private var password: String = ""
@@ -123,25 +123,6 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
 
         JotterListener.lockScanner(this, false)
         rejectNewInstances = false
-
-        // Parece que las actividades de tipo Setting no devuelven resultados
-        // así que de esta manera puedo volver a llenar el fragmento de usuarios
-        if (isReturnedFromSettings) {
-            isReturnedFromSettings = false
-
-            // Vamos a reconstruir el scanner por si cambió la configuración
-            JotterListener.autodetectDeviceModel(this)
-
-            if (settingViewModel.urlPanel.isEmpty()) {
-                showSnackBar(SnackBarEventData(getString(R.string.server_is_not_configured), ERROR))
-                return
-            }
-
-            Screen.closeKeyboard(this)
-
-            setResult(RESULT_OK)
-            finish()
-        }
     }
 
     override fun onBackPressed() {
@@ -319,13 +300,28 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
 
                 val intent = Intent(baseContext, SettingsActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                startActivity(intent)
+                resultForSettings.launch(intent)
             }
-            isReturnedFromSettings = true
         } else {
-            showSnackBar(SnackBarEventData(getString(R.string.invalid_password), ERROR))
+            makeText(binding.root, getString(R.string.invalid_password), ERROR)
         }
     }
+
+    private val resultForSettings =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            // Vamos a reconstruir el scanner por si cambió la configuración
+            JotterListener.autodetectDeviceModel(this)
+
+            if (settingViewModel.urlPanel.isEmpty()) {
+                showSnackBar(SnackBarEventData(getString(R.string.server_is_not_configured), ERROR))
+                return@registerForActivityResult
+            }
+
+            Screen.closeKeyboard(this)
+
+            setResult(RESULT_OK)
+            finish()
+        }
 
     private var isConfiguring = false
     private fun attemptToConfigure() {

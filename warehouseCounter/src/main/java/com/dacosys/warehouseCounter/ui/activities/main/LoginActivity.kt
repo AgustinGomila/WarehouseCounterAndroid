@@ -19,6 +19,7 @@ import android.view.View.VISIBLE
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -285,17 +286,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         rejectNewInstances = false
 
         Statics.isLogged = false
-
-        // Parece que las actividades de tipo Setting no devuelven resultados
-        // así que de esta manera puedo volver a llenar el fragmento de usuarios
-        if (isReturnedFromSettings) {
-            isReturnedFromSettings = false
-
-            // Vamos a reconstruir el scanner por si cambió la configuración
-            JotterListener.autodetectDeviceModel(this)
-
-            initialSetup()
-        }
     }
 
     private fun refreshUsers() {
@@ -328,7 +318,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
     private var userSpinnerFragment: UserSpinnerFragment? = null
     private var rejectNewInstances = false
-    private var isReturnedFromSettings = false
 
     private var attemptSync = false
     private var attemptRunning = false
@@ -557,13 +546,20 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
                 val intent = Intent(context, SettingsActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                startActivity(intent)
+                resultForSettings.launch(intent)
             }
-            isReturnedFromSettings = true
         } else {
-            showSnackBar(SnackBarEventData(getString(R.string.invalid_password), ERROR))
+            makeText(binding.root, getString(R.string.invalid_password), ERROR)
         }
     }
+
+    private val resultForSettings =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            // Vamos a reconstruir el scanner por si cambió la configuración
+            JotterListener.autodetectDeviceModel(this)
+
+            initialSetup()
+        }
 
     private fun resize(image: Drawable): Drawable {
         val bitmap = (image as BitmapDrawable).bitmap
