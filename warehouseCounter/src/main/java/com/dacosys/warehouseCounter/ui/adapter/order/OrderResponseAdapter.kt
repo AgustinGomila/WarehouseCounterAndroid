@@ -26,8 +26,8 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.databinding.OrderResponseRowBinding
 import com.dacosys.warehouseCounter.databinding.OrderResponseRowExpandedBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.Status
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderStatus
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
@@ -43,7 +43,7 @@ class OrderResponseAdapter private constructor(builder: Builder) :
     private var multiSelect: Boolean = false
     var showCheckBoxes: Boolean = false
     private var showCheckBoxesChanged: (Boolean) -> Unit = { }
-    private var visibleStatus: ArrayList<Status> = ArrayList()
+    private var visibleStatus: ArrayList<OrderStatus> = ArrayList()
     private var filterOptions: FilterOptions = FilterOptions()
 
     // Este Listener debe usarse para los cambios de cantidad o de ítems marcados de la lista,
@@ -308,7 +308,7 @@ class OrderResponseAdapter private constructor(builder: Builder) :
     }
 
     private fun mustBeVisible(it: OrderResponse): Boolean {
-        return visibleStatus.any { v -> v.id == it.statusId }
+        return visibleStatus.any { v -> v == it.status }
     }
 
     override fun getFilter(): Filter {
@@ -601,19 +601,19 @@ class OrderResponseAdapter private constructor(builder: Builder) :
         dataSetChangedListener?.onDataSetChanged()
     }
 
-    fun addVisibleStatus(status: Status) {
+    fun addVisibleStatus(status: OrderStatus) {
         if (visibleStatus.contains(status)) return
         visibleStatus.add(status)
 
         refreshFilter()
     }
 
-    fun removeVisibleStatus(status: Status) {
+    fun removeVisibleStatus(status: OrderStatus) {
         if (!visibleStatus.contains(status)) return
         visibleStatus.remove(status)
 
         // Quitamos los ítems con el estado seleccionado de la lista marcados.
-        val uncheckedItems = ArrayList(fullList.mapNotNull { if (it.statusId == status.id) it.hashCode else null })
+        val uncheckedItems = ArrayList(fullList.mapNotNull { if (it.status == status) it.hashCode else null })
         checkedHashArray.removeAll(uncheckedItems.toSet())
 
         refreshFilter()
@@ -656,51 +656,89 @@ class OrderResponseAdapter private constructor(builder: Builder) :
 
             // Background layouts
             // Resalta por estado del ítem
-            val layout1 = getDrawable(context.resources, R.drawable.layout_thin_border_w, null)
-            val layout2 = getDrawable(context.resources, R.drawable.layout_thin_border_w_inactive, null)
-            val layout3 = getDrawable(context.resources, R.drawable.layout_thin_border_wa, null)
-            val layout4 = getDrawable(context.resources, R.drawable.layout_thin_border_wa_inactive, null)
-            val layout5 = getDrawable(context.resources, R.drawable.layout_thin_border_r, null)
-            val layout6 = getDrawable(context.resources, R.drawable.layout_thin_border_r_inactive, null)
-            val layoutDefault = getDrawable(context.resources, R.drawable.layout_thin_border, null)
+            val layoutApproved = getDrawable(context.resources, R.drawable.layout_thin_border_status_approved, null)
+            val layoutDraft = getDrawable(context.resources, R.drawable.layout_thin_border_status_draft, null)
+            val layoutInProcess = getDrawable(context.resources, R.drawable.layout_thin_border_status_in_process, null)
+            val layoutInTransit = getDrawable(context.resources, R.drawable.layout_thin_border_status_in_transit, null)
+            val layoutDelivered = getDrawable(context.resources, R.drawable.layout_thin_border_status_delivered, null)
+            val layoutFinished = getDrawable(context.resources, R.drawable.layout_thin_border_status_finished, null)
+            val layoutPending = getDrawable(context.resources, R.drawable.layout_thin_border_status_pending, null)
+            val layoutPendingDistribution =
+                getDrawable(context.resources, R.drawable.layout_thin_border_status_pending_distribution, null)
+            val layoutProcessed = getDrawable(context.resources, R.drawable.layout_thin_border_status_processed, null)
+            val layoutNoStatus = getDrawable(context.resources, R.drawable.layout_thin_border_status_no_status, null)
+            val layoutActive = getDrawable(context.resources, R.drawable.layout_thin_border_status_active, null)
+            val layoutDeactivated =
+                getDrawable(context.resources, R.drawable.layout_thin_border_status_deactivated, null)
+            val layoutFlashing = getDrawable(context.resources, R.drawable.layout_thin_border_status_flashing, null)
 
             val backColor: Drawable
             val foreColor: Int
 
-            when (item.statusId) {
-                1L -> {
-                    backColor = layout1!!
-                    foreColor = selectedForeColor1
+            when (item.status) {
+                OrderStatus.approved -> {
+                    backColor = layoutApproved!!
+                    foreColor = approvedSelectedForeColor
                 }
 
-                2L -> {
-                    backColor = layout2!!
-                    foreColor = selectedForeColor2
+                OrderStatus.active -> {
+                    backColor = layoutActive!!
+                    foreColor = activeSelectedForeColor
                 }
 
-                3L -> {
-                    backColor = layout3!!
-                    foreColor = selectedForeColor3
+                OrderStatus.draft -> {
+                    backColor = layoutDraft!!
+                    foreColor = draftSelectedForeColor
                 }
 
-                4L -> {
-                    backColor = layout4!!
-                    foreColor = selectedForeColor4
+                OrderStatus.deactivated -> {
+                    backColor = layoutDeactivated!!
+                    foreColor = deactivatedSelectedForeColor
                 }
 
-                5L -> {
-                    backColor = layout5!!
-                    foreColor = selectedForeColor5
+                OrderStatus.inProcess -> {
+                    backColor = layoutInProcess!!
+                    foreColor = inProcessSelectedForeColor
                 }
 
-                6L -> {
-                    backColor = layout6!!
-                    foreColor = selectedForeColor6
+                OrderStatus.inTransit -> {
+                    backColor = layoutInTransit!!
+                    foreColor = inTransitSelectedForeColor
+                }
+
+                OrderStatus.delivered -> {
+                    backColor = layoutDelivered!!
+                    foreColor = deliveredSelectedForeColor
+                }
+
+                OrderStatus.finished -> {
+                    backColor = layoutFinished!!
+                    foreColor = finishedSelectedForeColor
+                }
+
+                OrderStatus.pending -> {
+                    backColor = layoutPending!!
+                    foreColor = pendingSelectedForeColor
+                }
+
+                OrderStatus.pendingDistribution -> {
+                    backColor = layoutPendingDistribution!!
+                    foreColor = pendingDistributionSelectedForeColor
+                }
+
+                OrderStatus.processed -> {
+                    backColor = layoutProcessed!!
+                    foreColor = processedSelectedForeColor
+                }
+
+                OrderStatus.flashing -> {
+                    backColor = layoutFlashing!!
+                    foreColor = flashingSelectedForeColor
                 }
 
                 else -> {
-                    backColor = layoutDefault!!
-                    foreColor = defaultSelectedForeColor
+                    backColor = layoutNoStatus!!
+                    foreColor = noStatusSelectedForeColor
                 }
             }
 
@@ -746,51 +784,89 @@ class OrderResponseAdapter private constructor(builder: Builder) :
 
             // Background layouts
             // Resalta por estado del ítem
-            val layout1 = getDrawable(context.resources, R.drawable.layout_thin_border_w, null)
-            val layout2 = getDrawable(context.resources, R.drawable.layout_thin_border_w_inactive, null)
-            val layout3 = getDrawable(context.resources, R.drawable.layout_thin_border_wa, null)
-            val layout4 = getDrawable(context.resources, R.drawable.layout_thin_border_wa_inactive, null)
-            val layout5 = getDrawable(context.resources, R.drawable.layout_thin_border_r, null)
-            val layout6 = getDrawable(context.resources, R.drawable.layout_thin_border_r_inactive, null)
-            val layoutDefault = getDrawable(context.resources, R.drawable.layout_thin_border, null)
+            val layoutApproved = getDrawable(context.resources, R.drawable.layout_thin_border_status_approved, null)
+            val layoutDraft = getDrawable(context.resources, R.drawable.layout_thin_border_status_draft, null)
+            val layoutInProcess = getDrawable(context.resources, R.drawable.layout_thin_border_status_in_process, null)
+            val layoutInTransit = getDrawable(context.resources, R.drawable.layout_thin_border_status_in_transit, null)
+            val layoutDelivered = getDrawable(context.resources, R.drawable.layout_thin_border_status_delivered, null)
+            val layoutFinished = getDrawable(context.resources, R.drawable.layout_thin_border_status_finished, null)
+            val layoutPending = getDrawable(context.resources, R.drawable.layout_thin_border_status_pending, null)
+            val layoutPendingDistribution =
+                getDrawable(context.resources, R.drawable.layout_thin_border_status_pending_distribution, null)
+            val layoutProcessed = getDrawable(context.resources, R.drawable.layout_thin_border_status_processed, null)
+            val layoutNoStatus = getDrawable(context.resources, R.drawable.layout_thin_border_status_no_status, null)
+            val layoutActive = getDrawable(context.resources, R.drawable.layout_thin_border_status_active, null)
+            val layoutDeactivated =
+                getDrawable(context.resources, R.drawable.layout_thin_border_status_deactivated, null)
+            val layoutFlashing = getDrawable(context.resources, R.drawable.layout_thin_border_status_flashing, null)
 
             val backColor: Drawable
             val foreColor: Int
 
-            when (item.statusId) {
-                1L -> {
-                    backColor = layout1!!
-                    foreColor = status1ForeColor
+            when (item.status) {
+                OrderStatus.approved -> {
+                    backColor = layoutApproved!!
+                    foreColor = approvedForeColor
                 }
 
-                2L -> {
-                    backColor = layout2!!
-                    foreColor = status2ForeColor
+                OrderStatus.active -> {
+                    backColor = layoutActive!!
+                    foreColor = activeForeColor
                 }
 
-                3L -> {
-                    backColor = layout3!!
-                    foreColor = status3ForeColor
+                OrderStatus.draft -> {
+                    backColor = layoutDraft!!
+                    foreColor = draftForeColor
                 }
 
-                4L -> {
-                    backColor = layout4!!
-                    foreColor = status4ForeColor
+                OrderStatus.deactivated -> {
+                    backColor = layoutDeactivated!!
+                    foreColor = deactivatedForeColor
                 }
 
-                5L -> {
-                    backColor = layout5!!
-                    foreColor = status5ForeColor
+                OrderStatus.inProcess -> {
+                    backColor = layoutInProcess!!
+                    foreColor = inProcessForeColor
                 }
 
-                6L -> {
-                    backColor = layout6!!
-                    foreColor = status6ForeColor
+                OrderStatus.inTransit -> {
+                    backColor = layoutInTransit!!
+                    foreColor = inTransitForeColor
+                }
+
+                OrderStatus.delivered -> {
+                    backColor = layoutDelivered!!
+                    foreColor = deliveredForeColor
+                }
+
+                OrderStatus.finished -> {
+                    backColor = layoutFinished!!
+                    foreColor = finishedForeColor
+                }
+
+                OrderStatus.pending -> {
+                    backColor = layoutPending!!
+                    foreColor = pendingForeColor
+                }
+
+                OrderStatus.pendingDistribution -> {
+                    backColor = layoutPendingDistribution!!
+                    foreColor = pendingDistributionForeColor
+                }
+
+                OrderStatus.processed -> {
+                    backColor = layoutProcessed!!
+                    foreColor = processedForeColor
+                }
+
+                OrderStatus.flashing -> {
+                    backColor = layoutFlashing!!
+                    foreColor = flashingForeColor
                 }
 
                 else -> {
-                    backColor = layoutDefault!!
-                    foreColor = defaultForeColor
+                    backColor = layoutNoStatus!!
+                    foreColor = noStatusForeColor
                 }
             }
 
@@ -819,21 +895,33 @@ class OrderResponseAdapter private constructor(builder: Builder) :
         const val UNSELECTED_VIEW_TYPE = 2
 
         // region COLORS
-        private var status1ForeColor: Int = 0
-        private var status2ForeColor: Int = 0
-        private var status3ForeColor: Int = 0
-        private var status4ForeColor: Int = 0
-        private var status5ForeColor: Int = 0
-        private var status6ForeColor: Int = 0
-        private var defaultForeColor: Int = 0
+        private var approvedForeColor: Int = 0
+        private var draftForeColor: Int = 0
+        private var inProcessForeColor: Int = 0
+        private var inTransitForeColor: Int = 0
+        private var deliveredForeColor: Int = 0
+        private var finishedForeColor: Int = 0
+        private var pendingForeColor: Int = 0
+        private var pendingDistributionForeColor: Int = 0
+        private var processedForeColor: Int = 0
+        private var noStatusForeColor: Int = 0
+        private var activeForeColor: Int = 0
+        private var deactivatedForeColor: Int = 0
+        private var flashingForeColor: Int = 0
 
-        private var selectedForeColor1: Int = 0
-        private var selectedForeColor2: Int = 0
-        private var selectedForeColor3: Int = 0
-        private var selectedForeColor4: Int = 0
-        private var selectedForeColor5: Int = 0
-        private var selectedForeColor6: Int = 0
-        private var defaultSelectedForeColor: Int = 0
+        private var approvedSelectedForeColor: Int = 0
+        private var draftSelectedForeColor: Int = 0
+        private var inProcessSelectedForeColor: Int = 0
+        private var inTransitSelectedForeColor: Int = 0
+        private var deliveredSelectedForeColor: Int = 0
+        private var finishedSelectedForeColor: Int = 0
+        private var pendingSelectedForeColor: Int = 0
+        private var pendingDistributionSelectedForeColor: Int = 0
+        private var processedSelectedForeColor: Int = 0
+        private var noStatusSelectedForeColor: Int = 0
+        private var activeSelectedForeColor: Int = 0
+        private var deactivatedSelectedForeColor: Int = 0
+        private var flashingSelectedForeColor: Int = 0
 
         private var darkslategray: Int = 0
         private var lightgray: Int = 0
@@ -844,31 +932,50 @@ class OrderResponseAdapter private constructor(builder: Builder) :
          */
         private fun setupColors() {
             // Color de los diferentes estados
-            val status3 = getColor(context.resources, R.color.status_w_active, null)
-            val status1 = getColor(context.resources, R.color.status_wa_active, null)
-            val status5 = getColor(context.resources, R.color.status_r_active, null)
-            val status2 = getColor(context.resources, R.color.status_w_inactive, null)
-            val status4 = getColor(context.resources, R.color.status_wa_inactive, null)
-            val status6 = getColor(context.resources, R.color.status_r_inactive, null)
-            val default = getColor(context.resources, R.color.status_default, null)
+            val statusApproved = getColor(context.resources, R.color.status_approved, null)
+            val statusDraft = getColor(context.resources, R.color.status_draft, null)
+            val statusInProcess = getColor(context.resources, R.color.status_in_process, null)
+            val statusInTransit = getColor(context.resources, R.color.status_in_transit, null)
+            val statusDelivered = getColor(context.resources, R.color.status_delivered, null)
+            val statusFinished = getColor(context.resources, R.color.status_finished, null)
+            val statusPending = getColor(context.resources, R.color.status_pending, null)
+            val statusPendingDistribution = getColor(context.resources, R.color.status_pending_distribution, null)
+            val statusProcessed = getColor(context.resources, R.color.status_processed, null)
+            val statusNoStatus = getColor(context.resources, R.color.status_no_status, null)
+            val statusActive = getColor(context.resources, R.color.status_active, null)
+            val statusDeactivated = getColor(context.resources, R.color.status_deactivated, null)
+            val statusFlashing = getColor(context.resources, R.color.status_flashing, null)
 
             // Mejor contraste para los ítems seleccionados
-            selectedForeColor1 = getBestContrastColor(manipulateColor(status1, 0.5f))
-            selectedForeColor2 = getBestContrastColor(manipulateColor(status2, 0.5f))
-            selectedForeColor3 = getBestContrastColor(manipulateColor(status3, 0.5f))
-            selectedForeColor4 = getBestContrastColor(manipulateColor(status4, 0.5f))
-            selectedForeColor5 = getBestContrastColor(manipulateColor(status5, 0.5f))
-            selectedForeColor6 = getBestContrastColor(manipulateColor(status6, 0.5f))
-            defaultSelectedForeColor = getBestContrastColor(manipulateColor(default, 0.5f))
+            approvedSelectedForeColor = getBestContrastColor(manipulateColor(statusApproved, 0.5f))
+            draftSelectedForeColor = getBestContrastColor(manipulateColor(statusDraft, 0.5f))
+            inProcessSelectedForeColor = getBestContrastColor(manipulateColor(statusInProcess, 0.5f))
+            inTransitSelectedForeColor = getBestContrastColor(manipulateColor(statusInTransit, 0.5f))
+            deliveredSelectedForeColor = getBestContrastColor(manipulateColor(statusDelivered, 0.5f))
+            finishedSelectedForeColor = getBestContrastColor(manipulateColor(statusFinished, 0.5f))
+            pendingSelectedForeColor = getBestContrastColor(manipulateColor(statusPending, 0.5f))
+            pendingDistributionSelectedForeColor =
+                getBestContrastColor(manipulateColor(statusPendingDistribution, 0.5f))
+            processedSelectedForeColor = getBestContrastColor(manipulateColor(statusProcessed, 0.5f))
+            noStatusSelectedForeColor = getBestContrastColor(manipulateColor(statusNoStatus, 0.5f))
+            activeSelectedForeColor = getBestContrastColor(manipulateColor(statusActive, 0.5f))
+            deactivatedSelectedForeColor = getBestContrastColor(manipulateColor(statusDeactivated, 0.5f))
+            flashingSelectedForeColor = getBestContrastColor(manipulateColor(statusFlashing, 0.5f))
 
             // Mejor contraste para los ítems no seleccionados
-            status1ForeColor = getBestContrastColor(status1)
-            status2ForeColor = getBestContrastColor(status2)
-            status3ForeColor = getBestContrastColor(status3)
-            status4ForeColor = getBestContrastColor(status4)
-            status5ForeColor = getBestContrastColor(status5)
-            status6ForeColor = getBestContrastColor(status6)
-            defaultForeColor = getBestContrastColor(default)
+            approvedForeColor = getBestContrastColor(statusApproved)
+            draftForeColor = getBestContrastColor(statusDraft)
+            inProcessForeColor = getBestContrastColor(statusInProcess)
+            inTransitForeColor = getBestContrastColor(statusInTransit)
+            deliveredForeColor = getBestContrastColor(statusDelivered)
+            finishedForeColor = getBestContrastColor(statusFinished)
+            pendingForeColor = getBestContrastColor(statusPending)
+            pendingDistributionForeColor = getBestContrastColor(statusPendingDistribution)
+            processedForeColor = getBestContrastColor(statusProcessed)
+            noStatusForeColor = getBestContrastColor(statusNoStatus)
+            activeForeColor = getBestContrastColor(statusActive)
+            deactivatedForeColor = getBestContrastColor(statusDeactivated)
+            flashingForeColor = getBestContrastColor(statusFlashing)
 
             // CheckBox color
             darkslategray = getColor(context.resources, R.color.darkslategray, null)
@@ -894,12 +1001,8 @@ class OrderResponseAdapter private constructor(builder: Builder) :
         selectedItemChangedListener = builder.selectedItemChangedListener
         checkedChangedListener = builder.checkedChangedListener
 
-        // TODO: Dummy status list, FIX Later
-        if (visibleStatus.isEmpty()) {
-            for (i in 0..19) {
-                visibleStatus.add(Status(i.toLong(), """${context.getString(R.string.status)} $i"""))
-            }
-        }
+        // Configuramos los estados visibles al usuario
+        if (visibleStatus.isEmpty()) visibleStatus = OrderStatus.getAll()
 
         // Configuramos variables de estilo que se van a reutilizar.
         setupColors()
@@ -955,7 +1058,7 @@ class OrderResponseAdapter private constructor(builder: Builder) :
         internal var multiSelect: Boolean = false
         internal var showCheckBoxes: Boolean = false
         internal var showCheckBoxesChanged: (Boolean) -> Unit = { }
-        internal var visibleStatus: ArrayList<Status> = ArrayList()
+        internal var visibleStatus: ArrayList<OrderStatus> = ArrayList()
         internal var filterOptions: FilterOptions = FilterOptions()
 
         internal var dataSetChangedListener: DataSetChangedListener? = null
@@ -995,7 +1098,7 @@ class OrderResponseAdapter private constructor(builder: Builder) :
         }
 
         @Suppress("unused")
-        fun visibleStatus(`val`: ArrayList<Status>): Builder {
+        fun visibleStatus(`val`: ArrayList<OrderStatus>): Builder {
             visibleStatus = `val`
             return this
         }

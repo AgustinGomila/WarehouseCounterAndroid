@@ -68,4 +68,19 @@
     <color name="status_wa_inactive">#0288D1</color>
     <color name="status_r_active">#00ACC1</color>
     <color name="status_r_inactive">#0097A7</color>
+
+    <color name="status_no_status">#ECECEC</color>
+    <color name="status_active">#512DA8</color>
+    <color name="status_draft">#AFB42B</color>
+    <color name="status_approved">#388E3C</color>
+    <color name="status_in_process">#0097A7</color>
+    <color name="status_in_transit">#1976D2</color>
+    <color name="status_delivered">#303F9F</color>
+    <color name="status_finished">#7B1FA2</color>
+    <color name="status_pending">#C2185B</color>
+    <color name="status_pending_distribution">#D32F2F</color>
+    <color name="status_processed">#F57C00</color>
+    <color name="status_deactivated">#FFA000</color>
+    <color name="status_flashing">#FBC02D</color>
+
 </resources>

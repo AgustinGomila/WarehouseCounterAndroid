@@ -58,6 +58,11 @@ data class OrderResponse(
             ?: emptyList(),
     )
 
+    val status: OrderStatus
+        get() {
+            return OrderStatus.getById(statusId)
+        }
+
     override fun toString(): String {
         return description
     }

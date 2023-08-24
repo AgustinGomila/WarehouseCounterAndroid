@@ -722,4 +722,17 @@
     <string name="search_by_template">Buscar plantilla</string>
     <string name="you_must_select_a_template">Debe seleccionar una plantilla</string>
     <string name="print_order_labels">Imprimir etiquetas de pedidos</string>
+    <string name="status_approved">Aprobado</string>
+    <string name="status_draft">Borrador</string>
+    <string name="status_in_process">En proceso</string>
+    <string name="status_in_transit">En tránsito</string>
+    <string name="status_delivered">Entregado</string>
+    <string name="status_finished">Finalizado</string>
+    <string name="status_pending">Pendiente</string>
+    <string name="status_pending_distribution">Pendiente distribución</string>
+    <string name="status_processed">Procesado</string>
+    <string name="status_no_status">Sin estado</string>
+    <string name="status_active">Activo</string>
+    <string name="status_deactivated">Desactivado</string>
+    <string name="status_flashing">Destellando</string>
 </resources>
