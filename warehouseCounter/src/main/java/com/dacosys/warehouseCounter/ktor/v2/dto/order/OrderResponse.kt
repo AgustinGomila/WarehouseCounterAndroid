@@ -58,6 +58,11 @@ data class OrderResponse(
             ?: emptyList(),
     )
 
+    val orderType: OrderRequestType
+        get() {
+            return OrderRequestType.getById(orderTypeId)
+        }
+
     val status: OrderStatus
         get() {
             return OrderStatus.getById(statusId)

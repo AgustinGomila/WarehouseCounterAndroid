@@ -55,7 +55,7 @@ import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.ui.activities.item.CheckItemCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
-import com.dacosys.warehouseCounter.ui.adapter.order.OrderResponseAdapter
+import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
@@ -72,8 +72,8 @@ import kotlin.concurrent.thread
 
 class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
-    SelectFilterFragment.OnFilterOrderChangedListener, OrderResponseAdapter.CheckedChangedListener,
-    PrintLabelFragment.FragmentListener, OrderResponseAdapter.DataSetChangedListener,
+    SelectFilterFragment.OnFilterOrderChangedListener, OrderAdapter.CheckedChangedListener,
+    PrintLabelFragment.FragmentListener, OrderAdapter.DataSetChangedListener,
     SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
     override fun onDestroy() {
         destroyLocals()
@@ -115,7 +115,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     private var showSelectButton = true
 
     private var multiSelect = false
-    private var adapter: OrderResponseAdapter? = null
+    private var adapter: OrderAdapter? = null
     private var lastSelected: OrderResponse? = null
     private var firstVisiblePos: Int? = null
     private var currentScrollPosition: Int = 0
@@ -644,7 +644,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                     lastSelected = currentItem
                 }
 
-                adapter = OrderResponseAdapter.Builder()
+                adapter = OrderAdapter.Builder()
                     .recyclerView(binding.recyclerView)
                     .fullList(completeList)
                     .checkedHashArray(checkedHashArray)

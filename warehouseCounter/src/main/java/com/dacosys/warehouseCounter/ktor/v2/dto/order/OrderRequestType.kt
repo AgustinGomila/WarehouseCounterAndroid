@@ -127,7 +127,11 @@ data class OrderRequestType(
             return getAllIdAsString().toHashSet()
         }
 
-        fun getById(typeId: Long): OrderRequestType {
+        fun getById(typeId: Int?): OrderRequestType {
+            return getById(typeId?.toLong())
+        }
+
+        fun getById(typeId: Long?): OrderRequestType {
             return getAll().firstOrNull { it.id == typeId } ?: notDefined
         }
     }

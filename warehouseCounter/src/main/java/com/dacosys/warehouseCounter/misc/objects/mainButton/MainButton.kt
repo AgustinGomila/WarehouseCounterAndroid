@@ -64,8 +64,8 @@ class MainButton(mainButton: Long = 0, description: String = "", iconResource: I
             MainButton(8, context.getString(R.string.order_location), R.drawable.ic_order_location, true)
         var MoveOrder =
             MainButton(9, context.getString(R.string.move_order), R.drawable.ic_move_order, true)
-        var UnboxingOrder =
-            MainButton(10, context.getString(R.string.unboxing), R.drawable.ic_unboxing, true)
+        var PackUnpackOrder =
+            MainButton(10, context.getString(R.string.pack_unpack), R.drawable.ic_unboxing, true)
         var Configuration =
             MainButton(100, context.getString(R.string.configuration), R.drawable.ic_settings, false)
 
@@ -82,7 +82,7 @@ class MainButton(mainButton: Long = 0, description: String = "", iconResource: I
                 PrintLabels,
                 OrderLocationLabel,
                 MoveOrder,
-                UnboxingOrder,
+                PackUnpackOrder,
                 Configuration
             )
 

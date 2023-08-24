@@ -24,8 +24,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.databinding.OrderResponseRowBinding
-import com.dacosys.warehouseCounter.databinding.OrderResponseRowExpandedBinding
+import com.dacosys.warehouseCounter.databinding.OrderRowBinding
+import com.dacosys.warehouseCounter.databinding.OrderRowExpandedBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderStatus
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
@@ -34,7 +34,7 @@ import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
 import java.util.*
 
-class OrderResponseAdapter private constructor(builder: Builder) :
+class OrderAdapter private constructor(builder: Builder) :
     ListAdapter<OrderResponse, ViewHolder>(ItemDiffUtilCallback), Filterable {
 
     private val recyclerView: RecyclerView
@@ -97,7 +97,7 @@ class OrderResponseAdapter private constructor(builder: Builder) :
         return when (viewType) {
             SELECTED_VIEW_TYPE -> {
                 SelectedViewHolder(
-                    OrderResponseRowExpandedBinding.inflate(
+                    OrderRowExpandedBinding.inflate(
                         LayoutInflater.from(parent.context),
                         parent,
                         false
@@ -107,7 +107,7 @@ class OrderResponseAdapter private constructor(builder: Builder) :
 
             else -> {
                 UnselectedViewHolder(
-                    OrderResponseRowBinding.inflate(
+                    OrderRowBinding.inflate(
                         LayoutInflater.from(parent.context),
                         parent,
                         false
@@ -619,7 +619,7 @@ class OrderResponseAdapter private constructor(builder: Builder) :
         refreshFilter()
     }
 
-    internal class SelectedViewHolder(val binding: OrderResponseRowExpandedBinding) :
+    internal class SelectedViewHolder(val binding: OrderRowExpandedBinding) :
         ViewHolder(binding.root) {
         fun bindCheckBoxVisibility(checkBoxVisibility: Int = GONE) {
             binding.checkBoxConstraintLayout.visibility = checkBoxVisibility
@@ -634,19 +634,54 @@ class OrderResponseAdapter private constructor(builder: Builder) :
 
             binding.descriptionTextView.text =
                 item.description.ifEmpty { context.getString(R.string.without_description) }
-            binding.creationDateTextView.text = item.startDate
-            binding.finishDateTextView.text = item.finishDate ?: context.getString(R.string.uncompleted)
 
             val extId = item.externalId
             if (extId.isNotEmpty()) {
                 binding.extIdTextView.text = extId
-                binding.extIdTextView.visibility = VISIBLE
-                binding.dividerInternal3.visibility = VISIBLE
+                binding.extIdPanel.visibility = VISIBLE
             } else {
                 binding.extIdTextView.text = ""
-                binding.extIdTextView.visibility = GONE
-                binding.dividerInternal3.visibility = GONE
+                binding.extIdPanel.visibility = GONE
             }
+
+            val status = item.status.description
+            if (status.isNotEmpty()) {
+                binding.statusTextView.text = status
+                binding.statusPanel.visibility = VISIBLE
+            } else {
+                binding.statusTextView.text = ""
+                binding.statusPanel.visibility = GONE
+            }
+
+            val type = item.orderType.description
+            if (type.isNotEmpty()) {
+                binding.orderTypeTextView.text = type
+                binding.typePanel.visibility = VISIBLE
+            } else {
+                binding.orderTypeTextView.text = ""
+                binding.typePanel.visibility = GONE
+            }
+
+            if (type.isEmpty() && status.isEmpty()) binding.orderTypeStatusPanel.visibility = GONE
+            else binding.orderTypeStatusPanel.visibility = VISIBLE
+
+            val zone = item.zone
+            if (extId.isNotEmpty()) {
+                binding.zoneTextView.text = zone
+                binding.zonePanel.visibility = VISIBLE
+            } else {
+                binding.zoneTextView.text = ""
+                binding.zonePanel.visibility = GONE
+            }
+
+            val startDate = item.startDate
+            val finishDate = item.finishDate ?: ""
+
+            if (startDate.isNotEmpty() || finishDate.isNotEmpty()) binding.datesPanel.visibility = VISIBLE
+            else binding.datesPanel.visibility = GONE
+
+            binding.creationDateTextView.text = startDate
+            binding.finishDateTextView.text = finishDate.ifEmpty { context.getString(R.string.uncompleted) }
 
             setStyle(item)
         }
@@ -745,18 +780,31 @@ class OrderResponseAdapter private constructor(builder: Builder) :
             val titleForeColor: Int = manipulateColor(foreColor, 0.8f)
 
             v.background = backColor
-            binding.extIdTextView.setTextColor(foreColor)
+
+            // Values
             binding.descriptionTextView.setTextColor(foreColor)
+
+            binding.statusTextView.setTextColor(foreColor)
+            binding.orderTypeTextView.setTextColor(foreColor)
+            binding.extIdTextView.setTextColor(foreColor)
+            binding.zoneTextView.setTextColor(foreColor)
             binding.creationDateTextView.setTextColor(foreColor)
             binding.finishDateTextView.setTextColor(foreColor)
-            binding.checkBox.buttonTintList = ColorStateList.valueOf(titleForeColor)
 
+            // Labels
+            binding.statusLabelTextView.setTextColor(titleForeColor)
+            binding.orderTypeLabelTextView.setTextColor(titleForeColor)
+            binding.extIdLabelTextView.setTextColor(titleForeColor)
+            binding.zoneLabelTextView.setTextColor(titleForeColor)
             binding.creationDateLabelTextView.setTextColor(titleForeColor)
             binding.finishDateLabelTextView.setTextColor(titleForeColor)
+
+            // CheckBox
+            binding.checkBox.buttonTintList = ColorStateList.valueOf(titleForeColor)
         }
     }
 
-    internal class UnselectedViewHolder(val binding: OrderResponseRowBinding) :
+    internal class UnselectedViewHolder(val binding: OrderRowBinding) :
         ViewHolder(binding.root) {
         fun bindCheckBoxVisibility(checkBoxVisibility: Int = GONE) {
             binding.checkBoxConstraintLayout.visibility = checkBoxVisibility
@@ -1048,8 +1096,8 @@ class OrderResponseAdapter private constructor(builder: Builder) :
     }
 
     class Builder {
-        fun build(): OrderResponseAdapter {
-            return OrderResponseAdapter(this)
+        fun build(): OrderAdapter {
+            return OrderAdapter(this)
         }
 
         internal lateinit var recyclerView: RecyclerView

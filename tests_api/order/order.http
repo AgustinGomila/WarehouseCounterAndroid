@@ -1,4 +1,14 @@
 ### INDEX
+GET {{server}}/v2/order?filter[description][like]=fo
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### INDEX
+GET {{server}}/v2/order?filter[description][like]=fo&expand=orderContents,orderScanLogs,location
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### INDEX
 GET {{server}}/v2/order?expand=orderContents,orderScanLogs,location
 Authorization: Basic {{username}} {{password}}
 Accept: application/json
