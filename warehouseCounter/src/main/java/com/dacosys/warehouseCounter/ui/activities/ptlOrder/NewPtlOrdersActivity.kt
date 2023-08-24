@@ -17,8 +17,7 @@ import com.dacosys.warehouseCounter.databinding.NewPtlOrdersBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.LocationType
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
-import com.dacosys.warehouseCounter.ktor.v2.functions.GetWarehouse
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiActionParam
+import com.dacosys.warehouseCounter.ktor.v2.functions.location.GetWarehouse
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiRequest
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -138,23 +137,11 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
 
         thread {
             GetWarehouse(
-                action = action,
+                action = GetWarehouse.defaultAction,
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
                 onFinish = { if (it.any()) onGetWarehouses(it) }
             ).execute()
         }
-    }
-
-    private val action: ArrayList<ApiActionParam> by lazy {
-        arrayListOf(
-            ApiActionParam(
-                action = ApiActionParam.ACTION_EXPAND,
-                extension = setOf(
-                    ApiActionParam.EXTENSION_WAREHOUSE_AREA_LIST,
-                    ApiActionParam.EXTENSION_STATUS
-                )
-            )
-        )
     }
 
     private fun onGetWarehouses(it: ArrayList<Warehouse>) {

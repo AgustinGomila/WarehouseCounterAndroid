@@ -15,7 +15,6 @@ import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderLocation
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderLocation.CREATOR.ORDER_LOCATION_LIST_KEY
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderMovePayload
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiActionParam.Companion.EXT_SEPARATOR
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam.Companion.ACTION_FILTER
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam.Companion.ACTION_FILTER_LIKE
 import com.dacosys.warehouseCounter.misc.Statics
@@ -604,6 +603,8 @@ class ApiRequest {
 
     companion object {
         val apiUrl by lazy { WarehouseCounterApp.settingViewModel.urlPanel }
+
+        const val EXT_SEPARATOR = ","
 
         const val VERSION_PATH = "v2"
 

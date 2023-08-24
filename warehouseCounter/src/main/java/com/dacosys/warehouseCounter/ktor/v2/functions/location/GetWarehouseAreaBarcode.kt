@@ -1,25 +1,25 @@
-package com.dacosys.warehouseCounter.ktor.v2.functions
+package com.dacosys.warehouseCounter.ktor.v2.functions.location
 
 import android.util.Log
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiActionParam
+import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.Barcode
+import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
 import kotlinx.coroutines.*
 
-class GetBarcodeLabelTemplate(
-    private val action: ArrayList<ApiActionParam> = arrayListOf(),
+class GetWarehouseAreaBarcode(
+    private val param: BarcodeParam,
     private val onEvent: (SnackBarEventData) -> Unit = { },
-    private val onFinish: (ArrayList<BarcodeLabelTemplate>) -> Unit,
+    private val onFinish: (ArrayList<Barcode>) -> Unit,
 ) {
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
-    private var r: ArrayList<BarcodeLabelTemplate> = ArrayList()
+    private var r: ArrayList<Barcode> = ArrayList()
 
     fun execute() {
         scope.launch {
@@ -34,11 +34,11 @@ class GetBarcodeLabelTemplate(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiServiceV2.getBarcodeLabelTemplate(
-            action = action,
+        ktorApiServiceV2.getWarehouseAreaBarcode(
+            params = param,
             callback = {
                 if (BuildConfig.DEBUG) Log.d(javaClass.simpleName, it.toString())
-                r = it.items
+                r = ArrayList(it)
                 if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
                 else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
             })

@@ -892,6 +892,7 @@ class OrderRequestAdapter private constructor(builder: Builder) :
         showCheckBoxesChanged = builder.showCheckBoxesChanged
         visibleStatus = builder.visibleStatus
         filterOptions = builder.filterOptions
+
         dataSetChangedListener = builder.dataSetChangedListener
         checkedChangedListener = builder.checkedChangedListener
 

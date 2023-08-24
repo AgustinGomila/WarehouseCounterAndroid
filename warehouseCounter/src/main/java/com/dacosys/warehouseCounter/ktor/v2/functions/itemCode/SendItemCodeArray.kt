@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ktor.v2.functions
+package com.dacosys.warehouseCounter.ktor.v2.functions.itemCode
 
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
@@ -42,6 +42,9 @@ class SendItemCodeArray
                 onFinish = {
                     if (it != null) {
                         allResp.add(it)
+                        /** Update transferred: Actualizar los ItemCode enviados en la base de datos local */
+                        /** Update transferred: Actualizar los ItemCode enviados en la base de datos local */
+                        /** Update transferred: Actualizar los ItemCode enviados en la base de datos local */
                         /** Update transferred: Actualizar los ItemCode enviados en la base de datos local */
                         ItemCodeCoroutines.updateTransferred(itemId = it.itemId, code = it.code)
                     }

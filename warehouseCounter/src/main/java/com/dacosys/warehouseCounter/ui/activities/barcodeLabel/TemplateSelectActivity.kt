@@ -16,7 +16,7 @@ import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
-import com.dacosys.warehouseCounter.ktor.v2.functions.GetBarcodeLabelTemplate
+import com.dacosys.warehouseCounter.ktor.v2.functions.template.GetBarcodeLabelTemplate
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.adapter.barcodeLabel.BarcodeLabelTemplateAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText

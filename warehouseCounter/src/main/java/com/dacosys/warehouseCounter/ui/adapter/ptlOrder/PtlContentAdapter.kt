@@ -924,6 +924,7 @@ class PtlContentAdapter private constructor(builder: Builder) :
         showCheckBoxesChanged = builder.showCheckBoxesChanged
         visibleStatus = builder.visibleStatus
         filterOptions = builder.filterOptions
+
         dataSetChangedListener = builder.dataSetChangedListener
         checkedChangedListener = builder.checkedChangedListener
         editQtyListener = builder.editQtyListener
@@ -985,6 +986,7 @@ class PtlContentAdapter private constructor(builder: Builder) :
         internal var showCheckBoxesChanged: (Boolean) -> Unit = { }
         internal var visibleStatus: ArrayList<ContentStatus> = ArrayList(ContentStatus.values().toList())
         internal var filterOptions: FilterOptions = FilterOptions()
+
         internal var dataSetChangedListener: DataSetChangedListener? = null
         internal var checkedChangedListener: CheckedChangedListener? = null
         internal var editQtyListener: EditQtyListener? = null

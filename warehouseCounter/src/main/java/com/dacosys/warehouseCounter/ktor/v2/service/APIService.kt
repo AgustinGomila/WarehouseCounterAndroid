@@ -46,6 +46,7 @@ interface APIService {
     suspend fun createOrder(payload: OrderRequest, callback: (OrderResponse) -> Unit)
     suspend fun moveOrder(payload: OrderMovePayload, callback: (OrderResponse) -> Unit)
     suspend fun getOrder(action: ArrayList<ApiActionParam>, callback: (ListResponse<OrderResponse>) -> Unit)
+    suspend fun getOrderBarcode(params: BarcodeParam, callback: (List<Barcode>) -> Unit)
 
     suspend fun getOrderPackage(action: ArrayList<ApiActionParam>, callback: (ListResponse<OrderPackage>) -> Unit)
 

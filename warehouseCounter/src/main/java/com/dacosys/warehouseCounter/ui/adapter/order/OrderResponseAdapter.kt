@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ui.adapter.orderLocation
+package com.dacosys.warehouseCounter.ui.adapter.order
 
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
@@ -24,27 +24,26 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.databinding.OrderLocationRowBinding
-import com.dacosys.warehouseCounter.databinding.OrderLocationRowExpandedBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderLocation
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderLocation.OrderLocationStatus
+import com.dacosys.warehouseCounter.databinding.OrderResponseRowBinding
+import com.dacosys.warehouseCounter.databinding.OrderResponseRowExpandedBinding
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.Status
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
 import java.util.*
 
+class OrderResponseAdapter private constructor(builder: Builder) :
+    ListAdapter<OrderResponse, ViewHolder>(ItemDiffUtilCallback), Filterable {
 
-class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
-    ListAdapter<OrderLocation, ViewHolder>(ItemDiffUtilCallback), Filterable {
-
-    private var recyclerView: RecyclerView
-    var fullList: ArrayList<OrderLocation> = ArrayList()
-    private var checkedIdArray: ArrayList<Long> = ArrayList()
+    private val recyclerView: RecyclerView
+    var fullList: ArrayList<OrderResponse> = ArrayList()
+    var checkedHashArray: ArrayList<Int> = ArrayList()
     private var multiSelect: Boolean = false
     var showCheckBoxes: Boolean = false
     private var showCheckBoxesChanged: (Boolean) -> Unit = { }
-    private var visibleStatus: ArrayList<OrderLocationStatus> = ArrayList(OrderLocationStatus.values().toList())
+    private var visibleStatus: ArrayList<Status> = ArrayList()
     private var filterOptions: FilterOptions = FilterOptions()
 
     // Este Listener debe usarse para los cambios de cantidad o de ítems marcados de la lista,
@@ -65,7 +64,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
     }
 
     fun clear() {
-        checkedIdArray.clear()
+        checkedHashArray.clear()
 
         fullList.clear()
         submitList(fullList)
@@ -90,7 +89,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
     }
 
     interface SelectedItemChangedListener {
-        fun onSelectedItemChanged(item: OrderLocation?)
+        fun onSelectedItemChanged(item: OrderResponse?)
     }
 
     // El método onCreateViewHolder infla los diseños para cada tipo de vista
@@ -98,7 +97,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         return when (viewType) {
             SELECTED_VIEW_TYPE -> {
                 SelectedViewHolder(
-                    OrderLocationRowExpandedBinding.inflate(
+                    OrderResponseRowExpandedBinding.inflate(
                         LayoutInflater.from(parent.context),
                         parent,
                         false
@@ -108,7 +107,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
 
             else -> {
                 UnselectedViewHolder(
-                    OrderLocationRowBinding.inflate(
+                    OrderResponseRowBinding.inflate(
                         LayoutInflater.from(parent.context),
                         parent,
                         false
@@ -140,9 +139,9 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
                 PAYLOADS.CHECKBOX_STATE -> {
                     val item = getItem(position)
                     if (position == currentIndex)
-                        (holder as SelectedViewHolder).bindCheckBoxState(checkedIdArray.contains(item.uniqueId))
+                        (holder as SelectedViewHolder).bindCheckBoxState(checkedHashArray.contains(item.hashCode))
                     else
-                        (holder as UnselectedViewHolder).bindCheckBoxState(checkedIdArray.contains(item.uniqueId))
+                        (holder as UnselectedViewHolder).bindCheckBoxState(checkedHashArray.contains(item.hashCode))
                 }
 
                 PAYLOADS.ITEM_SELECTED -> {
@@ -260,7 +259,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
      * @param position Posición en el adaptador
      */
     @SuppressLint("ClickableViewAccessibility")
-    private fun setCheckBoxLogic(checkBox: CheckBox, item: OrderLocation, position: Int) {
+    private fun setCheckBoxLogic(checkBox: CheckBox, item: OrderResponse, position: Int) {
         val checkChangeListener = CompoundButton.OnCheckedChangeListener { _, isChecked ->
             setChecked(item = item, isChecked = isChecked, suspendRefresh = true)
         }
@@ -272,15 +271,15 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
             val newState = !checkBox.isChecked
             if (newState) {
                 currentList.mapIndexed { pos, item ->
-                    if (item.uniqueId !in checkedIdArray) {
-                        checkedIdArray.add(item.uniqueId)
+                    if (item.hashCode !in checkedHashArray) {
+                        checkedHashArray.add(item.hashCode)
                         notifyItemChanged(pos, PAYLOADS.CHECKBOX_STATE)
                     }
                 }
             } else {
                 currentList.mapIndexed { pos, item ->
-                    if (item.uniqueId in checkedIdArray) {
-                        checkedIdArray.remove(item.uniqueId)
+                    if (item.hashCode in checkedHashArray) {
+                        checkedHashArray.remove(item.hashCode)
                         notifyItemChanged(pos, PAYLOADS.CHECKBOX_STATE)
                     }
                 }
@@ -294,7 +293,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         // Important to remove previous checkedChangedListener before calling setChecked
         checkBox.setOnCheckedChangeListener(null)
 
-        checkBox.isChecked = checkedIdArray.contains(item.uniqueId)
+        checkBox.isChecked = checkedHashArray.contains(item.hashCode)
         checkBox.isLongClickable = true
         checkBox.tag = position
 
@@ -308,10 +307,14 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         else UNSELECTED_VIEW_TYPE
     }
 
+    private fun mustBeVisible(it: OrderResponse): Boolean {
+        return visibleStatus.any { v -> v.id == it.statusId }
+    }
+
     override fun getFilter(): Filter {
         return object : Filter() {
-            var selected: OrderLocation? = null
-            var firstVisible: OrderLocation? = null
+            var selected: OrderResponse? = null
+            var firstVisible: OrderResponse? = null
 
             override fun performFiltering(constraint: CharSequence?): FilterResults {
                 // Guardamos el item seleccionado y la posición del scroll
@@ -324,7 +327,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
                     var currentScrolled = getItem(scrollPos)
 
                     // Comprobamos si es visible el ítem del Scroll
-                    if (currentScrolled.itemStatus in visibleStatus)
+                    if (mustBeVisible(currentScrolled))
                         firstVisible = currentScrolled
                     else {
                         // Si no es visible, intentar encontrar el próximo visible.
@@ -332,7 +335,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
                             scrollPos++
                             if (itemCount > scrollPos) {
                                 currentScrolled = getItem(scrollPos)
-                                if (currentScrolled.itemStatus in visibleStatus)
+                                if (mustBeVisible(currentScrolled))
                                     firstVisible = currentScrolled
                             } else break
                         }
@@ -341,24 +344,26 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
 
                 // Filtramos los resultados
                 val results = FilterResults()
-                var r: ArrayList<OrderLocation> = ArrayList()
+                var r: ArrayList<OrderResponse> = ArrayList()
                 if (constraint != null) {
                     val filterString = constraint.toString().lowercase(Locale.getDefault())
                     if (filterString.isNotEmpty()) {
-                        var filterableItem: OrderLocation
+                        var filterableItem: OrderResponse
 
                         for (i in 0 until fullList.size) {
                             filterableItem = fullList[i]
 
                             // Descartamos aquellos que no debe ser visibles
-                            if (filterableItem.itemStatus !in visibleStatus) continue
+                            if (!mustBeVisible(filterableItem)) continue
 
                             if (isFilterable(filterableItem, filterString)) {
                                 r.add(filterableItem)
                             }
                         }
                     } else if (filterOptions.showAllOnFilterEmpty) {
-                        r = ArrayList(fullList.mapNotNull { if (it.itemStatus in visibleStatus) it else null })
+                        r = ArrayList(fullList.mapNotNull {
+                            if (mustBeVisible(it)) it else null
+                        })
                     }
                 }
 
@@ -367,24 +372,22 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
                 return results
             }
 
-            fun isFilterable(filterableItem: OrderLocation, filterString: String): Boolean =
-                (filterableItem.itemDescription.contains(filterString, true) ||
-                        filterableItem.itemEan.contains(filterString, true) ||
-                        filterableItem.itemExternalId.toString().contains(filterString, true) ||
-                        filterableItem.orderExternalId.contains(filterString, true) ||
-                        filterableItem.orderDescription.contains(filterString, true))
+            fun isFilterable(filterableItem: OrderResponse, filterString: String): Boolean =
+                (filterableItem.description.contains(filterString, true) ||
+                        filterableItem.externalId.contains(filterString, true) ||
+                        filterableItem.zone.contains(filterString, true))
 
             @Suppress("UNCHECKED_CAST")
             override fun publishResults(
                 constraint: CharSequence?, results: FilterResults?,
             ) {
-                submitList(results?.values as ArrayList<OrderLocation>) {
+                submitList(results?.values as ArrayList<OrderResponse>) {
                     // Notificamos al Listener superior
                     dataSetChangedListener?.onDataSetChanged()
 
                     // Recuperamos el item seleccionado y la posición del scroll
                     if (firstVisible != null)
-                        scrollToPos(getIndexById(firstVisible?.uniqueId ?: -1), true)
+                        scrollToPos(getIndexByHashCode(firstVisible?.hashCode ?: -1), true)
                     if (selected != null)
                         selectItem(selected, false)
                 }
@@ -392,17 +395,13 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         }
     }
 
-    private fun sortItems(originalList: MutableList<OrderLocation>): ArrayList<OrderLocation> {
+    private fun sortItems(originalList: MutableList<OrderResponse>): ArrayList<OrderResponse> {
         // Run the follow method on each of the roots
         return ArrayList(
             originalList.sortedWith(
-                compareBy(
-                    { it.itemDescription },
-                    { it.itemEan },
-                    { it.itemExternalId },
-                    { it.orderExternalId },
-                    { it.orderDescription }
-                )
+                compareBy({ it.description },
+                    { it.externalId },
+                    { it.zone })
             ).toList()
         )
     }
@@ -416,7 +415,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         refreshFilter(filterOptions)
     }
 
-    fun add(item: OrderLocation, position: Int) {
+    fun add(item: OrderResponse, position: Int) {
         fullList.add(position, item)
         submitList(fullList) {
             // Notificamos al Listener superior
@@ -426,8 +425,8 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
     }
 
     fun remove(position: Int) {
-        val id = getItemId(position)
-        checkedIdArray.remove(id)
+        val location = getItem(position)
+        checkedHashArray.remove(location.hashCode)
 
         fullList.removeAt(position)
         submitList(fullList) {
@@ -436,7 +435,24 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         }
     }
 
-    fun selectItem(a: OrderLocation?, scroll: Boolean = true) {
+    /**
+     * Se utiliza cuando se edita un ítem y necesita actualizarse
+     */
+    fun updateItem(item: OrderResponse, scrollToPos: Boolean = false) {
+        val t = fullList.firstOrNull { it == item } ?: return
+
+        //// TODO: Update ítem
+
+        submitList(fullList) {
+            // Notificamos al Listener superior
+            dataSetChangedListener?.onDataSetChanged()
+
+            // Seleccionamos el ítem y hacemos scroll hasta él.
+            selectItem(item, scrollToPos)
+        }
+    }
+
+    fun selectItem(a: OrderResponse?, scroll: Boolean = true) {
         var pos = NO_POSITION
         if (a != null) pos = getIndex(a)
         selectItem(pos, scroll)
@@ -451,7 +467,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
 
     private fun notifyItemSelectedChanged(pos: Int) {
         notifyItemChanged(currentIndex)
-        var item: OrderLocation? = null
+        var item: OrderResponse? = null
         if (pos != NO_POSITION) item = getItem(pos)
         selectedItemChangedListener?.onSelectedItemChanged(item)
     }
@@ -518,32 +534,32 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         }
     }
 
-    fun getIndexById(id: Long): Int {
-        return currentList.indexOfFirst { it.uniqueId == id }
+    fun getIndexByHashCode(hashCode: Int): Int {
+        return currentList.indexOfFirst { it.hashCode == hashCode }
     }
 
-    private fun getIndex(item: OrderLocation): Int {
+    private fun getIndex(item: OrderResponse): Int {
         return currentList.indexOfFirst { it == item }
     }
 
-    private fun getItemById(id: Long): OrderLocation? {
-        return fullList.firstOrNull { it.uniqueId == id }
+    private fun getItemByHashCode(hashCode: Int): OrderResponse? {
+        return fullList.firstOrNull { it.hashCode == hashCode }
     }
 
-    fun getAllChecked(): ArrayList<OrderLocation> {
-        val items = ArrayList<OrderLocation>()
-        checkedIdArray.mapNotNullTo(items) { getItemById(it) }
+    fun getAllChecked(): ArrayList<OrderResponse> {
+        val items = ArrayList<OrderResponse>()
+        checkedHashArray.mapNotNullTo(items) { getItemByHashCode(it) }
         return items
     }
 
-    fun currentItem(): OrderLocation? {
+    fun currentItem(): OrderResponse? {
         if (currentIndex == NO_POSITION) return null
         return if (currentList.any() && itemCount > currentIndex) getItem(currentIndex)
         else null
     }
 
     fun countChecked(): Int {
-        return checkedIdArray.size
+        return checkedHashArray.size
     }
 
     fun totalVisible(): Int {
@@ -555,14 +571,14 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         return layoutManager.findFirstVisibleItemPosition()
     }
 
-    fun setChecked(item: OrderLocation, isChecked: Boolean, suspendRefresh: Boolean = false) {
-        val pos = getIndexById(item.uniqueId)
+    fun setChecked(item: OrderResponse, isChecked: Boolean, suspendRefresh: Boolean = false) {
+        val pos = getIndexByHashCode(item.hashCode)
         if (isChecked) {
-            if (!checkedIdArray.contains(item.uniqueId)) {
-                checkedIdArray.add(item.uniqueId)
+            if (!checkedHashArray.contains(item.hashCode)) {
+                checkedHashArray.add(item.hashCode)
             }
         } else {
-            checkedIdArray.remove(item.uniqueId)
+            checkedHashArray.remove(item.hashCode)
         }
 
         checkedChangedListener?.onCheckedChanged(isChecked, pos)
@@ -572,7 +588,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
     }
 
     private var isFilling = false
-    fun setChecked(items: ArrayList<OrderLocation>, isChecked: Boolean) {
+    fun setChecked(items: ArrayList<OrderResponse>, isChecked: Boolean) {
         if (isFilling) return
 
         isFilling = true
@@ -585,25 +601,25 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         dataSetChangedListener?.onDataSetChanged()
     }
 
-    fun addVisibleStatus(status: OrderLocationStatus) {
+    fun addVisibleStatus(status: Status) {
         if (visibleStatus.contains(status)) return
         visibleStatus.add(status)
 
         refreshFilter()
     }
 
-    fun removeVisibleStatus(status: OrderLocationStatus) {
+    fun removeVisibleStatus(status: Status) {
         if (!visibleStatus.contains(status)) return
         visibleStatus.remove(status)
 
         // Quitamos los ítems con el estado seleccionado de la lista marcados.
-        val uncheckedItems = ArrayList(fullList.mapNotNull { if (it.itemStatus == status) it.uniqueId else null })
-        checkedIdArray.removeAll(uncheckedItems.toSet())
+        val uncheckedItems = ArrayList(fullList.mapNotNull { if (it.statusId == status.id) it.hashCode else null })
+        checkedHashArray.removeAll(uncheckedItems.toSet())
 
         refreshFilter()
     }
 
-    internal class SelectedViewHolder(val binding: OrderLocationRowExpandedBinding) :
+    internal class SelectedViewHolder(val binding: OrderResponseRowExpandedBinding) :
         ViewHolder(binding.root) {
         fun bindCheckBoxVisibility(checkBoxVisibility: Int = GONE) {
             binding.checkBoxConstraintLayout.visibility = checkBoxVisibility
@@ -613,77 +629,96 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
             binding.checkBox.isChecked = checked
         }
 
-        fun bind(item: OrderLocation, checkBoxVisibility: Int = GONE) {
+        fun bind(item: OrderResponse, checkBoxVisibility: Int = GONE) {
             bindCheckBoxVisibility(checkBoxVisibility)
 
-            binding.eanTextView.text = item.itemEan
-            binding.qtyTextView.text = item.qtyCollected?.toString()
-            binding.descriptionTextView.text = item.itemDescription
-            binding.orderNbrTextView.text = item.orderExternalId
-            binding.orderDescriptionTextView.text = item.orderDescription
+            binding.descriptionTextView.text =
+                item.description.ifEmpty { context.getString(R.string.without_description) }
+            binding.creationDateTextView.text = item.startDate
+            binding.finishDateTextView.text = item.finishDate ?: context.getString(R.string.uncompleted)
 
-            val extId = item.itemExternalId ?: ""
+            val extId = item.externalId
             if (extId.isNotEmpty()) {
-                binding.extIdTextView.text = item.itemExternalId
-                binding.extIdPanel.visibility = VISIBLE
+                binding.extIdTextView.text = extId
+                binding.extIdTextView.visibility = VISIBLE
+                binding.dividerInternal3.visibility = VISIBLE
             } else {
                 binding.extIdTextView.text = ""
-                binding.extIdPanel.visibility = GONE
+                binding.extIdTextView.visibility = GONE
+                binding.dividerInternal3.visibility = GONE
             }
-
-            binding.warehouseTextView.text = item.warehouseDescription
-            binding.warehouseAreaTextView.text = item.warehouseAreaDescription
-            binding.rackTextView.text = item.rackId?.toString()
 
             setStyle(item)
         }
 
-        private fun setStyle(item: OrderLocation) {
+        private fun setStyle(item: OrderResponse) {
             val v = itemView
 
             // Background layouts
             // Resalta por estado del ítem
-            val layoutPicked = getDrawable(context.resources, R.drawable.layout_thin_border, null)
-            val layoutNotPicked = getDrawable(context.resources, R.drawable.layout_thin_border_gray, null)
+            val layout1 = getDrawable(context.resources, R.drawable.layout_thin_border_w, null)
+            val layout2 = getDrawable(context.resources, R.drawable.layout_thin_border_w_inactive, null)
+            val layout3 = getDrawable(context.resources, R.drawable.layout_thin_border_wa, null)
+            val layout4 = getDrawable(context.resources, R.drawable.layout_thin_border_wa_inactive, null)
+            val layout5 = getDrawable(context.resources, R.drawable.layout_thin_border_r, null)
+            val layout6 = getDrawable(context.resources, R.drawable.layout_thin_border_r_inactive, null)
+            val layoutDefault = getDrawable(context.resources, R.drawable.layout_thin_border, null)
 
             val backColor: Drawable
             val foreColor: Int
 
-            when (item.itemStatus) {
-                OrderLocationStatus.PICKED -> {
-                    backColor = layoutPicked!!
-                    foreColor = pickedSelectedForeColor
+            when (item.statusId) {
+                1L -> {
+                    backColor = layout1!!
+                    foreColor = selectedForeColor1
                 }
 
-                OrderLocationStatus.NOT_PICKED -> {
-                    backColor = layoutNotPicked!!
-                    foreColor = notPickedSelectedForeColor
+                2L -> {
+                    backColor = layout2!!
+                    foreColor = selectedForeColor2
+                }
+
+                3L -> {
+                    backColor = layout3!!
+                    foreColor = selectedForeColor3
+                }
+
+                4L -> {
+                    backColor = layout4!!
+                    foreColor = selectedForeColor4
+                }
+
+                5L -> {
+                    backColor = layout5!!
+                    foreColor = selectedForeColor5
+                }
+
+                6L -> {
+                    backColor = layout6!!
+                    foreColor = selectedForeColor6
+                }
+
+                else -> {
+                    backColor = layoutDefault!!
+                    foreColor = defaultSelectedForeColor
                 }
             }
 
             val titleForeColor: Int = manipulateColor(foreColor, 0.8f)
 
             v.background = backColor
-            binding.eanTextView.setTextColor(foreColor)
-            binding.qtyTextView.setTextColor(foreColor)
-            binding.descriptionTextView.setTextColor(foreColor)
-            binding.orderNbrTextView.setTextColor(foreColor)
-            binding.orderDescriptionTextView.setTextColor(foreColor)
             binding.extIdTextView.setTextColor(foreColor)
-            binding.warehouseTextView.setTextColor(foreColor)
-            binding.warehouseAreaTextView.setTextColor(foreColor)
-            binding.rackTextView.setTextColor(foreColor)
+            binding.descriptionTextView.setTextColor(foreColor)
+            binding.creationDateTextView.setTextColor(foreColor)
+            binding.finishDateTextView.setTextColor(foreColor)
             binding.checkBox.buttonTintList = ColorStateList.valueOf(titleForeColor)
 
-            // Titles
-            binding.orderLabelTextView.setTextColor(titleForeColor)
-            binding.locationLabelTextView.setTextColor(titleForeColor)
-            binding.descriptionLabelTextView.setTextColor(titleForeColor)
-            binding.extIdLabelTextView.setTextColor(titleForeColor)
+            binding.creationDateLabelTextView.setTextColor(titleForeColor)
+            binding.finishDateLabelTextView.setTextColor(titleForeColor)
         }
     }
 
-    internal class UnselectedViewHolder(val binding: OrderLocationRowBinding) :
+    internal class UnselectedViewHolder(val binding: OrderResponseRowBinding) :
         ViewHolder(binding.root) {
         fun bindCheckBoxVisibility(checkBoxVisibility: Int = GONE) {
             binding.checkBoxConstraintLayout.visibility = checkBoxVisibility
@@ -693,78 +728,115 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
             binding.checkBox.isChecked = checked
         }
 
-        fun bind(item: OrderLocation, checkBoxVisibility: Int = GONE) {
+        fun bind(item: OrderResponse, checkBoxVisibility: Int = GONE) {
             bindCheckBoxVisibility(checkBoxVisibility)
 
-            binding.eanTextView.text = item.itemEan
-            binding.qtyTextView.text = item.qtyCollected?.toString()
-            binding.descriptionTextView.text = item.itemDescription
-            binding.orderNbrTextView.text = item.orderExternalId
-            binding.orderDescriptionTextView.text = item.orderDescription
+            binding.descriptionTextView.text =
+                item.description.ifEmpty { context.getString(R.string.without_description) }
+            binding.extIdTextView.text = item.externalId
+            binding.creationDateTextView.text = item.startDate
 
             setStyle(item)
         }
 
-        private fun setStyle(item: OrderLocation) {
+        private fun setStyle(item: OrderResponse) {
             val v = itemView
+
+            val titleForeColor: Int = darkslategray
 
             // Background layouts
             // Resalta por estado del ítem
-            val layoutPicked = getDrawable(context.resources, R.drawable.layout_thin_border, null)
-            val layoutNotPicked = getDrawable(context.resources, R.drawable.layout_thin_border_gray, null)
+            val layout1 = getDrawable(context.resources, R.drawable.layout_thin_border_w, null)
+            val layout2 = getDrawable(context.resources, R.drawable.layout_thin_border_w_inactive, null)
+            val layout3 = getDrawable(context.resources, R.drawable.layout_thin_border_wa, null)
+            val layout4 = getDrawable(context.resources, R.drawable.layout_thin_border_wa_inactive, null)
+            val layout5 = getDrawable(context.resources, R.drawable.layout_thin_border_r, null)
+            val layout6 = getDrawable(context.resources, R.drawable.layout_thin_border_r_inactive, null)
+            val layoutDefault = getDrawable(context.resources, R.drawable.layout_thin_border, null)
 
             val backColor: Drawable
             val foreColor: Int
-            val titleForeColor: Int = darkslategray
 
-            when (item.itemStatus) {
-                OrderLocationStatus.PICKED -> {
-                    backColor = layoutPicked!!
-                    foreColor = pickedForeColor
+            when (item.statusId) {
+                1L -> {
+                    backColor = layout1!!
+                    foreColor = status1ForeColor
                 }
 
-                OrderLocationStatus.NOT_PICKED -> {
-                    backColor = layoutNotPicked!!
-                    foreColor = notPickedForeColor
+                2L -> {
+                    backColor = layout2!!
+                    foreColor = status2ForeColor
+                }
+
+                3L -> {
+                    backColor = layout3!!
+                    foreColor = status3ForeColor
+                }
+
+                4L -> {
+                    backColor = layout4!!
+                    foreColor = status4ForeColor
+                }
+
+                5L -> {
+                    backColor = layout5!!
+                    foreColor = status5ForeColor
+                }
+
+                6L -> {
+                    backColor = layout6!!
+                    foreColor = status6ForeColor
+                }
+
+                else -> {
+                    backColor = layoutDefault!!
+                    foreColor = defaultForeColor
                 }
             }
 
             v.background = backColor
-            binding.eanTextView.setTextColor(foreColor)
-            binding.qtyTextView.setTextColor(foreColor)
+            binding.extIdTextView.setTextColor(foreColor)
             binding.descriptionTextView.setTextColor(foreColor)
-            binding.orderNbrTextView.setTextColor(foreColor)
-            binding.orderDescriptionTextView.setTextColor(foreColor)
-
+            binding.creationDateTextView.setTextColor(foreColor)
             binding.checkBox.buttonTintList = ColorStateList.valueOf(titleForeColor)
-            binding.orderLabelTextView.setTextColor(titleForeColor)
         }
     }
 
-    private object ItemDiffUtilCallback : DiffUtil.ItemCallback<OrderLocation>() {
-        override fun areItemsTheSame(oldItem: OrderLocation, newItem: OrderLocation): Boolean {
-            return oldItem.uniqueId == newItem.uniqueId
+    private object ItemDiffUtilCallback : DiffUtil.ItemCallback<OrderResponse>() {
+        override fun areItemsTheSame(oldItem: OrderResponse, newItem: OrderResponse): Boolean {
+            return oldItem.hashCode == newItem.hashCode
         }
 
-        override fun areContentsTheSame(oldItem: OrderLocation, newItem: OrderLocation): Boolean {
-            return oldItem.hashCode() == newItem.hashCode()
+        override fun areContentsTheSame(oldItem: OrderResponse, newItem: OrderResponse): Boolean {
+            if (oldItem.id != newItem.id) return false
+            return oldItem.hashCode == newItem.hashCode
         }
     }
 
     companion object {
-
         // Aquí definimos dos constantes para identificar los dos diseños diferentes
         const val SELECTED_VIEW_TYPE = 1
         const val UNSELECTED_VIEW_TYPE = 2
 
         // region COLORS
-        private var pickedForeColor: Int = 0
-        private var notPickedForeColor: Int = 0
+        private var status1ForeColor: Int = 0
+        private var status2ForeColor: Int = 0
+        private var status3ForeColor: Int = 0
+        private var status4ForeColor: Int = 0
+        private var status5ForeColor: Int = 0
+        private var status6ForeColor: Int = 0
+        private var defaultForeColor: Int = 0
 
-        private var pickedSelectedForeColor: Int = 0
-        private var notPickedSelectedForeColor: Int = 0
+        private var selectedForeColor1: Int = 0
+        private var selectedForeColor2: Int = 0
+        private var selectedForeColor3: Int = 0
+        private var selectedForeColor4: Int = 0
+        private var selectedForeColor5: Int = 0
+        private var selectedForeColor6: Int = 0
+        private var defaultSelectedForeColor: Int = 0
 
         private var darkslategray: Int = 0
+        private var lightgray: Int = 0
 
         /**
          * Setup colors
@@ -772,19 +844,37 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
          */
         private fun setupColors() {
             // Color de los diferentes estados
-            val picked = getColor(context.resources, R.color.status_lot_active, null)
-            val notPicked = getColor(context.resources, R.color.status_lot_inactive, null)
+            val status3 = getColor(context.resources, R.color.status_w_active, null)
+            val status1 = getColor(context.resources, R.color.status_wa_active, null)
+            val status5 = getColor(context.resources, R.color.status_r_active, null)
+            val status2 = getColor(context.resources, R.color.status_w_inactive, null)
+            val status4 = getColor(context.resources, R.color.status_wa_inactive, null)
+            val status6 = getColor(context.resources, R.color.status_r_inactive, null)
+            val default = getColor(context.resources, R.color.status_default, null)
 
             // Mejor contraste para los ítems seleccionados
-            pickedSelectedForeColor = getBestContrastColor(manipulateColor(picked, 0.5f))
-            notPickedSelectedForeColor = getBestContrastColor(manipulateColor(notPicked, 0.5f))
+            selectedForeColor1 = getBestContrastColor(manipulateColor(status1, 0.5f))
+            selectedForeColor2 = getBestContrastColor(manipulateColor(status2, 0.5f))
+            selectedForeColor3 = getBestContrastColor(manipulateColor(status3, 0.5f))
+            selectedForeColor4 = getBestContrastColor(manipulateColor(status4, 0.5f))
+            selectedForeColor5 = getBestContrastColor(manipulateColor(status5, 0.5f))
+            selectedForeColor6 = getBestContrastColor(manipulateColor(status6, 0.5f))
+            defaultSelectedForeColor = getBestContrastColor(manipulateColor(default, 0.5f))
 
             // Mejor contraste para los ítems no seleccionados
-            pickedForeColor = getBestContrastColor(picked)
-            notPickedForeColor = getBestContrastColor(notPicked)
+            status1ForeColor = getBestContrastColor(status1)
+            status2ForeColor = getBestContrastColor(status2)
+            status3ForeColor = getBestContrastColor(status3)
+            status4ForeColor = getBestContrastColor(status4)
+            status5ForeColor = getBestContrastColor(status5)
+            status6ForeColor = getBestContrastColor(status6)
+            defaultForeColor = getBestContrastColor(default)
 
             // CheckBox color
             darkslategray = getColor(context.resources, R.color.darkslategray, null)
+
+            // Title color
+            lightgray = getColor(context.resources, R.color.lightgray, null)
         }
         // endregion
     }
@@ -793,7 +883,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         // Set values from Builder
         recyclerView = builder.recyclerView
         fullList = builder.fullList
-        checkedIdArray = builder.checkedIdArray
+        checkedHashArray = builder.checkedHashArray
         multiSelect = builder.multiSelect
         showCheckBoxes = builder.showCheckBoxes
         showCheckBoxesChanged = builder.showCheckBoxesChanged
@@ -803,6 +893,13 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         dataSetChangedListener = builder.dataSetChangedListener
         selectedItemChangedListener = builder.selectedItemChangedListener
         checkedChangedListener = builder.checkedChangedListener
+
+        // TODO: Dummy status list, FIX Later
+        if (visibleStatus.isEmpty()) {
+            for (i in 0..19) {
+                visibleStatus.add(Status(i.toLong(), """${context.getString(R.string.status)} $i"""))
+            }
+        }
 
         // Configuramos variables de estilo que se van a reutilizar.
         setupColors()
@@ -833,38 +930,39 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
      * @param list
      * @return Lista ordenada con los estados visibles
      */
-    private fun sortedVisibleList(list: MutableList<OrderLocation>?): MutableList<OrderLocation> {
-        val croppedList = (list ?: mutableListOf()).mapNotNull { if (it.itemStatus in visibleStatus) it else null }
+    private fun sortedVisibleList(list: MutableList<OrderResponse>?): MutableList<OrderResponse> {
+        val croppedList = (list ?: mutableListOf()).mapNotNull { if (mustBeVisible(it)) it else null }
         return sortItems(croppedList.toMutableList())
     }
 
     // Sobrecargamos estos métodos para suministrar siempre una lista ordenada y filtrada por estado de visibilidad
-    override fun submitList(list: MutableList<OrderLocation>?) {
+    override fun submitList(list: MutableList<OrderResponse>?) {
         super.submitList(sortedVisibleList(list))
     }
 
-    override fun submitList(list: MutableList<OrderLocation>?, commitCallback: Runnable?) {
+    override fun submitList(list: MutableList<OrderResponse>?, commitCallback: Runnable?) {
         super.submitList(sortedVisibleList(list), commitCallback)
     }
 
     class Builder {
-        fun build(): OrderLocationRecyclerAdapter {
-            return OrderLocationRecyclerAdapter(this)
+        fun build(): OrderResponseAdapter {
+            return OrderResponseAdapter(this)
         }
 
         internal lateinit var recyclerView: RecyclerView
-        internal var fullList: ArrayList<OrderLocation> = ArrayList()
-        internal var checkedIdArray: ArrayList<Long> = ArrayList()
+        internal var fullList: ArrayList<OrderResponse> = ArrayList()
+        internal var checkedHashArray: ArrayList<Int> = ArrayList()
         internal var multiSelect: Boolean = false
         internal var showCheckBoxes: Boolean = false
         internal var showCheckBoxesChanged: (Boolean) -> Unit = { }
-        internal var visibleStatus: ArrayList<OrderLocationStatus> = ArrayList(OrderLocationStatus.values().toList())
+        internal var visibleStatus: ArrayList<Status> = ArrayList()
         internal var filterOptions: FilterOptions = FilterOptions()
 
         internal var dataSetChangedListener: DataSetChangedListener? = null
         internal var selectedItemChangedListener: SelectedItemChangedListener? = null
         internal var checkedChangedListener: CheckedChangedListener? = null
 
+        // Setter methods for variables with chained methods
         @Suppress("unused")
         fun recyclerView(`val`: RecyclerView): Builder {
             recyclerView = `val`
@@ -872,14 +970,14 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         }
 
         @Suppress("unused")
-        fun fullList(`val`: ArrayList<OrderLocation>): Builder {
+        fun fullList(`val`: ArrayList<OrderResponse>): Builder {
             fullList = `val`
             return this
         }
 
         @Suppress("unused")
-        fun checkedIdArray(`val`: ArrayList<Long>): Builder {
-            checkedIdArray = `val`
+        fun checkedHashArray(`val`: ArrayList<Int>): Builder {
+            checkedHashArray = `val`
             return this
         }
 
@@ -890,14 +988,14 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         }
 
         @Suppress("unused")
-        fun showCheckBoxes(`val`: Boolean, callback: (Boolean) -> Unit): Builder {
+        fun showCheckBoxes(`val`: Boolean, listener: (Boolean) -> Unit): Builder {
             showCheckBoxes = `val`
-            showCheckBoxesChanged = callback
+            showCheckBoxesChanged = listener
             return this
         }
 
         @Suppress("unused")
-        fun visibleStatus(`val`: ArrayList<OrderLocationStatus>): Builder {
+        fun visibleStatus(`val`: ArrayList<Status>): Builder {
             visibleStatus = `val`
             return this
         }
@@ -908,21 +1006,22 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
             return this
         }
 
+        // Setter methods for variables with chained methods
         @Suppress("unused")
-        fun dataSetChangedListener(`val`: DataSetChangedListener): Builder {
-            dataSetChangedListener = `val`
+        fun dataSetChangedListener(listener: DataSetChangedListener?): Builder {
+            dataSetChangedListener = listener
             return this
         }
 
         @Suppress("unused")
-        fun selectedItemChangedListener(`val`: SelectedItemChangedListener): Builder {
-            selectedItemChangedListener = `val`
+        fun selectedItemChangedListener(listener: SelectedItemChangedListener?): Builder {
+            selectedItemChangedListener = listener
             return this
         }
 
         @Suppress("unused")
-        fun checkedChangedListener(`val`: CheckedChangedListener): Builder {
-            checkedChangedListener = `val`
+        fun checkedChangedListener(listener: CheckedChangedListener?): Builder {
+            checkedChangedListener = listener
             return this
         }
     }

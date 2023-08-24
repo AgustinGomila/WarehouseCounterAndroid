@@ -1,25 +1,34 @@
-package com.dacosys.warehouseCounter.ktor.v2.functions
+package com.dacosys.warehouseCounter.ktor.v2.functions.itemCode
 
 import android.util.Log
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderLocation
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam
+import com.dacosys.warehouseCounter.ktor.v2.dto.item.ItemCodePayload
+import com.dacosys.warehouseCounter.ktor.v2.dto.item.ItemCodeResponse
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
 import kotlinx.coroutines.*
 
-class GetOrderLocation(
-    private val filter: ArrayList<ApiFilterParam>,
+
+class SendItemCode
+/**
+ * Get a [ItemCodePayload] by his ID
+ *
+ * @property id ID of the itemCodePayload.
+ * @property onEvent Event to update the state of the UI according to the progress of the operation.
+ * @property onFinish If the operation is successful it returns a [ItemCodePayload] else null.
+ */(
+    private val payload: ItemCodePayload,
     private val onEvent: (SnackBarEventData) -> Unit = { },
-    private val onFinish: (List<OrderLocation>) -> Unit,
+    private val onFinish: (ItemCodeResponse?) -> Unit
 ) {
+
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
-    private var r: List<OrderLocation> = listOf()
+    private var r: ItemCodeResponse? = null
 
     fun execute() {
         scope.launch {
@@ -34,14 +43,15 @@ class GetOrderLocation(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiServiceV2.getOrderLocation(
-            filter = filter,
-            callback = {
-                if (BuildConfig.DEBUG) Log.d(javaClass.simpleName, it.toString())
-                r = it
-                if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
-                else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
-            })
+        ktorApiServiceV2.sendItemCode(payload = payload, callback = {
+            if (BuildConfig.DEBUG) Log.d(javaClass.simpleName, it.toString())
+            r = it
+            if (r != null) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
+            else sendEvent(
+                context.getString(R.string.an_error_occurred_while_trying_to_add_the_item_code),
+                SnackBarType.INFO
+            )
+        })
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {

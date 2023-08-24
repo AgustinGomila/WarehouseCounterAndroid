@@ -35,7 +35,7 @@ import com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.ktor.v1.functions.GetClientPackages.Companion.getConfig
 import com.dacosys.warehouseCounter.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.ktor.v2.dto.database.DatabaseData
-import com.dacosys.warehouseCounter.ktor.v2.functions.GetDatabase
+import com.dacosys.warehouseCounter.ktor.v2.functions.database.GetDatabase
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiRequest
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.closeImageControl
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl

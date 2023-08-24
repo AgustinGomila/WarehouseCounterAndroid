@@ -41,7 +41,7 @@ import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
-import com.dacosys.warehouseCounter.ktor.v2.functions.CreateOrder
+import com.dacosys.warehouseCounter.ktor.v2.functions.order.CreateOrder
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.DATE_FORMAT
@@ -100,6 +100,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                         onEvent = { showSnackBar(it) },
                         onFinish = { successFiles ->
 
+                            /** We delete the files of the orders sent */
                             /** We delete the files of the orders sent */
                             OrderRequest.removeCountFiles(
                                 successFiles = successFiles,

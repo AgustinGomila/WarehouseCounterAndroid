@@ -34,7 +34,7 @@ import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
-import com.dacosys.warehouseCounter.ktor.v2.functions.CreateOrder
+import com.dacosys.warehouseCounter.ktor.v2.functions.order.CreateOrder
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -299,10 +299,14 @@ class OutboxActivity : AppCompatActivity() {
                     onFinish = { successFiles ->
 
                         /** We delete the files of the orders sent */
+                        /** We delete the files of the orders sent */
                         OrderRequest.removeCountFiles(
                             successFiles = successFiles,
                             sendEvent = { eventData -> showSnackBar(eventData) }
                         )
+
+                        /** We remove the reference to the order in room database,
+                         * and we fill the list adapter at the end. */
 
                         /** We remove the reference to the order in room database,
                          * and we fill the list adapter at the end. */

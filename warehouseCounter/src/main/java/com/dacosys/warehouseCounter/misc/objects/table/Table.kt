@@ -16,6 +16,7 @@ class Table(var tableId: Int, var tableName: String, var description: String) {
         var rack = Table(102, "rack", context.getString(R.string.rack))
         var warehouseArea = Table(103, "warehouse_area", context.getString(R.string.area))
         var warehouse = Table(104, "warehouse", context.getString(R.string.warehouse))
+        var order = Table(105, "order_request", context.getString(R.string.order))
 
         fun getAll(): ArrayList<Table> {
             val allSections = ArrayList<Table>()
@@ -25,7 +26,8 @@ class Table(var tableId: Int, var tableName: String, var description: String) {
                 item,
                 rack,
                 warehouse,
-                warehouseArea
+                warehouseArea,
+                order
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.tableId }))

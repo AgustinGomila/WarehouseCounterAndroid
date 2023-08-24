@@ -1,34 +1,31 @@
-package com.dacosys.warehouseCounter.ktor.v2.functions
+package com.dacosys.warehouseCounter.ktor.v2.functions.database
 
 import android.util.Log
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
-import com.dacosys.warehouseCounter.ktor.v2.dto.item.ItemCodePayload
-import com.dacosys.warehouseCounter.ktor.v2.dto.item.ItemCodeResponse
+import com.dacosys.warehouseCounter.ktor.v2.dto.database.DatabaseData
+import com.dacosys.warehouseCounter.room.database.WcDatabase
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
 import kotlinx.coroutines.*
 
-
-class SendItemCode
+class GetDatabase
 /**
- * Get a [ItemCodePayload] by his ID
+ * Get a [DatabaseData] for the current user.
  *
- * @property id ID of the itemCodePayload.
  * @property onEvent Event to update the state of the UI according to the progress of the operation.
- * @property onFinish If the operation is successful it returns a [ItemCodePayload] else null.
+ * @property onFinish If the operation is successful it returns a [DatabaseData] else null.
  */(
-    private val payload: ItemCodePayload,
     private val onEvent: (SnackBarEventData) -> Unit = { },
-    private val onFinish: (ItemCodeResponse?) -> Unit
+    private val onFinish: (DatabaseData?) -> Unit,
 ) {
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
-    private var r: ItemCodeResponse? = null
+    private var r: DatabaseData? = null
 
     fun execute() {
         scope.launch {
@@ -43,15 +40,19 @@ class SendItemCode
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiServiceV2.sendItemCode(payload = payload, callback = {
-            if (BuildConfig.DEBUG) Log.d(javaClass.simpleName, it.toString())
-            r = it
-            if (r != null) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
-            else sendEvent(
-                context.getString(R.string.an_error_occurred_while_trying_to_add_the_item_code),
-                SnackBarType.INFO
-            )
-        })
+        var version = ""
+        @Suppress("KotlinConstantConditions") if (WcDatabase.DATABASE_VERSION > 1) {
+            version = "-v${WcDatabase.DATABASE_VERSION}"
+        }
+
+        ktorApiServiceV2.getDatabase(
+            version = version,
+            callback = {
+                if (BuildConfig.DEBUG) Log.d(javaClass.simpleName, it.toString())
+                r = it
+                if (r != null) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
+                else sendEvent(context.getString(R.string.item_not_exists), SnackBarType.INFO)
+            })
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {

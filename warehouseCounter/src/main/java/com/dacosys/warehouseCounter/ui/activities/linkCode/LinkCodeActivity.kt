@@ -57,7 +57,7 @@ import com.dacosys.warehouseCounter.databinding.LinkCodeActivityBottomPanelColla
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
-import com.dacosys.warehouseCounter.ktor.v2.functions.SendItemCodeArray
+import com.dacosys.warehouseCounter.ktor.v2.functions.itemCode.SendItemCodeArray
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalSeparator

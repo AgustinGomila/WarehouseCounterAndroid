@@ -6,7 +6,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
-import com.dacosys.warehouseCounter.ktor.v2.functions.SendItemCodeArray
+import com.dacosys.warehouseCounter.ktor.v2.functions.itemCode.SendItemCodeArray
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines

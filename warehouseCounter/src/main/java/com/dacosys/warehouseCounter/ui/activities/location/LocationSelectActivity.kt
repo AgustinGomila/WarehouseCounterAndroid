@@ -16,10 +16,9 @@ import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.databinding.LocationSelectActivityBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.*
-import com.dacosys.warehouseCounter.ktor.v2.functions.GetRack
-import com.dacosys.warehouseCounter.ktor.v2.functions.GetWarehouse
-import com.dacosys.warehouseCounter.ktor.v2.functions.GetWarehouseArea
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiActionParam
+import com.dacosys.warehouseCounter.ktor.v2.functions.location.GetRack
+import com.dacosys.warehouseCounter.ktor.v2.functions.location.GetWarehouse
+import com.dacosys.warehouseCounter.ktor.v2.functions.location.GetWarehouseArea
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.adapter.location.RackAdapter
 import com.dacosys.warehouseCounter.ui.adapter.location.WarehouseAdapter
@@ -289,7 +288,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
 
     private fun getWarehouse() {
         thread {
-            GetWarehouse(action = action,
+            GetWarehouse(action = GetWarehouse.defaultAction,
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
                 onFinish = {
                     fillWarehouse(it)
@@ -301,7 +300,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
 
     private fun getWarehouseArea() {
         thread {
-            GetWarehouseArea(action = action,
+            GetWarehouseArea(action = GetWarehouseArea.defaultAction,
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
                 onFinish = {
                     fillWarehouseArea(it)
@@ -313,7 +312,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
 
     private fun getRack() {
         thread {
-            GetRack(action = action,
+            GetRack(action = GetRack.defaultAction,
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
                 onFinish = {
                     fillRack(it)
@@ -322,50 +321,6 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
                 }).execute()
         }
     }
-
-
-    private val action: ArrayList<ApiActionParam> by lazy {
-        when (locationType) {
-            LocationType.WAREHOUSE -> warehouseParam
-
-            LocationType.WAREHOUSE_AREA -> warehouseAreaParam
-
-            LocationType.RACK -> rackParam
-        }
-    }
-
-    private val warehouseParam: ArrayList<ApiActionParam>
-        get() {
-            return arrayListOf(
-                ApiActionParam(
-                    action = ApiActionParam.ACTION_EXPAND, extension = setOf(
-                        ApiActionParam.EXTENSION_WAREHOUSE_AREA_LIST, ApiActionParam.EXTENSION_STATUS
-                    )
-                )
-            )
-        }
-
-    private val warehouseAreaParam: ArrayList<ApiActionParam>
-        get() {
-            return arrayListOf(
-                ApiActionParam(
-                    action = ApiActionParam.ACTION_EXPAND, extension = setOf(
-                        ApiActionParam.EXTENSION_STATUS
-                    )
-                )
-            )
-        }
-
-    private val rackParam: ArrayList<ApiActionParam>
-        get() {
-            return arrayListOf(
-                ApiActionParam(
-                    action = ApiActionParam.ACTION_EXPAND, extension = setOf(
-                        ApiActionParam.EXTENSION_STATUS
-                    )
-                )
-            )
-        }
 
     private fun showSnackBar(it: SnackBarEventData) {
         MakeText.makeText(binding.root, it.text, it.snackBarType)

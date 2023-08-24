@@ -29,7 +29,7 @@ import com.dacosys.warehouseCounter.databinding.PrintLabelFragmentBinding
 import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.Label
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.Barcode
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
-import com.dacosys.warehouseCounter.ktor.v2.functions.ViewBarcodeLabelTemplate
+import com.dacosys.warehouseCounter.ktor.v2.functions.template.ViewBarcodeLabelTemplate
 import com.dacosys.warehouseCounter.misc.BtPrinter.Companion.printerBluetoothDevice
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics

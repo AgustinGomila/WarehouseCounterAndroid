@@ -294,6 +294,23 @@ class APIServiceImpl : APIService {
     }
 
     /**
+     * Returns a list of [Barcode] of the desired list of [OrderResponse] and Template.
+     *
+     * @param params Barcode request parameters
+     * @param callback Request callback
+     *
+     * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/order/)
+     * [POST](http://localhost:8002/v2/order/barcode)
+     */
+    override suspend fun getOrderBarcode(params: BarcodeParam, callback: (List<Barcode>) -> Unit) {
+        callback(
+            apiRequest.getBarcodeOf(
+                objPath = ORDER_PATH, params = params
+            )
+        )
+    }
+
+    /**
      * Get a [ListResponse]<[OrderPackage]> through a callback
      *
      * @param action List of parameters

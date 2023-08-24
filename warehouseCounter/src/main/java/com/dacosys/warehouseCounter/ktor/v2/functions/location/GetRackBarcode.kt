@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ktor.v2.functions
+package com.dacosys.warehouseCounter.ktor.v2.functions.location
 
 import android.util.Log
 import com.dacosys.warehouseCounter.BuildConfig

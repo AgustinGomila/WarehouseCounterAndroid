@@ -12,7 +12,7 @@ data class OrderResponse(
     @SerialName(COMPLETED_KEY) var completed: String = "",
     @SerialName(DESCRIPTION_KEY) var description: String = "",
     @SerialName(EXTERNAL_ID_KEY) var externalId: String = "",
-    @SerialName(FINISH_DATE_KEY) var finishDate: String = "",
+    @SerialName(FINISH_DATE_KEY) var finishDate: String? = null,
     @SerialName(ORDER_TYPE_ID_KEY) var orderTypeId: Long? = null,
     @SerialName(RESULT_ALLOW_DIFF_KEY) var resultAllowDiff: Boolean? = null,
     @SerialName(RESULT_ALLOW_MOD_KEY) var resultAllowMod: Boolean? = null,
@@ -26,7 +26,7 @@ data class OrderResponse(
     @SerialName(STATUS_ID_KEY) var statusId: Long? = null,
     @SerialName(ROW_CREATION_DATE_KEY) var rowCreationDate: String = "",
     @SerialName(ROW_MODIFICATION_DATE_KEY) var rowModificationDate: String = "",
-    @SerialName(ID_KEY) var id: Long? = null,
+    @SerialName(ID_KEY) var id: Long = 0L,
     @SerialName(COLLECTOR_USER_ID_KEY) var collectorUserId: Long? = null,
     @SerialName(COLLECTOR_ID_KEY) var collectorId: Long? = null,
     @SerialName(CONTENT_RESPONSE_LIST_KEY) var contents: List<OrderResponseContent> = listOf()
@@ -50,7 +50,7 @@ data class OrderResponse(
         statusId = parcel.readValue(Long::class.java.classLoader) as? Long,
         rowCreationDate = parcel.readString() ?: "",
         rowModificationDate = parcel.readString() ?: "",
-        id = parcel.readValue(Long::class.java.classLoader) as? Long,
+        id = parcel.readLong(),
         collectorUserId = parcel.readValue(Long::class.java.classLoader) as? Long,
         collectorId = parcel.readValue(Long::class.java.classLoader) as? Long,
         contents = parcel.readParcelableArray(OrderResponseContent::class.java.classLoader)
@@ -76,7 +76,7 @@ data class OrderResponse(
         result = 31 * result + completed.hashCode()
         result = 31 * result + description.hashCode()
         result = 31 * result + externalId.hashCode()
-        result = 31 * result + finishDate.hashCode()
+        result = 31 * result + (finishDate?.hashCode() ?: 0)
         result = 31 * result + (orderTypeId?.hashCode() ?: 0)
         result = 31 * result + (resultAllowDiff?.hashCode() ?: 0)
         result = 31 * result + (resultAllowMod?.hashCode() ?: 0)
@@ -90,11 +90,16 @@ data class OrderResponse(
         result = 31 * result + (statusId?.hashCode() ?: 0)
         result = 31 * result + rowCreationDate.hashCode()
         result = 31 * result + rowModificationDate.hashCode()
-        result = 31 * result + (id?.hashCode() ?: 0)
+        result = 31 * result + id.hashCode()
         result = 31 * result + (collectorUserId?.hashCode() ?: 0)
         result = 31 * result + (collectorId?.hashCode() ?: 0)
         return result
     }
+
+    val hashCode: Int
+        get() {
+            return hashCode()
+        }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeValue(clientId)

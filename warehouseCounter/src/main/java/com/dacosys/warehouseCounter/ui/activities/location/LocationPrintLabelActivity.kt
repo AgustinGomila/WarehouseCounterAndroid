@@ -53,7 +53,7 @@ import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.PrintOps
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.*
 import com.dacosys.warehouseCounter.ktor.v2.functions.*
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiActionParam
+import com.dacosys.warehouseCounter.ktor.v2.functions.location.*
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
@@ -641,7 +641,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             if (rack != null) {
                 ViewRack(
                     id = rack.locationId,
-                    action = action(LocationType.RACK),
+                    action = ViewRack.defaultAction,
                     onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
                     onFinish = {
                         val list: ArrayList<Location> = arrayListOf()
@@ -652,7 +652,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             } else if (wa != null) {
                 ViewWarehouseArea(
                     id = wa.locationId,
-                    action = action(LocationType.WAREHOUSE_AREA),
+                    action = ViewWarehouseArea.defaultAction,
                     onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
                     onFinish = {
                         val list: ArrayList<Location> = arrayListOf()
@@ -663,7 +663,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             } else if (w != null) {
                 ViewWarehouse(
                     id = w.locationId,
-                    action = action(LocationType.WAREHOUSE),
+                    action = ViewWarehouse.defaultAction,
                     onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
                     onFinish = {
                         val list: ArrayList<Location> = arrayListOf()
@@ -679,49 +679,6 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             showProgressBar(false)
         }
     }
-
-    private fun action(locationType: LocationType): ArrayList<ApiActionParam> {
-        return when (locationType) {
-            LocationType.WAREHOUSE -> warehouseParam
-
-            LocationType.WAREHOUSE_AREA -> warehouseAreaParam
-
-            LocationType.RACK -> rackParam
-        }
-    }
-
-    private val warehouseParam: ArrayList<ApiActionParam>
-        get() {
-            return arrayListOf(
-                ApiActionParam(
-                    action = ApiActionParam.ACTION_EXPAND, extension = setOf(
-                        ApiActionParam.EXTENSION_WAREHOUSE_AREA_LIST, ApiActionParam.EXTENSION_STATUS
-                    )
-                )
-            )
-        }
-
-    private val warehouseAreaParam: ArrayList<ApiActionParam>
-        get() {
-            return arrayListOf(
-                ApiActionParam(
-                    action = ApiActionParam.ACTION_EXPAND, extension = setOf(
-                        ApiActionParam.EXTENSION_WAREHOUSE, ApiActionParam.EXTENSION_STATUS
-                    )
-                )
-            )
-        }
-
-    private val rackParam: ArrayList<ApiActionParam>
-        get() {
-            return arrayListOf(
-                ApiActionParam(
-                    action = ApiActionParam.ACTION_EXPAND, extension = setOf(
-                        ApiActionParam.EXTENSION_STATUS
-                    )
-                )
-            )
-        }
 
     private fun fillAdapter(t: ArrayList<Location>) {
         showProgressBar(true)

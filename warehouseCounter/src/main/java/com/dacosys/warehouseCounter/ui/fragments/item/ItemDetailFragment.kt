@@ -10,8 +10,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.databinding.ItemDetailBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.item.Price
-import com.dacosys.warehouseCounter.ktor.v2.functions.ViewItem
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiActionParam
+import com.dacosys.warehouseCounter.ktor.v2.functions.item.ViewItem
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.entity.item.Item
@@ -152,23 +151,11 @@ class ItemDetailFragment : Fragment() {
         thread {
             ViewItem(
                 id = it.itemId,
-                action = action,
+                action = ViewItem.defaultAction,
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
                 onFinish = { if (it != null) fillPriceLayout(it.prices) }
             ).execute()
         }
-    }
-
-    private val action: ArrayList<ApiActionParam> by lazy {
-        arrayListOf(
-            ApiActionParam(
-                action = ApiActionParam.ACTION_EXPAND,
-                extension = setOf(
-                    ApiActionParam.EXTENSION_ITEM_PRICE_LIST_CONTENTS,
-                    ApiActionParam.EXTENSION_ITEM_CATEGORY
-                )
-            )
-        )
     }
 
     private fun fillPriceLayout(it: List<Price>) {

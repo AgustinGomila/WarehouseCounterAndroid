@@ -10,6 +10,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.databinding.PrintLabelActivityBinding
 import com.dacosys.warehouseCounter.ui.activities.item.ItemSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.location.LocationPrintLabelActivity
+import com.dacosys.warehouseCounter.ui.activities.order.OrderPrintLabelActivity
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.setScreenRotation
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.setupUI
 
@@ -62,13 +63,13 @@ class PrintLabelActivity : AppCompatActivity() {
 
         binding.orderButton.setOnClickListener {
             if (!rejectNewInstances) {
-                // TODO:  Impresión de etiquetas de áreas y racks
-                // rejectNewInstances = true
+                rejectNewInstances = true
 
-                // val intent = Intent(baseContext, WarehouseAreaPrintLabelActivity::class.java)
-                // intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                // intent.putExtra("multiSelect", true)
-                // startActivity(intent)
+                val intent = Intent(baseContext, OrderPrintLabelActivity::class.java)
+                intent.putExtra(ItemSelectActivity.ARG_TITLE, getString(R.string.print_order_labels))
+                intent.putExtra(LocationPrintLabelActivity.ARG_MULTI_SELECT, true)
+                intent.putExtra(ItemSelectActivity.ARG_SHOW_SELECT_BUTTON, false)
+                startActivity(intent)
             }
         }
 

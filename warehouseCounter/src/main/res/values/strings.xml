@@ -721,4 +721,5 @@
     <string name="select_label_template">Seleccionar plantilla</string>
     <string name="search_by_template">Buscar plantilla</string>
     <string name="you_must_select_a_template">Debe seleccionar una plantilla</string>
+    <string name="print_order_labels">Imprimir etiquetas de pedidos</string>
 </resources>
