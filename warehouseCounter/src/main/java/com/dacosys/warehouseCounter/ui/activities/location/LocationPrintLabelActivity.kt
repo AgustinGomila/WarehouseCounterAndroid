@@ -57,7 +57,6 @@ import com.dacosys.warehouseCounter.ktor.v2.functions.location.*
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -82,7 +81,7 @@ import kotlin.concurrent.thread
 
 class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
-    SelectFilterFragment.OnFilterChangedListener, LocationAdapter.CheckedChangedListener,
+    SelectFilterFragment.OnFilterLocationChangedListener, LocationAdapter.CheckedChangedListener,
     PrintLabelFragment.FragmentListener, LocationAdapter.DataSetChangedListener,
     LocationAdapter.AddPhotoRequiredListener, LocationAdapter.AlbumViewRequiredListener,
     SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
@@ -323,7 +322,6 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 .searchByRack(sv.locationSearchByRack, sr.locationSearchByRack)
                 .searchByArea(sv.locationSearchByArea, sr.locationSearchByArea)
                 .searchByWarehouse(sv.locationSearchByWarehouse, sr.locationSearchByWarehouse)
-                .filterChangedListener(this)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
@@ -624,7 +622,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     }
 
     private fun getLocations() {
-        if (!filterFragment.validFilter()) {
+        if (!filterFragment.validFilters()) {
             fillAdapter(ArrayList())
             return
         }
@@ -638,6 +636,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             val rack = filterFragment.rack
             val wa = filterFragment.warehouseArea
             val w = filterFragment.warehouse
+
             if (rack != null) {
                 ViewRack(
                     id = rack.locationId,
@@ -989,12 +988,6 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     }
 
     override fun onFilterChanged(
-        code: String,
-        description: String,
-        ean: String,
-        itemCategory: ItemCategory?,
-        orderId: String,
-        orderExternalId: String,
         warehouse: Warehouse?,
         warehouseArea: WarehouseArea?,
         rack: Rack?,

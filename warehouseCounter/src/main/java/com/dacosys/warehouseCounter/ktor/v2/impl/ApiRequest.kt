@@ -160,10 +160,13 @@ class ApiRequest {
      * @param objPath Partial path of the object functions in the API.
      * @param listName Key of the item list in the Json.
      * @param action API actions
+     * @param filter API filters (optional)
      * @return [ListResponse]<[T]>
      */
     suspend inline fun <reified T> getListOf(
-        objPath: String, listName: String, action: ArrayList<ApiActionParam>,
+        objPath: String, listName: String,
+        action: ArrayList<ApiActionParam>,
+        filter: ArrayList<ApiFilterParam> = arrayListOf()
     ): ListResponse<T> {
         val url = URL(apiUrl)
 
@@ -173,6 +176,13 @@ class ApiRequest {
                 if (it.action.isNotEmpty()) append(
                     it.action, it.extension.joinToString(EXT_SEPARATOR)
                 )
+            }
+            filter.forEach {
+                val col = it.columnName
+                val like = if (it.like) "[$ACTION_FILTER_LIKE]" else ""
+                val value = it.value
+                if (col.isNotEmpty())
+                    this.append("$ACTION_FILTER[${col}]${like}", value)
             }
         }
 

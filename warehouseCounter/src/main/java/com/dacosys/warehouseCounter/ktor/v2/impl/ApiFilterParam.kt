@@ -14,8 +14,13 @@ data class ApiFilterParam(
         const val EXTENSION_ITEM_DESCRIPTION = "item.description"
         const val EXTENSION_ITEM_EAN = "item.ean"
         const val EXTENSION_ITEM_EXTERNAL_ID = "item.external_id"
+
         const val EXTENSION_ITEM_ID = "item_id"
+
+        const val EXTENSION_ORDER_ORDER_ID = "order.order_id"
+        const val EXTENSION_ORDER_DESCRIPTION = "order.description"
         const val EXTENSION_ORDER_EXTERNAL_ID = "order.external_id"
+
         const val EXTENSION_ORDER_LOCATION_AREA_ID = "order_location.warehouse_area_id"
         const val EXTENSION_ORDER_LOCATION_ORDER_ID = "order_location.order_id"
         const val EXTENSION_ORDER_LOCATION_RACK_ID = "order_location.rack_id"

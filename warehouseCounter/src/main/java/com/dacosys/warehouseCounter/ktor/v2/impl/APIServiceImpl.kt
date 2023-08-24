@@ -279,16 +279,24 @@ class APIServiceImpl : APIService {
     /**
      * Get a [ListResponse]<[OrderResponse]> through a callback
      *
+     * @param filter List of filters
      * @param action List of parameters
      * @param callback Request callback
      *
      * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/order/)
      * [index GET](http://localhost:8002/v2/order/)
      */
-    override suspend fun getOrder(action: ArrayList<ApiActionParam>, callback: (ListResponse<OrderResponse>) -> Unit) {
+    override suspend fun getOrder(
+        filter: ArrayList<ApiFilterParam>,
+        action: ArrayList<ApiActionParam>,
+        callback: (ListResponse<OrderResponse>) -> Unit
+    ) {
         callback(
             apiRequest.getListOf<OrderResponse>(
-                objPath = ORDER_PATH, listName = OrderResponse.ORDER_RESPONSE_LIST_KEY, action = action
+                objPath = ORDER_PATH,
+                listName = OrderResponse.ORDER_RESPONSE_LIST_KEY,
+                action = action,
+                filter = filter
             )
         )
     }

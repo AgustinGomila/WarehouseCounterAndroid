@@ -50,9 +50,6 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingReposit
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.misc.ParcelLong
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -80,11 +77,11 @@ import java.util.*
 import kotlin.concurrent.thread
 
 class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
-    Scanner.ScannerListener, Rfid.RfidDeviceListener,
-    SelectFilterFragment.OnFilterChangedListener, ItemRecyclerAdapter.CheckedChangedListener,
+    Scanner.ScannerListener, Rfid.RfidDeviceListener, ItemRecyclerAdapter.CheckedChangedListener,
     PrintLabelFragment.FragmentListener, ItemRecyclerAdapter.DataSetChangedListener,
     ItemRecyclerAdapter.AddPhotoRequiredListener, ItemRecyclerAdapter.AlbumViewRequiredListener,
-    SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
+    SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener,
+    SelectFilterFragment.OnFilterItemChangedListener {
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -322,9 +319,22 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 .searchByItemDescription(sv.itemSearchByItemDescription, sr.itemSearchByItemDescription)
                 .searchByItemEan(sv.itemSearchByItemEan, sr.itemSearchByItemEan)
                 .searchByCategory(sv.itemSearchByCategory, sr.itemSearchByCategory)
-                .filterChangedListener(this)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
+    }
+
+    override fun onFilterChanged(
+        code: String,
+        description: String,
+        ean: String,
+        itemCategory: ItemCategory?,
+        onlyActive: Boolean
+    ) {
+        closeKeyboard(this)
+        thread {
+            checkedIdArray.clear()
+            getItems()
+        }
     }
 
     // region Inset animation
@@ -625,7 +635,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private fun getItems() {
         val itemEan = filterFragment.itemEan.trim()
-        val itemDescription = filterFragment.itemDescription.trim()
+        val itemDescription = filterFragment.description.trim()
         val itemCategory = filterFragment.itemCategory
 
         if (itemEan.isEmpty() && itemDescription.isEmpty() && itemCategory == null) {
@@ -958,25 +968,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
 
             builder.show()
-        }
-    }
-
-    override fun onFilterChanged(
-        code: String,
-        description: String,
-        ean: String,
-        itemCategory: ItemCategory?,
-        orderId: String,
-        orderExternalId: String,
-        warehouse: Warehouse?,
-        warehouseArea: WarehouseArea?,
-        rack: Rack?,
-        onlyActive: Boolean
-    ) {
-        closeKeyboard(this)
-        thread {
-            checkedIdArray.clear()
-            getItems()
         }
     }
 

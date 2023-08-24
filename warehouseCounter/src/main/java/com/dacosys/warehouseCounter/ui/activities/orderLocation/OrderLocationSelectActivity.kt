@@ -66,7 +66,7 @@ import kotlin.concurrent.thread
 
 class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
-    SelectFilterFragment.OnFilterChangedListener, OrderLocationRecyclerAdapter.CheckedChangedListener,
+    SelectFilterFragment.OnFilterOrderLocationChangedListener, OrderLocationRecyclerAdapter.CheckedChangedListener,
     OrderLocationRecyclerAdapter.DataSetChangedListener,
     SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
     override fun onDestroy() {
@@ -309,7 +309,6 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                     sv.orderLocationSearchByRack,
                     sr.orderLocationSearchByRack
                 )
-                .filterChangedListener(this)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }

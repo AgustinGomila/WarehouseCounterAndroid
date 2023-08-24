@@ -494,6 +494,24 @@ class SettingsViewModel : ViewModel() {
             settingRepository.symbologyUPCEANExt.value = value
         }
 
+    var orderSearchByOrderId: Boolean
+        get() = settingRepository.orderSearchByOrderId.value as Boolean
+        set(value) {
+            settingRepository.orderSearchByOrderId.value = value
+        }
+
+    var orderSearchByOrderExtId: Boolean
+        get() = settingRepository.orderSearchByOrderExtId.value as Boolean
+        set(value) {
+            settingRepository.orderSearchByOrderExtId.value = value
+        }
+
+    var orderSearchByOrderDescription: Boolean
+        get() = settingRepository.orderSearchByOrderDescription.value as Boolean
+        set(value) {
+            settingRepository.orderSearchByOrderDescription.value = value
+        }
+
     var orderLocationSearchByOrderId: Boolean
         get() = settingRepository.orderLocationSearchByOrderId.value as Boolean
         set(value) {

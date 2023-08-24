@@ -48,7 +48,6 @@ import com.dacosys.warehouseCounter.ktor.v2.functions.order.GetOrderBarcode
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -73,7 +72,7 @@ import kotlin.concurrent.thread
 
 class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
-    SelectFilterFragment.OnFilterChangedListener, OrderResponseAdapter.CheckedChangedListener,
+    SelectFilterFragment.OnFilterOrderChangedListener, OrderResponseAdapter.CheckedChangedListener,
     PrintLabelFragment.FragmentListener, OrderResponseAdapter.DataSetChangedListener,
     SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
     override fun onDestroy() {
@@ -302,10 +301,9 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         val sr = settingRepository
         filterFragment =
             SelectFilterFragment.Builder()
-                .searchByRack(sv.locationSearchByRack, sr.locationSearchByRack)
-                .searchByArea(sv.locationSearchByArea, sr.locationSearchByArea)
-                .searchByWarehouse(sv.locationSearchByWarehouse, sr.locationSearchByWarehouse)
-                .filterChangedListener(this)
+                .searchByOrderId(sv.orderSearchByOrderId, sr.orderSearchByOrderId)
+                .searchByOrderExtId(sv.orderSearchByOrderExtId, sr.orderSearchByOrderExtId)
+                .searchByOrderDescription(sv.orderSearchByOrderDescription, sr.orderSearchByOrderDescription)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
@@ -619,7 +617,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             Log.d(this::class.java.simpleName, "Selecting orders...")
 
             GetOrder(
-                // TODO: Usar el filtro
+                filter = filter,
                 action = GetOrder.defaultAction,
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
                 onFinish = {
@@ -786,7 +784,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         binding.topAppbar.overflowIcon = drawable
 
         // Opciones de visibilidad del menú
-        val allControls = SettingsRepository.getAllSelectLocationVisibleControls()
+        val allControls = SettingsRepository.getAllSelectOrderVisibleControls()
         val visibleFilters = filterFragment.getVisibleFilters()
         allControls.forEach { p ->
             menu.add(0, p.key.hashCode(), menu.size(), p.description)
@@ -872,19 +870,19 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         item.isChecked = !item.isChecked
         val sv = settingViewModel
         when (id) {
-            settingRepository.locationSearchByWarehouse.key.hashCode() -> {
-                filterFragment.setWarehouseVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.locationSearchByWarehouse = item.isChecked
+            settingRepository.orderSearchByOrderId.key.hashCode() -> {
+                filterFragment.setOrderIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                sv.orderSearchByOrderId = item.isChecked
             }
 
-            settingRepository.locationSearchByArea.key.hashCode() -> {
-                filterFragment.setAreaVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.locationSearchByArea = item.isChecked
+            settingRepository.orderSearchByOrderExtId.key.hashCode() -> {
+                filterFragment.setOrderExtIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                sv.orderSearchByOrderExtId = item.isChecked
             }
 
-            settingRepository.locationSearchByRack.key.hashCode() -> {
-                filterFragment.setRackVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.locationSearchByRack = item.isChecked
+            settingRepository.orderSearchByOrderDescription.key.hashCode() -> {
+                filterFragment.setDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                sv.orderSearchByOrderDescription = item.isChecked
             }
 
             else -> return super.onOptionsItemSelected(item)
@@ -910,18 +908,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
     }
 
-    override fun onFilterChanged(
-        code: String,
-        description: String,
-        ean: String,
-        itemCategory: ItemCategory?,
-        orderId: String,
-        orderExternalId: String,
-        warehouse: Warehouse?,
-        warehouseArea: WarehouseArea?,
-        rack: Rack?,
-        onlyActive: Boolean
-    ) {
+    override fun onFilterChanged(orderId: String, orderExternalId: String, orderDescription: String) {
         closeKeyboard(this)
         thread {
             checkedHashArray.clear()

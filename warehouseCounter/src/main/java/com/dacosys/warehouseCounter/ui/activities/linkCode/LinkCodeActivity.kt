@@ -54,9 +54,6 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.LinkCodeActivityBottomPanelCollapsedBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.ktor.v2.functions.itemCode.SendItemCodeArray
 import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
@@ -88,7 +85,7 @@ import kotlin.concurrent.thread
 
 class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener,
     ItemRecyclerAdapter.SelectedItemChangedListener, ItemRecyclerAdapter.CheckedChangedListener,
-    CounterHandler.CounterListener, SelectFilterFragment.OnFilterChangedListener,
+    CounterHandler.CounterListener, SelectFilterFragment.OnFilterItemChangedListener,
     SwipeRefreshLayout.OnRefreshListener, ItemRecyclerAdapter.DataSetChangedListener,
     ItemRecyclerAdapter.AddPhotoRequiredListener, ItemRecyclerAdapter.AlbumViewRequiredListener {
     override fun onDestroy() {
@@ -447,7 +444,6 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 .searchByItemDescription(sv.linkCodeSearchByItemDescription, sr.linkCodeSearchByItemDescription)
                 .searchByItemEan(sv.linkCodeSearchByItemEan, sr.linkCodeSearchByItemEan)
                 .searchByCategory(sv.linkCodeSearchByCategory, sr.linkCodeSearchByCategory)
-                .filterChangedListener(this)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
@@ -1177,11 +1173,6 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         description: String,
         ean: String,
         itemCategory: ItemCategory?,
-        orderId: String,
-        orderExternalId: String,
-        warehouse: Warehouse?,
-        warehouseArea: WarehouseArea?,
-        rack: Rack?,
         onlyActive: Boolean
     ) {
         Screen.closeKeyboard(this)

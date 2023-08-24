@@ -534,6 +534,24 @@ class SettingsRepository {
     )
     //endregion WarehouseCounter WebService */
 
+    //region Impresión de pedidos
+    var orderSearchByOrderId = Preference(
+        key = "order_search_by_order_id",
+        description = context.getString(R.string.order_location_search_by_order_id),
+        default = true
+    )
+    var orderSearchByOrderExtId = Preference(
+        key = "order_search_by_order_external_id",
+        description = context.getString(R.string.order_location_search_by_order_external_id),
+        default = false
+    )
+    var orderSearchByOrderDescription = Preference(
+        key = "order_search_by_order_description",
+        description = context.getString(R.string.order_location_search_by_item_description),
+        default = true
+    )
+    //endregion Impresión de pedidos
+
     //region Actividad de búsqueda de pedidos
     var orderLocationSearchByOrderId = Preference(
         key = "order_location_search_by_order_id",
@@ -814,6 +832,10 @@ class SettingsRepository {
                 sr.orderLocationSearchByOnlyActive,
                 sr.orderLocationOnlyActive,
 
+                sr.orderSearchByOrderDescription,
+                sr.orderSearchByOrderExtId,
+                sr.orderSearchByOrderId,
+
                 sr.itemSearchByOrderId,
                 sr.itemSearchByOrderExtId,
                 sr.itemSearchByWarehouse,
@@ -940,6 +962,19 @@ class SettingsRepository {
                 sr.orderLocationSearchByItemDescription,
                 sr.orderLocationSearchByItemCode,
                 sr.orderLocationSearchByItemEan
+            )
+
+            return ArrayList(allSections.sortedWith(compareBy { it.key }))
+        }
+
+        fun getAllSelectOrderVisibleControls(): ArrayList<Preference> {
+            val sr = settingRepository
+            val allSections = ArrayList<Preference>()
+            Collections.addAll(
+                allSections,
+                sr.orderSearchByOrderId,
+                sr.orderSearchByOrderExtId,
+                sr.orderSearchByOrderDescription
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))
