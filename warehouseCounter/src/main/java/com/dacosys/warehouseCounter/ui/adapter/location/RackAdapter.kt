@@ -12,6 +12,7 @@ import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
+import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
 
@@ -23,8 +24,9 @@ import java.util.*
 class RackAdapter(
     private var activity: AppCompatActivity,
     private var resource: Int,
+    private var filterWarehouseArea: WarehouseArea? = null,
     private var rackArray: ArrayList<Rack>,
-    private var suggestedList: ArrayList<Rack>
+    private var suggestedList: ArrayList<Rack> = ArrayList()
 ) : ArrayAdapter<Rack>(WarehouseCounterApp.context, resource, suggestedList), Filterable {
 
     private var dataSetChangedListener: DataSetChangedListener? = null
@@ -290,6 +292,15 @@ class RackAdapter(
         return v
     }
 
+    fun setFilterWarehouseArea(area: WarehouseArea?) {
+        filterWarehouseArea = area
+    }
+
+    private val filterWarehouseAreaId: Long?
+        get() {
+            return filterWarehouseArea?.id
+        }
+
     override fun getFilter(): Filter {
         return object : Filter() {
             override fun performFiltering(constraint: CharSequence?): FilterResults {
@@ -302,6 +313,9 @@ class RackAdapter(
 
                     for (i in 0 until rackArray.size) {
                         filterableItem = rackArray[i]
+                        if (filterWarehouseAreaId != null && filterWarehouseAreaId != filterableItem.warehouseAreaId) {
+                            continue
+                        }
                         if (filterableItem.code.lowercase(Locale.getDefault())
                                 .contains(filterString) || (filterableItem.extId.lowercase(
                                 Locale.getDefault()

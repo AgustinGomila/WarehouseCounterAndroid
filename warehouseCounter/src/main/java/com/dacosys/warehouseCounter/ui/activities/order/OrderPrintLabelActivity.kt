@@ -16,6 +16,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -283,6 +284,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     }
 
     private fun setupPrintLabelFragment() {
+        binding.printFragment.visibility = VISIBLE
         printLabelFragment.setListener(this)
     }
 

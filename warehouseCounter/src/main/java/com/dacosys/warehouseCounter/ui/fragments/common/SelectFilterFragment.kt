@@ -15,7 +15,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.databinding.SelectFilterFragmentBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.LocationType
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
@@ -25,6 +24,7 @@ import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.settings.Preference
 import com.dacosys.warehouseCounter.ui.activities.itemCategory.ItemCategorySelectActivity
 import com.dacosys.warehouseCounter.ui.activities.location.LocationSelectActivity
+import org.parceler.Parcels
 
 
 /**
@@ -315,8 +315,9 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         binding.warehouseTextView.setOnClickListener {
             val intent = Intent(requireActivity(), LocationSelectActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra(LocationSelectActivity.ARG_LOCATION, warehouse)
-            intent.putExtra(LocationSelectActivity.ARG_LOCATION_TYPE, LocationType.WAREHOUSE)
+            intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE, warehouse)
+            intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_AREA_VISIBLE, false)
+            intent.putExtra(LocationSelectActivity.ARG_RACK_VISIBLE, false)
             intent.putExtra(LocationSelectActivity.ARG_TITLE, requireContext().getString(R.string.select_warehouse))
             resultForWarehouseSelect.launch(intent)
         }
@@ -331,8 +332,9 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         binding.areaTextView.setOnClickListener {
             val intent = Intent(requireActivity(), LocationSelectActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra(LocationSelectActivity.ARG_LOCATION, warehouseArea)
-            intent.putExtra(LocationSelectActivity.ARG_LOCATION_TYPE, LocationType.WAREHOUSE_AREA)
+            intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_AREA, warehouseArea)
+            intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_VISIBLE, false)
+            intent.putExtra(LocationSelectActivity.ARG_RACK_VISIBLE, false)
             intent.putExtra(LocationSelectActivity.ARG_TITLE, requireContext().getString(R.string.select_area))
             resultForAreaSelect.launch(intent)
         }
@@ -348,8 +350,9 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         binding.rackTextView.setOnClickListener {
             val intent = Intent(requireActivity(), LocationSelectActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra(LocationSelectActivity.ARG_LOCATION, rack)
-            intent.putExtra(LocationSelectActivity.ARG_LOCATION_TYPE, LocationType.RACK)
+            intent.putExtra(LocationSelectActivity.ARG_RACK, rack)
+            intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_VISIBLE, false)
+            intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_AREA_VISIBLE, false)
             intent.putExtra(LocationSelectActivity.ARG_TITLE, requireContext().getString(R.string.select_rack))
             resultForRackSelect.launch(intent)
         }
@@ -367,7 +370,8 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         val data = it?.data
         try {
             if (it?.resultCode == RESULT_OK && data != null) {
-                warehouseArea = data.getParcelableExtra(LocationSelectActivity.ARG_LOCATION)
+                warehouseArea =
+                    Parcels.unwrap<WarehouseArea>(data.getParcelableExtra(LocationSelectActivity.ARG_WAREHOUSE_AREA))
                 setAreaText()
                 onFilterChanged()
             }
@@ -381,7 +385,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         val data = it?.data
         try {
             if (it?.resultCode == RESULT_OK && data != null) {
-                rack = data.getParcelableExtra(LocationSelectActivity.ARG_LOCATION)
+                rack = Parcels.unwrap<Rack>(data.getParcelableExtra(LocationSelectActivity.ARG_RACK))
                 setRackText()
                 onFilterChanged()
             }
@@ -409,7 +413,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         val data = it?.data
         try {
             if (it?.resultCode == RESULT_OK && data != null) {
-                warehouse = data.getParcelableExtra(LocationSelectActivity.ARG_LOCATION)
+                warehouse = Parcels.unwrap<Warehouse>(data.getParcelableExtra(LocationSelectActivity.ARG_WAREHOUSE))
                 setWarehouseText()
                 onFilterChanged()
             }

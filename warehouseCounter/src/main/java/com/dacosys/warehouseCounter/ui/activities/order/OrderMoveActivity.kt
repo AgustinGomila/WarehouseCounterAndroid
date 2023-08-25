@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ui.activities.location
+package com.dacosys.warehouseCounter.ui.activities.order
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -16,16 +16,14 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.widget.EditText
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.BlendModeColorFilterCompat
-import androidx.core.graphics.BlendModeCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsAnimationCompat
@@ -34,26 +32,18 @@ import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.dacosys.imageControl.dto.DocumentContent
-import com.dacosys.imageControl.dto.DocumentContentRequestResult
-import com.dacosys.imageControl.network.common.ProgramData
-import com.dacosys.imageControl.network.download.GetImages.Companion.toDocumentContentList
-import com.dacosys.imageControl.network.webService.WsFunction
-import com.dacosys.imageControl.room.dao.ImageCoroutines
-import com.dacosys.imageControl.ui.activities.ImageControlCameraActivity
-import com.dacosys.imageControl.ui.activities.ImageControlGridActivity
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeParam
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.PrintOps
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.*
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderMovePayload
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.ktor.v2.functions.*
-import com.dacosys.warehouseCounter.ktor.v2.functions.location.*
+import com.dacosys.warehouseCounter.ktor.v2.functions.order.GetOrder
+import com.dacosys.warehouseCounter.ktor.v2.functions.order.MoveOrder
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
@@ -64,11 +54,11 @@ import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.ui.activities.item.CheckItemCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
-import com.dacosys.warehouseCounter.ui.adapter.location.LocationAdapter
+import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
-import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
+import com.dacosys.warehouseCounter.ui.fragments.order.DestinationHeaderFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -79,11 +69,10 @@ import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import java.util.*
 import kotlin.concurrent.thread
 
-class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
+class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
-    SelectFilterFragment.OnFilterLocationChangedListener, LocationAdapter.CheckedChangedListener,
-    PrintLabelFragment.FragmentListener, LocationAdapter.DataSetChangedListener,
-    LocationAdapter.AddPhotoRequiredListener, LocationAdapter.AlbumViewRequiredListener,
+    SelectFilterFragment.OnFilterOrderChangedListener, OrderAdapter.CheckedChangedListener,
+    DestinationHeaderFragment.LocationChangedListener, OrderAdapter.DataSetChangedListener,
     SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
     override fun onDestroy() {
         destroyLocals()
@@ -100,10 +89,9 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         }
 
         adapter?.refreshListeners()
-        adapter?.refreshImageControlListeners()
 
         filterFragment.onDestroy()
-        printLabelFragment.onDestroy()
+        destinationHeader.onDestroy()
         summaryFragment.onDestroy()
         searchTextFragment.onDestroy()
     }
@@ -126,12 +114,12 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     private var showSelectButton = true
 
     private var multiSelect = false
-    private var adapter: LocationAdapter? = null
-    private var lastSelected: Location? = null
+    private var adapter: OrderAdapter? = null
+    private var lastSelected: OrderResponse? = null
     private var firstVisiblePos: Int? = null
     private var currentScrollPosition: Int = 0
 
-    private var completeList: ArrayList<Location> = ArrayList()
+    private var completeList: ArrayList<OrderResponse> = ArrayList()
     private var checkedHashArray: ArrayList<Int> = ArrayList()
 
     // Se usa para saber si estamos en onStart luego de onCreate
@@ -142,12 +130,9 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
     private var hideFilterPanel = false
 
-    private val menuItemShowImages = 9999
-    private var showImages
-        get() = settingViewModel.itemSelectShowImages
-        set(value) {
-            settingViewModel.itemSelectShowImages = value
-        }
+    // Destination
+    private var warehouseArea: WarehouseArea? = null
+    private var rack: Rack? = null
 
     private var showCheckBoxes
         get() =
@@ -162,18 +147,18 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             return adapter?.countChecked() ?: 0
         }
 
-    private val allChecked: ArrayList<Location>
+    private val allChecked: ArrayList<OrderResponse>
         get() {
             return adapter?.getAllChecked() ?: arrayListOf()
         }
 
-    private val currentItem: Location?
+    private val currentItem: OrderResponse?
         get() {
             return adapter?.currentItem()
         }
 
     private lateinit var filterFragment: SelectFilterFragment
-    private lateinit var printLabelFragment: PrintLabelFragment
+    private lateinit var destinationHeader: DestinationHeaderFragment
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
@@ -189,6 +174,9 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         b.putBoolean(ARG_MULTI_SELECT, multiSelect)
         b.putBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
 
+        b.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
+        b.putParcelable(ARG_RACK, rack)
+
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
         b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
 
@@ -203,11 +191,14 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
     private fun loadBundleValues(b: Bundle) {
         tempTitle = b.getString(ARG_TITLE) ?: ""
-        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
+        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.move_order)
 
         showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, multiSelect)
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
+
+        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
+        rack = b.getParcelable(ARG_RACK)
 
         panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
         panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
@@ -222,11 +213,14 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
     private fun loadExtrasBundleValues(b: Bundle) {
         tempTitle = b.getString(ARG_TITLE) ?: ""
-        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
+        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.move_order)
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
         showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, true)
+
+        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
+        rack = b.getParcelable(ARG_RACK)
     }
 
     private lateinit var binding: ItemPrintLabelActivityTopPanelCollapsedBinding
@@ -252,7 +246,8 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         fillRequired = true
 
         filterFragment = supportFragmentManager.findFragmentById(R.id.filterFragment) as SelectFilterFragment
-        printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
+        destinationHeader =
+            supportFragmentManager.findFragmentById(R.id.destinationHeaderFragment) as DestinationHeaderFragment
         summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
         searchTextFragment = supportFragmentManager.findFragmentById(R.id.searchTextFragment) as SearchTextFragment
 
@@ -266,9 +261,12 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
         binding.topAppbar.title = tempTitle
 
+        // We change the title of the select button
+        binding.okButton.text = context.getString(R.string.move)
+
         setupFilterFragment()
         setupSearchTextFragment()
-        setupPrintLabelFragment()
+        setupDestinationHeaderFragment()
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
         binding.swipeRefreshItem.setColorSchemeResources(
@@ -282,7 +280,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         setBottomPanelAnimation()
         setTopPanelAnimation()
 
-        binding.okButton.setOnClickListener { itemSelect() }
+        binding.okButton.setOnClickListener { askForMoveConfirmation() }
 
         // OCULTAR PANEL DE CONTROLES DE FILTRADO
         if (hideFilterPanel) {
@@ -300,9 +298,23 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         Screen.setupUI(binding.root, this)
     }
 
-    private fun setupPrintLabelFragment() {
-        binding.printFragment.visibility = View.VISIBLE
-        printLabelFragment.setListener(this)
+    private fun setupDestinationHeaderFragment() {
+        binding.destinationHeaderFragment.visibility = VISIBLE
+        setDestinationHeaderTextBox(warehouseArea, rack)
+    }
+
+    private fun setDestinationHeaderTextBox(wa: WarehouseArea?, r: Rack?) {
+        destinationHeader.setChangeLocationListener(this)
+        destinationHeader.showChangePostButton(true)
+        destinationHeader.setTitle(getString(R.string.destination))
+
+        runOnUiThread {
+            if (r != null) {
+                destinationHeader.setDestination(r)
+            } else if (wa != null) {
+                destinationHeader.setDestination(wa)
+            }
+        }
     }
 
     private fun setupSearchTextFragment() {
@@ -320,9 +332,9 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         val sr = settingRepository
         filterFragment =
             SelectFilterFragment.Builder()
-                .searchByRack(sv.locationSearchByRack, sr.locationSearchByRack)
-                .searchByArea(sv.locationSearchByArea, sr.locationSearchByArea)
-                .searchByWarehouse(sv.locationSearchByWarehouse, sr.locationSearchByWarehouse)
+                .searchByOrderId(sv.orderSearchByOrderId, sr.orderSearchByOrderId)
+                .searchByOrderExtId(sv.orderSearchByOrderExtId, sr.orderSearchByOrderExtId)
+                .searchByOrderDescription(sv.orderSearchByOrderDescription, sr.orderSearchByOrderDescription)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
@@ -494,7 +506,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             else binding.expandBottomPanelButton?.text = context.getString(R.string.search_options)
 
             if (panelTopIsExpanded) binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
-            else binding.expandTopPanelButton.text = context.getString(R.string.print_labels)
+            else binding.expandTopPanelButton.text = context.getString(R.string.destination)
 
             refreshTextViews()
         }
@@ -569,13 +581,13 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             nextLayout.applyTo(binding.root)
 
             if (panelTopIsExpanded) binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
-            else binding.expandTopPanelButton.text = context.getString(R.string.print_labels)
+            else binding.expandTopPanelButton.text = context.getString(R.string.destination)
         }
     }
 
     private fun refreshTextViews() {
         runOnUiThread {
-            if (panelTopIsExpanded) printLabelFragment.refreshViews()
+            if (panelTopIsExpanded) destinationHeader.refreshViews()
             if (panelBottomIsExpanded) filterFragment.refreshViews()
         }
     }
@@ -586,45 +598,85 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         }, 20)
     }
 
-    private fun itemSelect() {
+    private fun askForMoveConfirmation() {
         closeKeyboard(this)
+        if (adapter == null) return
 
-        if (adapter != null) {
-            val data = Intent()
-
-            val item = currentItem
-            val countChecked = countChecked
-            var itemArray: ArrayList<Location> = ArrayList()
-
-            if (!multiSelect && item != null) {
-                data.putParcelableArrayListExtra(ARG_LOCATIONS, arrayListOf(item))
-                setResult(RESULT_OK, data)
-            } else if (multiSelect) {
-                if (countChecked > 0 || item != null) {
-                    if (countChecked > 0) itemArray = allChecked
-                    else if (adapter?.showCheckBoxes == false) {
-                        itemArray = arrayListOf(item!!)
-                    }
-
-                    data.putParcelableArrayListExtra(ARG_LOCATIONS, itemArray.map { it } as ArrayList<Location>)
-                    setResult(RESULT_OK, data)
-                } else {
-                    setResult(RESULT_CANCELED)
-                }
-            } else {
-                setResult(RESULT_CANCELED)
-            }
-        } else {
-            setResult(RESULT_CANCELED)
+        val wa = destinationHeader.warehouseArea
+        val r = destinationHeader.rack
+        if (wa == null) {
+            showSnackBar(SnackBarEventData(getString(R.string.you_must_select_a_destination), ERROR))
+            return
         }
 
-        isFinishingByUser = true
-        finish()
+        val item = currentItem
+        val countChecked = countChecked
+        var itemArray: ArrayList<OrderResponse> = ArrayList()
+
+        if (!multiSelect && item != null) {
+            itemArray = arrayListOf(item)
+        } else if (multiSelect) {
+            if (countChecked > 0 || item != null) {
+                if (countChecked > 0) itemArray = allChecked
+                else if (adapter?.showCheckBoxes == false) {
+                    itemArray = arrayListOf(item!!)
+                }
+                itemArray.map { it } as ArrayList<OrderResponse>
+            }
+        }
+
+        if (!itemArray.any()) {
+            showSnackBar(SnackBarEventData(getString(R.string.you_must_select_at_least_one_order), ERROR))
+            return
+        }
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(context.getString(R.string.confirm_movement))
+        builder.setMessage(getString(R.string.are_you_sure_to_move_the_selected_orders))
+        builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
+            moveOrder(itemArray, wa, r)
+            dialogInterface.dismiss()
+        }
+        builder.setNegativeButton(getString(R.string.no)) { dialogInterface, _ ->
+            dialogInterface.dismiss()
+        }
+        val dialog = builder.create()
+        dialog.show()
     }
 
-    private fun getLocations() {
-        if (!filterFragment.validFilters()) {
-            fillAdapter(ArrayList())
+    private fun moveOrder(itemArray: List<OrderResponse>, wa: WarehouseArea, r: Rack?) {
+        for ((index, or) in itemArray.withIndex()) {
+            val payload = getPayload(or, wa, r)
+            MoveOrder(
+                order = payload,
+                onFinish = {
+                    if (index == itemArray.lastIndex) {
+                        isFinishingByUser = true
+                        finish()
+                    }
+                }
+            ).execute()
+        }
+    }
+
+    private fun getPayload(or: OrderResponse, wa: WarehouseArea, r: Rack?): OrderMovePayload {
+        val payload = OrderMovePayload().apply {
+            orderRequestId = or.id
+            warehouseAreaId = wa.id
+            orderExternalId = or.externalId
+            orderPackageExternalId = ""
+            orderPackageCode = ""
+            orderDescription = or.description
+            warehouseAreaExternalId = wa.externalId
+            rackExternalId = r?.extId ?: ""
+        }
+        return payload
+    }
+
+    private fun getOrders() {
+        val filter = filterFragment.getFilters()
+        if (!filter.any()) {
+            showProgressBar(false)
             return
         }
 
@@ -632,55 +684,23 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         // filter.add(ApiFilterParam(EXTENSION_PAGE_NUMBER, pageNum.toString()))
 
         try {
-            Log.d(this::class.java.simpleName, "Selecting racks...")
+            Log.d(this::class.java.simpleName, "Selecting orders...")
 
-            val rack = filterFragment.rack
-            val wa = filterFragment.warehouseArea
-            val w = filterFragment.warehouse
-
-            if (rack != null) {
-                ViewRack(
-                    id = rack.locationId,
-                    action = ViewRack.defaultAction,
-                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
-                    onFinish = {
-                        val list: ArrayList<Location> = arrayListOf()
-                        if (it != null) list.add(it)
-                        fillAdapter(list)
-                    }
-                ).execute()
-            } else if (wa != null) {
-                ViewWarehouseArea(
-                    id = wa.locationId,
-                    action = ViewWarehouseArea.defaultAction,
-                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
-                    onFinish = {
-                        val list: ArrayList<Location> = arrayListOf()
-                        if (it != null) list.add(it)
-                        fillAdapter(list)
-                    }
-                ).execute()
-            } else if (w != null) {
-                ViewWarehouse(
-                    id = w.locationId,
-                    action = ViewWarehouse.defaultAction,
-                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
-                    onFinish = {
-                        val list: ArrayList<Location> = arrayListOf()
-                        if (it != null) list.add(it)
-                        fillAdapter(list)
-                    }
-                ).execute()
-            } else {
-                showProgressBar(false)
-            }
+            GetOrder(
+                filter = filter,
+                action = GetOrder.defaultAction,
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                onFinish = {
+                    fillAdapter(ArrayList(it))
+                }
+            ).execute()
         } catch (ex: java.lang.Exception) {
             ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
             showProgressBar(false)
         }
     }
 
-    private fun fillAdapter(t: ArrayList<Location>) {
+    private fun fillAdapter(t: ArrayList<OrderResponse>) {
         showProgressBar(true)
 
         completeList = t
@@ -694,18 +714,15 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                     lastSelected = currentItem
                 }
 
-                adapter = LocationAdapter.Builder()
+                adapter = OrderAdapter.Builder()
                     .recyclerView(binding.recyclerView)
                     .fullList(completeList)
                     .checkedHashArray(checkedHashArray)
                     .multiSelect(multiSelect)
                     .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
-                    .showImages(`val` = showImages, listener = { showImages = it })
                     .filterOptions(FilterOptions(searchTextFragment.searchText))
                     .checkedChangedListener(this)
                     .dataSetChangedListener(this)
-                    .addPhotoRequiredListener(this)
-                    .albumViewRequiredListener(this)
                     .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
@@ -779,19 +796,19 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
-            makeText(binding.root, res, ERROR)
+            showSnackBar(SnackBarEventData(res, ERROR))
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
         }
 
         JotterListener.lockScanner(this, true)
 
-        // TODO: Escaneado para racks y áreas
+        // TODO: Escaneado para pedidos
         // CheckItemCode(callback = { onCheckCodeEnded(it) },
         //     scannedCode = scanCode,
         //     list = adapter?.fullList ?: ArrayList(),
@@ -823,21 +840,6 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
-        // Opción de visibilidad de Imágenes
-        if (settingViewModel.useImageControl) {
-            menu.add(Menu.NONE, menuItemShowImages, Menu.NONE, context.getString(R.string.show_images))
-                .setChecked(showImages).isCheckable = true
-            val item = menu.findItem(menuItemShowImages)
-            if (showImages)
-                item.icon = ContextCompat.getDrawable(context, R.drawable.ic_photo_library)
-            else
-                item.icon = ContextCompat.getDrawable(context, R.drawable.ic_hide_image)
-            item.icon?.mutate()?.colorFilter =
-                BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                    getColor(R.color.dimgray), BlendModeCompat.SRC_IN
-                )
-        }
-
         if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
             menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
@@ -852,7 +854,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         binding.topAppbar.overflowIcon = drawable
 
         // Opciones de visibilidad del menú
-        val allControls = SettingsRepository.getAllSelectLocationVisibleControls()
+        val allControls = SettingsRepository.getAllSelectOrderVisibleControls()
         val visibleFilters = filterFragment.getVisibleFilters()
         allControls.forEach { p ->
             menu.add(0, p.key.hashCode(), menu.size(), p.description)
@@ -917,7 +919,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
             menuItemRandomOnListL -> {
                 val codes: ArrayList<String> = ArrayList()
-                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.locationExternalId }
+                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.externalId }
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
@@ -938,31 +940,19 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         item.isChecked = !item.isChecked
         val sv = settingViewModel
         when (id) {
-            menuItemShowImages -> {
-                adapter?.showImages(item.isChecked)
-                if (item.isChecked)
-                    item.icon = ContextCompat.getDrawable(context, R.drawable.ic_photo_library)
-                else
-                    item.icon = ContextCompat.getDrawable(context, R.drawable.ic_hide_image)
-                item.icon?.mutate()?.colorFilter =
-                    BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                        getColor(R.color.dimgray), BlendModeCompat.SRC_IN
-                    )
+            settingRepository.orderSearchByOrderId.key.hashCode() -> {
+                filterFragment.setOrderIdVisibility(if (item.isChecked) VISIBLE else GONE)
+                sv.orderSearchByOrderId = item.isChecked
             }
 
-            settingRepository.locationSearchByWarehouse.key.hashCode() -> {
-                filterFragment.setWarehouseVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.locationSearchByWarehouse = item.isChecked
+            settingRepository.orderSearchByOrderExtId.key.hashCode() -> {
+                filterFragment.setOrderExtIdVisibility(if (item.isChecked) VISIBLE else GONE)
+                sv.orderSearchByOrderExtId = item.isChecked
             }
 
-            settingRepository.locationSearchByArea.key.hashCode() -> {
-                filterFragment.setAreaVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.locationSearchByArea = item.isChecked
-            }
-
-            settingRepository.locationSearchByRack.key.hashCode() -> {
-                filterFragment.setRackVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.locationSearchByRack = item.isChecked
+            settingRepository.orderSearchByOrderDescription.key.hashCode() -> {
+                filterFragment.setDescriptionVisibility(if (item.isChecked) VISIBLE else GONE)
+                sv.orderSearchByOrderDescription = item.isChecked
             }
 
             else -> return super.onOptionsItemSelected(item)
@@ -988,16 +978,11 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         }
     }
 
-    override fun onFilterChanged(
-        warehouse: Warehouse?,
-        warehouseArea: WarehouseArea?,
-        rack: Rack?,
-        onlyActive: Boolean
-    ) {
+    override fun onFilterChanged(orderId: String, orderExternalId: String, orderDescription: String) {
         closeKeyboard(this)
         thread {
             checkedHashArray.clear()
-            getLocations()
+            getOrders()
         }
     }
 
@@ -1013,7 +998,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         JotterListener.lockScanner(this, false)
 
         // TODO: Filter fragment
-        // val item: Location = it.item ?: return
+        // val item: OrderResponse = it.item ?: return
         // val pos = adapter?.getIndexByHashCode(item.hashCode) ?: NO_POSITION
 
         // if (pos != NO_POSITION) {
@@ -1028,90 +1013,12 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         // }
     }
 
-    override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {}
-
-    override fun onPrintRequested(printer: String, qty: Int) {
-        val template = printLabelFragment.template
-        if (template == null) {
-            showSnackBar(SnackBarEventData(context.getString(R.string.you_must_select_a_template), ERROR))
-            return
-        }
-        val printOps = PrintOps.getPrintOps()
-
-        /** Acá seleccionamos siguiendo estos criterios:
-         *
-         * Si NO es multiSelect tomamos el ítem seleccionado de forma simple.
-         *
-         * Si es multiSelect nos fijamos que o bien estén marcados algunos ítems o
-         * bien tengamos un ítem seleccionado de forma simple.
-         *
-         * Si es así, vamos a devolver los ítems marcados si existen como prioridad.
-         *
-         * Si no, nos fijamos que NO sean visibles los CheckBoxes, esto quiere
-         * decir que el usuario está seleccionado el ítem de forma simple y
-         * devolvemos este ítem.
-         *
-         **/
-        val item = currentItem
-        val countChecked = countChecked
-        var itemArray: ArrayList<Location> = ArrayList()
-
-        if (!multiSelect && item != null) {
-            itemArray = arrayListOf(item)
-        } else if (multiSelect) {
-            if (countChecked > 0) itemArray = allChecked
-            else if (adapter?.showCheckBoxes == false && item != null) {
-                itemArray = arrayListOf(item)
-            }
-        }
-
-        val rs = itemArray.mapNotNull { if (it.locationType == LocationType.RACK) it else null }.toList()
-        val was = itemArray.mapNotNull { if (it.locationType == LocationType.WAREHOUSE_AREA) it else null }.toList()
-
-        if (rs.any()) {
-            val ids = ArrayList(rs.map { it.locationId })
-            GetRackBarcode(
-                param = BarcodeParam(
-                    idList = ids,
-                    templateId = template.templateId,
-                    printOps = printOps
-                ),
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
-                onFinish = {
-                    printLabelFragment.printBarcodes(it)
-                }
-            )
-        } else if (was.any()) {
-            val ids = ArrayList(was.map { it.locationId })
-            GetWarehouseAreaBarcode(
-                param = BarcodeParam(
-                    idList = ids,
-                    templateId = template.templateId,
-                    printOps = printOps
-                ),
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
-                onFinish = {
-                    printLabelFragment.printBarcodes(it)
-                }
-            )
-        }
-    }
-
-    override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {
-        printQtyIsFocused = hasFocus
-        if (hasFocus) {
-            /*
-            TODO Transición suave de teclado.
-            Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
-            Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
-            el teclado cambiará de tipo y puede tener una altura diferente.
-            Esto no dispara los eventos de animación del teclado.
-            Colapsar los paneles y reajustar el Layout al final es la solución temporal.
-            */
-            panelBottomIsExpanded = false
-            panelTopIsExpanded = true
-            setPanels()
-        }
+    override fun onLocationChanged(
+        warehouse: Warehouse?,
+        warehouseArea: WarehouseArea?,
+        rack: Rack?,
+    ) {
+        closeKeyboard(this)
     }
 
     override fun onDataSetChanged() {
@@ -1142,122 +1049,13 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     }
     //endregion READERS Reception
 
-    //region ImageControl
-    override fun onAddPhotoRequired(tableId: Int, itemId: Long, description: String) {
-        if (!settingViewModel.useImageControl) {
-            return
-        }
-
-        if (!rejectNewInstances) {
-            rejectNewInstances = true
-
-            val intent = Intent(this, ImageControlCameraActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra(ImageControlCameraActivity.ARG_PROGRAM_OBJECT_ID, tableId.toLong())
-            intent.putExtra(ImageControlCameraActivity.ARG_OBJECT_ID_1, itemId.toString())
-            intent.putExtra(ImageControlCameraActivity.ARG_DESCRIPTION, description)
-            intent.putExtra(ImageControlCameraActivity.ARG_ADD_PHOTO, settingViewModel.autoSend)
-            resultForPhotoCapture.launch(intent)
-        }
-    }
-
-    private val resultForPhotoCapture =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            val data = it?.data
-            try {
-                if (it?.resultCode == RESULT_OK && data != null) {
-                    val item = currentItem ?: return@registerForActivityResult
-                    adapter?.updateItem(item, true)
-                }
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-            } finally {
-                rejectNewInstances = false
-            }
-        }
-
-    override fun onAlbumViewRequired(tableId: Int, itemId: Long) {
-        if (!settingViewModel.useImageControl) {
-            return
-        }
-
-        if (rejectNewInstances) return
-        rejectNewInstances = true
-
-        tempObjectId = itemId.toString()
-        tempTableId = tableId
-
-        val programData = ProgramData(
-            programObjectId = tempTableId.toLong(),
-            objId1 = tempObjectId
-        )
-
-        ImageCoroutines().get(programData = programData) {
-            val allLocal = toDocumentContentList(images = it, programData = programData)
-            if (allLocal.isEmpty()) {
-                getFromWebservice()
-            } else {
-                showPhotoAlbum(allLocal)
-            }
-        }
-    }
-
-    private fun getFromWebservice() {
-        WsFunction().documentContentGetBy12(
-            programObjectId = tempTableId,
-            objectId1 = tempObjectId
-        ) { it2 ->
-            if (it2 != null) fillResults(it2)
-            else {
-                makeText(binding.root, getString(R.string.no_images), INFO)
-                rejectNewInstances = false
-            }
-        }
-    }
-
-    private fun showPhotoAlbum(images: ArrayList<DocumentContent> = ArrayList()) {
-        val intent = Intent(this, ImageControlGridActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra(ImageControlGridActivity.ARG_PROGRAM_OBJECT_ID, tempTableId.toLong())
-        intent.putExtra(ImageControlGridActivity.ARG_OBJECT_ID_1, tempObjectId)
-        intent.putExtra(ImageControlGridActivity.ARG_DOC_CONT_OBJ_ARRAY_LIST, images)
-        resultForShowPhotoAlbum.launch(intent)
-    }
-
-    private val resultForShowPhotoAlbum =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            rejectNewInstances = false
-        }
-
-    private var tempObjectId = ""
-    private var tempTableId = 0
-
-    private fun fillResults(docContReqResObj: DocumentContentRequestResult) {
-        if (docContReqResObj.documentContentArray.isEmpty()) {
-            makeText(binding.root, getString(R.string.no_images), INFO)
-            rejectNewInstances = false
-            return
-        }
-
-        val anyAvailable = docContReqResObj.documentContentArray.any { it.available }
-
-        if (!anyAvailable) {
-            makeText(
-                binding.root, getString(R.string.images_not_yet_processed), INFO
-            )
-            rejectNewInstances = false
-            return
-        }
-
-        showPhotoAlbum()
-    }
-    //endregion ImageControl
-
     companion object {
         const val ARG_TITLE = "title"
         const val ARG_MULTI_SELECT = "multiSelect"
         const val ARG_SHOW_SELECT_BUTTON = "showSelectButton"
         const val ARG_HIDE_FILTER_PANEL = "hideFilterPanel"
-        const val ARG_LOCATIONS = "locations"
+
+        const val ARG_WAREHOUSE_AREA = "warehouseArea"
+        const val ARG_RACK = "rack"
     }
 }

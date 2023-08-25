@@ -57,6 +57,7 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.sync.*
 import com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity
 import com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
+import com.dacosys.warehouseCounter.ui.activities.order.OrderMoveActivity
 import com.dacosys.warehouseCounter.ui.activities.orderLocation.OrderLocationSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.NewCountActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity
@@ -393,6 +394,21 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                     intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.order_location))
                     intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, true)
                     intent.putExtra(OrderLocationSelectActivity.ARG_SHOW_SELECT_BUTTON, false)
+                    startActivity(intent)
+                } catch (ex: Exception) {
+                    showSnackBar(SnackBarEventData("Error:" + ex.message, ERROR))
+                }
+            }
+
+            MainButton.MoveOrder -> {
+                if (rejectNewInstances) return
+                rejectNewInstances = true
+                JotterListener.lockScanner(this, true)
+
+                try {
+                    val intent = Intent(context, OrderMoveActivity::class.java)
+                    intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.move_order))
+                    intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, false)
                     startActivity(intent)
                 } catch (ex: Exception) {
                     showSnackBar(SnackBarEventData("Error:" + ex.message, ERROR))

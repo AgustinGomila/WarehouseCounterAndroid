@@ -266,7 +266,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         setupFilterFragment()
         setupSearchTextFragment()
-        setupPrintFragment()
+        setupPrintLabelFragment()
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
         binding.swipeRefreshItem.setColorSchemeResources(
@@ -298,7 +298,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         Screen.setupUI(binding.root, this)
     }
 
-    private fun setupPrintFragment() {
+    private fun setupPrintLabelFragment() {
+        binding.printFragment.visibility = View.VISIBLE
         printLabelFragment.setListener(this)
     }
 

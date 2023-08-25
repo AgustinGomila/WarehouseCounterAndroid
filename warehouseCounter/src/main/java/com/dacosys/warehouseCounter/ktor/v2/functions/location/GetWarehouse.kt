@@ -7,6 +7,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiActionParam
+import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
@@ -21,7 +22,8 @@ class GetWarehouse
  * @property onEvent Event to update the state of the UI according to the progress of the operation.
  * @property onFinish If the operation is successful it returns a list of [Warehouse]
  */(
-    private val action: ArrayList<ApiActionParam>,
+    private val filter: ArrayList<ApiFilterParam> = arrayListOf(),
+    private val action: ArrayList<ApiActionParam> = arrayListOf(),
     private val onEvent: (SnackBarEventData) -> Unit = { },
     private val onFinish: (ArrayList<Warehouse>) -> Unit,
 ) {
@@ -61,12 +63,15 @@ class GetWarehouse
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiServiceV2.getWarehouse(action = action, callback = {
-            if (BuildConfig.DEBUG) Log.d(javaClass.simpleName, it.toString())
-            r = it.items
-            if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
-            else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
-        })
+        ktorApiServiceV2.getWarehouse(
+            filter = filter,
+            action = action,
+            callback = {
+                if (BuildConfig.DEBUG) Log.d(javaClass.simpleName, it.toString())
+                r = it.items
+                if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
+                else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
+            })
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {

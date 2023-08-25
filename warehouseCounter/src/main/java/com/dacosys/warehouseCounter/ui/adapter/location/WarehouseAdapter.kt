@@ -24,7 +24,7 @@ class WarehouseAdapter(
     private var activity: AppCompatActivity,
     private var resource: Int,
     private var warehouseArray: ArrayList<Warehouse>,
-    private var suggestedList: ArrayList<Warehouse>
+    private var suggestedList: ArrayList<Warehouse> = ArrayList(),
 ) : ArrayAdapter<Warehouse>(WarehouseCounterApp.context, resource, suggestedList), Filterable {
 
     private var dataSetChangedListener: DataSetChangedListener? = null

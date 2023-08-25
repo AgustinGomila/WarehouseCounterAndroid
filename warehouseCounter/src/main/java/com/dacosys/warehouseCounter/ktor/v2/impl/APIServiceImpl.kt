@@ -46,10 +46,16 @@ class APIServiceImpl : APIService {
      * @param action List of parameters.
      * @param callback Desired [Rack].
      */
-    override suspend fun viewRack(id: Long, action: ArrayList<ApiActionParam>, callback: (Rack?) -> Unit) {
+    override suspend fun viewRack(
+        id: Long,
+        action: ArrayList<ApiActionParam>,
+        callback: (Rack?) -> Unit
+    ) {
         callback(
             apiRequest.view<Rack>(
-                objPath = RACK_PATH, id = id, action = action
+                objPath = RACK_PATH,
+                id = id,
+                action = action,
             )
         )
     }
@@ -57,16 +63,24 @@ class APIServiceImpl : APIService {
     /**
      * Get a [ListResponse]<[Rack]> through a callback
      *
+     * @param filter List of filters
      * @param action List of parameters
      * @param callback Request callback
      *
      * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/rack/)
      * [index GET](http://localhost:8002/v2/rack/)
      */
-    override suspend fun getRack(action: ArrayList<ApiActionParam>, callback: (ListResponse<Rack>) -> Unit) {
+    override suspend fun getRack(
+        filter: ArrayList<ApiFilterParam>,
+        action: ArrayList<ApiActionParam>,
+        callback: (ListResponse<Rack>) -> Unit
+    ) {
         callback(
             apiRequest.getListOf<Rack>(
-                objPath = RACK_PATH, listName = Rack.RACK_LIST_KEY, action = action
+                objPath = RACK_PATH,
+                listName = Rack.RACK_LIST_KEY,
+                action = action,
+                filter = filter,
             )
         )
     }
@@ -83,7 +97,8 @@ class APIServiceImpl : APIService {
     override suspend fun getRackBarcode(params: BarcodeParam, callback: (List<Barcode>) -> Unit) {
         callback(
             apiRequest.getBarcodeOf(
-                objPath = RACK_PATH, params = params
+                objPath = RACK_PATH,
+                params = params
             )
         )
     }
@@ -102,7 +117,9 @@ class APIServiceImpl : APIService {
     ) {
         callback(
             apiRequest.view<WarehouseArea>(
-                objPath = WAREHOUSE_AREA_PATH, id = id, action = action
+                objPath = WAREHOUSE_AREA_PATH,
+                id = id,
+                action = action,
             )
         )
     }
@@ -110,6 +127,7 @@ class APIServiceImpl : APIService {
     /**
      * Get a [ListResponse]<[WarehouseArea]> through a callback
      *
+     * @param filter List of filters
      * @param action List of parameters
      * @param callback Request callback
      *
@@ -117,11 +135,16 @@ class APIServiceImpl : APIService {
      * [index GET](http://localhost:8002/v2/warehouse_area/)
      */
     override suspend fun getWarehouseArea(
-        action: ArrayList<ApiActionParam>, callback: (ListResponse<WarehouseArea>) -> Unit,
+        filter: ArrayList<ApiFilterParam>,
+        action: ArrayList<ApiActionParam>,
+        callback: (ListResponse<WarehouseArea>) -> Unit,
     ) {
         callback(
             apiRequest.getListOf<WarehouseArea>(
-                objPath = WAREHOUSE_AREA_PATH, listName = WarehouseArea.WAREHOUSE_AREA_LIST_KEY, action = action
+                objPath = WAREHOUSE_AREA_PATH,
+                listName = WarehouseArea.WAREHOUSE_AREA_LIST_KEY,
+                action = action,
+                filter = filter,
             )
         )
     }
@@ -138,7 +161,8 @@ class APIServiceImpl : APIService {
     override suspend fun getWarehouseAreaBarcode(params: BarcodeParam, callback: (List<Barcode>) -> Unit) {
         callback(
             apiRequest.getBarcodeOf(
-                objPath = WAREHOUSE_AREA_PATH, params = params
+                objPath = WAREHOUSE_AREA_PATH,
+                params = params
             )
         )
     }
@@ -155,7 +179,8 @@ class APIServiceImpl : APIService {
     override suspend fun getWarehouseAreaBarcodeByCode(params: BarcodeCodeParam, callback: (List<Barcode>) -> Unit) {
         callback(
             apiRequest.getBarcodeByCodeOf(
-                objPath = WAREHOUSE_AREA_PATH, params = params
+                objPath = WAREHOUSE_AREA_PATH,
+                params = params
             )
         )
     }
@@ -167,10 +192,16 @@ class APIServiceImpl : APIService {
      * @param action List of parameters.
      * @param callback Desired [Warehouse].
      */
-    override suspend fun viewWarehouse(id: Long, action: ArrayList<ApiActionParam>, callback: (Warehouse?) -> Unit) {
+    override suspend fun viewWarehouse(
+        id: Long,
+        action: ArrayList<ApiActionParam>,
+        callback: (Warehouse?) -> Unit
+    ) {
         callback(
             apiRequest.view<Warehouse>(
-                objPath = WAREHOUSE_PATH, id = id, action = action
+                objPath = WAREHOUSE_PATH,
+                id = id,
+                action = action,
             )
         )
     }
@@ -178,16 +209,24 @@ class APIServiceImpl : APIService {
     /**
      * Get a [ListResponse]<[Warehouse]> through a callback
      *
+     * @param filter List of filters
      * @param action List of parameters
      * @param callback Request callback
      *
      * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/warehouse/)
      * [index GET](http://localhost:8002/v2/warehouse/)
      */
-    override suspend fun getWarehouse(action: ArrayList<ApiActionParam>, callback: (ListResponse<Warehouse>) -> Unit) {
+    override suspend fun getWarehouse(
+        filter: ArrayList<ApiFilterParam>,
+        action: ArrayList<ApiActionParam>,
+        callback: (ListResponse<Warehouse>) -> Unit
+    ) {
         callback(
             apiRequest.getListOf<Warehouse>(
-                objPath = WAREHOUSE_PATH, listName = Warehouse.WAREHOUSE_LIST_KEY, action = action
+                objPath = WAREHOUSE_PATH,
+                listName = Warehouse.WAREHOUSE_LIST_KEY,
+                action = action,
+                filter = filter,
             )
         )
     }
@@ -200,13 +239,14 @@ class APIServiceImpl : APIService {
      * @param callback Desired [BarcodeLabelTemplate].
      */
     override suspend fun viewBarcodeLabelTemplate(
-        id: Long,
-        action: ArrayList<ApiActionParam>,
+        id: Long, action: ArrayList<ApiActionParam>,
         callback: (BarcodeLabelTemplate?) -> Unit
     ) {
         callback(
             apiRequest.view<BarcodeLabelTemplate>(
-                objPath = BARCODE_LABEL_TEMPLATE_PATH, id = id, action = action
+                objPath = BARCODE_LABEL_TEMPLATE_PATH,
+                id = id,
+                action = action,
             )
         )
     }
@@ -214,6 +254,7 @@ class APIServiceImpl : APIService {
     /**
      * Get a [ListResponse]<[BarcodeLabelTemplate]> through a callback
      *
+     * @param filter List of filters
      * @param action List of parameters
      * @param callback Request callback
      *
@@ -221,14 +262,15 @@ class APIServiceImpl : APIService {
      * [POST](http://localhost:8002/v2/rack/barcode-label-template)
      */
     override suspend fun getBarcodeLabelTemplate(
-        action: ArrayList<ApiActionParam>,
+        filter: ArrayList<ApiFilterParam>, action: ArrayList<ApiActionParam>,
         callback: (ListResponse<BarcodeLabelTemplate>) -> Unit
     ) {
         callback(
             apiRequest.getListOf<BarcodeLabelTemplate>(
                 objPath = BARCODE_LABEL_TEMPLATE_PATH,
                 listName = BarcodeLabelTemplate.BARCODE_LABEL_TEMPLATE_LIST_KEY,
-                action = action
+                action = action,
+                filter = filter,
             )
         )
     }
@@ -240,10 +282,16 @@ class APIServiceImpl : APIService {
      * @param action List of parameters.
      * @param callback Desired [OrderResponse].
      */
-    override suspend fun viewOrder(id: Long, action: ArrayList<ApiActionParam>, callback: (OrderResponse?) -> Unit) {
+    override suspend fun viewOrder(
+        id: Long,
+        action: ArrayList<ApiActionParam>,
+        callback: (OrderResponse?) -> Unit
+    ) {
         callback(
             apiRequest.view<OrderResponse>(
-                objPath = ORDER_PATH, id = id, action = action
+                objPath = ORDER_PATH,
+                id = id,
+                action = action,
             )
         )
     }
@@ -258,7 +306,10 @@ class APIServiceImpl : APIService {
      */
     override suspend fun createOrder(payload: OrderRequest, callback: (OrderResponse) -> Unit) {
         callback(
-            apiRequest.create<OrderResponse>(objPath = ORDER_PATH, payload = payload)
+            apiRequest.create<OrderResponse>(
+                objPath = ORDER_PATH,
+                payload = payload
+            )
         )
     }
 
@@ -296,7 +347,7 @@ class APIServiceImpl : APIService {
                 objPath = ORDER_PATH,
                 listName = OrderResponse.ORDER_RESPONSE_LIST_KEY,
                 action = action,
-                filter = filter
+                filter = filter,
             )
         )
     }
@@ -313,7 +364,8 @@ class APIServiceImpl : APIService {
     override suspend fun getOrderBarcode(params: BarcodeParam, callback: (List<Barcode>) -> Unit) {
         callback(
             apiRequest.getBarcodeOf(
-                objPath = ORDER_PATH, params = params
+                objPath = ORDER_PATH,
+                params = params
             )
         )
     }
@@ -321,6 +373,7 @@ class APIServiceImpl : APIService {
     /**
      * Get a [ListResponse]<[OrderPackage]> through a callback
      *
+     * @param filter List of filters
      * @param action List of parameters
      * @param callback Request callback
      *
@@ -328,11 +381,16 @@ class APIServiceImpl : APIService {
      * [index GET](http://localhost:8002/v2/order-package/)
      */
     override suspend fun getOrderPackage(
-        action: ArrayList<ApiActionParam>, callback: (ListResponse<OrderPackage>) -> Unit,
+        filter: ArrayList<ApiFilterParam>,
+        action: ArrayList<ApiActionParam>,
+        callback: (ListResponse<OrderPackage>) -> Unit,
     ) {
         callback(
             apiRequest.getListOf<OrderPackage>(
-                objPath = ORDER_PACKAGE_PATH, listName = OrderPackage.ORDER_PACKAGE_LIST_KEY, action = action
+                objPath = ORDER_PACKAGE_PATH,
+                listName = OrderPackage.ORDER_PACKAGE_LIST_KEY,
+                action = action,
+                filter = filter,
             )
         )
     }
@@ -356,10 +414,16 @@ class APIServiceImpl : APIService {
      * @param action List of parameters.
      * @param callback Desired [Item].
      */
-    override suspend fun viewItem(id: Long, action: ArrayList<ApiActionParam>, callback: (Item?) -> Unit) {
+    override suspend fun viewItem(
+        id: Long,
+        action: ArrayList<ApiActionParam>,
+        callback: (Item?) -> Unit
+    ) {
         callback(
             apiRequest.view<Item>(
-                objPath = ITEM_PATH, id = id, action = action
+                objPath = ITEM_PATH,
+                id = id,
+                action = action,
             )
         )
     }
@@ -367,6 +431,7 @@ class APIServiceImpl : APIService {
     /**
      * Get a [ListResponse]<[Item]> through a callback
      *
+     * @param filter List of filters
      * @param action List of parameters
      * @param callback Request callback
      *
@@ -374,11 +439,14 @@ class APIServiceImpl : APIService {
      * [index GET](http://localhost:8002/v2/item/)
      */
     override suspend fun getItem(
-        action: ArrayList<ApiActionParam>, callback: (ListResponse<Item>) -> Unit,
+        filter: ArrayList<ApiFilterParam>, action: ArrayList<ApiActionParam>, callback: (ListResponse<Item>) -> Unit,
     ) {
         callback(
             apiRequest.getListOf<Item>(
-                objPath = ITEM_PATH, listName = Item.ITEM_LIST_KEY, action = action
+                objPath = ITEM_PATH,
+                listName = Item.ITEM_LIST_KEY,
+                action = action,
+                filter = filter,
             )
         )
     }
@@ -395,7 +463,8 @@ class APIServiceImpl : APIService {
     override suspend fun getItemBarcode(params: BarcodeParam, callback: (List<Barcode>) -> Unit) {
         callback(
             apiRequest.getBarcodeOf(
-                objPath = ITEM_PATH, params = params
+                objPath = ITEM_PATH,
+                params = params
             )
         )
     }
@@ -412,7 +481,8 @@ class APIServiceImpl : APIService {
     override suspend fun getItemBarcodeByCode(params: BarcodeCodeParam, callback: (List<Barcode>) -> Unit) {
         callback(
             apiRequest.getBarcodeByCodeOf(
-                objPath = ITEM_PATH, params = params
+                objPath = ITEM_PATH,
+                params = params
             )
         )
     }

@@ -164,8 +164,9 @@ class ApiRequest {
      * @return [ListResponse]<[T]>
      */
     suspend inline fun <reified T> getListOf(
-        objPath: String, listName: String,
-        action: ArrayList<ApiActionParam>,
+        objPath: String,
+        listName: String,
+        action: ArrayList<ApiActionParam> = arrayListOf(),
         filter: ArrayList<ApiFilterParam> = arrayListOf()
     ): ListResponse<T> {
         val url = URL(apiUrl)
@@ -529,17 +530,6 @@ class ApiRequest {
         filter: ArrayList<ApiFilterParam>,
     ): List<OrderLocation> {
         val url = URL(apiUrl)
-
-        /** Examples:
-         * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[order_location.order_id]=123
-         * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[order.external_id][like]=10
-         * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[item_id]=10
-         * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[item.external_id][like]=40
-         * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[item.description][like]=sie
-         * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[item.ean][like]=779
-         * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[order_location.rack_id]=2
-         * GET ${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH?filter[order_location.warehouse_area_id]=7
-         */
 
         /** We build the parameters (query actions) */
         val params = Parameters.build {

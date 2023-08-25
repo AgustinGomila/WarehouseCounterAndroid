@@ -735,4 +735,16 @@
     <string name="status_active">Activo</string>
     <string name="status_deactivated">Desactivado</string>
     <string name="status_flashing">Destellando</string>
+    <string name="rack_code">Código de rack</string>
+    <string name="set_destination">Elegir destino</string>
+    <string name="change_position">Cambiar posición</string>
+    <string name="select_destination">Seleccionar destino</string>
+    <string name="capture_barcode">Capturar código</string>
+    <string name="you_must_select_a_destination">Debe seleccionar un destino</string>
+    <string name="move">Mover</string>
+    <string name="you_must_select_an_order">Debe seleccionar un pedido</string>
+    <string name="you_must_select_at_least_one_order">Debe seleccionar al menos un pedido</string>
+    <string name="confirm_movement">Confirmar movimiento</string>
+    <string name="are_you_sure_to_move_the_selected_orders">¿Está seguro de mover los pedidos seleccionados?
+    </string>
 </resources>

@@ -7,13 +7,15 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiActionParam
+import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
 import kotlinx.coroutines.*
 
 class GetWarehouseArea(
-    private val action: ArrayList<ApiActionParam>,
+    private val filter: ArrayList<ApiFilterParam> = arrayListOf(),
+    private val action: ArrayList<ApiActionParam> = arrayListOf(),
     private val onEvent: (SnackBarEventData) -> Unit = { },
     private val onFinish: (ArrayList<WarehouseArea>) -> Unit,
 ) {
@@ -55,6 +57,7 @@ class GetWarehouseArea(
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         ktorApiServiceV2.getWarehouseArea(
+            filter = filter,
             action = action,
             callback = {
                 if (BuildConfig.DEBUG) Log.d(javaClass.simpleName, it.toString())

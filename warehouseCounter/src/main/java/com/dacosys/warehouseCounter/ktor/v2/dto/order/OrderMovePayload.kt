@@ -13,8 +13,8 @@ data class OrderMovePayload(
     @SerialName(ORDER_PACKAGE_EXTERNAL_ID_KEY) var orderPackageExternalId: String? = null,
     @SerialName(ORDER_PACKAGE_CODE_KEY) var orderPackageCode: String? = null,
     @SerialName(ORDER_DESCRIPTION_KEY) var orderDescription: String? = null,
-    @SerialName(WAREHOUSE_AREA_EXTERNAL_ID_KEY) var warehouseAreaExternalID: String? = null,
-    @SerialName(RACK_EXTERNAL_ID_KEY) var rackExternalID: String? = null,
+    @SerialName(WAREHOUSE_AREA_EXTERNAL_ID_KEY) var warehouseAreaExternalId: String? = null,
+    @SerialName(RACK_EXTERNAL_ID_KEY) var rackExternalId: String? = null,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         orderRequestId = parcel.readValue(Long::class.java.classLoader) as? Long,
@@ -23,8 +23,8 @@ data class OrderMovePayload(
         orderPackageExternalId = parcel.readString(),
         orderPackageCode = parcel.readString(),
         orderDescription = parcel.readString(),
-        warehouseAreaExternalID = parcel.readString(),
-        rackExternalID = parcel.readString()
+        warehouseAreaExternalId = parcel.readString(),
+        rackExternalId = parcel.readString()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -34,8 +34,8 @@ data class OrderMovePayload(
         parcel.writeString(orderPackageExternalId)
         parcel.writeString(orderPackageCode)
         parcel.writeString(orderDescription)
-        parcel.writeString(warehouseAreaExternalID)
-        parcel.writeString(rackExternalID)
+        parcel.writeString(warehouseAreaExternalId)
+        parcel.writeString(rackExternalId)
     }
 
     override fun describeContents(): Int {

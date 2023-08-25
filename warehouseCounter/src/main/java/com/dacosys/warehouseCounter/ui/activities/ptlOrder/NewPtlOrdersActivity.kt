@@ -14,7 +14,6 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.NewPtlOrdersBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.LocationType
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.ktor.v2.functions.location.GetWarehouse
@@ -100,8 +99,9 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
         binding.areaTextView.setOnClickListener {
             val intent = Intent(this, LocationSelectActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra(LocationSelectActivity.ARG_LOCATION, warehouseArea)
-            intent.putExtra(LocationSelectActivity.ARG_LOCATION_TYPE, LocationType.WAREHOUSE_AREA)
+            intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_AREA, warehouseArea)
+            intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_VISIBLE, false)
+            intent.putExtra(LocationSelectActivity.ARG_RACK_VISIBLE, false)
             intent.putExtra(LocationSelectActivity.ARG_TITLE, context.getString(R.string.select_area))
             resultForAreaSelect.launch(intent)
         }
@@ -117,8 +117,9 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
         val data = it?.data
         try {
             if (it?.resultCode == RESULT_OK && data != null) {
-                warehouseArea = data.getParcelableExtra(LocationSelectActivity.ARG_LOCATION)
-                    ?: return@registerForActivityResult
+                warehouseArea =
+                    Parcels.unwrap<WarehouseArea>(data.getParcelableExtra(LocationSelectActivity.ARG_WAREHOUSE_AREA))
+                        ?: return@registerForActivityResult
                 setAreaText()
             }
         } catch (ex: Exception) {
