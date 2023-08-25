@@ -278,6 +278,9 @@
         <activity android:name="com.dacosys.warehouseCounter.ui.activities.order.OrderMoveActivity"
                   android:windowSoftInputMode="adjustResize"
                   android:exported="false"/>
+        <activity android:name="com.dacosys.warehouseCounter.ui.activities.order.OrderPackUnpackActivity"
+                  android:windowSoftInputMode="adjustResize"
+                  android:exported="false"/>
         <meta-data
                 android:name="com.google.android.gms.vision.DEPENDENCIES"
                 android:value="barcode"/>

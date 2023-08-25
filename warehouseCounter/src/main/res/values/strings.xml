@@ -748,4 +748,9 @@
     <string name="are_you_sure_to_move_the_selected_orders">¿Está seguro de mover los pedidos seleccionados?
     </string>
     <string name="code_not_found">Código no encontrado</string>
+    <string name="unpack">Desempaquetar</string>
+    <string name="are_you_sure_to_unpack_the_selected_orders">¿Está seguro de desempaquetar los pedidos seleccionados?
+    </string>
+    <string name="confirm_unpacking">Confirmar desempaquetado</string>
+    <string name="order_not_found">Pedido no encontrado</string>
 </resources>

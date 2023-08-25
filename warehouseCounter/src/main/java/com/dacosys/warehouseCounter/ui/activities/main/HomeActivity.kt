@@ -41,7 +41,9 @@ import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.ktor.v2.functions.order.CreateOrder
+import com.dacosys.warehouseCounter.ktor.v2.functions.order.ViewOrder
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.DATE_FORMAT
@@ -58,6 +60,7 @@ import com.dacosys.warehouseCounter.sync.*
 import com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity
 import com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
 import com.dacosys.warehouseCounter.ui.activities.order.OrderMoveActivity
+import com.dacosys.warehouseCounter.ui.activities.order.OrderPackUnpackActivity
 import com.dacosys.warehouseCounter.ui.activities.orderLocation.OrderLocationSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.NewCountActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity
@@ -415,9 +418,49 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 }
             }
 
+            MainButton.PackUnpackOrder -> {
+                if (rejectNewInstances) return
+                rejectNewInstances = true
+                JotterListener.lockScanner(this, true)
+
+                try {
+                    val intent = Intent(context, OrderPackUnpackActivity::class.java)
+                    intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.move_order))
+                    intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, false)
+                    resultForUnpackOrder.launch(intent)
+                } catch (ex: Exception) {
+                    showSnackBar(SnackBarEventData("Error:" + ex.message, ERROR))
+                }
+            }
+
             MainButton.Configuration -> {
                 configApp()
             }
+        }
+    }
+
+    private val resultForUnpackOrder = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                val id = data.getLongExtra(OrderPackUnpackActivity.ARG_REPACK_ORDER_ID, 0L)
+                if (id > 0) {
+                    thread {
+                        ViewOrder(
+                            id = id,
+                            onFinish = { order ->
+                                if (order == null) {
+                                    showSnackBar(SnackBarEventData(getString(R.string.order_not_found), ERROR))
+                                } else {
+                                    repackOrder(order)
+                                }
+                            }).execute()
+                    }
+                }
+            }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         }
     }
 
@@ -480,45 +523,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val client = Parcels.unwrap<Client>(data.getParcelableExtra(NewCountActivity.ARG_CLIENT))
-                    val description = data.getStringExtra(NewCountActivity.ARG_DESCRIPTION)
+                    val description = data.getStringExtra(NewCountActivity.ARG_DESCRIPTION) ?: ""
                     val orderRequestType =
                         Parcels.unwrap<OrderRequestType>(data.getParcelableExtra<OrderRequestType>(NewCountActivity.ARG_ORDER_REQUEST_TYPE))
 
-                    showSnackBar(
-                        SnackBarEventData(
-                            String.format(
-                                getString(R.string.client_description),
-                                client?.name ?: getString(R.string.no_client),
-                                lineSeparator,
-                                description
-                            ), INFO
-                        )
-                    )
-
-                    val orderRequest = OrderRequestRoom(
-                        clientId = client?.clientId ?: 0,
-                        creationDate = DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString(),
-                        description = description ?: "",
-                        orderTypeDescription = orderRequestType.description,
-                        orderTypeId = orderRequestType.id.toInt(),
-                        resultAllowDiff = 1,
-                        resultAllowMod = 1,
-                        resultDiffProduct = 1,
-                        resultDiffQty = 1,
-                        startDate = DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString(),
-                        userId = Statics.currentUserId,
-                    )
-
-                    OrderRequestCoroutines.add(
-                        orderRequest = orderRequest,
-                        onResult = { newId ->
-                            if (newId != null) {
-                                val intent = Intent(context, OrderRequestContentActivity::class.java)
-                                intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
-                                intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, true)
-                                startActivity(intent)
-                            }
-                        })
+                    addOrderRequest(client, description, orderRequestType)
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -527,6 +536,82 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 rejectNewInstances = false
             }
         }
+
+    private fun addOrderRequest(client: Client?, description: String, orderRequestType: OrderRequestType) {
+        showSnackBar(
+            SnackBarEventData(
+                String.format(
+                    getString(R.string.client_description),
+                    client?.name ?: getString(R.string.no_client),
+                    lineSeparator,
+                    description
+                ), INFO
+            )
+        )
+
+        val orderRequest = OrderRequestRoom(
+            clientId = client?.clientId ?: 0,
+            creationDate = DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString(),
+            description = description,
+            orderTypeDescription = orderRequestType.description,
+            orderTypeId = orderRequestType.id.toInt(),
+            resultAllowDiff = 1,
+            resultAllowMod = 1,
+            resultDiffProduct = 1,
+            resultDiffQty = 1,
+            startDate = DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString(),
+            userId = Statics.currentUserId,
+        )
+
+        OrderRequestCoroutines.add(
+            orderRequest = orderRequest,
+            onResult = { newId ->
+                if (newId != null) {
+                    val intent = Intent(context, OrderRequestContentActivity::class.java)
+                    intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
+                    intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, true)
+                    startActivity(intent)
+                }
+            })
+    }
+
+    private fun repackOrder(order: OrderResponse) {
+        showSnackBar(
+            SnackBarEventData(
+                String.format(
+                    getString(R.string.client_description),
+                    order.clientId ?: getString(R.string.no_client),
+                    lineSeparator,
+                    order.description
+                ), INFO
+            )
+        )
+
+        val orderRequest = OrderRequestRoom(
+            clientId = order.clientId ?: 0,
+            creationDate = order.rowCreationDate,
+            description = order.description,
+            orderTypeDescription = OrderRequestType.packaging.description,
+            orderTypeId = OrderRequestType.packaging.id.toInt(),
+            resultAllowDiff = if (order.resultAllowDiff == true) 1 else 0,
+            resultAllowMod = if (order.resultAllowMod == true) 1 else 0,
+            resultDiffProduct = if (order.resultDiffProduct == true) 1 else 0,
+            resultDiffQty = if (order.resultDiffQty == true) 1 else 0,
+            startDate = order.startDate,
+            userId = Statics.currentUserId,
+        )
+
+        OrderRequestCoroutines.add(
+            orderRequest = orderRequest,
+            onResult = { newId ->
+                if (newId != null) {
+                    val intent = Intent(context, OrderRequestContentActivity::class.java)
+                    intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
+                    intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, true)
+                    startActivity(intent)
+                }
+            })
+    }
 
     private val resultForPendingCount =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -633,7 +718,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 resultForSettings.launch(intent)
             }
         } else {
-            makeText(binding.root, getString(R.string.invalid_password), ERROR)
+            showSnackBar(SnackBarEventData(getString(R.string.invalid_password), ERROR))
         }
     }
 
