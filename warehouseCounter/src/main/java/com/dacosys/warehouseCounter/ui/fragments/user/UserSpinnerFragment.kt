@@ -241,7 +241,6 @@ class UserSpinnerFragment : Fragment() {
     // Se llama cuando el fragmento ya no está asociado a la actividad anfitriona.
     override fun onDetach() {
         super.onDetach()
-
         mListener = null
         mCallback = null
     }

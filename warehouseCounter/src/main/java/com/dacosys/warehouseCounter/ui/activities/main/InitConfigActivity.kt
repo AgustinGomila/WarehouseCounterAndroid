@@ -38,7 +38,6 @@ import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.getConfigFromSc
 import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.selectClientPackage
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
@@ -53,9 +52,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         if (status == ProgressStatus.finished) {
             isConfiguring = false
             showSnackBar(
-                SnackBarEventData(
-                    getString(R.string.configuration_applied), SnackBarType.SUCCESS
-                )
+                getString(R.string.configuration_applied), SnackBarType.SUCCESS
             )
             removeDataBases()
             finish()
@@ -77,24 +74,24 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                         allPackage = result,
                         email = clientEmail,
                         password = clientPassword,
-                        onEventData = { showSnackBar(it) })
+                        onEventData = { showSnackBar(it.text, it.snackBarType) })
                 }
             } else {
                 isConfiguring = false
-                showSnackBar(SnackBarEventData(msg, INFO))
+                showSnackBar(msg, INFO)
             }
         } else if (status == ProgressStatus.success) {
             isConfiguring = false
-            showSnackBar(SnackBarEventData(msg, SnackBarType.SUCCESS))
+            showSnackBar(msg, SnackBarType.SUCCESS)
             finish()
         } else if (status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
             isConfiguring = false
-            showSnackBar(SnackBarEventData(msg, ERROR))
+            showSnackBar(msg, ERROR)
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onTaskSetupProxyEnded(
@@ -303,7 +300,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                 resultForSettings.launch(intent)
             }
         } else {
-            makeText(binding.root, getString(R.string.invalid_password), ERROR)
+            showSnackBar(getString(R.string.invalid_password), ERROR)
         }
     }
 
@@ -313,7 +310,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             JotterListener.autodetectDeviceModel(this)
 
             if (settingViewModel.urlPanel.isEmpty()) {
-                showSnackBar(SnackBarEventData(getString(R.string.server_is_not_configured), ERROR))
+                showSnackBar(getString(R.string.server_is_not_configured), ERROR)
                 return@registerForActivityResult
             }
 
@@ -380,7 +377,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             )
         } catch (ex: Exception) {
             ex.printStackTrace()
-            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
+            showSnackBar(ex.message.toString(), ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial

@@ -24,7 +24,6 @@ import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.bindPreferenceSummaryToValue
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.lang.ref.WeakReference
@@ -124,9 +123,7 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
                 true
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                if (view != null) MakeText.makeText(
-                    requireView(), "${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR
-                )
+                if (view != null) showSnackBar("${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR)
                 ErrorLog.writeLog(null, this::class.java.simpleName, ex)
                 false
             }
@@ -141,8 +138,7 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
             val clientPackage = settingViewModel.clientPackage
 
             if (urlPanel.isEmpty() || installationCode.isEmpty() || clientPackage.isEmpty() || clientEmail.isEmpty() || clientPassword.isEmpty()) {
-                if (view != null) MakeText.makeText(
-                    requireView(),
+                if (view != null) showSnackBar(
                     WarehouseCounterApp.context.getString(R.string.invalid_client_data),
                     SnackBarType.ERROR
                 )
@@ -175,9 +171,7 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
         val updateAppButton = findPreference<Preference>("update_app") as Preference
         updateAppButton.isEnabled = false
         updateAppButton.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            MakeText.makeText(
-                requireView(), getString(R.string.no_available_option), SnackBarType.INFO
-            )
+            showSnackBar(getString(R.string.no_available_option), SnackBarType.INFO)
             true
         }
 
@@ -253,33 +247,33 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
                         allPackage = result,
                         email = clientEmail,
                         password = clientPassword,
-                        onEventData = { showSnackBar(it) })
+                        onEventData = { showSnackBar(it.text, it.snackBarType) })
                 }
             } else {
-                if (view != null) MakeText.makeText(requireView(), msg, SnackBarType.INFO)
+                if (view != null) showSnackBar(msg, SnackBarType.INFO)
             }
         } else if (status == ProgressStatus.success) {
-            if (view != null) MakeText.makeText(requireView(), msg, SnackBarType.SUCCESS)
+            if (view != null) showSnackBar(msg, SnackBarType.SUCCESS)
         } else if (status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
-            if (view != null) MakeText.makeText(requireView(), msg, SnackBarType.ERROR)
+            if (view != null) showSnackBar(msg, SnackBarType.ERROR)
         }
     }
 
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
-            if (view != null) MakeText.makeText(
-                requireView(), getString(R.string.configuration_applied), SnackBarType.INFO
+            if (view != null) showSnackBar(
+                getString(R.string.configuration_applied), SnackBarType.INFO
             )
             FileHelper.removeDataBases()
             requireActivity().finish()
         } else if (status == ProgressStatus.crashed) {
-            if (view != null) MakeText.makeText(
-                requireView(), getString(R.string.error_setting_user_panel), SnackBarType.ERROR
+            if (view != null) showSnackBar(
+                getString(R.string.error_setting_user_panel), SnackBarType.ERROR
             )
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        MakeText.makeText(requireView(), it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        MakeText.makeText(requireView(), text, snackBarType)
     }
 }

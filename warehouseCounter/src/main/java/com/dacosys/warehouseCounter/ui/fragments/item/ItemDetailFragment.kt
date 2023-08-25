@@ -16,7 +16,6 @@ import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlin.concurrent.thread
 
@@ -152,7 +151,7 @@ class ItemDetailFragment : Fragment() {
             ViewItem(
                 id = it.itemId,
                 action = ViewItem.defaultAction,
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = { if (it != null) fillPriceLayout(it.prices) }
             ).execute()
         }
@@ -234,8 +233,8 @@ class ItemDetailFragment : Fragment() {
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        MakeText.makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        MakeText.makeText(binding.root, text, snackBarType)
     }
 
     companion object {

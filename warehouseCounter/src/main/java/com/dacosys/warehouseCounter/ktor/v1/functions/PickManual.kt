@@ -90,6 +90,7 @@ class PickManual(
 
     private fun sendEvent(event: SnackBarEventData) {
         onEvent.invoke(event)
+
         if (event.snackBarType in SnackBarType.getFinish() || event.snackBarType == SnackBarType.INFO) {
             onFinish.invoke(r)
         }

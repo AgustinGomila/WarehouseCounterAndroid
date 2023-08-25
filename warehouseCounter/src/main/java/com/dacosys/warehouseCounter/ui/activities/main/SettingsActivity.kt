@@ -31,7 +31,7 @@ import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.selectClientPac
 import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.fragments.settings.HeaderFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
@@ -41,7 +41,7 @@ import java.lang.ref.WeakReference
 /**
  * A [SettingsActivity] that presents a set of application settings. On
  * handset devices, settings are presented as a single list. On tablets,
- * settings are split by category, with category headers shown to the left of
+ * category splits settings, with category headers shown to the left of
  * the settings list.
  *
  * See:
@@ -79,7 +79,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         binding = SettingsActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        createOptionsMenu()
+        createOptionMenu()
 
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -102,7 +102,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         }
     }
 
-    private fun createOptionsMenu() {
+    private fun createOptionMenu() {
         // Add menu items without overriding methods in the Activity
         (this as ComponentActivity).addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
@@ -149,17 +149,17 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        // Save current requireActivity() title so we can set it again after a configuration change
+        // Save current requireActivity() title, so we can set it again after a configuration change
         outState.putCharSequence(ARG_TITLE, title)
     }
 
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
-            makeText(binding.settings, getString(R.string.configuration_applied), INFO)
+            showSnackBar(getString(R.string.configuration_applied), INFO)
             removeDataBases()
             onBackPressed()
         } else if (status == ProgressStatus.crashed) {
-            makeText(binding.settings, getString(R.string.error_setting_user_panel), ERROR)
+            showSnackBar(getString(R.string.error_setting_user_panel), ERROR)
         }
     }
 
@@ -178,20 +178,20 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
                         allPackage = result,
                         email = clientEmail,
                         password = clientPassword,
-                        onEventData = { showSnackBar(it) })
+                        onEventData = { showSnackBar(it.text, it.snackBarType) })
                 }
             } else {
-                makeText(binding.settings, msg, INFO)
+                showSnackBar(msg, INFO)
             }
         } else if (status == ProgressStatus.success) {
-            makeText(binding.settings, msg, SUCCESS)
+            showSnackBar(msg, SUCCESS)
         } else if (status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
-            makeText(binding.settings, msg, ERROR)
+            showSnackBar(msg, ERROR)
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     companion object {
@@ -355,7 +355,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
             )
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(binding.settings, ex.message.toString(), ERROR)
+            showSnackBar(ex.message.toString(), ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial

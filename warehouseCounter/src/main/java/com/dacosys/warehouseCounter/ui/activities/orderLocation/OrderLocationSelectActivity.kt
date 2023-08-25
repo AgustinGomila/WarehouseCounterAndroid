@@ -55,7 +55,6 @@ import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
@@ -84,10 +83,6 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         }
 
         adapter?.refreshListeners()
-
-        filterFragment.onDestroy()
-        summaryFragment.onDestroy()
-        searchTextFragment.onDestroy()
     }
 
     override fun onRefresh() {
@@ -529,37 +524,16 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     private fun itemSelect() {
         closeKeyboard(this)
 
-        if (adapter != null) {
-            val data = Intent()
+        val itemArray = adapter?.selectedLocations() ?: arrayListOf()
 
-            val item = currentItem
-            val countChecked = countChecked
-            var itemArray: ArrayList<OrderLocation> = ArrayList()
-
-            if (!multiSelect && item != null) {
-                data.putParcelableArrayListExtra(ARG_IDS, arrayListOf(ParcelLong(item.uniqueId)))
-                setResult(RESULT_OK, data)
-            } else if (multiSelect) {
-                if (countChecked > 0 || item != null) {
-                    if (countChecked > 0) {
-                        itemArray = allChecked
-                    } else if (adapter?.showCheckBoxes == false) {
-                        itemArray = arrayListOf(item!!)
-                    }
-
-                    data.putParcelableArrayListExtra(
-                        ARG_IDS,
-                        itemArray.map { ParcelLong(it.uniqueId) } as ArrayList<ParcelLong>)
-                    setResult(RESULT_OK, data)
-                } else {
-                    setResult(RESULT_CANCELED)
-                }
-            } else {
-                setResult(RESULT_CANCELED)
-            }
-        } else {
-            setResult(RESULT_CANCELED)
+        if (!itemArray.any()) {
+            showSnackBar(getString(R.string.you_must_select_at_least_one_location), ERROR)
+            return
         }
+
+        val data = Intent()
+        data.putParcelableArrayListExtra(ARG_IDS, itemArray.map { ParcelLong(it.uniqueId) } as ArrayList<ParcelLong>)
+        setResult(RESULT_OK, data)
 
         isFinishingByUser = true
         finish()
@@ -583,7 +557,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
             GetOrderLocation(
                 filter = filter,
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
                     fillAdapter(ArrayList(it))
                 }
@@ -672,12 +646,12 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
-            showSnackBar(SnackBarEventData(res, ERROR))
+            showSnackBar(res, ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
         }
@@ -686,8 +660,8 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         getItems()
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onBackPressed() {

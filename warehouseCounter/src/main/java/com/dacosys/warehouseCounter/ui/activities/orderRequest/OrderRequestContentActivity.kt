@@ -69,7 +69,7 @@ import com.dacosys.warehouseCounter.ui.activities.item.ItemSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.log.LogContentActivity
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrcAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
@@ -228,9 +228,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         if (lastRegexResult != null) {
             val qty = lastRegexResult?.qty?.toDouble()
             if (qty == null) showSnackBar(
-                SnackBarEventData(
-                    getString(R.string.null_quantity_in_regex), ERROR
-                )
+                getString(R.string.null_quantity_in_regex), ERROR
             )
 
             setQtyCollected(orc = orc, qty = qty ?: 1.toDouble())
@@ -1222,7 +1220,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 if (count >= 5) {
                     val res =
                         context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
-                    showSnackBar(SnackBarEventData(res, ERROR))
+                    showSnackBar(res, ERROR)
                     android.util.Log.e(this::class.java.simpleName, res)
                     return false
                 }
@@ -1255,7 +1253,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
             return true
         } catch (ex: Exception) {
-            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
+            showSnackBar(ex.message.toString(), ERROR)
             android.util.Log.e(this::class.java.simpleName, ex.message.toString())
             return false
         }
@@ -1654,8 +1652,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 REQUEST_EXTERNAL_STORAGE -> {
                     // If the request is canceled, the result arrays are empty.
                     if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                        makeText(
-                            this, getString(R.string.cannot_write_images_to_external_storage), ERROR
+                        showSnackBar(
+                            getString(R.string.cannot_write_images_to_external_storage), ERROR
                         )
                     } else {
                         val error = !Statics.writeJsonToFile(
@@ -1675,7 +1673,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var lastRegexResult: ItemRegex.Companion.RegexResult? = null
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
 
@@ -1692,9 +1690,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 if (it.count() > 1) {
                     // Mostrar advertencia.
                     showSnackBar(
-                        SnackBarEventData(
-                            getString(R.string.there_are_multiple_regex_matches), INFO
-                        )
+                        getString(R.string.there_are_multiple_regex_matches), INFO
                     )
                 }
 
@@ -1708,7 +1704,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     CheckCode(callback = { onCheckCodeEnded(it) },
                         scannedCode = regexRes.ean,
                         list = fullList,
-                        onEventData = { showSnackBar(it) }).execute()
+                        onEventData = { showSnackBar(it.text, it.snackBarType) }).execute()
 
                     return@tryToRegex
                 }
@@ -1718,7 +1714,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 //    un código corriente pero advertir sobre el error.
 
                 // Mostrar advertencia.
-                showSnackBar(SnackBarEventData("Cantidad nula en Regex", INFO))
+                showSnackBar("Cantidad nula en Regex", INFO)
                 code = regexRes.ean
 
                 // endregion Regex Founded
@@ -1735,14 +1731,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             CheckCode(callback = { onCheckCodeEnded(it) },
                 scannedCode = code,
                 list = fullList,
-                onEventData = { it2 -> showSnackBar(it2) }).execute()
+                onEventData = { it2 -> showSnackBar(it2.text, it2.snackBarType) }).execute()
 
             gentlyReturn()
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private fun gentlyReturn() {

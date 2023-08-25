@@ -19,12 +19,24 @@ import com.dacosys.warehouseCounter.ui.activities.location.LocationSelectActivit
 import org.parceler.Parcels
 
 /**
- * A simple [Fragment] subclass.
- * Use the [DestinationHeaderFragment.newInstance] factory method to
- * create an instance of this fragment.
+ * Destination header fragment
  */
-class DestinationHeaderFragment :
-    Fragment() {
+class DestinationHeaderFragment private constructor(builder: Builder) : Fragment() {
+
+    /**
+     * Required constructor for Fragments
+     */
+    constructor() : this(Builder())
+
+    private var locationChangedListener: LocationChangedListener? = null
+
+    private var title: String = ""
+    private var warehouse: Warehouse? = null
+    var warehouseArea: WarehouseArea? = null
+    var rack: Rack? = null
+
+    private var showChangePosButton: Boolean = true
+
     interface LocationChangedListener {
         fun onLocationChanged(
             warehouse: Warehouse?,
@@ -48,48 +60,6 @@ class DestinationHeaderFragment :
                 ErrorLog.writeLog(requireActivity(), this::class.java.simpleName, ex)
             }
         }
-
-    private var locationChangedListener: LocationChangedListener? = null
-
-    private var title: String = ""
-    private var warehouse: Warehouse? = null
-    var warehouseArea: WarehouseArea? = null
-    var rack: Rack? = null
-
-    private var showChangePosButton: Boolean = true
-
-    override fun onSaveInstanceState(savedInstanceState: Bundle) {
-        super.onSaveInstanceState(savedInstanceState)
-
-        savedInstanceState.putBoolean(ARG_SHOW_CHANGE_POSITION_BUTTON, showChangePosButton)
-        savedInstanceState.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
-        savedInstanceState.putParcelable(ARG_RACK, rack)
-        savedInstanceState.putString(ARG_TITLE, title)
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        if (arguments != null) {
-            warehouseArea = requireArguments().getParcelable(ARG_WAREHOUSE_AREA)
-            rack = requireArguments().getParcelable(ARG_RACK)
-        }
-    }
-
-    fun setChangeLocationListener(listener: LocationChangedListener) {
-        this.locationChangedListener = listener
-    }
-
-    fun showChangePostButton(show: Boolean) {
-        showChangePosButton = show
-        setButtonPanelVisibility()
-    }
-
-    fun setTitle(title: String) {
-        this.title = title
-        if (_binding == null) return
-        binding.titleTextView.text = title
-    }
 
     private fun setDestination(wa: WarehouseArea? = null, r: Rack? = null) {
         warehouse = null
@@ -117,6 +87,8 @@ class DestinationHeaderFragment :
     @Suppress("unused", "MemberVisibilityCanBePrivate")
     fun refreshViews() {
         activity?.runOnUiThread {
+            binding.titleTextView.text = title
+
             binding.warehouseTextView.text = warehouse?.description ?: ""
             TooltipCompat.setTooltipText(binding.warehouseTextView, warehouse?.description ?: "")
 
@@ -150,6 +122,34 @@ class DestinationHeaderFragment :
         _binding = null
     }
 
+    // Se llama cuando el fragmento ya no está asociado a la actividad anfitriona.
+    override fun onDetach() {
+        super.onDetach()
+        locationChangedListener = null
+    }
+
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+
+        savedInstanceState.putBoolean(ARG_SHOW_CHANGE_POSITION_BUTTON, showChangePosButton)
+        savedInstanceState.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
+        savedInstanceState.putParcelable(ARG_RACK, rack)
+        savedInstanceState.putString(ARG_TITLE, title)
+    }
+
+    private fun loadBundleValues(b: Bundle) {
+        showChangePosButton = b.getBoolean(ARG_SHOW_CHANGE_POSITION_BUTTON)
+        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
+        rack = b.getParcelable(ARG_RACK)
+        title = b.getString(ARG_TITLE) ?: ""
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (requireActivity() is LocationChangedListener) {
+            locationChangedListener = activity as LocationChangedListener
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -160,13 +160,7 @@ class DestinationHeaderFragment :
         val view = binding.root
 
         if (savedInstanceState != null) {
-            showChangePosButton = savedInstanceState.getBoolean(ARG_SHOW_CHANGE_POSITION_BUTTON)
-            warehouseArea = savedInstanceState.getParcelable(ARG_WAREHOUSE_AREA)
-            rack = savedInstanceState.getParcelable(ARG_RACK)
-            val t1 = savedInstanceState.getString(ARG_TITLE)
-            title =
-                if (!t1.isNullOrEmpty()) t1
-                else getString(R.string.destination)
+            loadBundleValues(savedInstanceState)
         }
 
         setButtonPanelVisibility()
@@ -183,8 +177,6 @@ class DestinationHeaderFragment :
     }
 
     private fun setButtonPanelVisibility() {
-        if (_binding == null) return
-
         if (showChangePosButton) {
             binding.changePosPanel.visibility = View.VISIBLE
         } else {
@@ -203,31 +195,61 @@ class DestinationHeaderFragment :
         resultForLocationSelect.launch(intent)
     }
 
+    init {
+        title = builder.title
+        warehouse = builder.warehouse
+        warehouseArea = builder.warehouseArea
+        rack = builder.rack
+        showChangePosButton = builder.showChangePosButton
+    }
+
+    class Builder {
+        internal var title: String = ""
+        internal var warehouse: Warehouse? = null
+        internal var warehouseArea: WarehouseArea? = null
+        internal var rack: Rack? = null
+        internal var showChangePosButton: Boolean = true
+
+        fun build(): DestinationHeaderFragment {
+            return DestinationHeaderFragment(this)
+        }
+
+        @Suppress("unused")
+        fun setTitle(title: String): Builder {
+            this.title = title
+            return this
+        }
+
+        @Suppress("unused")
+        fun setWarehouse(warehouse: Warehouse?): Builder {
+            this.warehouse = warehouse
+            return this
+        }
+
+        @Suppress("unused")
+        fun setWarehouseArea(warehouseArea: WarehouseArea?): Builder {
+            this.warehouseArea = warehouseArea
+            return this
+        }
+
+        @Suppress("unused")
+        fun setRack(rack: Rack?): Builder {
+            this.rack = rack
+            return this
+        }
+
+        @Suppress("unused")
+        fun setShowChangePosButton(showChangePosButton: Boolean): Builder {
+            this.showChangePosButton = showChangePosButton
+            return this
+        }
+    }
+
+
     companion object {
         const val ARG_SHOW_CHANGE_POSITION_BUTTON = "showChangePosButton"
         const val ARG_TITLE = "title"
         const val ARG_WAREHOUSE_AREA = "warehouseArea"
         const val ARG_RACK = "rack"
-
-        fun newInstance(
-            locationChangedListener: LocationChangedListener,
-            warehouseArea: WarehouseArea,
-            rack: Rack?,
-        ): DestinationHeaderFragment {
-            val fragment = DestinationHeaderFragment()
-
-            val args = Bundle()
-            args.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
-            args.putParcelable(ARG_RACK, rack)
-
-            fragment.arguments = args
-            fragment.locationChangedListener = locationChangedListener
-
-            return fragment
-        }
-
-        fun equals(a: Any?, b: Any?): Boolean {
-            return a != null && a == b
-        }
     }
 }

@@ -42,7 +42,6 @@ import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.ui.activities.barcodeLabel.TemplateSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.gms.common.api.CommonStatusCodes
@@ -59,19 +58,27 @@ import java.util.*
  * Activities that contain this fragment must implement the
  * [PrintLabelFragment.FragmentListener] interface
  * to handle interaction events.
- * Use the [PrintLabelFragment.newInstance] factory method to
- * create an instance of this fragment.
  */
-class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener {
-    private var fragmentListener: FragmentListener? = null
-    private var rejectNewInstances = false
+class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Runnable, CounterHandler.CounterListener {
 
-    private var ch: CounterHandler? = null
+    /**
+     * Required constructor for Fragments
+     */
+    constructor() : this(Builder())
+
+    var template: BarcodeLabelTemplate? = null
+
+    private var rejectNewInstances = false
 
     // Configuración guardada de los controles que se ven o no se ven
     private var printer: String = ""
-    var template: BarcodeLabelTemplate? = null
+    private var templateId: Long? = null
+    private var templateTypeIdList: ArrayList<Long> = arrayListOf()
     private var qty: Int = 1
+
+    private var fragmentListener: FragmentListener? = null
+
+    private var ch: CounterHandler? = null
 
     // Container Activity must implement this interface
     interface FragmentListener {
@@ -93,7 +100,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
     override fun onStart() {
         super.onStart()
-        if (fragmentListener is FragmentListener) {
+        if (requireActivity() is FragmentListener) {
             fragmentListener = activity as FragmentListener
         }
     }
@@ -102,7 +109,9 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         fragmentListener?.onFilterChanged(printer = printer, template = template, qty = qty)
     }
 
-    private fun saveSharedPreferences() {}
+    private fun saveSharedPreferences() {
+        // TODO: Guardar configuración de impresora generales
+    }
 
     override fun onDetach() {
         super.onDetach()
@@ -127,13 +136,8 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (arguments != null) {
-            loadBundleValues(requireArguments())
-        } else {
-            loadPrinterPreferences()
-
-            initializePrinter()
-        }
+        loadPrinterPreferences()
+        initializePrinter()
     }
 
     private fun loadPrinterPreferences() {
@@ -154,17 +158,23 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             else -> ""
         }
 
-        val bltId = settingViewModel.defaultTemplateId
-        if (bltId > 0) {
-            ViewBarcodeLabelTemplate(
-                id = bltId,
-                action = arrayListOf(),
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
-                onFinish = {
-                    template = it
-                    setTemplateText()
-                }
-            ).execute()
+        // Si tenemos una plantilla guardada la seleccionamos
+        if (template != null) {
+            setTemplateText()
+        } else {
+            val bltId = templateId ?: 0L
+            // No tenemos la plantilla cargada, pero tenemos el ID de la plantilla
+            if (bltId > 0) {
+                ViewBarcodeLabelTemplate(
+                    id = bltId,
+                    action = arrayListOf(),
+                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        template = it
+                        setTemplateText()
+                    }
+                ).execute()
+            }
         }
     }
 
@@ -208,7 +218,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                 mBluetoothSocket!!.close()
             }
 
-            showSnackBar(SnackBarEventData(getString(R.string.error_connecting_device), SnackBarType.ERROR))
+            showSnackBar(getString(R.string.error_connecting_device), SnackBarType.ERROR)
             return
         }
     }
@@ -231,8 +241,8 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             }
         }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private fun initializePrinter() {
@@ -244,9 +254,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         val mBluetoothAdapter = bluetoothManager.adapter
 
         if (mBluetoothAdapter == null) {
-            makeText(
-                binding.root, getString(R.string.there_are_no_bluetooth_devices), SnackBarType.ERROR
-            )
+            showSnackBar(getString(R.string.there_are_no_bluetooth_devices), SnackBarType.ERROR)
         } else {
             if (!mBluetoothAdapter.isEnabled) {
                 if (rejectNewInstances) return
@@ -282,12 +290,14 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
     private fun loadBundleValues(b: Bundle) {
         printer = b.getString(ARG_PRINTER) ?: ""
         template = b.getParcelable(ARG_TEMPLATE)
+        templateTypeIdList = (b.getLongArray(ARG_TEMPLATE_TYPE_ID_LIST) ?: longArrayOf()).toCollection(ArrayList())
         qty = b.getInt(ARG_QTY)
     }
 
     private fun saveBundleValues(b: Bundle) {
         b.putString(ARG_PRINTER, printer)
         b.putParcelable(ARG_TEMPLATE, template)
+        b.putLongArray(ARG_TEMPLATE_TYPE_ID_LIST, templateTypeIdList.toLongArray())
         b.putInt(ARG_QTY, Integer.parseInt(binding.qtyEditText.text.toString()))
     }
 
@@ -323,6 +333,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             val intent = Intent(requireContext(), TemplateSelectActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
             intent.putExtra(TemplateSelectActivity.ARG_TEMPLATE, template)
+            intent.putExtra(TemplateSelectActivity.ARG_TEMPLATE_TYPE_ID_LIST, templateTypeIdList)
             intent.putExtra(TemplateSelectActivity.ARG_TITLE, getString(R.string.select_label_template))
             resultForTemplateSelect.launch(intent)
         }
@@ -398,16 +409,12 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
         binding.printButton.setOnClickListener {
             if (printer.isEmpty()) {
-                makeText(
-                    binding.root, getString(R.string.you_must_select_a_printer), SnackBarType.ERROR
-                )
+                showSnackBar(getString(R.string.you_must_select_a_printer), SnackBarType.ERROR)
                 return@setOnClickListener
             }
             if (qty <= 0) {
-                makeText(
-                    binding.root,
-                    getString(R.string.you_must_select_the_amount_of_labels_to_print),
-                    SnackBarType.ERROR
+                showSnackBar(
+                    getString(R.string.you_must_select_the_amount_of_labels_to_print), SnackBarType.ERROR
                 )
                 return@setOnClickListener
             }
@@ -424,7 +431,6 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
             try {
                 if (it?.resultCode == AppCompatActivity.RESULT_OK && data != null) {
                     template = data.getParcelableExtra(TemplateSelectActivity.ARG_TEMPLATE)
-                    settingViewModel.defaultTemplateId = template?.barcodeLabelTypeId ?: 0L
                     setTemplateText()
                     sendMessage()
                 }
@@ -514,7 +520,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                 resultForPrinterConfig.launch(intent)
             }
         } else {
-            showSnackBar(SnackBarEventData(getString(R.string.invalid_password), SnackBarType.ERROR))
+            showSnackBar(getString(R.string.invalid_password), SnackBarType.ERROR)
         }
     }
 
@@ -529,10 +535,6 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         fragmentListener?.onPrintRequested(printer = printer, qty = qty)
     }
 
-    fun setListener(listener: FragmentListener) {
-        this.fragmentListener = listener
-    }
-
     @Suppress("unused", "MemberVisibilityCanBePrivate")
     fun refreshViews() {
         activity?.runOnUiThread {
@@ -543,16 +545,12 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
     fun printBarcodes(labelArray: ArrayList<Barcode>) {
         if (labelArray.isEmpty()) {
-            makeText(
-                binding.root,
-                getString(R.string.you_must_select_at_least_one_label),
-                SnackBarType.ERROR
-            )
+            showSnackBar(getString(R.string.you_must_select_at_least_one_label), SnackBarType.ERROR)
             return
         }
 
         if (printer.isEmpty() || settingViewModel.useBtPrinter && mBluetoothDevice == null) {
-            showSnackBar(SnackBarEventData(getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR))
+            showSnackBar(getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR)
             return
         }
 
@@ -563,26 +561,20 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
             settingViewModel.useNetPrinter -> printNetItem(sendThis)
 
-            else -> makeText(
-                binding.root,
-                getString(R.string.there_is_no_selected_printer),
-                SnackBarType.ERROR
+            else -> showSnackBar(
+                getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR
             )
         }
     }
 
     fun printPtlLabels(labelArray: ArrayList<Label>) {
         if (labelArray.isEmpty()) {
-            makeText(
-                binding.root,
-                getString(R.string.you_must_select_at_least_one_label),
-                SnackBarType.ERROR
-            )
+            showSnackBar(getString(R.string.you_must_select_at_least_one_label), SnackBarType.ERROR)
             return
         }
 
         if (printer.isEmpty() || settingViewModel.useBtPrinter && mBluetoothDevice == null) {
-            showSnackBar(SnackBarEventData(getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR))
+            showSnackBar(getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR)
             return
         }
 
@@ -593,21 +585,15 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
             settingViewModel.useNetPrinter -> printNetItem(sendThis)
 
-            else -> makeText(
-                binding.root,
-                getString(R.string.there_is_no_selected_printer),
-                SnackBarType.ERROR
+            else -> showSnackBar(
+                getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR
             )
         }
     }
 
     fun printItemById(itemIdArray: ArrayList<Long>) {
         if (itemIdArray.isEmpty()) {
-            makeText(
-                binding.root,
-                getString(R.string.you_must_select_at_least_one_item),
-                SnackBarType.ERROR
-            )
+            showSnackBar(getString(R.string.you_must_select_at_least_one_item), SnackBarType.ERROR)
             return
         }
 
@@ -627,16 +613,12 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         }
 
         if (items.isEmpty()) {
-            makeText(
-                binding.root,
-                getString(R.string.you_must_select_at_least_one_item),
-                SnackBarType.ERROR
-            )
+            showSnackBar(getString(R.string.you_must_select_at_least_one_item), SnackBarType.ERROR)
             return
         }
 
         if (printer.isEmpty() || settingViewModel.useBtPrinter && mBluetoothDevice == null) {
-            showSnackBar(SnackBarEventData(getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR))
+            showSnackBar(getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR)
             return
         }
 
@@ -660,10 +642,8 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
 
             settingViewModel.useNetPrinter -> printNetItem(sendThis)
 
-            else -> makeText(
-                binding.root,
-                getString(R.string.there_is_no_selected_printer),
-                SnackBarType.ERROR
+            else -> showSnackBar(
+                getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR
             )
         }
     }
@@ -685,22 +665,16 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                     sock.close()
                 } catch (e: UnknownHostException) {
                     e.printStackTrace()
-                    makeText(
-                        binding.root,
-                        "${getString(R.string.unknown_host)}: $ipPrinter ($portPrinter)",
-                        SnackBarType.ERROR
-                    )
+                    showSnackBar("${getString(R.string.unknown_host)}: $ipPrinter ($portPrinter)", SnackBarType.ERROR)
                 } catch (e: ConnectException) {
                     e.printStackTrace()
-                    makeText(
-                        binding.root,
+                    showSnackBar(
                         "${getString(R.string.error_connecting_to)}: $ipPrinter ($portPrinter)",
                         SnackBarType.ERROR
                     )
                 } catch (e: IOException) {
                     e.printStackTrace()
-                    makeText(
-                        binding.root,
+                    showSnackBar(
                         "${getString(R.string.error_printing_to)} $ipPrinter ($portPrinter)",
                         SnackBarType.ERROR
                     )
@@ -725,8 +699,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
                         this::class.java.simpleName,
                         "${getString(R.string.exception_error)}: " + e.message
                     )
-                    makeText(
-                        binding.root,
+                    showSnackBar(
                         "${getString(R.string.error_connecting_to)}: ${settingViewModel.printerBtAddress}",
                         SnackBarType.ERROR
                     )
@@ -802,7 +775,7 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         }
     }
 
-// region Filtro para aceptar solo números entre ciertos parámetros
+    // region Filtro para aceptar solo números entre ciertos parámetros
 
     /**
      * Devuelve una cadena de texto formateada que se ajusta a los parámetros.
@@ -895,37 +868,48 @@ class PrintLabelFragment : Fragment(), Runnable, CounterHandler.CounterListener 
         mBluetoothConnectThread.start()
     }
 
+    init {
+        templateId = builder.templateId
+        templateTypeIdList = builder.templateTypeIdList
+        qty = builder.qty
+    }
+
+    class Builder {
+        fun build(): PrintLabelFragment {
+            return PrintLabelFragment(this)
+        }
+
+        internal var templateId: Long? = null
+        internal var templateTypeIdList: ArrayList<Long> = arrayListOf()
+        internal var qty: Int = 1
+
+        @Suppress("unused")
+        fun setQty(qty: Int): Builder {
+            this.qty = qty
+            return this
+        }
+
+        @Suppress("unused")
+        fun setTemplateTypeIdList(list: ArrayList<Long>): Builder {
+            this.templateTypeIdList = list
+            return this
+        }
+
+        @Suppress("unused")
+        fun setTemplateId(templateId: Long): Builder {
+            this.templateId = templateId
+            return this
+        }
+    }
+
     companion object {
 
         // region Fragment initialization parameters
         private const val ARG_PRINTER = "printer"
+        private const val ARG_TEMPLATE_TYPE_ID_LIST = "templateTypeIdList"
         private const val ARG_TEMPLATE = "template"
         private const val ARG_QTY = "qty"
         // endregion
-
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         */
-        fun newInstance(
-            printer: String = "",
-            template: BarcodeLabelTemplate? = null,
-            qty: Int = 1,
-        ): PrintLabelFragment {
-            val fragment = PrintLabelFragment()
-
-            val args = Bundle()
-            args.putString(ARG_PRINTER, printer)
-            args.putParcelable(ARG_TEMPLATE, template)
-            args.putInt(ARG_QTY, qty)
-
-            fragment.arguments = args
-            return fragment
-        }
-
-        fun equals(a: Any?, b: Any?): Boolean {
-            return a != null && a == b
-        }
 
         class ConnectHandler(private val activity: PrintLabelFragment) :
             Handler(Looper.getMainLooper()) {

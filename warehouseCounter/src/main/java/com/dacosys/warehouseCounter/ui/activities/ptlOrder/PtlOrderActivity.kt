@@ -36,6 +36,7 @@ import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlContent
 import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlOrder
 import com.dacosys.warehouseCounter.ktor.v1.functions.*
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
+import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -47,7 +48,7 @@ import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlContentAdapter
 import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.fragments.ptlOrder.PtlOrderHeaderFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import com.dacosys.warehouseCounter.ui.utils.Screen
@@ -68,9 +69,6 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         stopSyncTimer()
 
         adapter?.refreshListeners()
-
-        orderHeaderFragment.onDestroy()
-        printLabelFragment.onDestroy()
     }
 
     override fun onEditQtyRequired(
@@ -111,7 +109,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
             thread {
                 DetachOrderToLocation(orderId = oldOrder.id,
                     warehouseAreaId = waId,
-                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
+                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) },
                     onFinish = {
                         if (it) getContents(ptlOrder.id, waId)
                         else gentlyReturn()
@@ -120,8 +118,8 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private fun getContents(orderId: Long, waId: Long) {
@@ -131,14 +129,14 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         thread {
             GetPtlOrderContent(orderId = orderId,
                 warehouseAreaId = waId,
-                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
+                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = { onGetContent(it) }).execute()
         }
     }
 
     private fun checkForCompletedOrder(contents: ArrayList<PtlContent>): Boolean {
         if (contents.sumOf { it.qtyCollected } >= contents.sumOf { it.qtyRequested }) {
-            showSnackBar(SnackBarEventData(context.getString(R.string.completed_order), SUCCESS))
+            showSnackBar(context.getString(R.string.completed_order), SUCCESS)
             return true
         }
         return false
@@ -164,7 +162,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
             thread {
                 AttachOrderToLocation(orderId = oldOrderId,
                     warehouseAreaId = waId,
-                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
+                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) },
                     onFinish = {
                         if (it) fillAdapter(contents)
                         else gentlyReturn()
@@ -522,16 +520,21 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     }
 
     private fun setupHeaderFragments() {
+        // TODO Hacer Builders
         orderHeaderFragment.setOrder(
             order = currentPtlOrder,
             location = warehouseArea,
             sendEvent = false
         )
-        orderHeaderFragment.setChangeOrderListener(this)
     }
 
     private fun setupPrinterLabelFragments() {
-        printLabelFragment.setListener(this)
+        printLabelFragment =
+            PrintLabelFragment.Builder()
+                .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.order.id))
+                .setTemplateId(settingViewModel.defaultOrderTemplateId)
+                .build()
+        supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
     }
 
     private val requiredLayout: Int
@@ -819,13 +822,13 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     // region Events from SCANNER, RFID, NFC
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
 
         thread {
             GetPtlOrderByCode(code = scanCode,
-                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
+                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = { onGetPtlOrder(it) }).execute()
         }
     }
@@ -907,7 +910,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         thread {
             DetachOrderToLocation(orderId = orderId,
                 warehouseAreaId = waId,
-                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
+                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
                     if (it) finish()
                     else gentlyReturn()
@@ -933,14 +936,14 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
             thread {
                 BlinkOneItem(itemId = cc.itemId,
                     warehouseAreaId = waId,
-                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
+                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) },
                     onFinish = { gentlyReturn() }).execute()
             }
         } else {
             thread {
                 BlinkAllOrder(orderId = orderId,
                     warehouseAreaId = waId,
-                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) },
+                    onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) },
                     onFinish = { gentlyReturn() }).execute()
             }
         }
@@ -962,7 +965,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
             AddBoxToOrder(orderId = orderId, onFinish = {
                 if (it) getContents(orderId, waId)
                 else gentlyReturn()
-            }, onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) }).execute()
+            }, onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) }).execute()
         }
     }
 
@@ -987,7 +990,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                 itemId = cc.itemId,
                 qty = qtyLeft,
                 onFinish = { onPickItem(it) },
-                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) }).execute()
+                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) }).execute()
         }
     }
 
@@ -1004,11 +1007,14 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         thread {
             PrintBox(orderId = orderId,
                 onFinish = { onGetLabel(it) },
-                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it) }).execute()
+                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) }).execute()
         }
     }
 
-    override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {}
+    override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {
+        val templateId = template?.templateId ?: return
+        settingViewModel.defaultOrderTemplateId = templateId
+    }
 
     override fun onPrintRequested(printer: String, qty: Int) {
         printSelected()

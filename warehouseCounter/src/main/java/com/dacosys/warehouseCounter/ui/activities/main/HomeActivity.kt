@@ -71,7 +71,6 @@ import com.dacosys.warehouseCounter.ui.activities.sync.InboxActivity
 import com.dacosys.warehouseCounter.ui.activities.sync.OutboxActivity
 import com.dacosys.warehouseCounter.ui.fragments.main.ButtonPageFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
@@ -101,14 +100,14 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
                     CreateOrder(
                         orderArray = orders,
-                        onEvent = { showSnackBar(it) },
+                        onEvent = { showSnackBar(it.text, it.snackBarType) },
                         onFinish = { successFiles ->
 
                             /** We delete the files of the orders sent */
                             /** We delete the files of the orders sent */
                             OrderRequest.removeCountFiles(
                                 successFiles = successFiles,
-                                sendEvent = { eventData -> showSnackBar(eventData) }
+                                sendEvent = { eventData -> showSnackBar(eventData.text, eventData.snackBarType) }
                             )
                         }
 
@@ -164,7 +163,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
         JotterListener.hideWindow(this)
@@ -178,7 +177,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             }
             */
         } catch (ex: Exception) {
-            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
+            showSnackBar(ex.message.toString(), ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
         } finally {
             // Unless is blocked, unlock the partial
@@ -186,8 +185,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private var rejectNewInstances = false
@@ -362,7 +361,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                     intent.putExtra(LinkCodeActivity.ARG_TITLE, getString(R.string.link_code))
                     startActivity(intent)
                 } catch (ex: Exception) {
-                    showSnackBar(SnackBarEventData("Error:" + ex.message, ERROR))
+                    showSnackBar("Error:" + ex.message, ERROR)
                 }
             }
 
@@ -383,7 +382,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                     intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
                     startActivity(intent)
                 } catch (ex: Exception) {
-                    showSnackBar(SnackBarEventData("Error:" + ex.message, ERROR))
+                    showSnackBar("Error:" + ex.message, ERROR)
                 }
             }
 
@@ -399,7 +398,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                     intent.putExtra(OrderLocationSelectActivity.ARG_SHOW_SELECT_BUTTON, false)
                     startActivity(intent)
                 } catch (ex: Exception) {
-                    showSnackBar(SnackBarEventData("Error:" + ex.message, ERROR))
+                    showSnackBar("Error:" + ex.message, ERROR)
                 }
             }
 
@@ -414,7 +413,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                     intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, false)
                     startActivity(intent)
                 } catch (ex: Exception) {
-                    showSnackBar(SnackBarEventData("Error:" + ex.message, ERROR))
+                    showSnackBar("Error:" + ex.message, ERROR)
                 }
             }
 
@@ -429,7 +428,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                     intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, false)
                     resultForUnpackOrder.launch(intent)
                 } catch (ex: Exception) {
-                    showSnackBar(SnackBarEventData("Error:" + ex.message, ERROR))
+                    showSnackBar("Error:" + ex.message, ERROR)
                 }
             }
 
@@ -450,7 +449,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                             id = id,
                             onFinish = { order ->
                                 if (order == null) {
-                                    showSnackBar(SnackBarEventData(getString(R.string.order_not_found), ERROR))
+                                    showSnackBar(getString(R.string.order_not_found), ERROR)
                                 } else {
                                     repackOrder(order)
                                 }
@@ -483,14 +482,12 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                     }
 
                     showSnackBar(
-                        SnackBarEventData(
-                            String.format(
-                                getString(R.string.area),
-                                warehouseArea.description,
-                                lineSeparator,
-                                "(${warehouseArea.locationParentStr})"
-                            ), INFO
-                        )
+                        String.format(
+                            getString(R.string.area),
+                            warehouseArea.description,
+                            lineSeparator,
+                            "(${warehouseArea.locationParentStr})"
+                        ), INFO
                     )
 
                     val intent = Intent(context, PtlOrderActivity::class.java)
@@ -539,14 +536,12 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
     private fun addOrderRequest(client: Client?, description: String, orderRequestType: OrderRequestType) {
         showSnackBar(
-            SnackBarEventData(
-                String.format(
-                    getString(R.string.client_description),
-                    client?.name ?: getString(R.string.no_client),
-                    lineSeparator,
-                    description
-                ), INFO
-            )
+            String.format(
+                getString(R.string.client_description),
+                client?.name ?: getString(R.string.no_client),
+                lineSeparator,
+                description
+            ), INFO
         )
 
         val orderRequest = OrderRequestRoom(
@@ -577,16 +572,15 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
     private fun repackOrder(order: OrderResponse) {
         showSnackBar(
-            SnackBarEventData(
-                String.format(
-                    getString(R.string.client_description),
-                    order.clientId ?: getString(R.string.no_client),
-                    lineSeparator,
-                    order.description
-                ), INFO
-            )
+            String.format(
+                getString(R.string.client_description),
+                order.clientId ?: getString(R.string.no_client),
+                lineSeparator,
+                order.description
+            ), INFO
         )
 
+        // TODO: Ver esto, hacer el repack
         val orderRequest = OrderRequestRoom(
             clientId = order.clientId ?: 0,
             creationDate = order.rowCreationDate,
@@ -607,7 +601,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 if (newId != null) {
                     val intent = Intent(context, OrderRequestContentActivity::class.java)
                     intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
-                    intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, true)
+                    intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
                     startActivity(intent)
                 }
             })
@@ -627,16 +621,14 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                     try {
                         val or = orArray[0]
                         showSnackBar(
-                            SnackBarEventData(
-                                String.format(
-                                    getString(R.string.requested_count_state_),
-                                    if (equals(or.description, "")) getString(R.string.no_description)
-                                    else or.description,
-                                    if (or.completed == true) getString(R.string.completed) else getString(
-                                        R.string.pending
-                                    )
-                                ), INFO
-                            )
+                            String.format(
+                                getString(R.string.requested_count_state_),
+                                if (equals(or.description, "")) getString(R.string.no_description)
+                                else or.description,
+                                if (or.completed == true) getString(R.string.completed) else getString(
+                                    R.string.pending
+                                )
+                            ), INFO
                         )
 
                         val intent = Intent(context, OrderRequestContentActivity::class.java)
@@ -646,7 +638,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                     } catch (ex: Exception) {
                         val res =
                             getString(R.string.an_error_occurred_while_trying_to_load_the_order)
-                        showSnackBar(SnackBarEventData(res, ERROR))
+                        showSnackBar(res, ERROR)
                         android.util.Log.e(this::class.java.simpleName, res)
                     }
                 }
@@ -718,7 +710,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 resultForSettings.launch(intent)
             }
         } else {
-            showSnackBar(SnackBarEventData(getString(R.string.invalid_password), ERROR))
+            showSnackBar(getString(R.string.invalid_password), ERROR)
         }
     }
 
@@ -800,7 +792,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         if (freshSessionReq) {
             // Inicializar la actividad
             if (settingViewModel.urlPanel.isEmpty()) {
-                showSnackBar(SnackBarEventData(getString(R.string.server_is_not_configured), ERROR))
+                showSnackBar(getString(R.string.server_is_not_configured), ERROR)
                 setupInitConfig()
             } else {
                 login()
@@ -823,12 +815,12 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
             ProgressStatus.crashed.id, ProgressStatus.canceled.id -> {
                 showImageProgressBar(false)
-                showSnackBar(SnackBarEventData(msg, ERROR))
+                showSnackBar(msg, ERROR)
             }
 
             ProgressStatus.success.id -> {
                 showImageProgressBar(false)
-                showSnackBar(SnackBarEventData(getString(R.string.upload_images_success), SnackBarType.SUCCESS))
+                showSnackBar(getString(R.string.upload_images_success), SnackBarType.SUCCESS)
             }
         }
     }
@@ -862,7 +854,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             try {
                 if (settingViewModel.urlPanel.isEmpty()) {
-                    showSnackBar(SnackBarEventData(getString(R.string.server_is_not_configured), ERROR))
+                    showSnackBar(getString(R.string.server_is_not_configured), ERROR)
                     setupInitConfig()
                 } else {
                     login()
@@ -1045,7 +1037,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             REQUEST_EXTERNAL_STORAGE -> {
                 // If the request is canceled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    showSnackBar(SnackBarEventData(getString(R.string.cannot_write_to_external_storage), ERROR))
+                    showSnackBar(getString(R.string.cannot_write_to_external_storage), ERROR)
                 } else {
                     writeNewOrderRequest(newOrArray)
                 }
@@ -1105,11 +1097,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
         if (isOk) {
             val res = getString(R.string.new_counts_saved)
-            showSnackBar(SnackBarEventData(res, SnackBarType.SUCCESS))
+            showSnackBar(res, SnackBarType.SUCCESS)
             android.util.Log.d(this::class.java.simpleName, res)
         } else {
             val res = getString(R.string.an_error_occurred_while_trying_to_save_the_count)
-            showSnackBar(SnackBarEventData(res, ERROR))
+            showSnackBar(res, ERROR)
             android.util.Log.e(this::class.java.simpleName, res)
         }
     }

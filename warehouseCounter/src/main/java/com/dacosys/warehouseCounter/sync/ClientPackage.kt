@@ -31,14 +31,15 @@ import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.serialization.json.JsonPrimitive
 import org.json.JSONObject
 import java.lang.ref.WeakReference
+import com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package as ClientPackage
 
 class ClientPackage {
     companion object : DialogInterface.OnMultiChoiceClickListener {
 
         // region Selección automática de paquetes del cliente
-        private var allProductArray: ArrayList<com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package> =
+        private var allProductArray: ArrayList<ClientPackage> =
             ArrayList()
-        private var validProductsArray: ArrayList<com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package> =
+        private var validProductsArray: ArrayList<ClientPackage> =
             ArrayList()
         private var selected: BooleanArray = booleanArrayOf()
 
@@ -71,7 +72,7 @@ class ClientPackage {
         fun selectClientPackage(
             callback: TaskConfigPanelEnded,
             weakAct: WeakReference<FragmentActivity>,
-            allPackage: ArrayList<com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package>,
+            allPackage: ArrayList<ClientPackage>,
             email: String,
             password: String,
             onEventData: (SnackBarEventData) -> Unit = {},
@@ -163,7 +164,7 @@ class ClientPackage {
             builder.setMultiChoiceItems(listItems.toTypedArray(), selected, this)
 
             builder.setPositiveButton(R.string.accept) { dialog, _ ->
-                val selectedPacks: ArrayList<com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package> =
+                val selectedPacks: ArrayList<ClientPackage> =
                     ArrayList()
                 for ((i, prod) in validProductsArray.withIndex()) {
                     if (selected[i]) {
@@ -202,7 +203,7 @@ class ClientPackage {
 
         private fun setConfigPanel(
             callback: TaskConfigPanelEnded,
-            packArray: ArrayList<com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package>,
+            packArray: ArrayList<ClientPackage>,
             email: String,
             password: String,
             onEventData: (SnackBarEventData) -> Unit = {},
@@ -247,12 +248,12 @@ class ClientPackage {
 
                 val customOptJsonObj = pack.customOptions
                 for ((key, value) in customOptJsonObj) {
-                    if (key == com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package.IC_USER_KEY) {
+                    if (key == ClientPackage.IC_USER_KEY) {
                         icUser = when (value) {
                             is JsonPrimitive -> value.content
                             else -> value.toString()
                         }
-                    } else if (key == com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package.IC_PASSWORD_KEY) {
+                    } else if (key == ClientPackage.IC_PASSWORD_KEY) {
                         icPass = when (value) {
                             is JsonPrimitive -> value.content
                             else -> value.toString()

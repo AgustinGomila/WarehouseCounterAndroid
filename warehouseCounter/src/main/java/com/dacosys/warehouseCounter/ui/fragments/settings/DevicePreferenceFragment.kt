@@ -32,7 +32,7 @@ import com.dacosys.warehouseCounter.settings.SettingsViewModel
 import com.dacosys.warehouseCounter.settings.custom.CollectorTypePreference
 import com.dacosys.warehouseCounter.settings.custom.DevicePreference
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.google.android.gms.common.api.CommonStatusCodes
 import java.util.regex.Matcher
@@ -109,7 +109,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             }
         } catch (ex: Exception) {
             ex.printStackTrace()
-            MakeText.makeText(v, getString(R.string.rfid_reader_not_initialized), SnackBarType.INFO)
+            showSnackBar(getString(R.string.rfid_reader_not_initialized), SnackBarType.INFO)
             ErrorLog.writeLog(activity, this::class.java.simpleName, ex)
         }
     }
@@ -342,8 +342,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             // returns boolean representing whether the
             // permission is granted or not
             if (!isGranted) {
-                MakeText.makeText(
-                    v,
+                showSnackBar(
                     WarehouseCounterApp.context.getString(R.string.app_dont_have_necessary_permissions),
                     SnackBarType.ERROR
                 )
@@ -361,6 +360,10 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             rfidSummary = "$rfidSummary: ${getBluetoothNameFromAddress()}"
 
         return rfidSummary
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(v, text, snackBarType)
     }
 
     // Esta preferencia se utiliza al recibir el nombre del dispositivo
@@ -386,7 +389,9 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
         }
         rfidDeviceNamePreference!!.setOnPreferenceClickListener {
             if (Rfid.rfidDevice == null || (Rfid.rfidDevice as Vh75Bt).getState() != Vh75Bt.STATE_CONNECTED) {
-                MakeText.makeText(v, getString(R.string.there_is_no_rfid_device_connected), SnackBarType.ERROR)
+                showSnackBar(
+                    getString(R.string.there_is_no_rfid_device_connected), SnackBarType.ERROR
+                )
             }
             true
         }
@@ -394,7 +399,9 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             if (Rfid.rfidDevice != null && (Rfid.rfidDevice as Vh75Bt).getState() == Vh75Bt.STATE_CONNECTED) {
                 (Rfid.rfidDevice as Vh75Bt).setBluetoothName(newValue.toString())
             } else {
-                MakeText.makeText(v, getString(R.string.there_is_no_rfid_device_connected), SnackBarType.ERROR)
+                showSnackBar(
+                    getString(R.string.there_is_no_rfid_device_connected), SnackBarType.ERROR
+                )
             }
             true
         }
@@ -437,7 +444,9 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
                 val diaBox = askForResetToFactory()
                 diaBox.show()
             } else {
-                MakeText.makeText(v, getString(R.string.there_is_no_rfid_device_connected), SnackBarType.ERROR)
+                showSnackBar(
+                    getString(R.string.there_is_no_rfid_device_connected), SnackBarType.ERROR
+                )
             }
             true
         }
@@ -453,7 +462,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             WarehouseCounterApp.context.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
         val mBluetoothAdapter = bluetoothManager.adapter
         if (mBluetoothAdapter == null) {
-            MakeText.makeText(v, getString(R.string.there_are_no_bluetooth_devices), SnackBarType.INFO)
+            showSnackBar(getString(R.string.there_are_no_bluetooth_devices), SnackBarType.INFO)
         } else {
             if (!mBluetoothAdapter.isEnabled) {
                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
@@ -491,8 +500,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             // returns boolean representing whether the
             // permission is granted or not
             if (!isGranted) {
-                MakeText.makeText(
-                    v,
+                showSnackBar(
                     WarehouseCounterApp.context.getString(R.string.app_dont_have_necessary_permissions),
                     SnackBarType.ERROR
                 )

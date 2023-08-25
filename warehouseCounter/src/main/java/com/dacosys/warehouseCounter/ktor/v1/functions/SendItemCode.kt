@@ -82,7 +82,7 @@ class SendItemCode(
                 itemId = itemCode.itemId ?: 0L, code = itemCode.code ?: ""
             )
         }
-        onEvent.invoke(SnackBarEventData(context.getString(R.string.ok), SnackBarType.SUCCESS))
+        sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
     }
 
     private fun getBody(): JSONObject {

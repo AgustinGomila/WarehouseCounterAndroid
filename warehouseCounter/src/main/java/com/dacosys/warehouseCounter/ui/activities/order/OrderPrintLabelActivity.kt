@@ -39,6 +39,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingReposit
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
+import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.PrintOps
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.*
@@ -62,7 +63,6 @@ import com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
@@ -91,11 +91,6 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
 
         adapter?.refreshListeners()
-
-        filterFragment.onDestroy()
-        printLabelFragment.onDestroy()
-        summaryFragment.onDestroy()
-        searchTextFragment.onDestroy()
     }
 
     override fun onRefresh() {
@@ -285,7 +280,12 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
     private fun setupPrintLabelFragment() {
         binding.printFragment.visibility = VISIBLE
-        printLabelFragment.setListener(this)
+        printLabelFragment =
+            PrintLabelFragment.Builder()
+                .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.order.id))
+                .setTemplateId(settingViewModel.defaultOrderTemplateId)
+                .build()
+        supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
     }
 
     private fun setupSearchTextFragment() {
@@ -572,35 +572,16 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     private fun itemSelect() {
         closeKeyboard(this)
 
-        if (adapter != null) {
-            val data = Intent()
+        val selectedOrders = adapter?.selectedOrders() ?: arrayListOf()
 
-            val item = currentItem
-            val countChecked = countChecked
-            var itemArray: ArrayList<OrderResponse> = ArrayList()
-
-            if (!multiSelect && item != null) {
-                data.putParcelableArrayListExtra(ARG_ORDERS, arrayListOf(item))
-                setResult(RESULT_OK, data)
-            } else if (multiSelect) {
-                if (countChecked > 0 || item != null) {
-                    if (countChecked > 0) itemArray = allChecked
-                    else if (adapter?.showCheckBoxes == false) {
-                        itemArray = arrayListOf(item!!)
-                    }
-
-                    data.putParcelableArrayListExtra(ARG_ORDERS, itemArray.map { it } as ArrayList<OrderResponse>)
-                    setResult(RESULT_OK, data)
-                } else {
-                    setResult(RESULT_CANCELED)
-                }
-            } else {
-                setResult(RESULT_CANCELED)
-            }
-        } else {
-            setResult(RESULT_CANCELED)
+        if (!selectedOrders.any()) {
+            showSnackBar(getString(R.string.you_must_select_at_least_one_order), ERROR)
+            return
         }
 
+        val data = Intent()
+        data.putParcelableArrayListExtra(ARG_ORDERS, selectedOrders)
+        setResult(RESULT_OK, data)
         isFinishingByUser = true
         finish()
     }
@@ -621,7 +602,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             GetOrder(
                 filter = filter,
                 action = GetOrder.defaultAction,
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
                     fillAdapter(ArrayList(it))
                 }
@@ -731,12 +712,12 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
-            showSnackBar(SnackBarEventData(res, ERROR))
+            showSnackBar(res, ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
         }
 
-        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
         JotterListener.lockScanner(this, true)
 
         // Buscar por ubicación
@@ -750,8 +731,8 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         )
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onBackPressed() {
@@ -929,57 +910,39 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
     }
 
-    override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {}
+    override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {
+        val templateId = template?.templateId ?: return
+        settingViewModel.defaultOrderTemplateId = templateId
+    }
 
     override fun onPrintRequested(printer: String, qty: Int) {
         val template = printLabelFragment.template
         if (template == null) {
-            showSnackBar(SnackBarEventData(context.getString(R.string.you_must_select_a_template), ERROR))
+            showSnackBar(context.getString(R.string.you_must_select_a_template), ERROR)
             return
         }
+
+        val selectedOrders = adapter?.selectedOrders() ?: arrayListOf()
+
+        if (!selectedOrders.any()) {
+            showSnackBar(getString(R.string.you_must_select_at_least_one_order), ERROR)
+            return
+        }
+
         val printOps = PrintOps.getPrintOps()
 
-        /** Acá seleccionamos siguiendo estos criterios:
-         *
-         * Si NO es multiSelect tomamos el ítem seleccionado de forma simple.
-         *
-         * Si es multiSelect nos fijamos que o bien estén marcados algunos ítems o
-         * bien tengamos un ítem seleccionado de forma simple.
-         *
-         * Si es así, vamos a devolver los ítems marcados si existen como prioridad.
-         *
-         * Si no, nos fijamos que NO sean visibles los CheckBoxes, esto quiere
-         * decir que el usuario está seleccionado el ítem de forma simple y
-         * devolvemos este ítem.
-         *
-         **/
-        val item = currentItem
-        val countChecked = countChecked
-        var itemArray: ArrayList<OrderResponse> = ArrayList()
-
-        if (!multiSelect && item != null) {
-            itemArray = arrayListOf(item)
-        } else if (multiSelect) {
-            if (countChecked > 0) itemArray = allChecked
-            else if (adapter?.showCheckBoxes == false && item != null) {
-                itemArray = arrayListOf(item)
+        val ids = ArrayList(selectedOrders.map { it.id })
+        GetOrderBarcode(
+            param = BarcodeParam(
+                idList = ids,
+                templateId = template.templateId,
+                printOps = printOps
+            ),
+            onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+            onFinish = {
+                printLabelFragment.printBarcodes(it)
             }
-        }
-
-        if (itemArray.any()) {
-            val ids = ArrayList(itemArray.map { it.id })
-            GetOrderBarcode(
-                param = BarcodeParam(
-                    idList = ids,
-                    templateId = template.templateId,
-                    printOps = printOps
-                ),
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
-                onFinish = {
-                    printLabelFragment.printBarcodes(it)
-                }
-            )
-        }
+        )
     }
 
     override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {

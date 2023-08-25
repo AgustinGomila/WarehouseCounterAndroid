@@ -60,7 +60,6 @@ import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment
 import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.*
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.utils.Screen
@@ -80,13 +79,11 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
             showSnackBar(
-                SnackBarEventData(
-                    getString(R.string.configuration_applied), SnackBarType.SUCCESS
-                )
+                getString(R.string.configuration_applied), SnackBarType.SUCCESS
             )
             initialSetup()
         } else if (status == ProgressStatus.crashed) {
-            showSnackBar(SnackBarEventData(getString(R.string.error_setting_user_panel), ERROR))
+            showSnackBar(getString(R.string.error_setting_user_panel), ERROR)
         }
     }
 
@@ -114,15 +111,15 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                         allPackage = result,
                         email = clientEmail,
                         password = clientPassword,
-                        onEventData = { showSnackBar(it) })
+                        onEventData = { showSnackBar(it.text, it.snackBarType) })
                 }
             } else {
-                showSnackBar(SnackBarEventData(msg, SnackBarType.INFO))
+                showSnackBar(msg, SnackBarType.INFO)
             }
         } else if (status == ProgressStatus.success) {
-            showSnackBar(SnackBarEventData(msg, SnackBarType.SUCCESS))
+            showSnackBar(msg, SnackBarType.SUCCESS)
         } else if (status == ProgressStatus.crashed) {
-            showSnackBar(SnackBarEventData(msg, ERROR))
+            showSnackBar(msg, ERROR)
         }
     }
 
@@ -133,7 +130,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 sync.addParams(callBack = this,
                     timeFileUrl = data.dbDate,
                     dbFileUrl = data.dbFile,
-                    onEventData = { showSnackBar(it) })
+                    onEventData = { showSnackBar(it.text, it.snackBarType) })
                 sync.execute()
             }
         } else {
@@ -143,8 +140,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onDownloadDbTask(downloadStatus: DownloadDb.DownloadStatus) {
@@ -438,13 +435,13 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
     private fun initSync() {
         if (!ApiRequest.validUrl()) {
-            showSnackBar(SnackBarEventData(context.getString(R.string.invalid_url), ERROR))
+            showSnackBar(context.getString(R.string.invalid_url), ERROR)
             return
         }
 
         thread {
             GetDatabase(
-                onEvent = { showSnackBar(it) },
+                onEvent = { showSnackBar(it.text, it.snackBarType) },
                 onFinish = { onGetDatabaseData(it) }).execute()
         }
     }
@@ -456,11 +453,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         setButton(ButtonStyle.BUSY)
 
         if (settingViewModel.urlPanel.isEmpty()) {
-            showSnackBar(
-                SnackBarEventData(
-                    text = getString(R.string.server_is_not_configured), ERROR
-                )
-            )
+            showSnackBar(text = getString(R.string.server_is_not_configured), ERROR)
 
             setButton(ButtonStyle.REFRESH)
             attemptSync = false
@@ -480,7 +473,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 initSync()
             } catch (ex: Exception) {
                 showProgressBar()
-                showSnackBar(SnackBarEventData(text = ex.message.toString(), ERROR))
+                showSnackBar(ex.message.toString(), ERROR)
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
 
                 setButton(ButtonStyle.REFRESH)
@@ -549,7 +542,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 resultForSettings.launch(intent)
             }
         } else {
-            makeText(binding.root, getString(R.string.invalid_password), ERROR)
+            showSnackBar(getString(R.string.invalid_password), ERROR)
         }
     }
 
@@ -590,10 +583,10 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
         // Check for a valid email address.
         if (userId == null || userId <= 0) {
-            showSnackBar(SnackBarEventData(getString(R.string.you_must_select_a_user), ERROR))
+            showSnackBar(getString(R.string.you_must_select_a_user), ERROR)
             cancel = true
         } else if (!isUserValid(userId)) {
-            showSnackBar(SnackBarEventData(getString(R.string.you_must_select_a_user), ERROR))
+            showSnackBar(getString(R.string.you_must_select_a_user), ERROR)
             cancel = true
         }
 
@@ -620,11 +613,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
                 finish()
             } else {
-                showSnackBar(
-                    SnackBarEventData(
-                        getString(R.string.wrong_user_password_combination), ERROR
-                    )
-                )
+                showSnackBar(getString(R.string.wrong_user_password_combination), ERROR)
             }
         }
     }
@@ -641,8 +630,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode && BuildConfig.DEBUG) makeText(
-            binding.root, scanCode, SnackBarType.INFO
+        if (settingViewModel.showScannedCode && BuildConfig.DEBUG) showSnackBar(
+            scanCode, SnackBarType.INFO
         )
 
         JotterListener.lockScanner(this, true)
@@ -663,11 +652,11 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                         if (it != null) {
                             attemptLogin(it.userId, it.password ?: "", password)
                         } else {
-                            showSnackBar(SnackBarEventData(getString(R.string.invalid_user), ERROR))
+                            showSnackBar(getString(R.string.invalid_user), ERROR)
                         }
                     }
                 } else {
-                    showSnackBar(SnackBarEventData(getString(R.string.invalid_code), ERROR))
+                    showSnackBar(getString(R.string.invalid_code), ERROR)
                 }
                 return
             }
@@ -707,12 +696,12 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 }
 
                 else -> {
-                    showSnackBar(SnackBarEventData(getString(R.string.invalid_code), ERROR))
+                    showSnackBar(getString(R.string.invalid_code), ERROR)
                 }
             }
         } catch (ex: Exception) {
             ex.printStackTrace()
-            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
+            showSnackBar(ex.message.toString(), ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial

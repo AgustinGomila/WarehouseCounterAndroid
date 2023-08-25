@@ -17,22 +17,11 @@ import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderSelectActivity
 
 /**
- * A simple [Fragment] subclass.
- * Use the [PtlOrderHeaderFragment.newInstance] factory method to
- * create an instance of this fragment.
+ * Ptl order header fragment
  */
 class PtlOrderHeaderFragment : Fragment() {
     interface OrderChangedListener {
         fun onOrderChanged(ptlOrder: PtlOrder?)
-    }
-
-    override fun onDestroy() {
-        destroyLocals()
-        super.onDestroy()
-    }
-
-    private fun destroyLocals() {
-        orderChangedListener = null
     }
 
     private var orderChangedListener: OrderChangedListener? = null
@@ -143,6 +132,18 @@ class PtlOrderHeaderFragment : Fragment() {
         _binding = null
     }
 
+    // Se llama cuando el fragmento ya no está asociado a la actividad anfitriona.
+    override fun onDetach() {
+        super.onDetach()
+        orderChangedListener = null
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (requireActivity() is OrderChangedListener) {
+            orderChangedListener = activity as OrderChangedListener
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -218,26 +219,5 @@ class PtlOrderHeaderFragment : Fragment() {
     companion object {
         const val ARG_PTL_ORDER = "ptlOrder"
         const val ARG_WAREHOUSE_AREA = "warehouseArea"
-
-        fun newInstance(
-            orderChangedListener: OrderChangedListener,
-            ptlOrder: PtlOrder,
-            warehouseArea: WarehouseArea?,
-        ): PtlOrderHeaderFragment {
-            val fragment = PtlOrderHeaderFragment()
-
-            val args = Bundle()
-            args.putParcelable(ARG_PTL_ORDER, ptlOrder)
-            args.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
-
-            fragment.arguments = args
-            fragment.orderChangedListener = orderChangedListener
-
-            return fragment
-        }
-
-        fun equals(a: Any?, b: Any?): Boolean {
-            return a != null && a == b
-        }
     }
 }

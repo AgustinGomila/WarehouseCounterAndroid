@@ -53,7 +53,7 @@ class DownloadController(private val view: View) {
 
         // Enqueue a new download and same the referenceId
         downloadManager.enqueue(request)
-        makeText(view, context.getString(R.string.downloading_), SnackBarType.INFO)
+        showSnackBar(context.getString(R.string.downloading_), SnackBarType.INFO)
     }
 
     private fun showInstallOption(
@@ -89,15 +89,15 @@ class DownloadController(private val view: View) {
                 context.startActivity(intent)
             } catch (e: ActivityNotFoundException) {
                 e.printStackTrace()
-                makeText(
-                    view,
-                    context.getString(R.string.error_opening_the_file),
-                    SnackBarType.ERROR
-                )
+                showSnackBar(context.getString(R.string.error_opening_the_file), SnackBarType.ERROR)
             }
         } else {
-            makeText(view, context.getString(R.string.file_not_found), SnackBarType.ERROR)
+            showSnackBar(context.getString(R.string.file_not_found), SnackBarType.ERROR)
         }
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(view, text, snackBarType)
     }
 
     private fun uriFromFile(context: Context, destination: String): Uri? {

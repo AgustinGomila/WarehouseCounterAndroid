@@ -56,6 +56,13 @@ class SearchTextFragment private constructor(builder: Builder) : Fragment() {
         _binding = null
     }
 
+    // Se llama cuando el fragmento ya no está asociado a la actividad anfitriona.
+    override fun onDetach() {
+        super.onDetach()
+        textChangedCallback = null
+        focusChangedCallback = null
+    }
+
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 

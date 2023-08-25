@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -162,12 +163,11 @@ object JotterListener : Jotter.Listener {
 
         when (requestCode) {
             REQUEST_BLUETOOTH_CONNECT -> {
-                // If request is cancelled, the result arrays are empty.
+                // If the request is cancelled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    makeText(
+                    showSnackBar(
                         activity.window.decorView,
-                        activity.getString(R.string.app_dont_have_necessary_permissions),
-                        SnackBarType.ERROR
+                        activity.getString(R.string.app_dont_have_necessary_permissions), SnackBarType.ERROR
                     )
                 } else {
                     rfidSetListener(activity)
@@ -210,7 +210,7 @@ object JotterListener : Jotter.Listener {
             Log.v(this::class.java.simpleName, "Manufacturer: $manufacturer, Model: $model")
 
             settingViewModel.collectorType = collectorType.id.toString()
-            makeText(
+            showSnackBar(
                 activity.window.decorView,
                 "${context.getString(R.string.device)}: $manufacturer $model",
                 SnackBarType.INFO
@@ -278,10 +278,9 @@ object JotterListener : Jotter.Listener {
             context.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
         val mBluetoothAdapter = bluetoothManager.adapter
         if (mBluetoothAdapter == null) {
-            makeText(
+            showSnackBar(
                 activity.window.decorView,
-                activity.getString(R.string.there_are_no_bluetooth_devices),
-                SnackBarType.INFO
+                activity.getString(R.string.there_are_no_bluetooth_devices), SnackBarType.INFO
             )
         } else {
             if (!mBluetoothAdapter.isEnabled) {
@@ -314,12 +313,16 @@ object JotterListener : Jotter.Listener {
         }
     }
 
+    private fun showSnackBar(v: View, text: String, snackBarType: SnackBarType) {
+        makeText(v, text, snackBarType)
+    }
+
     private fun createBarcodeReader(activity: AppCompatActivity) {
         try {
             scannerList.add(Scanner(activity))
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(
+            showSnackBar(
                 activity.window.decorView,
                 activity.getString(R.string.barcode_reader_not_initialized),
                 SnackBarType.ERROR
@@ -333,7 +336,7 @@ object JotterListener : Jotter.Listener {
             Rfid.setListener(activity as Rfid.RfidDeviceListener, RfidType.vh75)
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(
+            showSnackBar(
                 activity.window.decorView,
                 activity.getString(R.string.rfid_reader_not_initialized),
                 SnackBarType.ERROR

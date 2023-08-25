@@ -25,6 +25,7 @@ import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.ui.fragments.item.ItemDetailFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
@@ -176,6 +177,10 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         }
     }
 
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
+    }
+
     private fun clearControls() {
         fillPanel(null)
         binding.infoTextView.setText("", TextView.BufferType.EDITABLE)
@@ -200,7 +205,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         // Nada que hacer, volver
         if (scannedCode.isEmpty()) {
             val res = getString(R.string.invalid_code)
-            makeText(binding.root, res, ERROR)
+            showSnackBar(res, ERROR)
             Log.d(this::class.java.simpleName, res)
             return
         }
@@ -245,7 +250,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                         }
                         JotterListener.lockScanner(this, false)
                     } catch (ex: Exception) {
-                        makeText(binding.root, ex.message.toString(), ERROR)
+                        showSnackBar(ex.message.toString(), ERROR)
                         ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
                     }
                 }

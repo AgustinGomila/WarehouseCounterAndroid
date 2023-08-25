@@ -787,9 +787,27 @@ class SettingsViewModel : ViewModel() {
             settingRepository.outboxShowCheckBoxes.value = value
         }
 
-    var defaultTemplateId: Long
-        get() = settingRepository.defaultTemplateId.value as Long
+    var defaultItemTemplateId: Long
+        get() = settingRepository.defaultItemTemplateId.value as Long
         set(value) {
-            settingRepository.defaultTemplateId.value = value
+            settingRepository.defaultItemTemplateId.value = value
+        }
+
+    var defaultOrderTemplateId: Long
+        get() = settingRepository.defaultOrderTemplateId.value as Long
+        set(value) {
+            settingRepository.defaultOrderTemplateId.value = value
+        }
+
+    var defaultWaTemplateId: Long
+        get() = settingRepository.defaultWaTemplateId.value as Long
+        set(value) {
+            settingRepository.defaultWaTemplateId.value = value
+        }
+
+    var defaultRackTemplateId: Long
+        get() = settingRepository.defaultRackTemplateId.value as Long
+        set(value) {
+            settingRepository.defaultRackTemplateId.value = value
         }
 }

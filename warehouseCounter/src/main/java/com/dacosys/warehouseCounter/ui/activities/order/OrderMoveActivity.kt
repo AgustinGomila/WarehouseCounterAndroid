@@ -60,7 +60,6 @@ import com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.fragments.order.DestinationHeaderFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
@@ -89,11 +88,6 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         }
 
         adapter?.refreshListeners()
-
-        filterFragment.onDestroy()
-        destinationHeader.onDestroy()
-        summaryFragment.onDestroy()
-        searchTextFragment.onDestroy()
     }
 
     override fun onRefresh() {
@@ -300,21 +294,14 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
 
     private fun setupDestinationHeaderFragment() {
         binding.destinationHeaderFragment.visibility = VISIBLE
-        setDestinationHeaderTextBox(warehouseArea, rack)
-    }
-
-    private fun setDestinationHeaderTextBox(wa: WarehouseArea?, r: Rack?) {
-        destinationHeader.setChangeLocationListener(this)
-        destinationHeader.showChangePostButton(true)
-        destinationHeader.setTitle(getString(R.string.destination))
-
-        runOnUiThread {
-            if (r != null) {
-                destinationHeader.setDestination(r)
-            } else if (wa != null) {
-                destinationHeader.setDestination(wa)
-            }
-        }
+        destinationHeader =
+            DestinationHeaderFragment.Builder()
+                .setTitle(getString(R.string.destination))
+                .setShowChangePosButton(true)
+                .setRack(rack)
+                .setWarehouseArea(warehouseArea)
+                .build()
+        supportFragmentManager.beginTransaction().replace(R.id.destinationHeaderFragment, destinationHeader).commit()
     }
 
     private fun setupSearchTextFragment() {
@@ -605,28 +592,14 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         val wa = destinationHeader.warehouseArea
         val r = destinationHeader.rack
         if (wa == null) {
-            showSnackBar(SnackBarEventData(getString(R.string.you_must_select_a_destination), ERROR))
+            showSnackBar(getString(R.string.you_must_select_a_destination), ERROR)
             return
         }
 
-        val item = currentItem
-        val countChecked = countChecked
-        var itemArray: ArrayList<OrderResponse> = ArrayList()
+        val selectedOrders = adapter?.selectedOrders() ?: arrayListOf()
 
-        if (!multiSelect && item != null) {
-            itemArray = arrayListOf(item)
-        } else if (multiSelect) {
-            if (countChecked > 0 || item != null) {
-                if (countChecked > 0) itemArray = allChecked
-                else if (adapter?.showCheckBoxes == false) {
-                    itemArray = arrayListOf(item!!)
-                }
-                itemArray.map { it } as ArrayList<OrderResponse>
-            }
-        }
-
-        if (!itemArray.any()) {
-            showSnackBar(SnackBarEventData(getString(R.string.you_must_select_at_least_one_order), ERROR))
+        if (!selectedOrders.any()) {
+            showSnackBar(getString(R.string.you_must_select_at_least_one_order), ERROR)
             return
         }
 
@@ -634,7 +607,7 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         builder.setTitle(context.getString(R.string.confirm_movement))
         builder.setMessage(getString(R.string.are_you_sure_to_move_the_selected_orders))
         builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
-            moveOrder(itemArray, wa, r)
+            moveOrder(selectedOrders, wa, r)
             dialogInterface.dismiss()
         }
         builder.setNegativeButton(getString(R.string.no)) { dialogInterface, _ ->
@@ -689,7 +662,7 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
             GetOrder(
                 filter = filter,
                 action = GetOrder.defaultAction,
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
                     fillAdapter(ArrayList(it))
                 }
@@ -799,12 +772,12 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
-            showSnackBar(SnackBarEventData(res, ERROR))
+            showSnackBar(res, ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
         }
 
-        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
         JotterListener.lockScanner(this, true)
 
         // Buscar por ubicación de destino o pedido
@@ -838,8 +811,8 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         )
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onBackPressed() {

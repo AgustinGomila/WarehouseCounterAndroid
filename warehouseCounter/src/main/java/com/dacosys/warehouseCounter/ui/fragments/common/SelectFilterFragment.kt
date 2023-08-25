@@ -135,18 +135,6 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         )
     }
 
-    override fun onDestroy() {
-        destroyLocals()
-        super.onDestroy()
-    }
-
-    private fun destroyLocals() {
-        this.filterItemChangedListener = null
-        this.filterLocationChangedListener = null
-        this.filterOrderChangedListener = null
-        this.filterOrderLocationChangedListener = null
-    }
-
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 

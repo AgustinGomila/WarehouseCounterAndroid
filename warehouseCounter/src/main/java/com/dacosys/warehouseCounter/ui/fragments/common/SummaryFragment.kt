@@ -9,9 +9,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.databinding.SummaryFragmentBinding
 
 /**
- * A simple [Fragment] subclass.
- * Use the [SummaryFragment.newInstance] factory method to
- * create an instance of this fragment.
+ * Summary fragment
  */
 class SummaryFragment : Fragment() {
     private var multiSelect: Boolean = false
@@ -47,7 +45,6 @@ class SummaryFragment : Fragment() {
             totalChecked = requireArguments().getInt(ARG_TOTAL_CHECKED)
             totalRequired = requireArguments().getInt(ARG_TOTAL_REQUIRED)
         }
-
         fill()
     }
 
@@ -100,27 +97,5 @@ class SummaryFragment : Fragment() {
         const val ARG_TOTAL_VISIBLE = "totalVisible"
         const val ARG_TOTAL_REQUIRED = "totalRequired"
         const val ARG_TOTAL_CHECKED = "totalChecked"
-
-        fun newInstance(
-            multiSelect: Boolean,
-            totalVisible: Int,
-            totalChecked: Int,
-            totalRequired: Int
-        ): SummaryFragment {
-            val fragment = SummaryFragment()
-
-            val args = Bundle()
-            args.putBoolean(ARG_MULTISELECT, multiSelect)
-            args.putInt(ARG_TOTAL_VISIBLE, totalVisible)
-            args.putInt(ARG_TOTAL_REQUIRED, totalRequired)
-            args.putInt(ARG_TOTAL_CHECKED, totalChecked)
-            fragment.arguments = args
-
-            return fragment
-        }
-
-        fun equals(a: Any?, b: Any?): Boolean {
-            return a != null && a == b
-        }
     }
 }

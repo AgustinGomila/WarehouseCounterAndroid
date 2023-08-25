@@ -44,7 +44,7 @@ class CheckCode(
             if (Statics.DEMO_MODE) {
                 if (count >= 5) {
                     val res = context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
-                    onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
+                    sendEvent(res, SnackBarType.ERROR)
                     callback.invoke(CheckCodeEnded(null, itemCode))
                     Log.e(this::class.java.simpleName, res)
                     return@withContext
@@ -56,7 +56,7 @@ class CheckCode(
             // Nada que hacer, volver
             if (code.isEmpty()) {
                 val res = context.getString(R.string.invalid_code)
-                onEventData.invoke(SnackBarEventData(res, SnackBarType.ERROR))
+                sendEvent(res, SnackBarType.ERROR)
                 callback.invoke(CheckCodeEnded(null, itemCode))
                 Log.e(this::class.java.simpleName, res)
                 return@withContext
@@ -140,18 +140,16 @@ class CheckCode(
                                 )
                             } else {
                                 callback.invoke(CheckCodeEnded(null, null))
-                                onEventData.invoke(
-                                    SnackBarEventData(
-                                        context.getString(R.string.error_attempting_to_add_item_to_database),
-                                        SnackBarType.ERROR
-                                    )
+                                sendEvent(
+                                    context.getString(R.string.error_attempting_to_add_item_to_database),
+                                    SnackBarType.ERROR
                                 )
 
                             }
                         }
                     } else {
                         callback.invoke(CheckCodeEnded(null, null))
-                        onEventData.invoke(
+                        sendEvent(
                             SnackBarEventData(
                                 "${context.getString(R.string.unknown_item)}: $code",
                                 SnackBarType.INFO
@@ -162,8 +160,17 @@ class CheckCode(
             }
         } catch (ex: Exception) {
             callback.invoke(CheckCodeEnded(null, null))
-            onEventData.invoke(SnackBarEventData(ex.message.toString(), SnackBarType.ERROR))
+            sendEvent(ex.message.toString(), SnackBarType.ERROR)
             Log.e(this::class.java.simpleName, ex.message ?: "")
         }
+    }
+
+    private fun sendEvent(msg: String, type: SnackBarType) {
+        val event = SnackBarEventData(msg, type)
+        sendEvent(event)
+    }
+
+    private fun sendEvent(event: SnackBarEventData) {
+        onEventData.invoke(event)
     }
 }

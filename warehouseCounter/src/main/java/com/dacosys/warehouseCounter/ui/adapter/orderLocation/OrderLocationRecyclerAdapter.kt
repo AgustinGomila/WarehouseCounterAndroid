@@ -847,6 +847,26 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         super.submitList(sortedVisibleList(list), commitCallback)
     }
 
+    fun selectedLocations(): ArrayList<OrderLocation> {
+        val item = currentItem()
+        val countChecked = countChecked()
+        var itemArray: ArrayList<OrderLocation> = ArrayList()
+
+        if (!multiSelect && item != null) {
+            itemArray = arrayListOf(item)
+        } else if (multiSelect) {
+            if (countChecked > 0 || item != null) {
+                if (countChecked > 0) {
+                    itemArray = getAllChecked()
+                } else if (!showCheckBoxes) {
+                    itemArray = arrayListOf(item!!)
+                }
+                itemArray.map { it } as ArrayList<OrderLocation>
+            }
+        }
+        return itemArray
+    }
+
     class Builder {
         fun build(): OrderLocationRecyclerAdapter {
             return OrderLocationRecyclerAdapter(this)

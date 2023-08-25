@@ -73,9 +73,10 @@ import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.ui.activities.item.CheckItemCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemRecyclerAdapter
+import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment
+import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
@@ -87,7 +88,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     ItemRecyclerAdapter.SelectedItemChangedListener, ItemRecyclerAdapter.CheckedChangedListener,
     CounterHandler.CounterListener, SelectFilterFragment.OnFilterItemChangedListener,
     SwipeRefreshLayout.OnRefreshListener, ItemRecyclerAdapter.DataSetChangedListener,
-    ItemRecyclerAdapter.AddPhotoRequiredListener, ItemRecyclerAdapter.AlbumViewRequiredListener {
+    ItemRecyclerAdapter.AddPhotoRequiredListener, ItemRecyclerAdapter.AlbumViewRequiredListener,
+    SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -96,8 +98,6 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private fun destroyLocals() {
         adapter?.refreshListeners()
         adapter?.refreshImageControlListeners()
-
-        filterFragment.onDestroy()
     }
 
     override fun onSelectedItemChanged(item: Item?) {
@@ -143,12 +143,12 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
-            showSnackBar(SnackBarEventData(res, ERROR))
+            showSnackBar(res, ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
         }
@@ -157,12 +157,12 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             CheckItemCode(
                 scannedCode = scanCode,
                 list = adapter?.fullList ?: ArrayList(),
-                onEventData = { showSnackBar(it) },
+                onEventData = { showSnackBar(it.text, it.snackBarType) },
                 onFinish = { onCheckCodeEnded(it) },
             ).execute()
         } catch (ex: Exception) {
             ex.printStackTrace()
-            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
+            showSnackBar(ex.message.toString(), ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial
@@ -170,8 +170,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onIncrement(view: View?, number: Double) {
@@ -184,9 +184,10 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
         runOnUiThread {
-            binding.selectedTextView.text = adapter?.countChecked().toString()
+            summaryFragment
+                .totalChecked(countChecked)
+                .fill()
         }
-        adapter?.selectItem(pos)
     }
 
     private var rejectNewInstances = false
@@ -194,8 +195,11 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private var tempTitle = ""
 
     private var panelIsExpanded = false
+    private var searchTextIsFocused = false
 
     private lateinit var filterFragment: SelectFilterFragment
+    private lateinit var summaryFragment: SummaryFragment
+    private lateinit var searchTextFragment: SearchTextFragment
 
     private var linkCode: String = ""
 
@@ -230,6 +234,11 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             else settingViewModel.linkCodeShowCheckBoxes
         set(value) {
             settingViewModel.linkCodeShowCheckBoxes = value
+        }
+
+    private val countChecked: Int
+        get() {
+            return adapter?.countChecked() ?: 0
         }
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
@@ -303,8 +312,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         fillRequired = true
 
         //// INICIALIZAR CONTROLES
-        filterFragment =
-            supportFragmentManager.findFragmentById(R.id.filterFragment) as SelectFilterFragment
+        filterFragment = supportFragmentManager.findFragmentById(R.id.filterFragment) as SelectFilterFragment
+        summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
+        searchTextFragment = supportFragmentManager.findFragmentById(R.id.searchTextFragment) as SearchTextFragment
 
         if (savedInstanceState != null) {
             loadBundleValues(savedInstanceState)
@@ -317,6 +327,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         binding.topAppbar.title = tempTitle
 
         setupFilterFragment()
+        setupSearchTextFragment()
 
         // Esta clase controla el comportamiento de los botones (+) y (-)
         ch = CounterHandler.Builder()
@@ -381,42 +392,6 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
         binding.codeEditText.setText(linkCode, TextView.BufferType.EDITABLE)
 
-        binding.searchEditText.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable) {
-            }
-
-            override fun beforeTextChanged(
-                s: CharSequence, start: Int,
-                count: Int, after: Int,
-            ) {
-            }
-
-            override fun onTextChanged(
-                s: CharSequence, start: Int,
-                before: Int, count: Int,
-            ) {
-                searchText = s.toString()
-                adapter?.refreshFilter(FilterOptions(searchText))
-            }
-        })
-        binding.searchEditText.setText(searchText, TextView.BufferType.EDITABLE)
-        binding.searchEditText.setOnKeyListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        Screen.closeKeyboard(this)
-                    }
-                }
-            }
-            false
-        }
-        binding.searchEditText.setRawInputType(InputType.TYPE_CLASS_TEXT)
-
-        binding.searchTextImageView.setOnClickListener { binding.searchEditText.requestFocus() }
-        binding.searchTextClearImageView.setOnClickListener {
-            binding.searchEditText.setText("")
-        }
-
         binding.swipeRefreshItem.setOnRefreshListener(this)
         binding.swipeRefreshItem.setColorSchemeResources(
             android.R.color.holo_blue_bright,
@@ -448,6 +423,15 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 .searchByCategory(sv.linkCodeSearchByCategory, sr.linkCodeSearchByCategory)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
+    }
+
+    private fun setupSearchTextFragment() {
+        searchTextFragment =
+            SearchTextFragment.Builder()
+                .focusChangedCallback(this)
+                .searchTextChangedCallback(this)
+                .build()
+        supportFragmentManager.beginTransaction().replace(R.id.searchTextFragment, searchTextFragment).commit()
     }
 
     // region Inset animation
@@ -507,6 +491,15 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
                     return insets
                 }
+
+                override fun onStart(
+                    animation: WindowInsetsAnimationCompat,
+                    bounds: WindowInsetsAnimationCompat.BoundsCompat
+                ): WindowInsetsAnimationCompat.BoundsCompat {
+                    // Ocultamos el panel de asistente para hacer lugar al teclado en pantalla que está por aparecer.
+                    if (!isKeyboardVisible) setToolTipVisibility(GONE)
+                    return super.onStart(animation, bounds)
+                }
             })
     }
 
@@ -528,6 +521,17 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun postExecuteImeAnimation() {
+        if (!isKeyboardVisible) {
+            // Visibilidad del panel de ingreso de códigos y cantidades
+            setInputPanelVisibility(VISIBLE)
+
+            // Expandir el panel de búsqueda y sumario para darle espacio al teclado
+            setSearchAndSummaryPanelVisibility(VISIBLE)
+
+            // Visibilidad del panel superior de guía
+            setToolTipVisibility(VISIBLE)
+        }
+
         // Si estamos esperando que termine la animación para ejecutar un cambio de vista
         if (changePanelsStateAtFinish) {
             changePanelsStateAtFinish = false
@@ -535,22 +539,27 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         } else if (isKeyboardVisible) {
             val orientation = resources.configuration.orientation
             when {
-                orientation == Configuration.ORIENTATION_PORTRAIT && !binding.codeEditText.isFocused -> {
+                !inputPanelIsFocused() -> {
                     panelIsExpanded = false
                     setPanels()
+
+                    // No necesitamos ver el panel de ingreso de códigos y cantidades
+                    setInputPanelVisibility(GONE)
                 }
 
-                orientation == Configuration.ORIENTATION_PORTRAIT && binding.codeEditText.isFocused -> {
+                orientation == Configuration.ORIENTATION_PORTRAIT && inputPanelIsFocused() -> {
                     panelIsExpanded = false
                     setPanels()
-                }
 
-                orientation != Configuration.ORIENTATION_PORTRAIT && !binding.codeEditText.isFocused -> {
-                    panelIsExpanded = false
-                    setPanels()
+                    // Colapsar el panel de búsqueda y sumario para darle espacio al teclado
+                    setSearchAndSummaryPanelVisibility(GONE)
                 }
             }
         }
+    }
+
+    private fun inputPanelIsFocused(): Boolean {
+        return binding.codeEditText.isFocused || binding.qtyEditText.isFocused
     }
     // endregion
 
@@ -573,10 +582,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 sendItemCodes(it)
             } else {
                 showSnackBar(
-                    SnackBarEventData(
-                        context.getString(R.string.there_are_no_item_codes_to_send),
-                        INFO
-                    )
+                    context.getString(R.string.there_are_no_item_codes_to_send), INFO
                 )
             }
         }
@@ -596,7 +602,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     thread {
                         SendItemCodeArray(
                             payload = it,
-                            onEvent = { showSnackBar(it) },
+                            onEvent = { showSnackBar(it.text, it.snackBarType) },
                             onFinish = { setSendButtonText() }
                         ).execute()
                     }
@@ -615,10 +621,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 val tempCode = binding.codeEditText.text.toString()
                 if (tempCode.isEmpty()) {
                     showSnackBar(
-                        SnackBarEventData(
-                            context.getString(R.string.you_must_select_a_code_to_link),
-                            ERROR
-                        )
+                        context.getString(R.string.you_must_select_a_code_to_link), ERROR
                     )
                     return
                 }
@@ -626,10 +629,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 val tempStrQty = binding.qtyEditText.text.toString()
                 if (tempStrQty.isEmpty()) {
                     showSnackBar(
-                        SnackBarEventData(
-                            context.getString(R.string.you_must_select_an_amount_to_link),
-                            ERROR
-                        )
+                        context.getString(R.string.you_must_select_an_amount_to_link), ERROR
                     )
                     return
                 }
@@ -638,16 +638,13 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 try {
                     tempQty = java.lang.Double.parseDouble(tempStrQty)
                 } catch (e: NumberFormatException) {
-                    showSnackBar(SnackBarEventData(context.getString(R.string.invalid_amount), ERROR))
+                    showSnackBar(context.getString(R.string.invalid_amount), ERROR)
                     return
                 }
 
                 if (tempQty <= 0) {
                     showSnackBar(
-                        SnackBarEventData(
-                            context.getString(R.string.you_must_select_a_positive_amount_greater_than_zero),
-                            ERROR
-                        )
+                        context.getString(R.string.you_must_select_a_positive_amount_greater_than_zero), ERROR
                     )
                     return
                 }
@@ -656,10 +653,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 ItemCodeCoroutines.getByCode(tempCode) {
                     if (it.size > 0) {
                         showSnackBar(
-                            SnackBarEventData(
-                                context.getString(R.string.the_code_is_already_linked_to_an_item),
-                                ERROR
-                            )
+                            context.getString(R.string.the_code_is_already_linked_to_an_item), ERROR
                         )
                         return@getByCode
                     }
@@ -680,13 +674,11 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                         }
 
                         showSnackBar(
-                            SnackBarEventData(
-                                String.format(
-                                    context.getString(R.string.item_linked_to_code),
-                                    item.itemId,
-                                    tempCode
-                                ), SnackBarType.SUCCESS
-                            )
+                            String.format(
+                                context.getString(R.string.item_linked_to_code),
+                                item.itemId,
+                                tempCode
+                            ), SnackBarType.SUCCESS
                         )
 
                         runOnUiThread { adapter?.selectItem(item) }
@@ -704,20 +696,15 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 val tempCode = binding.codeEditText.text.toString()
                 if (tempCode.isEmpty()) {
                     showSnackBar(
-                        SnackBarEventData(
-                            context.getString(R.string.you_must_select_a_code_to_link),
-                            ERROR
-                        )
+                        context.getString(R.string.you_must_select_a_code_to_link), ERROR
                     )
                     return
                 }
 
                 ItemCodeCoroutines.unlinkCode(item.itemId, tempCode) {
                     showSnackBar(
-                        SnackBarEventData(
-                            String.format(getString(R.string.item_unlinked_from_codes), item.itemId),
-                            SnackBarType.SUCCESS
-                        )
+                        String.format(getString(R.string.item_unlinked_from_codes), item.itemId),
+                        SnackBarType.SUCCESS
                     )
 
                     runOnUiThread { adapter?.selectItem(item) }
@@ -1108,6 +1095,45 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }
     }
 
+    override fun onSearchTextFocusChange(hasFocus: Boolean) {
+        searchTextIsFocused = hasFocus
+        if (hasFocus) {
+            /*
+            TODO Transición suave de teclado.
+            Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
+            Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
+            el teclado cambiará de tipo y puede tener una altura diferente.
+            Esto no dispara los eventos de animación del teclado.
+            Colapsar los paneles y reajustar el Layout al final es la solución temporal.
+            */
+            panelIsExpanded = false
+            setPanels()
+        }
+    }
+
+    private fun setInputPanelVisibility(visibility: Int) {
+        runOnUiThread {
+            binding.inputPanel.visibility = visibility
+        }
+    }
+
+    private fun setSearchAndSummaryPanelVisibility(visibility: Int) {
+        runOnUiThread {
+            binding.summaryFragment.visibility = visibility
+            binding.searchTextFragment.visibility = visibility
+        }
+    }
+
+    private fun setToolTipVisibility(visibility: Int) {
+        runOnUiThread {
+            binding.tooltipTextView.visibility = visibility
+        }
+    }
+
+    override fun onSearchTextChanged(searchText: String) {
+        adapter?.refreshFilter(FilterOptions(searchText))
+    }
+
     /**
      * Devuelve una cadena de texto formateada que se ajusta a los parámetros.
      * Devuelve una cadena vacía en caso de Exception.
@@ -1228,43 +1254,14 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     override fun onDataSetChanged() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            fillSummaryRow()
-        }, 100)
-    }
-
-    private fun fillSummaryRow() {
-        Log.d(this::class.java.simpleName, "fillSummaryRow")
         runOnUiThread {
-            if (multiSelect) {
-                binding.totalLabelTextView.text = context.getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context.getString(R.string.cant)
-                binding.selectedLabelTextView.text = context.getString(R.string.checked)
-
-                if (adapter != null) {
-                    binding.totalTextView.text = adapter?.totalVisible().toString()
-                    binding.qtyReqTextView.text = "0"
-                    binding.selectedTextView.text = adapter?.countChecked().toString()
-                }
-            } else {
-                binding.totalLabelTextView.text = context.getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
-                binding.selectedLabelTextView.text = context.getString(R.string.items)
-
-                if (adapter != null) {
-                    val cont = 0
-                    val t = adapter?.totalVisible() ?: 0
-                    binding.totalTextView.text = t.toString()
-                    binding.qtyReqTextView.text = cont.toString()
-                    binding.selectedTextView.text = (t - cont).toString()
-                }
-            }
-
-            if (adapter == null) {
-                binding.totalTextView.text = 0.toString()
-                binding.qtyReqTextView.text = 0.toString()
-                binding.selectedTextView.text = 0.toString()
-            }
+            Handler(Looper.getMainLooper()).postDelayed({
+                summaryFragment
+                    .multiSelect(multiSelect)
+                    .totalVisible(adapter?.totalVisible() ?: 0)
+                    .totalChecked(countChecked)
+                    .fill()
+            }, 100)
         }
     }
 
@@ -1352,7 +1349,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         ) { it2 ->
             if (it2 != null) fillResults(it2)
             else {
-                showSnackBar(SnackBarEventData(getString(R.string.no_images), INFO))
+                showSnackBar(getString(R.string.no_images), INFO)
                 rejectNewInstances = false
             }
         }
@@ -1377,7 +1374,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     private fun fillResults(docContReqResObj: DocumentContentRequestResult) {
         if (docContReqResObj.documentContentArray.isEmpty()) {
-            showSnackBar(SnackBarEventData(getString(R.string.no_images), INFO))
+            showSnackBar(getString(R.string.no_images), INFO)
             rejectNewInstances = false
             return
         }
@@ -1385,7 +1382,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         val anyAvailable = docContReqResObj.documentContentArray.any { it.available }
 
         if (!anyAvailable) {
-            showSnackBar(SnackBarEventData(getString(R.string.images_not_yet_processed), INFO))
+            showSnackBar(getString(R.string.images_not_yet_processed), INFO)
             rejectNewInstances = false
             return
         }

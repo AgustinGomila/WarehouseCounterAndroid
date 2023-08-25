@@ -19,6 +19,7 @@ import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.vh75.Vh75Bt
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.journeyapps.barcodescanner.ScanOptions
 import org.json.JSONObject
@@ -317,11 +318,16 @@ class Statics {
         // region Operaciones de escritura en almacenamiento de Órdenes
 
         fun writeJsonToFile(v: View, filename: String, value: String, completed: Boolean): Boolean {
+
+            fun showSnackBar(text: String, snackBarType: SnackBarType) {
+                makeText(v, text, snackBarType)
+            }
+
             if (!isExternalStorageWritable) {
                 val res =
                     context.getString(R.string.error_external_storage_not_available_for_reading_or_writing)
                 Log.e(this::class.java.simpleName, res)
-                makeText(v, res, ERROR)
+                showSnackBar(res, ERROR)
                 return false
             }
 
@@ -338,7 +344,7 @@ class Statics {
                 val res =
                     context.getString(R.string.an_error_occurred_while_trying_to_save_the_count)
                 Log.e(this::class.java.simpleName, res)
-                makeText(v, res, ERROR)
+                showSnackBar(res, ERROR)
                 error = true
             }
 

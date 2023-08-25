@@ -25,7 +25,6 @@ import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.ui.activities.location.LocationSelectActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import org.parceler.Parcels
@@ -46,7 +45,7 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
     override fun scannerCompleted(scanCode: String) {
         if (isFinishing) return
 
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, SnackBarType.INFO)
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
     }
 
     private var warehouseArea: WarehouseArea? = null
@@ -132,14 +131,14 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
         if (isFinishing) return
 
         if (!ApiRequest.validUrl()) {
-            showSnackBar(SnackBarEventData(context.getString(R.string.invalid_url), SnackBarType.ERROR))
+            showSnackBar(context.getString(R.string.invalid_url), SnackBarType.ERROR)
             return
         }
 
         thread {
             GetWarehouse(
                 action = GetWarehouse.defaultAction,
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = { if (it.any()) onGetWarehouses(it) }
             ).execute()
         }
@@ -153,8 +152,8 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
         setAreaText()
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private fun setAreaText() {

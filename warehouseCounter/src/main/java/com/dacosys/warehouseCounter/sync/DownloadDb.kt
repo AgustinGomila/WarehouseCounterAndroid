@@ -57,18 +57,23 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
              * Don't show the error message.
              */
             if (fileType == FileType.TIME_FILE) {
-                onEventData(
-                    SnackBarEventData(
-                        context.getString(R.string.offline_mode), SnackBarType.INFO
-                    )
-                )
+                sendEvent(context.getString(R.string.offline_mode), SnackBarType.INFO)
             } else {
-                onEventData(SnackBarEventData(msg, ERROR))
+                sendEvent(msg, ERROR)
             }
         }
 
         Log.d(this::class.java.simpleName, "${downloadStatus.name}: ${fileType.name}, $msg")
         mCallback?.onDownloadFileTask(msg, fileType, downloadStatus, progress)
+    }
+
+    private fun sendEvent(msg: String, type: SnackBarType) {
+        val event = SnackBarEventData(msg, type)
+        sendEvent(event)
+    }
+
+    private fun sendEvent(event: SnackBarEventData) {
+        onEventData.invoke(event)
     }
 
     /**

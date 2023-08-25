@@ -51,11 +51,15 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     override fun scannerCompleted(scanCode: String) {
         if (isFinishing) return
 
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, SnackBarType.INFO)
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
 
         runOnUiThread {
             binding.descEditText.setText(scanCode)
         }
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private var client: Client? = null
@@ -223,15 +227,6 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             focusView = binding.descEditText
             cancel = true
         }
-
-        /*
-        if (client == null || !isClientValid(client!!)) {
-            //clientSpinnerFragment.setError(getString(R.string.error_field_required));
-            focusView = clientAutoCompleteTextView!!
-            Toast.makeText(binding.root,context(), R.string.you_must_select_a_client, Toast.LENGTH_SHORT).show()
-            cancel = true
-        }
-        */
 
         if (cancel) {
             // Hacer foco en el problema

@@ -1164,6 +1164,24 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
         super.submitList(sortedVisibleList(list), commitCallback)
     }
 
+    fun selectedItems(): ArrayList<Item> {
+        val item = currentItem()
+        val countChecked = countChecked()
+        var itemArray: ArrayList<Item> = ArrayList()
+
+        if (!multiSelect && item != null) {
+            itemArray = arrayListOf(item)
+        } else if (multiSelect) {
+            if (countChecked > 0 || item != null) {
+                if (countChecked > 0) itemArray = getAllChecked()
+                else if (!showCheckBoxes) {
+                    itemArray = arrayListOf(item!!)
+                }
+            }
+        }
+        return itemArray
+    }
+
     class Builder {
         fun build(): ItemRecyclerAdapter {
             return ItemRecyclerAdapter(this)

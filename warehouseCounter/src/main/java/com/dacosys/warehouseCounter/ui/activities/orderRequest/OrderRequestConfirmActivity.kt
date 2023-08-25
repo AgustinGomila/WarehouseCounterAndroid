@@ -507,9 +507,13 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         }
     }
 
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
+    }
+
     private fun confirm() {
         if (settingViewModel.signMandatory && imageControlFragment?.isSigned == false) {
-            makeText(binding.root, getString(R.string.mandatory_sign), SnackBarType.ERROR)
+            showSnackBar(getString(R.string.mandatory_sign), SnackBarType.ERROR)
         } else {
             val allowDiff = orderRequest.resultAllowDiff ?: true
             val allowMod = orderRequest.resultAllowDiff ?: true
@@ -517,8 +521,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             val orDiffProduct = orderRequest.resultDiffProduct ?: false
 
             if (!allowDiff && orDiffQty) {
-                makeText(
-                    binding.root,
+                showSnackBar(
                     getString(R.string.there_are_quantities_differences_in_some_items_and_this_count_does_not_allow_these_differences),
                     SnackBarType.ERROR
                 )
@@ -526,8 +529,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             }
 
             if (!allowMod && orDiffProduct) {
-                makeText(
-                    binding.root,
+                showSnackBar(
                     getString(R.string.there_are_items_differences_and_this_count_does_not_allow_these_differences),
                     SnackBarType.ERROR
                 )

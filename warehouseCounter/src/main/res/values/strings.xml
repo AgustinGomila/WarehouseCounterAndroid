@@ -753,4 +753,9 @@
     </string>
     <string name="confirm_unpacking">Confirmar desempaquetado</string>
     <string name="order_not_found">Pedido no encontrado</string>
+    <string name="default_template_for_items">Plantilla para ítems predeterminada</string>
+    <string name="default_template_for_orders">Plantilla para pedidos predeterminada</string>
+    <string name="default_template_for_areas">Plantilla para áreas predeterminada</string>
+    <string name="default_template_for_racks">Plantilla para racks predeterminada</string>
+    <string name="you_must_select_at_least_one_location">Debe seleccionar al menos una ubicación</string>
 </resources>

@@ -31,6 +31,11 @@ data class BarcodeLabelTemplate(
         rowModificationDate = parcel.readString() ?: ""
     )
 
+    val barcodeLabelType: BarcodeLabelType
+        get() {
+            return BarcodeLabelType.getById(barcodeLabelTypeId)
+        }
+
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeLong(templateId)
         parcel.writeInt(active)

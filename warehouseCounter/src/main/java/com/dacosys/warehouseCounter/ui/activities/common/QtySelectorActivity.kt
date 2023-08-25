@@ -30,6 +30,7 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
@@ -258,7 +259,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
             if (it == null) {
                 val res =
                     getString(R.string.an_error_occurred_while_updating_the_description_of_the_item_in_the_database)
-                makeText(binding.root, res, ERROR)
+                showSnackBar(res, ERROR)
                 android.util.Log.e(this::class.java.simpleName, res)
                 return@updateItemDescriptionToDb
             }
@@ -268,6 +269,10 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
 
             refreshTextViews()
         }
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private fun updateItemDescriptionToDb(
@@ -326,7 +331,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
         if (equals(scanCode, orc.ean)) {
@@ -335,9 +340,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
                 try {
                     currentQty = java.lang.Double.parseDouble(binding.qtyEditText.text.toString())
                 } catch (e: NumberFormatException) {
-                    makeText(
-                        binding.root, e.message.toString(), ERROR
-                    )
+                    showSnackBar(e.message.toString(), ERROR)
                     return
                 }
 
@@ -346,7 +349,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
                     binding.qtyEditText.setText(r.toString(), TextView.BufferType.EDITABLE)
                 }
             } catch (ex: Exception) {
-                makeText(binding.root, ex.message.toString(), ERROR)
+                showSnackBar(ex.message.toString(), ERROR)
             } finally {
                 JotterListener.lockScanner(this, false)
             }

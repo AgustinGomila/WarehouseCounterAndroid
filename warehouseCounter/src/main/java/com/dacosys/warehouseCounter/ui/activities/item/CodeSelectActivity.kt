@@ -115,8 +115,9 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         binding.autoCompleteTextView.hint = title
         binding.autoCompleteTextView.onItemClickListener =
             AdapterView.OnItemClickListener { _, _, position, _ ->
-                if (binding.autoCompleteTextView.adapter != null && binding.autoCompleteTextView.adapter is ItemAdapter) {
-                    val it = (binding.autoCompleteTextView.adapter as ItemAdapter).getItem(position)
+                val adapter = binding.autoCompleteTextView.adapter
+                if (adapter is ItemAdapter) {
+                    val it = adapter.getItem(position)
                     if (it != null) {
                         code = it.ean
                     }
@@ -352,9 +353,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) makeText(
-            binding.root, scanCode, SnackBarType.INFO
-        )
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
 
         JotterListener.lockScanner(this, true)
 
@@ -363,12 +362,16 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
             refreshCodeText(cleanText = false, focus = true)
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(binding.root, ex.message.toString(), SnackBarType.ERROR)
+            showSnackBar(ex.message.toString(), SnackBarType.ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial
             JotterListener.lockScanner(this, false)
         }
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     companion object {

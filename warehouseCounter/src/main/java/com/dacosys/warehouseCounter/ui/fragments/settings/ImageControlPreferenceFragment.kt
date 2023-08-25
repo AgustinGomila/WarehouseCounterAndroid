@@ -24,7 +24,6 @@ import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.bindPreferenceSummaryToValue
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 
@@ -69,10 +68,8 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
             val icPasswordWs = settingViewModel.icWsPass
 
             if (icUrl.isEmpty() || icNamespace.isEmpty() || icUserWs.isEmpty() || icPasswordWs.isEmpty()) {
-                if (view != null) MakeText.makeText(
-                    requireView(),
-                    WarehouseCounterApp.context.getString(R.string.invalid_webservice_data),
-                    SnackBarType.ERROR
+                if (view != null) showSnackBar(
+                    WarehouseCounterApp.context.getString(R.string.invalid_webservice_data), SnackBarType.ERROR
                 )
                 return@OnPreferenceClickListener false
             }
@@ -106,9 +103,7 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
                 true
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                if (view != null) MakeText.makeText(
-                    requireView(), "${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR
-                )
+                if (view != null) showSnackBar("${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR)
                 ErrorLog.writeLog(null, this::class.java.simpleName, ex)
                 false
             }
@@ -116,7 +111,7 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
 
         val inputConfCodePref = findPreference<Preference>("input_config_code")
         inputConfCodePref?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            showSnackBar(SnackBarEventData(getString(R.string.no_available_option), SnackBarType.INFO))
+            showSnackBar(getString(R.string.no_available_option), SnackBarType.INFO)
             true
         }
         // endregion
@@ -211,33 +206,29 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
         namespace: String,
     ) {
         if (url.isEmpty() || namespace.isEmpty()) {
-            if (view != null) MakeText.makeText(
-                requireView(),
-                WarehouseCounterApp.context.getString(R.string.invalid_webservice_data),
-                SnackBarType.INFO
+            if (view != null) showSnackBar(
+                WarehouseCounterApp.context.getString(R.string.invalid_webservice_data), SnackBarType.INFO
             )
             return
         }
-        ImageControlCheckUser { showSnackBar(it) }.execute()
+        ImageControlCheckUser { showSnackBar(it.text, it.snackBarType) }.execute()
     }
 
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
-            if (view != null) MakeText.makeText(
-                requireView(), getString(R.string.configuration_applied), SnackBarType.INFO
+            if (view != null) showSnackBar(
+                getString(R.string.configuration_applied), SnackBarType.INFO
             )
             FileHelper.removeDataBases()
             requireActivity().onBackPressed()
         } else if (status == ProgressStatus.crashed) {
-            if (view != null) MakeText.makeText(
-                requireView(), getString(R.string.error_setting_user_panel), SnackBarType.ERROR
-            )
+            if (view != null) showSnackBar(getString(R.string.error_setting_user_panel), SnackBarType.ERROR)
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
         if (requireActivity().isDestroyed || requireActivity().isFinishing) return
 
-        MakeText.makeText(requireView(), it.text, it.snackBarType)
+        MakeText.makeText(requireView(), text, snackBarType)
     }
 }

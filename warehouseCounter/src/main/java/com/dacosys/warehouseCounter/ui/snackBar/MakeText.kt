@@ -17,7 +17,35 @@ import java.lang.ref.WeakReference
 
 class MakeText : AppCompatActivity() {
     companion object {
-        fun makeText(activity: AppCompatActivity, text: String, snackBarType: SnackBarType) {
+        fun showInfoSnackBar(v: View, text: String) {
+            makeText(v, text, SnackBarType.INFO)
+        }
+
+        fun showErrorSnackBar(v: View, text: String) {
+            makeText(v, text, SnackBarType.ERROR)
+        }
+
+        fun showSuccessSnackBar(v: View, text: String) {
+            makeText(v, text, SnackBarType.SUCCESS)
+        }
+
+        fun showAddSnackBar(v: View, text: String) {
+            makeText(v, text, SnackBarType.ADD)
+        }
+
+        fun showRemoveSnackBar(v: View, text: String) {
+            makeText(v, text, SnackBarType.REMOVE)
+        }
+
+        fun showRunningSnackBar(v: View, text: String) {
+            makeText(v, text, SnackBarType.RUNNING)
+        }
+
+        fun showUpdateSnackBar(v: View, text: String) {
+            makeText(v, text, SnackBarType.UPDATE)
+        }
+
+        private fun makeText(activity: AppCompatActivity, text: String, snackBarType: SnackBarType) {
             makeText(
                 WeakReference(activity.window.decorView.findViewById(R.id.content)),
                 text,

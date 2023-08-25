@@ -764,24 +764,28 @@ class OrcAdapter private constructor(builder: Builder) :
         }
     }
 
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        MakeText.makeText(recyclerView, text, snackBarType)
+    }
+
     private fun reportQtyCollectedChange(content: OrderRequestContent) {
         val itemCode = content.ean
         val qtyRequested = content.qtyRequested ?: 0.0
         val decimalPlaces = 0
 
         val res = "${itemCode}: ${Statics.roundToString(qtyRequested, decimalPlaces)}"
-        MakeText.makeText(recyclerView, res, SnackBarType.ADD)
+        showSnackBar(res, SnackBarType.ADD)
     }
 
     private fun reportQtyRequestedReached(content: OrderRequestContent) {
         val itemCode = content.ean
         val res = "${itemCode}: ${context.getString(R.string.maximum_reached)}"
-        MakeText.makeText(recyclerView, res, SnackBarType.UPDATE)
+        showSnackBar(res, SnackBarType.UPDATE)
     }
 
     private fun reportQtyRequestedExceeded(orc: OrderRequestContent) {
         val res = "${orc.ean}: ${context.getString(R.string.qty_requested_exceeded)}"
-        MakeText.makeText(recyclerView, res, SnackBarType.UPDATE)
+        showSnackBar(res, SnackBarType.UPDATE)
     }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")

@@ -20,7 +20,6 @@ import com.dacosys.warehouseCounter.ktor.v2.functions.template.GetBarcodeLabelTe
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.adapter.barcodeLabel.BarcodeLabelTemplateAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
@@ -43,10 +42,23 @@ class TemplateSelectActivity : AppCompatActivity(),
 
     private var fillRequired = false
     private var template: BarcodeLabelTemplate? = null
+    private var templateTypeIdList: ArrayList<Long> = arrayListOf()
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         savedInstanceState.putParcelable(ARG_TEMPLATE, template)
+        savedInstanceState.putLongArray(ARG_TEMPLATE_TYPE_ID_LIST, templateTypeIdList.toLongArray())
+        savedInstanceState.putString(ARG_TITLE, title.toString())
+    }
+
+    private fun loadFromBundle(b: Bundle) {
+        val t1 = b.getString(ARG_TITLE)
+        title = if (!t1.isNullOrEmpty()) t1
+        else getString(R.string.search_by_template)
+
+        template = b.getParcelable(ARG_TEMPLATE)
+        templateTypeIdList =
+            (b.getLongArray(ARG_TEMPLATE_TYPE_ID_LIST) ?: longArrayOf()).toCollection(java.util.ArrayList())
     }
 
     private lateinit var binding: CodeSelectActivityBinding
@@ -62,7 +74,6 @@ class TemplateSelectActivity : AppCompatActivity(),
         // fuera de la ventana. Esta actividad se ve como un diálogo.
         setFinishOnTouchOutside(true)
 
-        var tempTitle = getString(R.string.search_by_template)
         if (savedInstanceState != null) {
             // Dejo de escuchar estos eventos hasta pasar los valores guardados
             // más adelante se reconectan
@@ -72,21 +83,16 @@ class TemplateSelectActivity : AppCompatActivity(),
             binding.autoCompleteTextView.onFocusChangeListener = null
             binding.autoCompleteTextView.setOnDismissListener(null)
 
-            template = savedInstanceState.getParcelable(ARG_TEMPLATE)
+            loadFromBundle(savedInstanceState)
         } else {
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString(ARG_TITLE)
-                if (!t1.isNullOrEmpty()) tempTitle = t1
-
-                template = extras.getParcelable(ARG_TEMPLATE)
+                loadFromBundle(extras)
             }
         }
 
         // Para el llenado en el onStart siguiente de onCreate
         fillRequired = true
-
-        title = tempTitle
 
         binding.codeSelect.setOnClickListener { onBackPressed() }
 
@@ -98,13 +104,12 @@ class TemplateSelectActivity : AppCompatActivity(),
         // region Setup CATEGORY_CATEGORY ID AUTOCOMPLETE
         // Set an barcodeLabelTemplate click checkedChangedListener for auto complete text view
         binding.autoCompleteTextView.threshold = 1
-        binding.autoCompleteTextView.hint = tempTitle
+        binding.autoCompleteTextView.hint = title
         binding.autoCompleteTextView.onItemClickListener =
             AdapterView.OnItemClickListener { _, _, position, _ ->
-                if (binding.autoCompleteTextView.adapter != null && binding.autoCompleteTextView.adapter is BarcodeLabelTemplateAdapter) {
-                    val it = (binding.autoCompleteTextView.adapter as BarcodeLabelTemplateAdapter).getItem(
-                        position
-                    )
+                val adapter = binding.autoCompleteTextView.adapter
+                if (adapter is BarcodeLabelTemplateAdapter) {
+                    val it = adapter.getItem(position)
                     if (it != null) {
                         template = it
                     }
@@ -114,7 +119,10 @@ class TemplateSelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.setOnContractsAvailability(this)
         binding.autoCompleteTextView.onFocusChangeListener =
             View.OnFocusChangeListener { _, hasFocus ->
-                if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold && binding.autoCompleteTextView.adapter != null && (binding.autoCompleteTextView.adapter as BarcodeLabelTemplateAdapter).count > 0 && !binding.autoCompleteTextView.isPopupShowing) {
+                if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold &&
+                    (binding.autoCompleteTextView.adapter?.count ?: 0) > 0 &&
+                    !binding.autoCompleteTextView.isPopupShowing
+                ) {
                     // Display the suggestion dropdown on focus
                     Handler(Looper.getMainLooper()).post {
                         adjustAndShowDropDown()
@@ -136,16 +144,17 @@ class TemplateSelectActivity : AppCompatActivity(),
             return@setOnTouchListener false
         }
         binding.autoCompleteTextView.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE || event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
-                if (binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold) {
-                    if (binding.autoCompleteTextView.adapter != null && binding.autoCompleteTextView.adapter is BarcodeLabelTemplateAdapter) {
-                        val all =
-                            (binding.autoCompleteTextView.adapter as BarcodeLabelTemplateAdapter).getAll()
+            val adapter = binding.autoCompleteTextView.adapter
+            if (adapter is BarcodeLabelTemplateAdapter) {
+                if (actionId == EditorInfo.IME_ACTION_DONE || event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
+                    if (binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold) {
+                        val all = adapter.getAll()
                         if (all.any()) {
                             var founded = false
                             for (a in all) {
                                 if (a.description.startsWith(
-                                        binding.autoCompleteTextView.text.toString().trim(), true
+                                        binding.autoCompleteTextView.text.toString().trim(),
+                                        true
                                     )
                                 ) {
                                     template = a
@@ -167,8 +176,8 @@ class TemplateSelectActivity : AppCompatActivity(),
                             }
                         }
                     }
+                    itemSelected()
                 }
-                itemSelected()
                 true
             } else {
                 false
@@ -238,9 +247,12 @@ class TemplateSelectActivity : AppCompatActivity(),
         try {
             thread {
                 GetBarcodeLabelTemplate(
-                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                     onFinish = {
-                        fillBarcodeLabelTemplate(it)
+                        val allTemplates =
+                            ArrayList(it.mapNotNull { t -> if (t.barcodeLabelTypeId in templateTypeIdList) t else null }
+                                .toList())
+                        fillBarcodeLabelTemplate(allTemplates)
                         showProgressBar(View.GONE)
                         isFilling = false
                     }).execute()
@@ -253,8 +265,8 @@ class TemplateSelectActivity : AppCompatActivity(),
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private fun fillBarcodeLabelTemplate(it: ArrayList<BarcodeLabelTemplate>) {
@@ -374,5 +386,6 @@ class TemplateSelectActivity : AppCompatActivity(),
     companion object {
         const val ARG_TITLE = "title"
         const val ARG_TEMPLATE = "template"
+        const val ARG_TEMPLATE_TYPE_ID_LIST = "templateTypeIdList"
     }
 }

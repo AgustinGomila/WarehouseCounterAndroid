@@ -96,10 +96,9 @@ class ClientSelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.hint = tempTitle
         binding.autoCompleteTextView.onItemClickListener =
             AdapterView.OnItemClickListener { _, _, position, _ ->
-                if (binding.autoCompleteTextView.adapter != null && binding.autoCompleteTextView.adapter is ClientAdapter) {
-                    val it = (binding.autoCompleteTextView.adapter as ClientAdapter).getItem(
-                        position
-                    )
+                val adapter = binding.autoCompleteTextView.adapter
+                if (adapter is ClientAdapter) {
+                    val it = adapter.getItem(position)
                     if (it != null) {
                         client = it
                     }
@@ -109,7 +108,10 @@ class ClientSelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.setOnContractsAvailability(this)
         binding.autoCompleteTextView.onFocusChangeListener =
             View.OnFocusChangeListener { _, hasFocus ->
-                if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold && binding.autoCompleteTextView.adapter != null && (binding.autoCompleteTextView.adapter as ClientAdapter).count > 0 && !binding.autoCompleteTextView.isPopupShowing) {
+                if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold &&
+                    (binding.autoCompleteTextView.adapter?.count ?: 0) > 0 &&
+                    !binding.autoCompleteTextView.isPopupShowing
+                ) {
                     // Display the suggestion dropdown on focus
                     Handler(Looper.getMainLooper()).post {
                         adjustAndShowDropDown()
@@ -132,9 +134,10 @@ class ClientSelectActivity : AppCompatActivity(),
         }
         binding.autoCompleteTextView.setOnEditorActionListener { _, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_DONE || event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
-                if (binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold) {
-                    if (binding.autoCompleteTextView.adapter != null && binding.autoCompleteTextView.adapter is ClientAdapter) {
-                        val all = (binding.autoCompleteTextView.adapter as ClientAdapter).getAll()
+                val adapter = binding.autoCompleteTextView.adapter
+                if (adapter is ClientAdapter) {
+                    if (binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold) {
+                        val all = adapter.getAll()
                         if (all.any()) {
                             var founded = false
                             for (a in all) {
@@ -161,8 +164,8 @@ class ClientSelectActivity : AppCompatActivity(),
                             }
                         }
                     }
+                    clientSelected()
                 }
-                clientSelected()
                 true
             } else {
                 false

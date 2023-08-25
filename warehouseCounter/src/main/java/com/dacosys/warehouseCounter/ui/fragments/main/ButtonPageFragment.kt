@@ -170,17 +170,17 @@ class ButtonPageFragment : Fragment() {
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                makeText(
-                    binding1.root,
-                    "${getString(R.string.exception_error)}: " + ex.message,
-                    SnackBarType.ERROR
-                )
+                showSnackBar("${getString(R.string.exception_error)}: " + ex.message, SnackBarType.ERROR)
             }
         }
         button.setOnTouchListener(View.OnTouchListener { view, motionEvent ->
             touchButton(motionEvent, view as Button)
             return@OnTouchListener true
         })
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding1.root, text, snackBarType)
     }
 
     private fun touchButton(motionEvent: MotionEvent, button: Button) {

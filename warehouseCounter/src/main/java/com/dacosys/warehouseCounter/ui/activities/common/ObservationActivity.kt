@@ -152,15 +152,19 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
                 binding.obsEditText.scrollTo(0, binding.obsEditText.bottom)
             }
 
-            makeText(binding.root, getString(R.string.ok), SnackBarType.SUCCESS)
+            showSnackBar(getString(R.string.ok), SnackBarType.SUCCESS)
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(binding.root, ex.message.toString(), SnackBarType.ERROR)
+            showSnackBar(ex.message.toString(), SnackBarType.ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial
             JotterListener.lockScanner(this, false)
         }
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onNewIntent(intent: Intent) {

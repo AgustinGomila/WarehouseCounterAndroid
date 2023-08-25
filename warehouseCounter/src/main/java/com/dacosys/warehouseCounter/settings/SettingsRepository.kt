@@ -324,9 +324,27 @@ class SettingsRepository {
         default = false
     )
 
-    var defaultTemplateId = Preference(
-        key = "default_template_id",
-        description = context.getString(R.string.default_template),
+    var defaultItemTemplateId = Preference(
+        key = "default_item_template_id",
+        description = context.getString(R.string.default_template_for_items),
+        default = 0L
+    )
+
+    var defaultOrderTemplateId = Preference(
+        key = "default_order_template_id",
+        description = context.getString(R.string.default_template_for_orders),
+        default = 0L
+    )
+
+    var defaultWaTemplateId = Preference(
+        key = "default_wa_template_id",
+        description = context.getString(R.string.default_template_for_areas),
+        default = 0L
+    )
+
+    var defaultRackTemplateId = Preference(
+        key = "default_rack_template_id",
+        description = context.getString(R.string.default_template_for_racks),
         default = 0L
     )
 
@@ -740,7 +758,10 @@ class SettingsRepository {
                 sr.inboxShowCheckBoxes,
                 sr.outboxShowCheckBoxes,
 
-                sr.defaultTemplateId,
+                sr.defaultItemTemplateId,
+                sr.defaultOrderTemplateId,
+                sr.defaultWaTemplateId,
+                sr.defaultRackTemplateId,
 
                 sr.printerBtAddress,
 

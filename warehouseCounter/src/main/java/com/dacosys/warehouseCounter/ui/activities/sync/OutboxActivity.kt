@@ -42,7 +42,6 @@ import com.dacosys.warehouseCounter.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.utils.Screen
@@ -295,14 +294,14 @@ class OutboxActivity : AppCompatActivity() {
 
                 CreateOrder(
                     orderArray = orArray,
-                    onEvent = { showSnackBar(it) },
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
                     onFinish = { successFiles ->
 
                         /** We delete the files of the orders sent */
                         /** We delete the files of the orders sent */
                         OrderRequest.removeCountFiles(
                             successFiles = successFiles,
-                            sendEvent = { eventData -> showSnackBar(eventData) }
+                            sendEvent = { eventData -> showSnackBar(eventData.text, eventData.snackBarType) }
                         )
 
                         /** We remove the reference to the order in room database,
@@ -323,8 +322,8 @@ class OutboxActivity : AppCompatActivity() {
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private fun removeResetDialog() {
@@ -389,10 +388,7 @@ class OutboxActivity : AppCompatActivity() {
 
         if (!isOk) {
             showSnackBar(
-                SnackBarEventData(
-                    getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
-                    ERROR
-                )
+                getString(R.string.an_error_occurred_while_trying_to_delete_the_count), ERROR
             )
         }
 
@@ -452,10 +448,7 @@ class OutboxActivity : AppCompatActivity() {
 
         if (!isOk) {
             showSnackBar(
-                SnackBarEventData(
-                    getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
-                    ERROR
-                )
+                getString(R.string.an_error_occurred_while_trying_to_delete_the_count), ERROR
             )
         }
 
@@ -468,7 +461,7 @@ class OutboxActivity : AppCompatActivity() {
             finish()
         } else {
             val res = getString(R.string.an_error_occurred_while_trying_to_save_the_count)
-            showSnackBar(SnackBarEventData(res, ERROR))
+            showSnackBar(res, ERROR)
             android.util.Log.e(this::class.java.simpleName, res)
         }
     }
@@ -490,10 +483,7 @@ class OutboxActivity : AppCompatActivity() {
             temp = getCompletedOrders()
             if (temp.isEmpty()) {
                 showSnackBar(
-                    SnackBarEventData(
-                        this.getString(R.string.there_are_no_completed_counts),
-                        SnackBarType.INFO
-                    )
+                    this.getString(R.string.there_are_no_completed_counts), SnackBarType.INFO
                 )
             }
         }
@@ -654,7 +644,7 @@ class OutboxActivity : AppCompatActivity() {
                 // If the request is canceled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     showSnackBar(
-                        SnackBarEventData(getString(R.string.cannot_write_to_external_storage), ERROR)
+                        getString(R.string.cannot_write_to_external_storage), ERROR
                     )
                 } else {
                     write(orFileName, orJson)

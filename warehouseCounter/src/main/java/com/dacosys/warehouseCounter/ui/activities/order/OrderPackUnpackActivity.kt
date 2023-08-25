@@ -51,7 +51,6 @@ import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
@@ -80,10 +79,6 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
 
         adapter?.refreshListeners()
-
-        filterFragment.onDestroy()
-        summaryFragment.onDestroy()
-        searchTextFragment.onDestroy()
     }
 
     override fun onRefresh() {
@@ -503,24 +498,10 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         closeKeyboard(this)
         if (adapter == null) return
 
-        val item = currentItem
-        val countChecked = countChecked
-        var itemArray: ArrayList<OrderResponse> = ArrayList()
+        val selectedOrders = adapter?.selectedOrders() ?: arrayListOf()
 
-        if (!multiSelect && item != null) {
-            itemArray = arrayListOf(item)
-        } else if (multiSelect) {
-            if (countChecked > 0 || item != null) {
-                if (countChecked > 0) itemArray = allChecked
-                else if (adapter?.showCheckBoxes == false) {
-                    itemArray = arrayListOf(item!!)
-                }
-                itemArray.map { it } as ArrayList<OrderResponse>
-            }
-        }
-
-        if (!itemArray.any()) {
-            showSnackBar(SnackBarEventData(getString(R.string.you_must_select_at_least_one_order), ERROR))
+        if (!selectedOrders.any()) {
+            showSnackBar(getString(R.string.you_must_select_at_least_one_order), ERROR)
             return
         }
 
@@ -528,7 +509,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         builder.setTitle(context.getString(R.string.confirm_unpacking))
         builder.setMessage(getString(R.string.are_you_sure_to_unpack_the_selected_orders))
         builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
-            unpack(itemArray)
+            unpack(selectedOrders)
             dialogInterface.dismiss()
         }
         builder.setNegativeButton(getString(R.string.no)) { dialogInterface, _ ->
@@ -599,7 +580,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             GetOrder(
                 filter = filter,
                 action = GetOrder.defaultAction,
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
                     fillAdapter(ArrayList(it))
                 }
@@ -691,12 +672,12 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
-            showSnackBar(SnackBarEventData(res, ERROR))
+            showSnackBar(res, ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
         }
 
-        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
         JotterListener.lockScanner(this, true)
 
         // Buscar por ubicación de destino o pedido
@@ -712,8 +693,8 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         )
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onBackPressed() {

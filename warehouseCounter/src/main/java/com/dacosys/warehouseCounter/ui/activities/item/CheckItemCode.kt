@@ -46,7 +46,7 @@ class CheckItemCode(
             if (Statics.DEMO_MODE) {
                 if (count >= 5) {
                     val res = context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
-                    onEventData(SnackBarEventData(res, SnackBarType.ERROR))
+                    sendEvent(res, SnackBarType.ERROR)
                     onFinish.invoke(CheckCodeEnded(scannedCode = ""))
                     Log.e(this::class.java.simpleName, res)
                     return@withContext
@@ -56,7 +56,7 @@ class CheckItemCode(
             // Nada que hacer, volver
             if (scannedCode.isEmpty()) {
                 val res = context.getString(R.string.invalid_code)
-                onEventData(SnackBarEventData(res, SnackBarType.ERROR))
+                sendEvent(res, SnackBarType.ERROR)
                 onFinish.invoke(CheckCodeEnded(scannedCode = ""))
                 Log.e(this::class.java.simpleName, res)
                 return@withContext
@@ -101,10 +101,19 @@ class CheckItemCode(
                 }
             }
         } catch (ex: Exception) {
-            onEventData(SnackBarEventData(ex.message.toString(), SnackBarType.ERROR))
+            sendEvent(ex.message.toString(), SnackBarType.ERROR)
             onFinish.invoke(CheckCodeEnded(scannedCode = ""))
             Log.e(this::class.java.simpleName, ex.message ?: "")
             return@withContext
         }
+    }
+
+    private fun sendEvent(msg: String, type: SnackBarType) {
+        val event = SnackBarEventData(msg, type)
+        sendEvent(event)
+    }
+
+    private fun sendEvent(event: SnackBarEventData) {
+        onEventData.invoke(event)
     }
 }

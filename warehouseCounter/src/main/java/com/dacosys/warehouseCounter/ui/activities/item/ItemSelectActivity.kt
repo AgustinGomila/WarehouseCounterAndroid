@@ -50,6 +50,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingReposit
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
+import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.misc.ParcelLong
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -68,7 +69,7 @@ import com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
@@ -98,11 +99,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         adapter?.refreshListeners()
         adapter?.refreshImageControlListeners()
-
-        filterFragment.onDestroy()
-        printLabelFragment.onDestroy()
-        summaryFragment.onDestroy()
-        searchTextFragment.onDestroy()
     }
 
     override fun onRefresh() {
@@ -300,7 +296,12 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private fun setupPrintLabelFragment() {
         binding.printFragment.visibility = View.VISIBLE
-        printLabelFragment.setListener(this)
+        printLabelFragment =
+            PrintLabelFragment.Builder()
+                .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.item.id))
+                .setTemplateId(settingViewModel.defaultItemTemplateId)
+                .build()
+        supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
     }
 
     private fun setupSearchTextFragment() {
@@ -600,35 +601,16 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private fun itemSelect() {
         closeKeyboard(this)
 
-        if (adapter != null) {
-            val data = Intent()
+        val itemArray = adapter?.selectedItems() ?: arrayListOf()
 
-            val item = currentItem
-            val countChecked = countChecked
-            var itemArray: ArrayList<Item> = ArrayList()
-
-            if (!multiSelect && item != null) {
-                data.putParcelableArrayListExtra(ARG_IDS, arrayListOf(ParcelLong(item.itemId)))
-                setResult(RESULT_OK, data)
-            } else if (multiSelect) {
-                if (countChecked > 0 || item != null) {
-                    if (countChecked > 0) itemArray = allChecked
-                    else if (adapter?.showCheckBoxes == false) {
-                        itemArray = arrayListOf(item!!)
-                    }
-                    data.putParcelableArrayListExtra(
-                        ARG_IDS,
-                        itemArray.map { ParcelLong(it.itemId) } as ArrayList<ParcelLong>)
-                    setResult(RESULT_OK, data)
-                } else {
-                    setResult(RESULT_CANCELED)
-                }
-            } else {
-                setResult(RESULT_CANCELED)
-            }
-        } else {
-            setResult(RESULT_CANCELED)
+        if (!itemArray.any()) {
+            showSnackBar(getString(R.string.you_must_select_at_least_one_item), ERROR)
+            return
         }
+
+        val data = Intent()
+        data.putParcelableArrayListExtra(ARG_IDS, itemArray.map { ParcelLong(it.itemId) } as ArrayList<ParcelLong>)
+        setResult(RESULT_OK, data)
 
         isFinishingByUser = true
         finish()
@@ -763,12 +745,12 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
+        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
-            showSnackBar(SnackBarEventData(res, ERROR))
+            showSnackBar(res, ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
         }
@@ -778,13 +760,13 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         CheckItemCode(
             scannedCode = scanCode,
             list = adapter?.fullList ?: ArrayList(),
-            onEventData = { showSnackBar(it) },
+            onEventData = { showSnackBar(it.text, it.snackBarType) },
             onFinish = { onCheckCodeEnded(it) },
         ).execute()
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onBackPressed() {
@@ -999,37 +981,17 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {}
+    override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {
+        val templateId = template?.templateId ?: return
+        settingViewModel.defaultItemTemplateId = templateId
+    }
 
     override fun onPrintRequested(printer: String, qty: Int) {
-        /** Acá seleccionamos siguiendo estos criterios:
-         *
-         * Si NO es multiSelect tomamos el ítem seleccionado de forma simple.
-         *
-         * Si es multiSelect nos fijamos que o bien estén marcados algunos ítems o
-         * bien tengamos un ítem seleccionado de forma simple.
-         *
-         * Si es así, vamos a devolver los ítems marcados si existen como prioridad.
-         *
-         * Si no, nos fijamos que NO sean visibles los CheckBoxes, esto quiere
-         * decir que el usuario está seleccionado el ítem de forma simple y
-         * devolvemos este ítem.
-         *
-         **/
+        val itemArray = adapter?.selectedItems() ?: arrayListOf()
 
-        val item = currentItem
-        val countChecked = countChecked
-        var itemArray: ArrayList<Item> = ArrayList()
-
-        if (!multiSelect && item != null) {
-            itemArray = arrayListOf(item)
-        } else if (multiSelect) {
-            if (countChecked > 0 || item != null) {
-                if (countChecked > 0) itemArray = allChecked
-                else if (adapter?.showCheckBoxes == false) {
-                    itemArray = arrayListOf(item!!)
-                }
-            }
+        if (!itemArray.any()) {
+            showSnackBar(getString(R.string.you_must_select_at_least_one_item), ERROR)
+            return
         }
 
         printLabelFragment.printItemById(ArrayList(itemArray.map { it.itemId }))
@@ -1147,7 +1109,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         ) { it2 ->
             if (it2 != null) fillResults(it2)
             else {
-                showSnackBar(SnackBarEventData(getString(R.string.no_images), INFO))
+                showSnackBar(getString(R.string.no_images), INFO)
                 rejectNewInstances = false
             }
         }
@@ -1172,7 +1134,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private fun fillResults(docContReqResObj: DocumentContentRequestResult) {
         if (docContReqResObj.documentContentArray.isEmpty()) {
-            showSnackBar(SnackBarEventData(getString(R.string.no_images), INFO))
+            showSnackBar(getString(R.string.no_images), INFO)
             rejectNewInstances = false
             return
         }
@@ -1180,7 +1142,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         val anyAvailable = docContReqResObj.documentContentArray.any { it.available }
 
         if (!anyAvailable) {
-            showSnackBar(SnackBarEventData(getString(R.string.images_not_yet_processed), INFO))
+            showSnackBar(getString(R.string.images_not_yet_processed), INFO)
             rejectNewInstances = false
             return
         }

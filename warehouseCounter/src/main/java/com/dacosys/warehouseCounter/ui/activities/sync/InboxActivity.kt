@@ -34,7 +34,6 @@ import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.io.File
@@ -86,8 +85,8 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         adapter?.refreshListeners(checkedChangedListener = null, dataSetChangedListener = null)
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
@@ -305,12 +304,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         }
 
         if (!isOk) {
-            showSnackBar(
-                SnackBarEventData(
-                    getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
-                    SnackBarType.ERROR
-                )
-            )
+            showSnackBar(getString(R.string.an_error_occurred_while_trying_to_delete_the_count), SnackBarType.ERROR)
         }
 
         thread { fillAdapter(ArrayList()) }
@@ -353,7 +347,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         if (!temp.any()) {
             temp = OrderRequest.getPendingOrders()
             if (temp.isEmpty()) {
-                showSnackBar(SnackBarEventData(getString(R.string.there_are_no_pending_counts), SnackBarType.INFO))
+                showSnackBar(getString(R.string.there_are_no_pending_counts), SnackBarType.INFO)
             }
         }
         completeList = temp

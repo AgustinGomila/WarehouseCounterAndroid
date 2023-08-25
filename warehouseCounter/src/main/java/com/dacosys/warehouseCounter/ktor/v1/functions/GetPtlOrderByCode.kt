@@ -39,12 +39,7 @@ class GetPtlOrderByCode(
                 }
             } else {
                 // Token inválido.
-                onEvent.invoke(
-                    SnackBarEventData(
-                        context.getString(R.string.invalid_or_expired_token),
-                        SnackBarType.ERROR
-                    )
-                )
+                sendEvent(context.getString(R.string.invalid_or_expired_token), SnackBarType.ERROR)
             }
         }
 

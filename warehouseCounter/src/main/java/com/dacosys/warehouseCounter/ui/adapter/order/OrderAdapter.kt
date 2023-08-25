@@ -1095,6 +1095,32 @@ class OrderAdapter private constructor(builder: Builder) :
         super.submitList(sortedVisibleList(list), commitCallback)
     }
 
+    /** Acá seleccionamos siguiendo estos criterios:
+     * 1. Si NO es [multiSelect] tomamos el ítem seleccionado de forma simple.
+     * 2. Si es [multiSelect] nos fijamos que o bien estén marcados algunos ítems o bien tengamos un ítem seleccionado de forma simple.
+     *     1. Si es así, vamos a devolver los ítems marcados si existen como prioridad.
+     *     2. Si no, nos fijamos que NO sean visibles los CheckBoxes, esto quiere decir que el usuario está seleccionado el ítem de forma simple y devolvemos este ítem.
+     **/
+    fun selectedOrders(): ArrayList<OrderResponse> {
+        val item = currentItem()
+        val countChecked = countChecked()
+        var itemArray: ArrayList<OrderResponse> = ArrayList()
+
+        if (!multiSelect && item != null) {
+            itemArray = arrayListOf(item)
+        } else if (multiSelect) {
+            if (countChecked > 0 || item != null) {
+                if (countChecked > 0) {
+                    itemArray = getAllChecked()
+                } else if (!showCheckBoxes) {
+                    itemArray = arrayListOf(item!!)
+                }
+                itemArray.map { it } as ArrayList<OrderResponse>
+            }
+        }
+        return itemArray
+    }
+
     class Builder {
         fun build(): OrderAdapter {
             return OrderAdapter(this)

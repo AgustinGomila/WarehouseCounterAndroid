@@ -1047,6 +1047,26 @@ class LocationAdapter private constructor(builder: Builder) :
         }
     }
 
+    fun selectedLocations(): ArrayList<Location> {
+        val item = currentItem()
+        val countChecked = countChecked()
+        var itemArray: ArrayList<Location> = ArrayList()
+
+        if (!multiSelect && item != null) {
+            itemArray = arrayListOf(item)
+        } else if (multiSelect) {
+            if (countChecked > 0 || item != null) {
+                if (countChecked > 0) {
+                    itemArray = getAllChecked()
+                } else if (!showCheckBoxes) {
+                    itemArray = arrayListOf(item!!)
+                }
+                itemArray.map { it } as ArrayList<Location>
+            }
+        }
+        return itemArray
+    }
+
     private object ItemDiffUtilCallback : DiffUtil.ItemCallback<Location>() {
         override fun areItemsTheSame(oldItem: Location, newItem: Location): Boolean {
             return oldItem.hashCode == newItem.hashCode

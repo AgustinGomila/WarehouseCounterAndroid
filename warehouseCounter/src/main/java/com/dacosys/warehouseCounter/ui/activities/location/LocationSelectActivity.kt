@@ -21,12 +21,10 @@ import com.dacosys.warehouseCounter.ktor.v2.functions.location.GetRack
 import com.dacosys.warehouseCounter.ktor.v2.functions.location.GetWarehouse
 import com.dacosys.warehouseCounter.ktor.v2.functions.location.GetWarehouseArea
 import com.dacosys.warehouseCounter.scanners.JotterListener
-import com.dacosys.warehouseCounter.ui.activities.item.CodeSelectActivity
 import com.dacosys.warehouseCounter.ui.adapter.location.RackAdapter
 import com.dacosys.warehouseCounter.ui.adapter.location.WarehouseAdapter
 import com.dacosys.warehouseCounter.ui.adapter.location.WarehouseAreaAdapter
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
@@ -78,7 +76,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
     }
 
     private fun loadSavedValues(b: Bundle) {
-        val t1 = b.getString(CodeSelectActivity.ARG_TITLE)
+        val t1 = b.getString(ARG_TITLE)
         title = if (!t1.isNullOrEmpty()) t1
         else getString(R.string.select_area)
 
@@ -571,7 +569,12 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
     private fun getWarehouse() {
         showWarehouseProgressBar(VISIBLE)
         thread {
-            GetWarehouse(onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) }, onFinish = {
+            GetWarehouse(onEvent = {
+                if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(
+                    it.text,
+                    it.snackBarType
+                )
+            }, onFinish = {
                 fillWarehouse(it)
                 showWarehouseProgressBar(View.GONE)
                 isFilling = false
@@ -582,7 +585,12 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
     private fun getWarehouseArea() {
         showWarehouseAreaProgressBar(VISIBLE)
         thread {
-            GetWarehouseArea(onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) }, onFinish = {
+            GetWarehouseArea(onEvent = {
+                if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(
+                    it.text,
+                    it.snackBarType
+                )
+            }, onFinish = {
                 fillWarehouseArea(it)
                 showWarehouseAreaProgressBar(View.GONE)
                 isFilling = false
@@ -593,16 +601,18 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
     private fun getRack() {
         showRackProgressBar(VISIBLE)
         thread {
-            GetRack(onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) }, onFinish = {
-                fillRack(it)
-                showRackProgressBar(View.GONE)
-                isFilling = false
-            }).execute()
+            GetRack(
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                onFinish = {
+                    fillRack(it)
+                    showRackProgressBar(View.GONE)
+                    isFilling = false
+                }).execute()
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        MakeText.makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private var isWFilling = false

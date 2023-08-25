@@ -410,15 +410,17 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
             // returns boolean representing whether the
             // permission is granted or not
             if (!isGranted) {
-                makeText(
-                    activity.window.decorView,
-                    context.getString(R.string.app_dont_have_necessary_permissions),
-                    SnackBarType.ERROR
+                showSnackBar(
+                    context.getString(R.string.app_dont_have_necessary_permissions), SnackBarType.ERROR
                 )
             } else {
                 checkFloatingPermission()
             }
         }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(activity.window.decorView, text, snackBarType)
+    }
 
     fun hideWindow() {
         if (floatWindowCreated && EasyFloat.isShow(getEasyFloatTag())) EasyFloat.hide(
@@ -444,7 +446,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
         try {
             checkCameraFloatingPermission()
         } catch (ex: Exception) {
-            makeText(activity.window.decorView, "Error: ${ex.message}", SnackBarType.ERROR)
+            showSnackBar("Error: ${ex.message}", SnackBarType.ERROR)
             ex.message
         }
     }
