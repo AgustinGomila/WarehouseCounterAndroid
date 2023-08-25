@@ -51,8 +51,8 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.scanners.scanCode.CheckScannedCode
 import com.dacosys.warehouseCounter.settings.SettingsRepository
-import com.dacosys.warehouseCounter.ui.activities.item.CheckItemCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -796,8 +796,6 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
-
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
@@ -806,13 +804,38 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
             return
         }
 
+        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
         JotterListener.lockScanner(this, true)
 
-        // TODO: Escaneado para pedidos
-        // CheckItemCode(callback = { onCheckCodeEnded(it) },
-        //     scannedCode = scanCode,
-        //     list = adapter?.fullList ?: ArrayList(),
-        //     onEventData = { showSnackBar(it) }).execute()
+        // Buscar por ubicación de destino o pedido
+        CheckScannedCode(
+            code = scanCode,
+            searchOrder = true,
+            searchRackId = true,
+            searchWarehouseAreaId = true,
+            onFinish = {
+                val res = it.typedObject ?: return@CheckScannedCode
+                when (res) {
+                    is OrderResponse -> fillAdapter(arrayListOf(res))
+
+                    is WarehouseArea -> {
+                        destinationHeader.setDestination(res)
+                        if (!panelTopIsExpanded) {
+                            panelTopIsExpanded = true
+                            setPanels()
+                        }
+                    }
+
+                    is Rack -> {
+                        destinationHeader.setDestination(res)
+                        if (!panelTopIsExpanded) {
+                            panelTopIsExpanded = true
+                            setPanels()
+                        }
+                    }
+                }
+            }
+        )
     }
 
     private fun showSnackBar(it: SnackBarEventData) {
@@ -992,25 +1015,6 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
                 .totalChecked(countChecked)
                 .fill()
         }
-    }
-
-    private fun onCheckCodeEnded(it: CheckItemCode.CheckCodeEnded) {
-        JotterListener.lockScanner(this, false)
-
-        // TODO: Filter fragment
-        // val item: OrderResponse = it.item ?: return
-        // val pos = adapter?.getIndexByHashCode(item.hashCode) ?: NO_POSITION
-
-        // if (pos != NO_POSITION) {
-        //     adapter?.selectItem(item)
-        // } else {
-        //     filterFragment.itemCode = item.ean
-        //     thread {
-        //         completeList = arrayListOf(item)
-        //         checkedHashArray.clear()
-        //         fillAdapter(completeList)
-        //     }
-        // }
     }
 
     override fun onLocationChanged(

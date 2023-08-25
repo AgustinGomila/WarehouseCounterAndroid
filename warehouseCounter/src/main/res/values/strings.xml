@@ -747,4 +747,5 @@
     <string name="confirm_movement">Confirmar movimiento</string>
     <string name="are_you_sure_to_move_the_selected_orders">¿Está seguro de mover los pedidos seleccionados?
     </string>
+    <string name="code_not_found">Código no encontrado</string>
 </resources>

@@ -53,8 +53,8 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.scanners.scanCode.CheckScannedCode
 import com.dacosys.warehouseCounter.settings.SettingsRepository
-import com.dacosys.warehouseCounter.ui.activities.item.CheckItemCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -728,23 +728,26 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
-
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
-            makeText(binding.root, res, ERROR)
+            showSnackBar(SnackBarEventData(res, ERROR))
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
         }
 
+        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
         JotterListener.lockScanner(this, true)
 
-        // TODO: Escaneado para pedidos
-        // CheckItemCode(callback = { onCheckCodeEnded(it) },
-        //     scannedCode = scanCode,
-        //     list = adapter?.fullList ?: ArrayList(),
-        //     onEventData = { showSnackBar(it) }).execute()
+        // Buscar por ubicación
+        CheckScannedCode(
+            code = scanCode,
+            searchOrder = true,
+            onFinish = {
+                val location = it.typedObject as OrderResponse? ?: return@CheckScannedCode
+                fillAdapter(arrayListOf(location))
+            }
+        )
     }
 
     private fun showSnackBar(it: SnackBarEventData) {
@@ -924,25 +927,6 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                 .totalChecked(countChecked)
                 .fill()
         }
-    }
-
-    private fun onCheckCodeEnded(it: CheckItemCode.CheckCodeEnded) {
-        JotterListener.lockScanner(this, false)
-
-        // TODO: Filter fragment
-        // val item: OrderResponse = it.item ?: return
-        // val pos = adapter?.getIndexByHashCode(item.hashCode) ?: NO_POSITION
-
-        // if (pos != NO_POSITION) {
-        //     adapter?.selectItem(item)
-        // } else {
-        //     filterFragment.itemCode = item.ean
-        //     thread {
-        //         completeList = arrayListOf(item)
-        //         checkedHashArray.clear()
-        //         fillAdapter(completeList)
-        //     }
-        // }
     }
 
     override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {}

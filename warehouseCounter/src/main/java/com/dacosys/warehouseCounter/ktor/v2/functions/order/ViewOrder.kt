@@ -22,7 +22,7 @@ class ViewOrder
  * @property onFinish If the operation is successful it returns a [OrderResponse] else null.
  */(
     private val id: Long,
-    private val action: ArrayList<ApiActionParam>,
+    private val action: ArrayList<ApiActionParam> = arrayListOf(),
     private val onEvent: (SnackBarEventData) -> Unit = { },
     private val onFinish: (OrderResponse?) -> Unit,
 ) {

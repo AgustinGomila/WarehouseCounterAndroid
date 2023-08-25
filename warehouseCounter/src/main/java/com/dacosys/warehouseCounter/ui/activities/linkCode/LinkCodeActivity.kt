@@ -143,24 +143,26 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
-            makeText(binding.root, res, ERROR)
+            showSnackBar(SnackBarEventData(res, ERROR))
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
         }
 
         try {
-            CheckItemCode(callback = { onCheckCodeEnded(it) },
+            CheckItemCode(
                 scannedCode = scanCode,
                 list = adapter?.fullList ?: ArrayList(),
-                onEventData = { showSnackBar(it) }).execute()
+                onEventData = { showSnackBar(it) },
+                onFinish = { onCheckCodeEnded(it) },
+            ).execute()
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(binding.root, ex.message.toString(), ERROR)
+            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial
@@ -570,10 +572,11 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             if (it.isNotEmpty()) {
                 sendItemCodes(it)
             } else {
-                makeText(
-                    binding.root,
-                    context.getString(R.string.there_are_no_item_codes_to_send),
-                    INFO
+                showSnackBar(
+                    SnackBarEventData(
+                        context.getString(R.string.there_are_no_item_codes_to_send),
+                        INFO
+                    )
                 )
             }
         }
@@ -611,20 +614,22 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             if (item != null) {
                 val tempCode = binding.codeEditText.text.toString()
                 if (tempCode.isEmpty()) {
-                    makeText(
-                        binding.root,
-                        context.getString(R.string.you_must_select_a_code_to_link),
-                        ERROR
+                    showSnackBar(
+                        SnackBarEventData(
+                            context.getString(R.string.you_must_select_a_code_to_link),
+                            ERROR
+                        )
                     )
                     return
                 }
 
                 val tempStrQty = binding.qtyEditText.text.toString()
                 if (tempStrQty.isEmpty()) {
-                    makeText(
-                        binding.root,
-                        context.getString(R.string.you_must_select_an_amount_to_link),
-                        ERROR
+                    showSnackBar(
+                        SnackBarEventData(
+                            context.getString(R.string.you_must_select_an_amount_to_link),
+                            ERROR
+                        )
                     )
                     return
                 }
@@ -633,15 +638,16 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 try {
                     tempQty = java.lang.Double.parseDouble(tempStrQty)
                 } catch (e: NumberFormatException) {
-                    makeText(binding.root, context.getString(R.string.invalid_amount), ERROR)
+                    showSnackBar(SnackBarEventData(context.getString(R.string.invalid_amount), ERROR))
                     return
                 }
 
                 if (tempQty <= 0) {
-                    makeText(
-                        binding.root,
-                        context.getString(R.string.you_must_select_a_positive_amount_greater_than_zero),
-                        ERROR
+                    showSnackBar(
+                        SnackBarEventData(
+                            context.getString(R.string.you_must_select_a_positive_amount_greater_than_zero),
+                            ERROR
+                        )
                     )
                     return
                 }
@@ -649,10 +655,11 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 // Chequear si ya está vinculado
                 ItemCodeCoroutines.getByCode(tempCode) {
                     if (it.size > 0) {
-                        makeText(
-                            binding.root,
-                            context.getString(R.string.the_code_is_already_linked_to_an_item),
-                            ERROR
+                        showSnackBar(
+                            SnackBarEventData(
+                                context.getString(R.string.the_code_is_already_linked_to_an_item),
+                                ERROR
+                            )
                         )
                         return@getByCode
                     }
@@ -672,12 +679,14 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                             )
                         }
 
-                        makeText(
-                            binding.root, String.format(
-                                context.getString(R.string.item_linked_to_code),
-                                item.itemId,
-                                tempCode
-                            ), SnackBarType.SUCCESS
+                        showSnackBar(
+                            SnackBarEventData(
+                                String.format(
+                                    context.getString(R.string.item_linked_to_code),
+                                    item.itemId,
+                                    tempCode
+                                ), SnackBarType.SUCCESS
+                            )
                         )
 
                         runOnUiThread { adapter?.selectItem(item) }
@@ -694,19 +703,21 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             if (item != null) {
                 val tempCode = binding.codeEditText.text.toString()
                 if (tempCode.isEmpty()) {
-                    makeText(
-                        binding.root,
-                        context.getString(R.string.you_must_select_a_code_to_link),
-                        ERROR
+                    showSnackBar(
+                        SnackBarEventData(
+                            context.getString(R.string.you_must_select_a_code_to_link),
+                            ERROR
+                        )
                     )
                     return
                 }
 
                 ItemCodeCoroutines.unlinkCode(item.itemId, tempCode) {
-                    makeText(
-                        binding.root,
-                        String.format(getString(R.string.item_unlinked_from_codes), item.itemId),
-                        SnackBarType.SUCCESS
+                    showSnackBar(
+                        SnackBarEventData(
+                            String.format(getString(R.string.item_unlinked_from_codes), item.itemId),
+                            SnackBarType.SUCCESS
+                        )
                     )
 
                     runOnUiThread { adapter?.selectItem(item) }
@@ -1341,7 +1352,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         ) { it2 ->
             if (it2 != null) fillResults(it2)
             else {
-                makeText(binding.root, getString(R.string.no_images), INFO)
+                showSnackBar(SnackBarEventData(getString(R.string.no_images), INFO))
                 rejectNewInstances = false
             }
         }
@@ -1366,7 +1377,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     private fun fillResults(docContReqResObj: DocumentContentRequestResult) {
         if (docContReqResObj.documentContentArray.isEmpty()) {
-            makeText(binding.root, getString(R.string.no_images), INFO)
+            showSnackBar(SnackBarEventData(getString(R.string.no_images), INFO))
             rejectNewInstances = false
             return
         }
@@ -1374,9 +1385,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         val anyAvailable = docContReqResObj.documentContentArray.any { it.available }
 
         if (!anyAvailable) {
-            makeText(
-                binding.root, getString(R.string.images_not_yet_processed), INFO
-            )
+            showSnackBar(SnackBarEventData(getString(R.string.images_not_yet_processed), INFO))
             rejectNewInstances = false
             return
         }

@@ -14,8 +14,8 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
 import kotlinx.coroutines.*
 
 class GetOrder(
-    private val filter: ArrayList<ApiFilterParam>,
-    private val action: ArrayList<ApiActionParam>,
+    private val filter: ArrayList<ApiFilterParam> = arrayListOf(),
+    private val action: ArrayList<ApiActionParam> = arrayListOf(),
     private val onEvent: (SnackBarEventData) -> Unit = { },
     private val onFinish: (ArrayList<OrderResponse>) -> Unit,
 ) {

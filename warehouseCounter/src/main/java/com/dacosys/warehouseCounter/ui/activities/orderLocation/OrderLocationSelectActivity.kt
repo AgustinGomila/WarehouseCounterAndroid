@@ -672,12 +672,12 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
-            makeText(binding.root, res, ERROR)
+            showSnackBar(SnackBarEventData(res, ERROR))
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
         }

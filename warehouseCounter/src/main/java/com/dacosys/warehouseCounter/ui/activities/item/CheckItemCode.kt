@@ -13,15 +13,15 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
 
 class CheckItemCode(
-    private var callback: (CheckCodeEnded) -> Unit = {},
     private var scannedCode: String,
     private var list: ArrayList<Item>,
     private var onEventData: (SnackBarEventData) -> Unit = {},
+    private var onFinish: (CheckCodeEnded) -> Unit = {},
 ) {
     data class CheckCodeEnded(
         var scannedCode: String,
-        var item: Item?,
-        var itemCode: ItemCode?,
+        var item: Item? = null,
+        var itemCode: ItemCode? = null,
     )
 
     private var itemCode: ItemCode? = null
@@ -47,19 +47,17 @@ class CheckItemCode(
                 if (count >= 5) {
                     val res = context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     onEventData(SnackBarEventData(res, SnackBarType.ERROR))
-                    callback.invoke(CheckCodeEnded(scannedCode = "", item = null, itemCode = null))
+                    onFinish.invoke(CheckCodeEnded(scannedCode = ""))
                     Log.e(this::class.java.simpleName, res)
                     return@withContext
                 }
             }
 
-            val code = scannedCode
-
             // Nada que hacer, volver
-            if (code.isEmpty()) {
+            if (scannedCode.isEmpty()) {
                 val res = context.getString(R.string.invalid_code)
                 onEventData(SnackBarEventData(res, SnackBarType.ERROR))
-                callback.invoke(CheckCodeEnded(scannedCode = "", item = null, itemCode = null))
+                onFinish.invoke(CheckCodeEnded(scannedCode = ""))
                 Log.e(this::class.java.simpleName, res)
                 return@withContext
             }
@@ -68,37 +66,25 @@ class CheckItemCode(
                 // Buscar primero en el adaptador de la lista
                 (0 until count).map { list[it] }
                     .filter { it.ean == scannedCode }.forEach { it2 ->
-                        callback.invoke(
-                            CheckCodeEnded(
-                                scannedCode = code, item = it2, itemCode = itemCode
-                            )
-                        )
+                        onFinish.invoke(CheckCodeEnded(scannedCode = scannedCode, item = it2, itemCode = itemCode))
                         return@withContext
                     }
             }
 
             // Si no está en el adaptador del control, buscar en la base de datos
-            ItemCoroutines.getByQuery(code) {
+            ItemCoroutines.getByQuery(scannedCode) {
                 val itemObj = it.firstOrNull()
 
                 if (itemObj != null) {
-                    callback.invoke(
-                        CheckCodeEnded(
-                            scannedCode = code, item = itemObj, itemCode = null
-                        )
-                    )
+                    onFinish.invoke(CheckCodeEnded(scannedCode = scannedCode, item = itemObj))
                     return@getByQuery
                 }
 
-                ItemCodeCoroutines.getByCode(code) { icList ->
+                ItemCodeCoroutines.getByCode(scannedCode) { icList ->
                     itemCode = icList.firstOrNull()
                     val itemId = itemCode?.itemId
                     if (itemId == null) {
-                        callback.invoke(
-                            CheckCodeEnded(
-                                scannedCode = code, item = null, itemCode = null
-                            )
-                        )
+                        onFinish.invoke(CheckCodeEnded(scannedCode = scannedCode))
                         return@getByCode
                     }
 
@@ -106,25 +92,17 @@ class CheckItemCode(
                     for (x in 0 until count) {
                         val item = list[x]
                         if (item.itemId == itemId) {
-                            callback.invoke(
-                                CheckCodeEnded(
-                                    scannedCode = code, item = item, itemCode = itemCode
-                                )
-                            )
+                            onFinish.invoke(CheckCodeEnded(scannedCode = scannedCode, item = item, itemCode = itemCode))
                             return@getByCode
                         }
                     }
 
-                    callback.invoke(
-                        CheckCodeEnded(
-                            scannedCode = code, item = null, itemCode = null
-                        )
-                    )
+                    onFinish.invoke(CheckCodeEnded(scannedCode = scannedCode))
                 }
             }
         } catch (ex: Exception) {
             onEventData(SnackBarEventData(ex.message.toString(), SnackBarType.ERROR))
-            callback.invoke(CheckCodeEnded(scannedCode = "", item = null, itemCode = null))
+            onFinish.invoke(CheckCodeEnded(scannedCode = ""))
             Log.e(this::class.java.simpleName, ex.message ?: "")
             return@withContext
         }

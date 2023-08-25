@@ -758,28 +758,29 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
+        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
-            makeText(binding.root, res, ERROR)
+            showSnackBar(SnackBarEventData(res, ERROR))
             ErrorLog.writeLog(this, this::class.java.simpleName, res)
             return
         }
 
         JotterListener.lockScanner(this, true)
 
-        CheckItemCode(callback = { onCheckCodeEnded(it) },
+        CheckItemCode(
             scannedCode = scanCode,
             list = adapter?.fullList ?: ArrayList(),
-            onEventData = { showSnackBar(it) }).execute()
+            onEventData = { showSnackBar(it) },
+            onFinish = { onCheckCodeEnded(it) },
+        ).execute()
     }
 
     private fun showSnackBar(it: SnackBarEventData) {
@@ -1146,7 +1147,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         ) { it2 ->
             if (it2 != null) fillResults(it2)
             else {
-                makeText(binding.root, getString(R.string.no_images), INFO)
+                showSnackBar(SnackBarEventData(getString(R.string.no_images), INFO))
                 rejectNewInstances = false
             }
         }
@@ -1171,7 +1172,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private fun fillResults(docContReqResObj: DocumentContentRequestResult) {
         if (docContReqResObj.documentContentArray.isEmpty()) {
-            makeText(binding.root, getString(R.string.no_images), INFO)
+            showSnackBar(SnackBarEventData(getString(R.string.no_images), INFO))
             rejectNewInstances = false
             return
         }
@@ -1179,9 +1180,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         val anyAvailable = docContReqResObj.documentContentArray.any { it.available }
 
         if (!anyAvailable) {
-            makeText(
-                binding.root, getString(R.string.images_not_yet_processed), INFO
-            )
+            showSnackBar(SnackBarEventData(getString(R.string.images_not_yet_processed), INFO))
             rejectNewInstances = false
             return
         }
