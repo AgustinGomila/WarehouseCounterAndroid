@@ -271,9 +271,8 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         // TOP LAYOUT
         topLayout()
 
-        val adapter = (binding.autoCompleteTextView.adapter!! as ItemAdapter)
-        val viewHeight = ItemAdapter.viewHeight
-        val maxNeeded = adapter.count() * viewHeight
+        val viewHeight = settingViewModel.itemViewHeight
+        val maxNeeded = (binding.autoCompleteTextView.adapter?.count ?: 0) * viewHeight
         val availableHeight =
             calculateDropDownHeight() - (binding.autoCompleteTextView.y + binding.autoCompleteTextView.height).toInt()
         var newHeight = availableHeight / viewHeight * viewHeight

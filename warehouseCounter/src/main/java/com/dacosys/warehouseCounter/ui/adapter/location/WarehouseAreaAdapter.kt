@@ -9,11 +9,12 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
-import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
 
 /**
@@ -191,6 +192,11 @@ class WarehouseAreaAdapter(
         }
 
         fillSimpleView(position, v!!, alreadyExists)
+
+        val h = if (v.height > 0) v.height else v.minimumHeight
+        settingViewModel.locationViewHeight = h
+        if (BuildConfig.DEBUG) Log.d(this::class.java.simpleName, "-------{RES: $resource Height:${h}}-------")
+
         return v
     }
 
@@ -285,10 +291,6 @@ class WarehouseAreaAdapter(
             }
         }
 
-        if (v.height > 0) {
-            viewHeight = v.height
-            Log.d(this::class.java.simpleName, "-------{RES: $resource Height:${v.height}}-------")
-        }
         return v
     }
 
@@ -347,9 +349,6 @@ class WarehouseAreaAdapter(
     }
 
     companion object {
-
-        var viewHeight = if (Screen.isTablet()) 202 else 153
-
         class WarehouseAreaComparator : Comparator<WarehouseArea> {
             fun compareNullable(o1: WarehouseArea?, o2: WarehouseArea?): Int {
                 return if (o1 == null || o2 == null) {

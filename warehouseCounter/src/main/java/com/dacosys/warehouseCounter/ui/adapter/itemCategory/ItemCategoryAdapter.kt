@@ -10,10 +10,11 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
-import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
 
 
@@ -191,6 +192,11 @@ class ItemCategoryAdapter(
         }
 
         fillSimpleView(position, v!!, alreadyExists)
+
+        val h = if (v.height > 0) v.height else v.minimumHeight
+        settingViewModel.categoryViewHeight = h
+        if (BuildConfig.DEBUG) Log.d(this::class.java.simpleName, "-------{RES: $resource Height:${h}}-------")
+
         return v
     }
 
@@ -295,10 +301,6 @@ class ItemCategoryAdapter(
             }
         }
 
-        if (v.height > 0) {
-            viewHeight = v.height
-            Log.d(this::class.java.simpleName, "-------{RES: $resource Height:${v.height}}-------")
-        }
         return v
     }
 
@@ -345,9 +347,6 @@ class ItemCategoryAdapter(
     }
 
     companion object {
-
-        var viewHeight = if (Screen.isTablet()) 186 else 107
-
         class ItemCategoryComparator : Comparator<ItemCategory> {
             fun compareNullable(o1: ItemCategory?, o2: ItemCategory?): Int {
                 return if (o1 == null || o2 == null) {

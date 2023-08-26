@@ -4,6 +4,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
+import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
 
 class SettingsRepository {
@@ -346,6 +347,36 @@ class SettingsRepository {
         key = "default_rack_template_id",
         description = context.getString(R.string.default_template_for_racks),
         default = 0L
+    )
+
+    var clientViewHeight = Preference(
+        key = "client_view_height",
+        description = context.getString(R.string.default_client_adapter_view_height),
+        default = if (Screen.isTablet()) 202 else 115
+    )
+
+    var templateViewHeight = Preference(
+        key = "template_view_height",
+        description = context.getString(R.string.default_template_adapter_view_height),
+        default = if (Screen.isTablet()) 186 else 107
+    )
+
+    var categoryViewHeight = Preference(
+        key = "category_view_height",
+        description = context.getString(R.string.default_category_adapter_view_height),
+        default = if (Screen.isTablet()) 186 else 107
+    )
+
+    var itemViewHeight = Preference(
+        key = "item_view_height",
+        description = context.getString(R.string.default_item_adapter_view_height),
+        default = if (Screen.isTablet()) 251 else 143
+    )
+
+    var locationViewHeight = Preference(
+        key = "location_view_height",
+        description = context.getString(R.string.default_location_adapter_view_height),
+        default = if (Screen.isTablet()) 202 else 153
     )
 
     //region FloatingCamera Position and Size
@@ -874,7 +905,13 @@ class SettingsRepository {
 
                 sr.locationSearchByRack,
                 sr.locationSearchByArea,
-                sr.locationSearchByWarehouse
+                sr.locationSearchByWarehouse,
+
+                sr.clientViewHeight,
+                sr.itemViewHeight,
+                sr.categoryViewHeight,
+                sr.locationViewHeight,
+                sr.templateViewHeight
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))

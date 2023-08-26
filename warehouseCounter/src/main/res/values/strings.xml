@@ -758,4 +758,9 @@
     <string name="default_template_for_areas">Plantilla para áreas predeterminada</string>
     <string name="default_template_for_racks">Plantilla para racks predeterminada</string>
     <string name="you_must_select_at_least_one_location">Debe seleccionar al menos una ubicación</string>
+    <string name="default_client_adapter_view_height">Altura predeterminada para la vista de clientes</string>
+    <string name="default_template_adapter_view_height">Altura predeterminada para la vista de plantillas</string>
+    <string name="default_category_adapter_view_height">Altura predeterminada para la vista de categorías</string>
+    <string name="default_item_adapter_view_height">Altura predeterminada para la vista de ítems</string>
+    <string name="default_location_adapter_view_height">Altura predeterminada para la vista de ubicaciones</string>
 </resources>

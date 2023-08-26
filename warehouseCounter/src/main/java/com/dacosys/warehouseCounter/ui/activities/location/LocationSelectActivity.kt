@@ -15,6 +15,7 @@ import android.widget.AdapterView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.LocationSelectActivityBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.*
 import com.dacosys.warehouseCounter.ktor.v2.functions.location.GetRack
@@ -716,9 +717,8 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         // TOP LAYOUT
         topLayout()
 
-        val adapter = (binding.rackCode.adapter!! as RackAdapter)
-        val viewHeight = RackAdapter.viewHeight
-        val maxNeeded = adapter.count() * viewHeight
+        val viewHeight = settingViewModel.locationViewHeight
+        val maxNeeded = (binding.rackCode.adapter?.count ?: 0) * viewHeight
         val availableHeight = calculateDropDownHeight() - (binding.rackCode.y + binding.rackCode.height).toInt()
         var newHeight = availableHeight / viewHeight * viewHeight
         if (maxNeeded < newHeight) {
@@ -732,9 +732,8 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         // TOP LAYOUT
         topLayout()
 
-        val adapter = (binding.warehouseArea.adapter!! as WarehouseAreaAdapter)
-        val viewHeight = WarehouseAreaAdapter.viewHeight
-        val maxNeeded = adapter.count() * viewHeight
+        val viewHeight = settingViewModel.locationViewHeight
+        val maxNeeded = (binding.warehouseArea.adapter?.count ?: 0) * viewHeight
         val availableHeight =
             calculateDropDownHeight() - (binding.warehouseArea.y + binding.warehouseArea.height).toInt()
         var newHeight = availableHeight / viewHeight * viewHeight
@@ -749,9 +748,8 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         // TOP LAYOUT
         topLayout()
 
-        val adapter = (binding.warehouse.adapter!! as WarehouseAdapter)
-        val viewHeight = WarehouseAdapter.viewHeight
-        val maxNeeded = adapter.count() * viewHeight
+        val viewHeight = settingViewModel.locationViewHeight
+        val maxNeeded = (binding.warehouse.adapter?.count ?: 0) * viewHeight
         val availableHeight = calculateDropDownHeight() - (binding.warehouse.y + binding.warehouse.height).toInt()
         var newHeight = availableHeight / viewHeight * viewHeight
         if (maxNeeded < newHeight) {

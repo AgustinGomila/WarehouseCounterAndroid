@@ -810,4 +810,34 @@ class SettingsViewModel : ViewModel() {
         set(value) {
             settingRepository.defaultRackTemplateId.value = value
         }
+
+    var categoryViewHeight: Int
+        get() = settingRepository.categoryViewHeight.value as Int
+        set(value) {
+            settingRepository.categoryViewHeight.value = value
+        }
+
+    var itemViewHeight: Int
+        get() = settingRepository.itemViewHeight.value as Int
+        set(value) {
+            settingRepository.itemViewHeight.value = value
+        }
+
+    var locationViewHeight: Int
+        get() = settingRepository.locationViewHeight.value as Int
+        set(value) {
+            settingRepository.locationViewHeight.value = value
+        }
+
+    var templateViewHeight: Int
+        get() = settingRepository.templateViewHeight.value as Int
+        set(value) {
+            settingRepository.templateViewHeight.value = value
+        }
+
+    var clientViewHeight: Int
+        get() = settingRepository.clientViewHeight.value as Int
+        set(value) {
+            settingRepository.clientViewHeight.value = value
+        }
 }

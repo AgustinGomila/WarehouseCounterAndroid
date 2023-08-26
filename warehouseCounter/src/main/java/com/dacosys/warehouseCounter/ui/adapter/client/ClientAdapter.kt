@@ -9,11 +9,12 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.room.entity.client.Client
-import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
 
 /**
@@ -186,6 +187,11 @@ class ClientAdapter(
         }
 
         fillSimpleView(position, v!!, alreadyExists)
+
+        val h = if (v.height > 0) v.height else v.minimumHeight
+        settingViewModel.clientViewHeight = h
+        if (BuildConfig.DEBUG) Log.d(this::class.java.simpleName, "-------{RES: $resource Height:${h}}-------")
+
         return v
     }
 
@@ -297,10 +303,6 @@ class ClientAdapter(
             }
         }
 
-        if (v.height > 0) {
-            viewHeight = v.height
-            Log.d(this::class.java.simpleName, "-------{RES: $resource Height:${v.height}}-------")
-        }
         return v
     }
 
@@ -349,9 +351,6 @@ class ClientAdapter(
     }
 
     companion object {
-
-        var viewHeight = if (Screen.isTablet()) 202 else 115
-
         class ClientComparator : Comparator<Client> {
             fun compareNullable(o1: Client?, o2: Client?): Int {
                 return if (o1 == null || o2 == null) {

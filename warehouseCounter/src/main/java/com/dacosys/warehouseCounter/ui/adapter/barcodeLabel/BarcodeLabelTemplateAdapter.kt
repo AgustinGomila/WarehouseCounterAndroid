@@ -10,11 +10,12 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelType
-import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
 
 
@@ -192,6 +193,11 @@ class BarcodeLabelTemplateAdapter(
         }
 
         fillSimpleView(position, v!!, alreadyExists)
+
+        val h = if (v.height > 0) v.height else v.minimumHeight
+        settingViewModel.templateViewHeight = h
+        if (BuildConfig.DEBUG) Log.d(this::class.java.simpleName, "-------{RES: $resource Height:${h}}-------")
+
         return v
     }
 
@@ -297,10 +303,6 @@ class BarcodeLabelTemplateAdapter(
             }
         }
 
-        if (v.height > 0) {
-            viewHeight = v.height
-            Log.d(this::class.java.simpleName, "-------{RES: $resource Height:${v.height}}-------")
-        }
         return v
     }
 
@@ -343,9 +345,6 @@ class BarcodeLabelTemplateAdapter(
     }
 
     companion object {
-
-        var viewHeight = if (Screen.isTablet()) 186 else 107
-
         class BarcodeLabelTemplateComparator : Comparator<BarcodeLabelTemplate> {
             fun compareNullable(o1: BarcodeLabelTemplate?, o2: BarcodeLabelTemplate?): Int {
                 return if (o1 == null || o2 == null) {
