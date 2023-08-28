@@ -140,6 +140,27 @@ data class OrderRequest(
         }
     }
 
+    constructor(orderResponse: OrderResponse) : this() {
+        this.orderRequestId = orderResponse.id
+        this.externalId = orderResponse.externalId
+        this.creationDate = orderResponse.receivedDate
+        this.description = orderResponse.description
+        this.zone = orderResponse.zone
+        this.orderTypeId = orderResponse.orderTypeId
+        this.orderTypeDescription = orderResponse.orderType.description
+        this.resultDiffQty = orderResponse.resultDiffQty
+        this.resultDiffProduct = orderResponse.resultDiffProduct
+        this.resultAllowDiff = orderResponse.resultAllowDiff
+        this.resultAllowMod = orderResponse.resultAllowMod
+        this.completed = orderResponse.completed.isNotEmpty()
+        this.startDate = orderResponse.startDate
+        this.finishDate = orderResponse.finishDate
+        this.clientId = orderResponse.clientId
+        this.userId = orderResponse.collectorUserId
+
+        this.contents = orderResponse.contents.map { OrderRequestContent(it) }
+    }
+
     override fun toString(): String {
         return description
     }

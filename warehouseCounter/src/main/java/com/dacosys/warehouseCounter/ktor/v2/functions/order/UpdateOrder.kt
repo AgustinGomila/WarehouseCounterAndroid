@@ -11,10 +11,10 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
 
-class CreateOrder(
+class UpdateOrder(
     private val payload: ArrayList<OrderRequest>,
     private val onEvent: (SnackBarEventData) -> Unit = { },
-    private val onFinish: (successFiles: ArrayList<String>) -> Unit = { },
+    private val onFinish: (successIdList: ArrayList<Long>) -> Unit = { },
 ) {
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
@@ -30,8 +30,8 @@ class CreateOrder(
         if (scope.isActive) scope.cancel()
     }
 
-    /** Save the file names of the orders sent correctly */
-    private val successFiles: ArrayList<String> = ArrayList()
+    /** Save the Ids of the orders updated correctly */
+    private val successIdList: ArrayList<Long> = ArrayList()
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         var isDone = false
@@ -39,9 +39,9 @@ class CreateOrder(
         for ((index, order) in payload.withIndex()) {
             if (BuildConfig.DEBUG) println(json.encodeToString(OrderRequest.serializer(), order))
 
-            ktorApiServiceV2.createOrder(payload = order, callback = {
+            ktorApiServiceV2.updateOrder(payload = order, callback = {
                 val id = it.id
-                if (id > 0) successFiles.add(order.filename)
+                if (id > 0) successIdList.add(id)
                 else errorOccurred = true
                 isDone = index == payload.lastIndex
             })
@@ -59,7 +59,7 @@ class CreateOrder(
             sendEvent(context.getString(R.string.an_error_occurred_while_trying_to_send_the_order), SnackBarType.ERROR)
         }
 
-        onFinish(successFiles)
+        onFinish(successIdList)
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {

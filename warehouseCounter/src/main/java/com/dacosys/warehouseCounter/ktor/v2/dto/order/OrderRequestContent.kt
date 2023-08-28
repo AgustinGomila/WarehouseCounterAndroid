@@ -69,6 +69,12 @@ data class OrderRequestContent(
         qtyCollected = parcel.readValue(Double::class.java.classLoader) as? Double,
     )
 
+    constructor(orCont: OrderResponseContent) : this(
+        itemId = orCont.itemId,
+        qtyRequested = orCont.qtyRequested,
+        qtyCollected = orCont.qtyCollected,
+    )
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

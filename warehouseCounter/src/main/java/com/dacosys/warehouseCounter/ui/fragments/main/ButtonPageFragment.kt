@@ -22,8 +22,7 @@ import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
 import com.dacosys.warehouseCounter.ui.activities.main.HomeActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
-import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBackColor
-import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
+import com.dacosys.warehouseCounter.ui.utils.Colors
 
 /**
  * A simple [Fragment] subclass.
@@ -88,72 +87,75 @@ class ButtonPageFragment : Fragment() {
     }
 
     private fun setupMainButton() {
+        if (allButton == null) return
+
         val allButtonMain: ArrayList<MainButton> = ArrayList()
+        var index = 0
+        val buttonCollection = getButtonCollection()
+        for (b in allButton!!) {
+            if (b.visibility) {
+                allButtonMain.add(b)
 
-        if (allButton != null) {
-            var index = 0
-            val buttonCollection = getButtonCollection()
-            for (b in allButton!!) {
-                if (b.visibility) {
-                    allButtonMain.add(b)
-
-                    // Si alcanza el máximo salir
-                    index++
-                    if (index == buttonCollection.size) {
-                        break
-                    }
+                // Si alcanza el máximo salir
+                index++
+                if (index == buttonCollection.size) {
+                    break
                 }
-            }
-
-            for (i in buttonCollection.indices) {
-                val b = buttonCollection[i]
-                if (i < allButtonMain.size) {
-                    val backColor: Int = getBackColor(b)
-                    val textColor = getBestContrastColor("#" + Integer.toHexString(backColor))
-
-                    b.setTextColor(textColor)
-                    b.visibility = View.VISIBLE
-                    b.tag = allButtonMain[i].id
-                    b.text = allButtonMain[i].description
-                    b.textAlignment = View.TEXT_ALIGNMENT_VIEW_START
-
-                    try {
-                        b.setCompoundDrawablesWithIntrinsicBounds(
-                            AppCompatResources.getDrawable(
-                                requireContext(),
-                                allButtonMain[i].iconResource
-                            ),
-                            null,
-                            null,
-                            null
-                        )
-                    } catch (ex: Exception) {
-                        Log.e(this::class.java.simpleName, ex.message.toString())
-                    }
-
-                    b.compoundDrawables
-                        .filterNotNull()
-                        .forEach {
-                            it.colorFilter =
-                                BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                                    ResourcesCompat.getColor(
-                                        WarehouseCounterApp.context.resources,
-                                        R.color.white,
-                                        null
-                                    ),
-                                    BlendModeCompat.SRC_IN
-                                )
-                        }
-                    b.compoundDrawablePadding = 25
-                } else {
-                    b.visibility = View.GONE
-                }
-            }
-
-            for (a in buttonCollection) {
-                setupButton(a)
             }
         }
+
+        for (i in buttonCollection.indices) {
+            val b = buttonCollection[i]
+            if (i < allButtonMain.size) {
+                setupButton(b, allButtonMain[i])
+            } else {
+                b.visibility = View.GONE
+            }
+        }
+
+        for (a in buttonCollection) {
+            setupButton(a)
+        }
+    }
+
+    private fun setupButton(b: Button, m: MainButton) {
+        val backColor: Int = Colors.getBackColor(b)
+        val textColor = Colors.getBestContrastColor("#" + Integer.toHexString(backColor))
+
+        b.setTextColor(textColor)
+        b.visibility = View.VISIBLE
+        b.tag = m.id
+        b.text = m.description
+        b.textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+
+        try {
+            b.setCompoundDrawablesWithIntrinsicBounds(
+                AppCompatResources.getDrawable(
+                    requireContext(),
+                    m.iconResource
+                ),
+                null,
+                null,
+                null
+            )
+        } catch (ex: Exception) {
+            Log.e(this::class.java.simpleName, ex.message.toString())
+        }
+
+        b.compoundDrawables
+            .filterNotNull()
+            .forEach {
+                it.colorFilter =
+                    BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
+                        ResourcesCompat.getColor(
+                            WarehouseCounterApp.context.resources,
+                            R.color.white,
+                            null
+                        ),
+                        BlendModeCompat.SRC_IN
+                    )
+            }
+        b.compoundDrawablePadding = 25
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

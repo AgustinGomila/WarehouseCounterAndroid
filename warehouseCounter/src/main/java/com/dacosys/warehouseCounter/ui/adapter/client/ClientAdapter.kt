@@ -169,21 +169,7 @@ class ClientAdapter(
             // El view todavía no fue creado, crearlo con el layout correspondiente.
             val vi = LayoutInflater.from(context)
             v = vi.inflate(currentLayout, parent, false)
-
             alreadyExists = false
-        } else {
-            // El view ya existe, comprobar que no necesite cambiar de layout.
-            if (
-            // Row null cambiando...
-                v.tag is String && currentLayout == R.layout.client_row) {
-                // Ya fue creado, si es un row normal que está siendo seleccionada
-                // o un row expandido que está siendo deseleccionado
-                // debe cambiar de layout, por lo tanto, volver a crearse.
-                val vi = LayoutInflater.from(context)
-                v = vi.inflate(currentLayout, parent, false)
-
-                alreadyExists = false
-            }
         }
 
         fillSimpleView(position, v!!, alreadyExists)

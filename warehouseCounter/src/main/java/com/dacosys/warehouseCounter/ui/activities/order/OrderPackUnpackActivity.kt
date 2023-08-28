@@ -34,8 +34,11 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.OrderLocationActivityBinding
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderStatus
 import com.dacosys.warehouseCounter.ktor.v2.functions.order.GetOrder
+import com.dacosys.warehouseCounter.ktor.v2.functions.order.UpdateOrder
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
@@ -522,24 +525,30 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     private fun unpack(itemArray: ArrayList<OrderResponse>) {
         if (itemArray.count() == 1) {
             val item = itemArray.first()
-            // UnpackOrder(
-            //     order = payload,
-            //     onFinish = {
-            //         askForRepack(item)
-            //     }
-            // ).execute()
+            // Agotado
+            item.statusId = OrderStatus.outOfStock.id
+            UpdateOrder(
+                payload = arrayListOf(OrderRequest(item)),
+                onEvent = { showSnackBar(it.text, it.snackBarType) },
+                onFinish = {
+                    askForRepack(item)
+                }
+            ).execute()
         } else {
             for ((index, or) in itemArray.withIndex()) {
-                // val payload = getPayload(or, wa, r)
-                // UnpackOrder(
-                //     order = payload,
-                //     onFinish = {
-                //         if (index == itemArray.lastIndex) {
-                //             isFinishingByUser = true
-                //             finish()
-                //         }
-                //     }
-                // ).execute()
+                // Agotado
+                or.statusId = OrderStatus.outOfStock.id
+                val payload = ArrayList(itemArray.mapNotNull { if (it.id == or.id) OrderRequest(it) else null })
+                UpdateOrder(
+                    payload = payload,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (index == itemArray.lastIndex) {
+                            isFinishingByUser = true
+                            finish()
+                        }
+                    }
+                ).execute()
             }
         }
     }

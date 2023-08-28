@@ -308,6 +308,60 @@ class ApiRequest {
     }
 
     /**
+     * Update an object of the desired [T] type.
+     *
+     * @param T DTO Clazz of the response
+     * @param objPath Partial path of the object functions in the API.
+     * @param payload Payload object
+     * @return [T] Object updated
+     */
+    suspend inline fun <reified T> update(
+        objPath: String, payload: Any,
+    ): T {
+        val url = URL(apiUrl)
+
+        /** HTTP Post function */
+        val response = httpClient.post {
+            /** Set a Basic auth */
+            basicAuth(
+                username = Statics.currentUserName, password = Statics.currentPass
+            )
+            /** Set the API URL and parameters */
+            url {
+                protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
+                else URLProtocol.HTTPS
+                host = url.host
+                path("${url.path}/$VERSION_PATH/$objPath/$UPDATE_PATH")
+            }
+            /** Payload content */
+            contentType(ContentType.Application.Json)
+            setBody(payload)
+        }
+
+        println(response.status.description)
+        val entityClass: Class<T> = T::class.java
+        var r: T = entityClass.getDeclaredConstructor().newInstance()
+
+        try {
+            when (response.status.value) {
+                in 200..299 -> {
+                    r = response.body<T>()
+                }
+
+                422 -> {}
+                401 -> {}
+            }
+        } catch (e: JsonConvertException) {
+            println(e.message)
+        } catch (e: SerializationException) {
+            println(e.message)
+        } catch (e: NullPointerException) {
+            println(e.message)
+        }
+        return r
+    }
+
+    /**
      * Move an order to a desired destination defined in the [payload].
      *
      * @param [payload] Payload object with the order ID, the destination ID and other optional parameters.
@@ -627,6 +681,7 @@ class ApiRequest {
         const val VIEW_PATH = "view"
         const val MOVE_PATH = "move"
         const val CREATE_PATH = "create"
+        const val UPDATE_PATH = "update"
 
         fun validUrl(): Boolean {
             val url = URL(apiUrl)

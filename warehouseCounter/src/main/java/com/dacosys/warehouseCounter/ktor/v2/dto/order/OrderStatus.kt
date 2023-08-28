@@ -71,6 +71,7 @@ data class OrderStatus(
         var active = OrderStatus(11, context.getString(R.string.status_active))
         var deactivated = OrderStatus(12, context.getString(R.string.status_deactivated))
         var flashing = OrderStatus(99, context.getString(R.string.status_flashing))
+        var outOfStock = OrderStatus(101, context.getString(R.string.status_out_of_stock))
 
         fun getAll(): ArrayList<OrderStatus> {
             val allSections = ArrayList<OrderStatus>()
@@ -89,6 +90,7 @@ data class OrderStatus(
                 active,
                 deactivated,
                 flashing,
+                outOfStock
             )
 
             Collections.sort(allSections, CustomComparator())
@@ -123,6 +125,7 @@ data class OrderStatus(
                 active.id.toString(),
                 deactivated.id.toString(),
                 flashing.id.toString(),
+                outOfStock.id.toString()
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it }))

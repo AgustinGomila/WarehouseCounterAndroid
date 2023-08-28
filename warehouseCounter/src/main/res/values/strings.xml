@@ -763,4 +763,5 @@
     <string name="default_category_adapter_view_height">Altura predeterminada para la vista de categorías</string>
     <string name="default_item_adapter_view_height">Altura predeterminada para la vista de ítems</string>
     <string name="default_location_adapter_view_height">Altura predeterminada para la vista de ubicaciones</string>
+    <string name="status_out_of_stock">Agotado</string>
 </resources>

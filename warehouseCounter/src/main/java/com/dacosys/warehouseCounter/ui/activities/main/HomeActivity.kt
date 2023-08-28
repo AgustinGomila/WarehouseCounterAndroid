@@ -99,7 +99,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 thread {
 
                     CreateOrder(
-                        orderArray = orders,
+                        payload = orders,
                         onEvent = { showSnackBar(it.text, it.snackBarType) },
                         onFinish = { successFiles ->
 
