@@ -531,7 +531,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                 payload = arrayListOf(OrderRequest(item)),
                 onEvent = { showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
-                    askForRepack(item)
+                    askForRepack(item.id)
                 }
             ).execute()
         } else {
@@ -553,13 +553,13 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
     }
 
-    private fun askForRepack(it: OrderResponse) {
+    private fun askForRepack(id: Long) {
         val builder = AlertDialog.Builder(this)
         builder.setTitle(context.getString(R.string.confirm_unpacking))
         builder.setMessage(getString(R.string.are_you_sure_to_unpack_the_selected_orders))
         builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
             val data = Intent()
-            data.putExtra(ARG_REPACK_ORDER_ID, it.id)
+            data.putExtra(ARG_REPACK_ORDER_ID, id)
             setResult(RESULT_OK, data)
             dialogInterface.dismiss()
         }
