@@ -280,7 +280,7 @@ data class OrderRequest(
             }
         }
 
-        fun removeOrders(files: ArrayList<String>): Boolean {
+        private fun removeOrders(files: ArrayList<String>): Boolean {
             var isOk = true
             val path = Statics.getCompletedPath()
 

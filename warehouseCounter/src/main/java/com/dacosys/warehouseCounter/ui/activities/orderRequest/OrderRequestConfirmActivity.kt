@@ -27,13 +27,13 @@ import com.dacosys.warehouseCounter.databinding.OrderRequestConfirmActivityBindi
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
 import com.dacosys.warehouseCounter.misc.objects.table.Table
 import com.dacosys.warehouseCounter.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrcAdapter
+import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderRequestHeader
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -51,6 +51,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
     // Panel de ImageControl
     private var imageControlFragment: ImageControlButtonsFragment? = null
+    private lateinit var summaryFragment: SummaryFragment
 
     // Adaptador, colección de ítems, fila seleccionada
     private var adapter: OrcAdapter? = null
@@ -73,9 +74,29 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     // Se usa para saber si estamos en onStart luego de onCreate
     private var fillRequired = false
 
+    private val countChecked: Int
+        get() {
+            return adapter?.countChecked() ?: 0
+        }
+
+    private val totalCollected: Int
+        get() {
+            return (adapter?.qtyCollectedTotal() ?: 0).toInt()
+        }
+
+    private val totalRequested: Int
+        get() {
+            return (adapter?.qtyRequestedTotal() ?: 0).toInt()
+        }
+
+    private val currentItem: OrderRequestContent?
+        get() {
+            return adapter?.currentItem()
+        }
+
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
-            binding.swipeRefreshOrc.isRefreshing = false
+            binding.swipeRefreshItem.isRefreshing = false
         }, 100)
     }
 
@@ -91,7 +112,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         savedInstanceState.putParcelable(ARG_CLIENT, client)
 
         if (adapter != null) {
-            savedInstanceState.putParcelable("lastSelected", adapter?.currentItem())
+            savedInstanceState.putParcelable("lastSelected", currentItem)
             savedInstanceState.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
             savedInstanceState.putInt("currentScrollPosition", currentScrollPosition)
         }
@@ -141,6 +162,8 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         // Para el llenado en el onStart siguiente de onCreate
         fillRequired = true
 
+        summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
+
         var tempTitle = getString(R.string.confirm_count)
 
         if (savedInstanceState != null) {
@@ -182,8 +205,8 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
         binding.finishCheckBox.isChecked = finishOrder
 
-        binding.swipeRefreshOrc.setOnRefreshListener(this)
-        binding.swipeRefreshOrc.setColorSchemeResources(
+        binding.swipeRefreshItem.setOnRefreshListener(this)
+        binding.swipeRefreshItem.setColorSchemeResources(
             android.R.color.holo_blue_bright,
             android.R.color.holo_green_light,
             android.R.color.holo_orange_light,
@@ -401,7 +424,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            binding.swipeRefreshOrc.isRefreshing = show
+            binding.swipeRefreshItem.isRefreshing = show
         }, 20)
     }
 
@@ -419,42 +442,6 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         super.onBackPressed()
     }
 
-    private fun fillSummaryRow() {
-        runOnUiThread {
-            if (orderRequest.orderRequestType != OrderRequestType.stockAuditFromDevice) {
-                binding.totalLabelTextView.text = getString(R.string.total)
-                binding.qtyReqLabelTextView.text = getString(R.string.cant)
-                binding.selectedLabelTextView.visibility = View.VISIBLE
-                binding.selectedLabelTextView.text = getString(R.string.checked)
-
-                if (adapter != null) {
-                    val cont = adapter?.qtyRequestedTotal() ?: 0.0
-                    val t = adapter?.itemCount ?: 0
-                    binding.totalTextView.text = t.toString()
-                    binding.qtyReqTextView.text = Statics.roundToString(cont, 0)
-                    binding.selectedTextView.text = adapter!!.countChecked().toString()
-                }
-            } else {
-                binding.totalLabelTextView.text = getString(R.string.total)
-                binding.qtyReqLabelTextView.text = getString(R.string.cont_)
-                binding.selectedLabelTextView.visibility = View.GONE
-
-                if (adapter != null) {
-                    val cont = adapter?.qtyCollectedTotal() ?: 0.0
-                    val t = adapter?.itemCount ?: 0
-                    binding.totalTextView.text = t.toString()
-                    binding.qtyReqTextView.text = Statics.roundToString(cont, 0)
-                }
-            }
-
-            if (adapter == null) {
-                binding.totalTextView.text = 0.toString()
-                binding.qtyReqTextView.text = 0.toString()
-                binding.selectedTextView.text = 0.toString()
-            }
-        }
-    }
-
     private fun fillAdapter(t: ArrayList<OrderRequestContent>) {
         completeList = t
 
@@ -466,7 +453,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                     // Si el adapter es NULL es porque aún no fue creado.
                     // Por lo tanto, puede ser que los valores de [lastSelected]
                     // sean valores guardados de la instancia anterior y queremos preservarlos.
-                    lastSelected = adapter?.currentItem()
+                    lastSelected = currentItem
                 }
 
                 val filteredList = ArrayList(completeList.indices
@@ -563,10 +550,25 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     override fun onDataSetChanged() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            setHeaderFragment()
-            fillSummaryRow()
-        }, 100)
+        runOnUiThread {
+            Handler(Looper.getMainLooper()).postDelayed({
+                val labelCant: Boolean
+                val totalVisible: Int
+                if (orderRequest.orderRequestType == OrderRequestType.stockAuditFromDevice) {
+                    labelCant = false
+                    totalVisible = totalCollected
+                } else {
+                    labelCant = true
+                    totalVisible = totalRequested
+                }
+
+                summaryFragment
+                    .multiSelect(labelCant) // This is to set fragments captions
+                    .totalVisible(totalVisible)
+                    .totalChecked(countChecked)
+                    .fill()
+            }, 100)
+        }
     }
 
     companion object {

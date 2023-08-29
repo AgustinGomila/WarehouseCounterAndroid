@@ -1098,14 +1098,13 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     override fun onSearchTextFocusChange(hasFocus: Boolean) {
         searchTextIsFocused = hasFocus
         if (hasFocus) {
-            /*
-            TODO Transición suave de teclado.
+            /**
             Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
             Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
             el teclado cambiará de tipo y puede tener una altura diferente.
             Esto no dispara los eventos de animación del teclado.
             Colapsar los paneles y reajustar el Layout al final es la solución temporal.
-            */
+             */
             panelIsExpanded = false
             setPanels()
         }

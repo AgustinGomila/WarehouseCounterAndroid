@@ -424,7 +424,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
                 try {
                     val intent = Intent(context, OrderPackUnpackActivity::class.java)
-                    intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.move_order))
+                    intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.pack_unpack))
                     intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, false)
                     resultForUnpackOrder.launch(intent)
                 } catch (ex: Exception) {

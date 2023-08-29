@@ -38,13 +38,13 @@ import com.dacosys.warehouseCounter.ktor.v1.functions.*
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlContentAdapter
+import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.fragments.ptlOrder.PtlOrderHeaderFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -144,7 +144,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     private fun onGetContent(contents: ArrayList<PtlContent>) {
         // Recién ahora que tenemos los contenidos, definimos la orden actual.
-        currentPtlOrder = orderHeaderFragment.ptlOrder
+        currentPtlOrder = headerFragment.ptlOrder
 
         // Comprobar si la orden fue completada
         if (contents.any() && checkForCompletedOrder(contents)) {
@@ -190,7 +190,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                 itemId = item.itemId, qtyCollected = item.qtyCollected.toDouble()
             )
 
-            val all = adapter?.fullList ?: ArrayList()
+            val all = allItemsInAdapter
 
             // Comprobamos si está completada la orden...
             if (all.any() && checkForCompletedOrder(all)) {
@@ -202,9 +202,28 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     }
 
     override fun onDataSetChanged() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            fillSummaryRow()
-        }, 100)
+        runOnUiThread {
+            Handler(Looper.getMainLooper()).postDelayed({
+                val labelCant: Boolean
+                val totalVisible: Int
+                val totalChecked: Int
+                if (multiselect) {
+                    labelCant = false
+                    totalVisible = totalCollected
+                    totalChecked = countChecked
+                } else {
+                    labelCant = true
+                    totalVisible = totalRequested
+                    totalChecked = totalCollected
+                }
+
+                summaryFragment
+                    .multiSelect(labelCant) // This is to set fragments captions
+                    .totalVisible(totalVisible)
+                    .totalChecked(totalChecked)
+                    .fill()
+            }, 100)
+        }
     }
 
     override fun onStart() {
@@ -240,7 +259,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
-            binding.swipeRefreshWac.isRefreshing = false
+            binding.swipeRefreshItem.isRefreshing = false
         }, 100)
     }
 
@@ -265,8 +284,9 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     private var allowClicks = true
     private var rejectNewInstances = false
 
-    private lateinit var orderHeaderFragment: PtlOrderHeaderFragment
+    private lateinit var headerFragment: PtlOrderHeaderFragment
     private lateinit var printLabelFragment: PrintLabelFragment
+    private lateinit var summaryFragment: SummaryFragment
 
     private var panelBottomIsExpanded = false
     private var panelTopIsExpanded = true
@@ -289,7 +309,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         b.putParcelableArrayList("tempWacArray", tempContArray)
         if (adapter != null) {
-            b.putParcelable("lastSelected", adapter?.currentItem())
+            b.putParcelable("lastSelected", currentItem)
             b.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
             b.putParcelableArrayList("completeList", adapter?.fullList)
             b.putLongArray("checkedIdArray", adapter?.checkedIdArray?.map { it }?.toLongArray())
@@ -299,8 +319,8 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
         b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
 
-        b.putParcelable(ARG_WAREHOUSE_AREA, orderHeaderFragment.warehouseArea)
-        b.putParcelable(ARG_PTL_ORDER, orderHeaderFragment.ptlOrder)
+        b.putParcelable(ARG_WAREHOUSE_AREA, headerFragment.warehouseArea)
+        b.putParcelable(ARG_PTL_ORDER, headerFragment.ptlOrder)
     }
 
     private fun loadBundleValues(b: Bundle) {
@@ -354,7 +374,8 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         fillRequired = true
 
-        orderHeaderFragment = supportFragmentManager.findFragmentById(R.id.headerFragment) as PtlOrderHeaderFragment
+        summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
+        headerFragment = supportFragmentManager.findFragmentById(R.id.headerFragment) as PtlOrderHeaderFragment
         printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
 
         if (savedInstanceState != null) {
@@ -370,8 +391,8 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         setupHeaderFragments()
         setupPrinterLabelFragments()
 
-        binding.swipeRefreshWac.setOnRefreshListener(this)
-        binding.swipeRefreshWac.setColorSchemeResources(
+        binding.swipeRefreshItem.setOnRefreshListener(this)
+        binding.swipeRefreshItem.setColorSchemeResources(
             android.R.color.holo_blue_bright,
             android.R.color.holo_green_light,
             android.R.color.holo_orange_light,
@@ -520,12 +541,13 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     }
 
     private fun setupHeaderFragments() {
-        // TODO Hacer Builders
-        orderHeaderFragment.setOrder(
-            order = currentPtlOrder,
-            location = warehouseArea,
-            sendEvent = false
-        )
+        headerFragment =
+            PtlOrderHeaderFragment.Builder()
+                .ptlOrder(currentPtlOrder)
+                .warehouseArea(warehouseArea)
+                .orderChangedListener(this)
+                .build()
+        supportFragmentManager.beginTransaction().replace(R.id.headerFragment, headerFragment).commit()
     }
 
     private fun setupPrinterLabelFragments() {
@@ -692,13 +714,16 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     private fun refreshTextViews() {
         runOnUiThread {
-            if (panelTopIsExpanded) printLabelFragment.refreshViews()
+            if (panelTopIsExpanded) {
+                printLabelFragment.refreshViews()
+                headerFragment.refreshViews()
+            }
         }
     }
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            binding.swipeRefreshWac.isRefreshing = show
+            binding.swipeRefreshItem.isRefreshing = show
         }, 20)
     }
 
@@ -711,7 +736,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                     // Si el adapter es NULL es porque aún no fue creado.
                     // Por lo tanto, puede ser que los valores de [lastSelected]
                     // sean valores guardados de la instancia anterior y queremos preservarlos.
-                    lastSelected = adapter?.currentItem()
+                    lastSelected = currentItem
                 }
 
                 adapter = PtlContentAdapter.Builder()
@@ -751,40 +776,30 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
             return adapter?.multiSelect ?: false
         }
 
-    private fun fillSummaryRow() {
-        runOnUiThread {
-            if (multiselect) {
-                binding.totalLabelTextView.text = getString(R.string.total)
-                binding.qtyReqLabelTextView.text = getString(R.string.cant)
-                binding.selectedLabelTextView.text = getString(R.string.checked)
-
-                if (adapter != null) {
-                    binding.totalTextView.text = adapter?.itemCount.toString()
-                    binding.qtyReqTextView.text =
-                        Statics.roundToString(adapter?.qtyRequestedTotal() ?: 0.0, 3)
-                    binding.selectedTextView.text = adapter?.countChecked().toString()
-                }
-            } else {
-                binding.totalLabelTextView.text = getString(R.string.total)
-                binding.qtyReqLabelTextView.text = getString(R.string.cant)
-                binding.selectedLabelTextView.text = getString(R.string.cont_)
-
-                if (adapter != null) {
-                    binding.totalTextView.text = adapter?.itemCount.toString()
-                    binding.qtyReqTextView.text =
-                        Statics.roundToString(adapter?.qtyRequestedTotal() ?: 0.0, 3)
-                    binding.selectedTextView.text =
-                        Statics.roundToString(adapter?.qtyCollectedTotal() ?: 0.0, 3)
-                }
-            }
-
-            if (adapter == null) {
-                binding.totalTextView.text = 0.toString()
-                binding.qtyReqTextView.text = 0.toString()
-                binding.selectedTextView.text = 0.toString()
-            }
+    private val countChecked: Int
+        get() {
+            return adapter?.countChecked() ?: 0
         }
-    }
+
+    private val totalCollected: Int
+        get() {
+            return (adapter?.qtyCollectedTotal() ?: 0).toInt()
+        }
+
+    private val totalRequested: Int
+        get() {
+            return (adapter?.qtyRequestedTotal() ?: 0).toInt()
+        }
+
+    private val allItemsInAdapter: ArrayList<PtlContent>
+        get() {
+            return adapter?.fullList ?: ArrayList()
+        }
+
+    private val currentItem: PtlContent?
+        get() {
+            return adapter?.currentItem()
+        }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -835,7 +850,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     private fun onGetPtlOrder(it: ArrayList<PtlOrder>) {
         if (it.any()) {
-            orderHeaderFragment.setOrder(order = it.first(), location = warehouseArea)
+            headerFragment.setOrder(order = it.first(), location = warehouseArea)
             return
         }
         gentlyReturn()
@@ -930,7 +945,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         if (!allowClicks) return
         allowClicks = false
 
-        val cc = adapter?.currentItem()
+        val cc = currentItem
 
         if (cc != null) {
             thread {
@@ -972,7 +987,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     private fun manualPick() {
         val waId = warehouseArea?.id
         val orderId = currentPtlOrder?.id
-        val cc = adapter?.currentItem()
+        val cc = currentItem
 
         if (waId == null || orderId == null || cc == null) {
             gentlyReturn()
@@ -1023,14 +1038,13 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {
         printQtyIsFocused = hasFocus
         if (hasFocus) {
-            /*
-            TODO Transición suave de teclado.
+            /**
             Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
             Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
             el teclado cambiará de tipo y puede tener una altura diferente.
             Esto no dispara los eventos de animación del teclado.
             Colapsar los paneles y reajustar el Layout al final es la solución temporal.
-            */
+             */
             panelBottomIsExpanded = false
             panelTopIsExpanded = true
             setPanels()

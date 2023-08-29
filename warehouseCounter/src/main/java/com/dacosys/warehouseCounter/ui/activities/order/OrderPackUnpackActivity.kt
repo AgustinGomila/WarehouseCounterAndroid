@@ -73,9 +73,9 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     }
 
     private fun destroyLocals() {
-        /*
-        TODO: Usar tabla temporal para guardar listas largas.
-        */
+        /**
+        Usar tabla temporal para guardar listas largas con Room en el futuro
+         */
         if (isFinishingByUser) {
             // Borramos los Ids temporales que se usaron en la actividad.
             // ItemDbHelper().deleteTemp()
@@ -388,14 +388,13 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     override fun onSearchTextFocusChange(hasFocus: Boolean) {
         searchTextIsFocused = hasFocus
         if (hasFocus) {
-            /*
-            TODO Transición suave de teclado.
+            /**
             Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
             Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
             el teclado cambiará de tipo y puede tener una altura diferente.
             Esto no dispara los eventos de animación del teclado.
             Colapsar los paneles y reajustar el Layout al final es la solución temporal.
-            */
+             */
             panelIsExpanded = false
             setPanels()
         }
@@ -580,8 +579,9 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             return
         }
 
-        // TODO Usar pageNum y pageTotal
-        // filter.add(ApiFilterParam(EXTENSION_PAGE_NUMBER, pageNum.toString()))
+        /** Usar pageNum y pageTotal
+         * filter.add(ApiFilterParam(EXTENSION_PAGE_NUMBER, pageNum.toString()))
+         */
 
         try {
             Log.d(this::class.java.simpleName, "Selecting orders...")

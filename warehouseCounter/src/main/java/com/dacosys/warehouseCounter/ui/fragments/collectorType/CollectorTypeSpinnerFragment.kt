@@ -116,8 +116,6 @@ class CollectorTypeSpinnerFragment : Fragment() {
         return view
     }
 
-    // Se llama cuando el fragmento esta visible ante el usuario.
-    // Obviamente depende del método onStart() de la actividad para saber si la actividad se está mostrando.
     override fun onStart() {
         super.onStart()
         try {

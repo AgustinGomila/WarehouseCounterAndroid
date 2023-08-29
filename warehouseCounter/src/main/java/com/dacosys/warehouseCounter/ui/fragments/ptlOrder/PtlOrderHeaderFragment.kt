@@ -19,7 +19,12 @@ import com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderSelectActivit
 /**
  * Ptl order header fragment
  */
-class PtlOrderHeaderFragment : Fragment() {
+class PtlOrderHeaderFragment private constructor(builder: Builder) : Fragment() {
+    /**
+     * Required constructor for Fragments
+     */
+    constructor() : this(Builder())
+
     interface OrderChangedListener {
         fun onOrderChanged(ptlOrder: PtlOrder?)
     }
@@ -82,10 +87,16 @@ class PtlOrderHeaderFragment : Fragment() {
      * @param location Warehouse area location.
      * @param sendEvent Send the order change event on completion.
      */
-    fun setOrder(order: PtlOrder?, location: WarehouseArea?, sendEvent: Boolean = true) {
+    fun setOrder(order: PtlOrder?, location: WarehouseArea?) {
         ptlOrder = order
         warehouseArea = location
 
+        refreshViews()
+
+        orderChangedListener?.onOrderChanged(ptlOrder)
+    }
+
+    fun refreshViews() {
         val orderNbrText: String = ptlOrder?.id?.toString() ?: ""
         val clientText: String = ptlOrder?.client?.first()?.name ?: ""
         val waDescription: String = warehouseArea?.description ?: ""
@@ -100,9 +111,6 @@ class PtlOrderHeaderFragment : Fragment() {
             binding.locationTextView.text = waDescription
             TooltipCompat.setTooltipText(binding.locationTextView, waDescription)
         }
-
-        // Evento de cambio de orden
-        if (sendEvent) orderChangedListener?.onOrderChanged(ptlOrder)
     }
 
     // region DESTINATION CONTAINER
@@ -175,7 +183,7 @@ class PtlOrderHeaderFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setOrder(order = ptlOrder, location = warehouseArea, sendEvent = false)
+        refreshViews()
     }
 
     private fun setButtonPanelVisibility() {
@@ -215,6 +223,64 @@ class PtlOrderHeaderFragment : Fragment() {
                 ErrorLog.writeLog(requireActivity(), this::class.java.simpleName, ex)
             }
         }
+
+    init {
+        orderChangedListener = builder.orderChangedListener
+        ptlOrder = builder.ptlOrder
+        warehouseArea = builder.warehouseArea
+        showOrderPanel = builder.showOrderPanel
+        showChangeOrderButton = builder.showChangeOrderButton
+        showLocationPanel = builder.showLocationPanel
+    }
+
+    class Builder {
+        fun build(): PtlOrderHeaderFragment {
+            return PtlOrderHeaderFragment(this)
+        }
+
+        internal var orderChangedListener: OrderChangedListener? = null
+        internal var ptlOrder: PtlOrder? = null
+        internal var warehouseArea: WarehouseArea? = null
+        internal var showOrderPanel: Boolean = true
+        internal var showChangeOrderButton: Boolean = true
+        internal var showLocationPanel = true
+
+        @Suppress("unused")
+        fun orderChangedListener(listener: OrderChangedListener): Builder {
+            this.orderChangedListener = listener
+            return this
+        }
+
+        @Suppress("unused")
+        fun ptlOrder(ptlOrder: PtlOrder?): Builder {
+            this.ptlOrder = ptlOrder
+            return this
+        }
+
+        @Suppress("unused")
+        fun warehouseArea(warehouseArea: WarehouseArea?): Builder {
+            this.warehouseArea = warehouseArea
+            return this
+        }
+
+        @Suppress("unused")
+        fun showOrderPanel(show: Boolean): Builder {
+            this.showOrderPanel = show
+            return this
+        }
+
+        @Suppress("unused")
+        fun showChangeOrderButton(show: Boolean): Builder {
+            this.showChangeOrderButton = show
+            return this
+        }
+
+        @Suppress("unused")
+        fun showLocationPanel(show: Boolean): Builder {
+            this.showLocationPanel = show
+            return this
+        }
+    }
 
     companion object {
         const val ARG_PTL_ORDER = "ptlOrder"

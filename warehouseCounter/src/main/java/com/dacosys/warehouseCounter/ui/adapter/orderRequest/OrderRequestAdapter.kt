@@ -145,7 +145,7 @@ class OrderRequestAdapter private constructor(builder: Builder) :
                 }
 
                 PAYLOADS.ITEM_SELECTED -> {
-                    // TODO: No regenerar la vista ante cambios de selección
+                    // No regenerar la vista ante cambios de selección
                     // No está funcionando.
                     // La idea es usarlo para los cambios de selección.
                     // Pero por algún motivo los Payloads vienen vacíos luego de notifyItemChanged

@@ -20,8 +20,6 @@ import android.transition.TransitionManager
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View.GONE
-import android.view.View.VISIBLE
 import android.view.WindowManager
 import android.widget.EditText
 import androidx.activity.result.contract.ActivityResultContracts
@@ -68,6 +66,7 @@ import com.dacosys.warehouseCounter.ui.activities.common.QtySelectorActivity
 import com.dacosys.warehouseCounter.ui.activities.item.ItemSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.log.LogContentActivity
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrcAdapter
+import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
@@ -82,206 +81,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     OrcAdapter.EditQtyListener, OrcAdapter.EditDescriptionListener,
     Scanner.ScannerListener,
     SwipeRefreshLayout.OnRefreshListener, Rfid.RfidDeviceListener {
-    override fun onEditDescriptionRequired(position: Int, orc: OrderRequestContent) {
-        showDialogForItemDescription(orc)
-    }
-
-    private fun onCheckCodeEnded(it: CheckCode.CheckCodeEnded) {
-        val orc = it.orc ?: return
-        itemCode = it.itemCode
-
-        // El código fue chequeado, se agrega y se selecciona en la lista
-        runOnUiThread { adapter?.add(arrayListOf(orc)) }
-
-        // Definir las cantidades según el modo de ingreso actual
-        if (binding.requiredDescCheckBox.isChecked &&
-            orc.itemDescription == context.getString(
-                R.string.unknown_item
-            )
-        ) {
-            // Antes agregar descripción si es obligatorio.
-            // La función itemDescriptionDialog(orc) al final llama a setQty(orc)
-            showDialogForAddDescription(orc)
-            return
-        }
-
-        // Esta pausa permite que el Adapter se actualice a tiempo
-        Handler(mainLooper).postDelayed({
-            setQty(orc)
-        }, 250)
-        gentlyReturn()
-    }
-
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
-    private val menuItemRandomOnListL = 999003
-    private val menuRegexItem = 999004
-
-    @SuppressLint("RestrictedApi")
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        menuInflater.inflate(R.menu.menu_read_activity, menu)
-
-        if (!settingViewModel.useBtRfid) {
-            menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
-        }
-
-        if (BuildConfig.DEBUG || Statics.TEST_MODE) {
-            menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
-            menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
-            menu.add(Menu.NONE, menuRegexItem, Menu.NONE, "Regex")
-        }
-
-        if (menu is MenuBuilder) {
-            menu.setOptionalIconsVisible(true)
-        }
-
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-
-        when (item.itemId) {
-            R.id.home, android.R.id.home -> {
-                onBackPressed()
-                return true
-            }
-
-            R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
-                return super.onOptionsItemSelected(item)
-            }
-
-            R.id.action_trigger_scan -> {
-                /*
-                val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321"
-                val s = Random().ints(10, 0, source.length)
-                    .asSequence()
-                    .map(source::get)
-                    .joinToString("")
-                scannerCompleted(s)
-                return super.onOptionsItemSelected(item)
-                */
-                JotterListener.trigger(this)
-                return super.onOptionsItemSelected(item)
-            }
-
-            R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
-                return super.onOptionsItemSelected(item)
-            }
-
-            menuItemRandomOnListL -> {
-                val codes: ArrayList<String> = ArrayList()
-
-                (adapter?.fullList ?: ArrayList<OrderRequestContent>()
-                    .filter { it.codeRead.isNotEmpty() })
-                    .mapTo(codes) { it.codeRead }
-
-                if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
-                return super.onOptionsItemSelected(item)
-            }
-
-            menuItemRandomIt -> {
-                ItemCoroutines.getCodes(true) {
-                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
-                }
-                return super.onOptionsItemSelected(item)
-            }
-
-            menuItemManualCode -> {
-                enterCode()
-                return super.onOptionsItemSelected(item)
-            }
-
-            menuRegexItem -> {
-                scannerCompleted("0SM20220721092826007792261002857001038858")
-                return super.onOptionsItemSelected(item)
-            }
-        }
-        return true
-    }
-
-    private fun enterCode() {
-        runOnUiThread {
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle(R.string.enter_code)
-
-            val input = EditText(this)
-            input.inputType = InputType.TYPE_CLASS_TEXT
-            builder.setView(input)
-
-            builder.setPositiveButton(R.string.ok) { _, _ ->
-                scannerCompleted(input.text.toString())
-            }
-            builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
-
-            builder.show()
-        }
-    }
-
-    private fun setQty(orc: OrderRequestContent) {
-        if (lastRegexResult != null) {
-            val qty = lastRegexResult?.qty?.toDouble()
-            if (qty == null) showSnackBar(
-                getString(R.string.null_quantity_in_regex), ERROR
-            )
-
-            setQtyCollected(orc = orc, qty = qty ?: 1.toDouble())
-        } else {
-            if (partial || partialBlock) {
-                setQtyManually(orc)
-            } else {
-                setQtyCollected(orc = orc, qty = 1.toDouble())
-            }
-        }
-    }
-
-    private fun checkLotEnabled(orc: OrderRequestContent) {
-        // Check LOT ENABLED
-        val itemId = orc.itemId ?: 0
-        if (itemId <= 0 || orc.lotEnabled != true) return
-
-        val lotIdStr = lastRegexResult?.lot ?: orc.lotId?.toString() ?: ""
-        if (lotIdStr.isNotEmpty()) {
-            lastRegexResult = null
-            setLotCode(orc = orc, lotCode = lotIdStr)
-        } else {
-            lotCodeDialog(orc)
-        }
-    }
-
-    override fun onDataSetChanged() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            fillSummaryRow()
-        }, 100)
-    }
-
-    override fun onEditQtyRequired(
-        position: Int,
-        content: OrderRequestContent,
-        initialQty: Double,
-        minValue: Double,
-        maxValue: Double,
-        multiplier: Int,
-    ) {
-        qtySelectorDialog(
-            orc = content,
-            initialQty = initialQty,
-            minValue = minValue,
-            maxValue = maxValue,
-            multiplier = multiplier,
-            total = true
-        )
-    }
-
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
-            binding.swipeRefreshOrc.isRefreshing = false
+            binding.swipeRefreshItem.isRefreshing = false
         }, 100)
     }
 
@@ -310,6 +112,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var firstVisiblePos: Int? = null
     private var currentScrollPosition: Int = 0
 
+    private lateinit var summaryFragment: SummaryFragment
+
     private val itemCount: Int
         get() {
             return adapter?.itemCount ?: 0
@@ -318,6 +122,21 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private val countChecked: Int
         get() {
             return adapter?.countChecked() ?: 0
+        }
+
+    private val totalCollected: Int
+        get() {
+            return (adapter?.qtyCollectedTotal() ?: 0).toInt()
+        }
+
+    private val totalRequested: Int
+        get() {
+            return (adapter?.qtyRequestedTotal() ?: 0).toInt()
+        }
+
+    private val currentItem: OrderRequestContent?
+        get() {
+            return adapter?.currentItem()
         }
 
     private var allowClicks = true
@@ -353,7 +172,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun saveBundleValues(b: Bundle) {
         if (adapter != null) {
-            b.putParcelable("lastSelected", adapter?.currentItem())
+            b.putParcelable("lastSelected", currentItem)
             b.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
             b.putLongArray("checkedIdArray", adapter?.checkedIdArray?.map { it }?.toLongArray())
             b.putInt("currentScrollPosition", currentScrollPosition)
@@ -470,6 +289,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         // Para el llenado en el onStart siguiente de onCreate
         fillRequired = true
 
+        summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
+
         if (savedInstanceState != null) {
             // Recuperar el estado previo de la actividad con los datos guardados
             loadBundleValues(savedInstanceState)
@@ -479,8 +300,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             if (extras != null) loadExtraBundleValues(extras)
         }
 
-        binding.swipeRefreshOrc.setOnRefreshListener(this)
-        binding.swipeRefreshOrc.setColorSchemeResources(
+        binding.swipeRefreshItem.setOnRefreshListener(this)
+        binding.swipeRefreshItem.setColorSchemeResources(
             android.R.color.holo_blue_bright,
             android.R.color.holo_green_light,
             android.R.color.holo_orange_light,
@@ -688,7 +509,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            binding.swipeRefreshOrc.isRefreshing = show
+            binding.swipeRefreshItem.isRefreshing = show
         }, 20)
     }
 
@@ -796,7 +617,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     // Si el adapter es NULL es porque aún no fue creado.
                     // Por lo tanto, puede ser que los valores de [lastSelected]
                     // sean valores guardados de la instancia anterior y queremos preservarlos.
-                    lastSelected = adapter?.currentItem()
+                    lastSelected = currentItem
                 }
 
                 adapter = OrcAdapter.Builder()
@@ -833,42 +654,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
     }
 
-    private fun fillSummaryRow() {
-        runOnUiThread {
-            if (orderRequest.orderRequestType != OrderRequestType.stockAuditFromDevice) {
-                binding.totalLabelTextView.text = context.getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context.getString(R.string.cant)
-                binding.selectedLabelTextView.visibility = VISIBLE
-                binding.selectedLabelTextView.text = context.getString(R.string.checked)
-
-                if (adapter != null) {
-                    val cont = adapter?.qtyRequestedTotal() ?: 0.0
-                    val t = adapter?.itemCount ?: 0
-                    binding.totalTextView.text = t.toString()
-                    binding.qtyReqTextView.text = Statics.roundToString(cont, 0)
-                    binding.selectedTextView.text = countChecked.toString()
-                }
-            } else {
-                binding.totalLabelTextView.text = context.getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
-                binding.selectedLabelTextView.visibility = GONE
-
-                if (adapter != null) {
-                    val cont = adapter?.qtyCollectedTotal() ?: 0.0
-                    val t = adapter?.itemCount ?: 0
-                    binding.totalTextView.text = t.toString()
-                    binding.qtyReqTextView.text = Statics.roundToString(cont, 0)
-                }
-            }
-
-            if (adapter == null) {
-                binding.totalTextView.text = 0.toString()
-                binding.qtyReqTextView.text = 0.toString()
-                binding.selectedTextView.text = 0.toString()
-            }
-        }
-    }
-
     private fun setMultiplierButtonText() {
         runOnUiThread {
             binding.multiplierButton.text = String.format(
@@ -879,7 +664,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     @SuppressLint("SimpleDateFormat")
     private fun removeItem() {
-        val currentItem = adapter?.currentItem()
+        val currentItem = currentItem
         if (currentItem == null && countChecked <= 0) {
             allowClicks = true
             return
@@ -1753,6 +1538,219 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         allowClicks = true
         JotterListener.lockScanner(this, false)
         rejectNewInstances = false
+    }
+
+    override fun onEditDescriptionRequired(position: Int, orc: OrderRequestContent) {
+        showDialogForItemDescription(orc)
+    }
+
+    private fun onCheckCodeEnded(it: CheckCode.CheckCodeEnded) {
+        val orc = it.orc ?: return
+        itemCode = it.itemCode
+
+        // El código fue chequeado, se agrega y se selecciona en la lista
+        runOnUiThread { adapter?.add(arrayListOf(orc)) }
+
+        // Definir las cantidades según el modo de ingreso actual
+        if (binding.requiredDescCheckBox.isChecked &&
+            orc.itemDescription == context.getString(
+                R.string.unknown_item
+            )
+        ) {
+            // Antes agregar descripción si es obligatorio.
+            // La función itemDescriptionDialog(orc) al final llama a setQty(orc)
+            showDialogForAddDescription(orc)
+            return
+        }
+
+        // Esta pausa permite que el Adapter se actualice a tiempo
+        Handler(mainLooper).postDelayed({
+            setQty(orc)
+        }, 250)
+        gentlyReturn()
+    }
+
+    private val menuItemRandomIt = 999001
+    private val menuItemManualCode = 999002
+    private val menuItemRandomOnListL = 999003
+    private val menuRegexItem = 999004
+
+    @SuppressLint("RestrictedApi")
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        menuInflater.inflate(R.menu.menu_read_activity, menu)
+
+        if (!settingViewModel.useBtRfid) {
+            menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
+        }
+
+        if (BuildConfig.DEBUG || Statics.TEST_MODE) {
+            menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
+            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
+            menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
+            menu.add(Menu.NONE, menuRegexItem, Menu.NONE, "Regex")
+        }
+
+        if (menu is MenuBuilder) {
+            menu.setOptionalIconsVisible(true)
+        }
+
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+
+        when (item.itemId) {
+            R.id.home, android.R.id.home -> {
+                onBackPressed()
+                return true
+            }
+
+            R.id.action_rfid_connect -> {
+                JotterListener.rfidStart(this)
+                return super.onOptionsItemSelected(item)
+            }
+
+            R.id.action_trigger_scan -> {
+                /*
+                val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321"
+                val s = Random().ints(10, 0, source.length)
+                    .asSequence()
+                    .map(source::get)
+                    .joinToString("")
+                scannerCompleted(s)
+                return super.onOptionsItemSelected(item)
+                */
+                JotterListener.trigger(this)
+                return super.onOptionsItemSelected(item)
+            }
+
+            R.id.action_read_barcode -> {
+                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomOnListL -> {
+                val codes: ArrayList<String> = ArrayList()
+
+                (adapter?.fullList ?: ArrayList<OrderRequestContent>()
+                    .filter { it.codeRead.isNotEmpty() })
+                    .mapTo(codes) { it.codeRead }
+
+                if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomIt -> {
+                ItemCoroutines.getCodes(true) {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemManualCode -> {
+                enterCode()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuRegexItem -> {
+                scannerCompleted("0SM20220721092826007792261002857001038858")
+                return super.onOptionsItemSelected(item)
+            }
+        }
+        return true
+    }
+
+    private fun enterCode() {
+        runOnUiThread {
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(R.string.enter_code)
+
+            val input = EditText(this)
+            input.inputType = InputType.TYPE_CLASS_TEXT
+            builder.setView(input)
+
+            builder.setPositiveButton(R.string.ok) { _, _ ->
+                scannerCompleted(input.text.toString())
+            }
+            builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
+
+            builder.show()
+        }
+    }
+
+    private fun setQty(orc: OrderRequestContent) {
+        if (lastRegexResult != null) {
+            val qty = lastRegexResult?.qty?.toDouble()
+            if (qty == null) showSnackBar(
+                getString(R.string.null_quantity_in_regex), ERROR
+            )
+
+            setQtyCollected(orc = orc, qty = qty ?: 1.toDouble())
+        } else {
+            if (partial || partialBlock) {
+                setQtyManually(orc)
+            } else {
+                setQtyCollected(orc = orc, qty = 1.toDouble())
+            }
+        }
+    }
+
+    private fun checkLotEnabled(orc: OrderRequestContent) {
+        // Check LOT ENABLED
+        val itemId = orc.itemId ?: 0
+        if (itemId <= 0 || orc.lotEnabled != true) return
+
+        val lotIdStr = lastRegexResult?.lot ?: orc.lotId?.toString() ?: ""
+        if (lotIdStr.isNotEmpty()) {
+            lastRegexResult = null
+            setLotCode(orc = orc, lotCode = lotIdStr)
+        } else {
+            lotCodeDialog(orc)
+        }
+    }
+
+    override fun onDataSetChanged() {
+        runOnUiThread {
+            Handler(Looper.getMainLooper()).postDelayed({
+                val labelCant: Boolean
+                val totalVisible: Int
+                if (orderRequest.orderRequestType == OrderRequestType.stockAuditFromDevice) {
+                    labelCant = false
+                    totalVisible = totalCollected
+                } else {
+                    labelCant = true
+                    totalVisible = totalRequested
+                }
+
+                summaryFragment
+                    .multiSelect(labelCant) // This is to set fragments captions
+                    .totalVisible(totalVisible)
+                    .totalChecked(countChecked)
+                    .fill()
+            }, 100)
+        }
+    }
+
+    override fun onEditQtyRequired(
+        position: Int,
+        content: OrderRequestContent,
+        initialQty: Double,
+        minValue: Double,
+        maxValue: Double,
+        multiplier: Int,
+    ) {
+        qtySelectorDialog(
+            orc = content,
+            initialQty = initialQty,
+            minValue = minValue,
+            maxValue = maxValue,
+            multiplier = multiplier,
+            total = true
+        )
     }
 
     companion object {
