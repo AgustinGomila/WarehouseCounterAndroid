@@ -68,6 +68,17 @@ data class OrderResponse(
             return OrderStatus.getById(statusId)
         }
 
+    fun contentToKtor(): List<OrderRequestContent> {
+        val r: ArrayList<OrderRequestContent> = ArrayList()
+        contents.mapTo(r) { it.toKtor() }
+        return r
+    }
+
+    val hashCode: Int
+        get() {
+            return hashCode()
+        }
+
     override fun toString(): String {
         return description
     }
@@ -105,11 +116,6 @@ data class OrderResponse(
         result = 31 * result + (collectorId?.hashCode() ?: 0)
         return result
     }
-
-    val hashCode: Int
-        get() {
-            return hashCode()
-        }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeValue(clientId)

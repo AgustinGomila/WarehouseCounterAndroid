@@ -447,6 +447,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                     thread {
                         ViewOrder(
                             id = id,
+                            action = ViewOrder.defaultAction,
                             onFinish = { order ->
                                 if (order == null) {
                                     showSnackBar(getString(R.string.order_not_found), ERROR)
@@ -600,7 +601,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 if (newId != null) {
                     OrderRequestCoroutines.update(
                         orderRequest = orderRequest.toKtor,
-                        contents = order.contents.map { it.toKtor() },
+                        contents = order.contentToKtor(),
                         onResult = {
                             if (it) {
                                 val intent = Intent(context, OrderRequestContentActivity::class.java)

@@ -51,7 +51,7 @@ object OrderRequestCoroutines {
                 val orRoom = orderRequest.toRoom
                 database.orderRequestDao().update(
                     orderRequest = orRoom,
-                    contents = contents.map { it.toRoom(orRoom.orderRequestId) },
+                    contents = orderRequest.contentToRoom(),
                 )
             }.await()
             onResult(true)

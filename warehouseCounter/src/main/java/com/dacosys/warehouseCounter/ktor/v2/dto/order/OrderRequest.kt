@@ -102,9 +102,10 @@ data class OrderRequest(
             )
         }
 
-    fun contentToRoom(orderId: Long): ArrayList<OrderRequestContentRoom> {
+    fun contentToRoom(): ArrayList<OrderRequestContentRoom> {
+        val orId = this.orderRequestId ?: return ArrayList()
         val r: ArrayList<OrderRequestContentRoom> = ArrayList()
-        contents.mapTo(r) { it.toRoom(orderId) }
+        contents.mapTo(r) { it.toRoom(orId) }
         return r
     }
 
