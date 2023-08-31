@@ -246,7 +246,10 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         // Para expandir y colapsar los paneles
         setPanelAnimation()
 
-        binding.okButton.setOnClickListener { askForUnpackConfirmation() }
+        binding.okButton.setOnClickListener {
+            val id = currentItem?.id ?: return@setOnClickListener
+            askForRepack(id)
+        }
 
         // OCULTAR PANEL DE CONTROLES DE FILTRADO
         if (hideFilterPanel) {
@@ -496,31 +499,6 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }, 20)
     }
 
-    private fun askForUnpackConfirmation() {
-        closeKeyboard(this)
-        if (adapter == null) return
-
-        val selectedOrders = adapter?.selectedOrders() ?: arrayListOf()
-
-        if (!selectedOrders.any()) {
-            showSnackBar(getString(R.string.you_must_select_at_least_one_order), ERROR)
-            return
-        }
-
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(context.getString(R.string.confirm_unpacking))
-        builder.setMessage(getString(R.string.are_you_sure_to_unpack_the_selected_orders))
-        builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
-            unpack(selectedOrders)
-            dialogInterface.dismiss()
-        }
-        builder.setNegativeButton(getString(R.string.no)) { dialogInterface, _ ->
-            dialogInterface.dismiss()
-        }
-        val dialog = builder.create()
-        dialog.show()
-    }
-
     private fun unpack(itemArray: ArrayList<OrderResponse>) {
         if (itemArray.count() == 1) {
             val item = itemArray.first()
@@ -553,23 +531,25 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     }
 
     private fun askForRepack(id: Long) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(context.getString(R.string.confirm_unpacking))
-        builder.setMessage(getString(R.string.are_you_sure_to_unpack_the_selected_orders))
-        builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
-            val data = Intent()
-            data.putExtra(ARG_REPACK_ORDER_ID, id)
-            setResult(RESULT_OK, data)
-            dialogInterface.dismiss()
+        runOnUiThread {
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(context.getString(R.string.confirm_unpacking))
+            builder.setMessage(getString(R.string.are_you_sure_to_unpack_the_selected_orders))
+            builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
+                val data = Intent()
+                data.putExtra(ARG_REPACK_ORDER_ID, id)
+                setResult(RESULT_OK, data)
+                dialogInterface.dismiss()
+            }
+            builder.setNegativeButton(getString(R.string.no)) { dialogInterface, _ ->
+                dialogInterface.dismiss()
+            }
+            builder.setOnDismissListener {
+                finish()
+            }
+            val dialog = builder.create()
+            dialog.show()
         }
-        builder.setNegativeButton(getString(R.string.no)) { dialogInterface, _ ->
-            dialogInterface.dismiss()
-        }
-        builder.setOnDismissListener {
-            finish()
-        }
-        val dialog = builder.create()
-        dialog.show()
     }
 
     private fun getOrders() {

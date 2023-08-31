@@ -580,7 +580,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             ), INFO
         )
 
-        // TODO: Ver esto, hacer el repack
         val orderRequest = OrderRequestRoom(
             clientId = order.clientId ?: 0,
             creationDate = order.rowCreationDate,
@@ -599,10 +598,21 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             orderRequest = orderRequest,
             onResult = { newId ->
                 if (newId != null) {
-                    val intent = Intent(context, OrderRequestContentActivity::class.java)
-                    intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
-                    intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
-                    startActivity(intent)
+                    OrderRequestCoroutines.update(
+                        orderRequest = orderRequest.toKtor,
+                        contents = order.contents.map { it.toKtor() },
+                        onResult = {
+                            if (it) {
+                                val intent = Intent(context, OrderRequestContentActivity::class.java)
+                                intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
+                                intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
+                                startActivity(intent)
+                            } else {
+                                showSnackBar(getString(R.string.error_when_updating_the_order), ERROR)
+                            }
+                        })
+                } else {
+                    showSnackBar(getString(R.string.error_when_creating_the_order), ERROR)
                 }
             })
     }
@@ -890,7 +900,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             }
         }
 
-    // region ViewPager
+// region ViewPager
     /**
      * Así se construye el nombre de un fragmento en FragmentManager
      */
@@ -961,7 +971,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             return totalPages
         }
     }
-    //endregion
+//endregion
 
     /**
      *

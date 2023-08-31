@@ -355,12 +355,12 @@ class APIServiceImpl : APIService {
     /**
      * Update a new [OrderResponse]
      *
-     * @param payload Load object: [OrderRequest] containing the order, contents, scan records, etc.
+     * @param payload Load object: [OrderUpdatePayload] containing the necessary order information.
      * @param callback Return object: updated order
      * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/order/)
      * [POST](http://localhost:8002/v2/order/update)
      */
-    override suspend fun updateOrder(payload: OrderRequest, callback: (OrderResponse) -> Unit) {
+    override suspend fun updateOrder(payload: OrderUpdatePayload, callback: (OrderResponse) -> Unit) {
         callback(
             apiRequest.update<OrderResponse>(
                 objPath = ORDER_PATH,

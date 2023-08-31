@@ -7,6 +7,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.Log.CREATOR.LOG_LIST_KEY
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestContent.CREATOR.CONTENT_LIST_KEY
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderStatus.CREATOR.outOfStock
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.Package.CREATOR.PACKAGE_LIST_KEY
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
@@ -16,6 +17,7 @@ import kotlinx.serialization.Serializable
 import java.io.File
 import com.dacosys.warehouseCounter.room.entity.orderRequest.OrderRequest as OrderRequestRoom
 import com.dacosys.warehouseCounter.room.entity.orderRequest.OrderRequestContent as OrderRequestContentRoom
+
 
 @Serializable
 data class OrderRequest(
@@ -245,6 +247,14 @@ data class OrderRequest(
 
         fun getCompletedOrders(): ArrayList<OrderRequest> {
             return getOrders(Statics.getCompletedPath())
+        }
+
+        fun toUpdatePayload(or: OrderRequest): OrderUpdatePayload {
+            return OrderUpdatePayload(
+                externalId = or.externalId,
+                description = or.description,
+                statusId = outOfStock.id.toInt()
+            )
         }
 
         private fun getOrders(path: File): ArrayList<OrderRequest> {

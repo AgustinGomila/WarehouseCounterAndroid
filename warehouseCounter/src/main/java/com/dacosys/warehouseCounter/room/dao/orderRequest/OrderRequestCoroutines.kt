@@ -14,9 +14,9 @@ object OrderRequestCoroutines {
         onResult: (OrderRequestKtor?) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = async { database.orderRequestDao().getById(id)?.toOrderRequestKtor ?: OrderRequestKtor() }.await()
+            val r = async { database.orderRequestDao().getById(id)?.toKtor ?: OrderRequestKtor() }.await()
             val rc =
-                async { database.orderRequestContentDao().getByOrderId(id).map { it.toRequestContentKtor } }.await()
+                async { database.orderRequestContentDao().getByOrderId(id).map { it.toKtor } }.await()
 
             r.contents = rc
             onResult(r)

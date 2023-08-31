@@ -56,7 +56,7 @@ data class OrderRequest(
         zone = parcel.readString() ?: ""
     )
 
-    val toOrderRequestKtor: OrderRequestKtor
+    val toKtor: OrderRequestKtor
         get() {
             return OrderRequestKtor(
                 orderRequestId = this.orderRequestId,

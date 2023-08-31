@@ -321,7 +321,7 @@ class ApiRequest {
         val url = URL(apiUrl)
 
         /** HTTP Post function */
-        val response = httpClient.post {
+        val response = httpClient.put {
             /** Set a Basic auth */
             basicAuth(
                 username = Statics.currentUserName, password = Statics.currentPass

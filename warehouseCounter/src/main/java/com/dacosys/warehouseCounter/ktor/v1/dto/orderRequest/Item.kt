@@ -113,7 +113,7 @@ class Item() : Parcelable {
             return arrayOfNulls(size)
         }
 
-        fun fromItemRoom(item: ItemRoom): Item {
+        fun fromRoom(item: ItemRoom): Item {
             val temp = Item().apply {
                 itemId = item.itemId
                 itemDescription = item.description

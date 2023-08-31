@@ -7,6 +7,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest.CREATOR.toUpdatePayload
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
@@ -39,7 +40,7 @@ class UpdateOrder(
         for ((index, order) in payload.withIndex()) {
             if (BuildConfig.DEBUG) println(json.encodeToString(OrderRequest.serializer(), order))
 
-            ktorApiServiceV2.updateOrder(payload = order, callback = {
+            ktorApiServiceV2.updateOrder(payload = toUpdatePayload(order), callback = {
                 val id = it.id
                 if (id > 0) successIdList.add(id)
                 else errorOccurred = true

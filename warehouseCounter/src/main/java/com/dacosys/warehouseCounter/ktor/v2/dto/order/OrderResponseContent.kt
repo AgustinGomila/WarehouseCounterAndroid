@@ -25,6 +25,14 @@ data class OrderResponseContent(
         rowModificationDate = parcel.readString()
     )
 
+    fun toKtor(): OrderRequestContent {
+        return OrderRequestContent(
+            itemId = this.itemId,
+            qtyRequested = this.qtyRequested ?: 0.0,
+            qtyCollected = this.qtyCollected ?: 0.0
+        )
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

@@ -58,7 +58,7 @@ data class OrderRequestContent(
         qtyCollected = parcel.readValue(Double::class.java.classLoader) as? Double
     )
 
-    val toRequestContentKtor: OrderRequestContentKtor
+    val toKtor: OrderRequestContentKtor
         get() {
             return OrderRequestContentKtor(
                 itemId = this.itemId,
