@@ -1,7 +1,5 @@
 package com.dacosys.warehouseCounter.ktor.v2.functions.itemCode
 
-import android.util.Log
-import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
@@ -44,8 +42,8 @@ class SendItemCode
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         ktorApiServiceV2.sendItemCode(payload = payload, callback = {
-            if (BuildConfig.DEBUG) Log.d(javaClass.simpleName, it.toString())
-            r = it
+            if (it.onEvent != null) sendEvent(it.onEvent)
+            if (it.response != null) r = it.response
             if (r != null) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
             else sendEvent(
                 context.getString(R.string.an_error_occurred_while_trying_to_add_the_item_code),
@@ -61,7 +59,6 @@ class SendItemCode
 
     private fun sendEvent(event: SnackBarEventData) {
         onEvent.invoke(event)
-
         if (event.snackBarType in getFinish() || event.snackBarType == SnackBarType.INFO) {
             onFinish.invoke(r)
         }

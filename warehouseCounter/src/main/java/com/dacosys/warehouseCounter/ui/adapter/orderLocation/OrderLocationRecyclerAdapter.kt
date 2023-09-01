@@ -619,7 +619,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
             binding.eanTextView.text = item.itemEan
             binding.qtyTextView.text = item.qtyCollected?.toString()
             binding.descriptionTextView.text = item.itemDescription
-            binding.orderNbrTextView.text = item.orderExternalId
+            binding.orderNbrTextView.text = item.orderId.toString()
             binding.orderDescriptionTextView.text = item.orderDescription
 
             val extId = item.itemExternalId ?: ""
@@ -633,7 +633,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
 
             binding.warehouseTextView.text = item.warehouseDescription
             binding.warehouseAreaTextView.text = item.warehouseAreaDescription
-            binding.rackTextView.text = item.rackId?.toString()
+            binding.rackTextView.text = item.rackCode
 
             setStyle(item)
         }
@@ -699,7 +699,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
             binding.eanTextView.text = item.itemEan
             binding.qtyTextView.text = item.qtyCollected?.toString()
             binding.descriptionTextView.text = item.itemDescription
-            binding.orderNbrTextView.text = item.orderExternalId
+            binding.orderNbrTextView.text = item.orderId.toString()
             binding.orderDescriptionTextView.text = item.orderDescription
 
             setStyle(item)

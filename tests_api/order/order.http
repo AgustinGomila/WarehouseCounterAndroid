@@ -217,6 +217,19 @@ Content-Type: application/json
   "warehouseAreaId": 2
 }
 
+
+
+### MOVE
+POST {{server}}/v2/order/move
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "orderRequestId": 1637,
+  "orderExternalId": null,
+  "warehouseAreaId": 4
+}
+
 ###
 
 ### MOVE

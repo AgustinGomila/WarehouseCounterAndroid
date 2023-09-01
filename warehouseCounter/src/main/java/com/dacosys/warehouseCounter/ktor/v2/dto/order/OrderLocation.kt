@@ -21,6 +21,7 @@ data class OrderLocation(
     @SerialName(WAREHOUSE_AREA_EXTERNAL_ID_KEY) var warehouseAreaExternalId: String = "",
     @SerialName(WAREHOUSE_AREA_DESCRIPTION_KEY) var warehouseAreaDescription: String = "",
     @SerialName(RACK_ID_KEY) var rackId: Long? = null,
+    @SerialName(RACK_CODE_KEY) var rackCode: String? = null,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         orderId = parcel.readValue(Long::class.java.classLoader) as? Long,
@@ -36,7 +37,8 @@ data class OrderLocation(
         warehouseAreaId = parcel.readValue(Long::class.java.classLoader) as? Long,
         warehouseAreaExternalId = parcel.readString() ?: "",
         warehouseAreaDescription = parcel.readString() ?: "",
-        rackId = parcel.readValue(Long::class.java.classLoader) as? Long
+        rackId = parcel.readValue(Long::class.java.classLoader) as? Long,
+        rackCode = parcel.readString()
     )
 
     enum class OrderLocationStatus(val id: Long) {
@@ -72,6 +74,7 @@ data class OrderLocation(
         parcel.writeString(warehouseAreaExternalId)
         parcel.writeString(warehouseAreaDescription)
         parcel.writeValue(rackId)
+        parcel.writeString(rackCode)
     }
 
     override fun describeContents(): Int {
@@ -97,6 +100,7 @@ data class OrderLocation(
         if (warehouseAreaId != other.warehouseAreaId) return false
         if (warehouseAreaExternalId != other.warehouseAreaExternalId) return false
         if (warehouseAreaDescription != other.warehouseAreaDescription) return false
+        if (rackCode != other.rackCode) return false
         if (rackId != other.rackId) return false
 
         return true
@@ -116,6 +120,7 @@ data class OrderLocation(
         result = 31 * result + (warehouseAreaId?.hashCode() ?: 0)
         result = 31 * result + warehouseAreaExternalId.hashCode()
         result = 31 * result + warehouseAreaDescription.hashCode()
+        result = 31 * result + rackCode.hashCode()
         result = 31 * result + (rackId?.hashCode() ?: 0)
         return result
     }
@@ -135,6 +140,7 @@ data class OrderLocation(
         const val WAREHOUSE_AREA_EXTERNAL_ID_KEY = "warehouseAreaExternalId"
         const val WAREHOUSE_AREA_DESCRIPTION_KEY = "warehouseAreaDescription"
         const val RACK_ID_KEY = "rackId"
+        const val RACK_CODE_KEY = "rackCode"
 
         const val ORDER_LOCATION_LIST_KEY = "orderLocations"
 

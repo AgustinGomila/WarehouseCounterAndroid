@@ -1,7 +1,5 @@
 package com.dacosys.warehouseCounter.ktor.v2.functions.orderPackage
 
-import android.util.Log
-import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
@@ -59,8 +57,8 @@ class GetOrderPackage(
             filter = filter,
             action = action,
             callback = {
-                if (BuildConfig.DEBUG) Log.d(javaClass.simpleName, it.toString())
-                r = it.items
+                if (it.onEvent != null) sendEvent(it.onEvent)
+                if (it.response != null) r = it.response.items
                 if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
                 else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
             })
@@ -73,7 +71,6 @@ class GetOrderPackage(
 
     private fun sendEvent(event: SnackBarEventData) {
         onEvent.invoke(event)
-
         if (event.snackBarType in getFinish() || event.snackBarType == SnackBarType.INFO) {
             onFinish.invoke(r)
         }

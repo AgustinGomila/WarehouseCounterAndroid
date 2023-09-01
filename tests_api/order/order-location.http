@@ -9,7 +9,7 @@ Authorization: Basic {{username}} {{password}}
 Accept: application/json
 
 ### Index Filter order id
-GET {{server}}/v2/order-location?filter[order_location.order_id]=1312
+GET {{server}}/v2/order-location?filter[order_location.order_id]=1637
 Authorization: Basic {{username}} {{password}}
 Accept: application/json
 

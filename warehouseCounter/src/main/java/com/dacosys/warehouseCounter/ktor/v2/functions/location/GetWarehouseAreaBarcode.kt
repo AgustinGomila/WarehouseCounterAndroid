@@ -1,7 +1,5 @@
 package com.dacosys.warehouseCounter.ktor.v2.functions.location
 
-import android.util.Log
-import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
@@ -37,8 +35,8 @@ class GetWarehouseAreaBarcode(
         ktorApiServiceV2.getWarehouseAreaBarcode(
             params = param,
             callback = {
-                if (BuildConfig.DEBUG) Log.d(javaClass.simpleName, it.toString())
-                r = ArrayList(it)
+                if (it.onEvent != null) sendEvent(it.onEvent)
+                if (it.response != null) r = ArrayList(it.response)
                 if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
                 else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
             })
@@ -51,7 +49,6 @@ class GetWarehouseAreaBarcode(
 
     private fun sendEvent(event: SnackBarEventData) {
         onEvent.invoke(event)
-
         if (event.snackBarType in getFinish() || event.snackBarType == SnackBarType.INFO) {
             onFinish.invoke(r)
         }

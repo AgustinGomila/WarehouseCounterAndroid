@@ -1,7 +1,5 @@
 package com.dacosys.warehouseCounter.ktor.v2.functions.template
 
-import android.util.Log
-import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
@@ -23,8 +21,8 @@ class ViewBarcodeLabelTemplate
  */(
     private val id: Long,
     private val action: ArrayList<ApiActionParam>,
-    private val onEvent: (SnackBarEventData) -> Unit = { },
     private val onFinish: (BarcodeLabelTemplate?) -> Unit,
+    private val onEvent: (SnackBarEventData) -> Unit = { },
 ) {
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
@@ -48,8 +46,8 @@ class ViewBarcodeLabelTemplate
             id = id,
             action = action,
             callback = {
-                if (BuildConfig.DEBUG) Log.d(javaClass.simpleName, it.toString())
-                r = it
+                if (it.onEvent != null) sendEvent(it.onEvent)
+                if (it.response != null) r = it.response
                 if (r != null) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
                 else sendEvent(context.getString(R.string.item_not_exists), SnackBarType.INFO)
             })
@@ -62,7 +60,6 @@ class ViewBarcodeLabelTemplate
 
     private fun sendEvent(event: SnackBarEventData) {
         onEvent.invoke(event)
-
         if (event.snackBarType in getFinish() || event.snackBarType == SnackBarType.INFO) {
             onFinish.invoke(r)
         }

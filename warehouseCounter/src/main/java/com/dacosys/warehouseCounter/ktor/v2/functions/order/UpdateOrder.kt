@@ -41,7 +41,11 @@ class UpdateOrder(
             if (BuildConfig.DEBUG) println(json.encodeToString(OrderRequest.serializer(), order))
 
             ktorApiServiceV2.updateOrder(payload = toUpdatePayload(order), callback = {
-                val id = it.id
+                if (it.onEvent != null) sendEvent(it.onEvent)
+
+                var id: Long = 0
+                if (it.response != null) id = it.response.id
+
                 if (id > 0) successIdList.add(id)
                 else errorOccurred = true
                 isDone = index == payload.lastIndex

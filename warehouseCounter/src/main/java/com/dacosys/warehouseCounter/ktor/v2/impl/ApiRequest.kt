@@ -1,9 +1,13 @@
 package com.dacosys.warehouseCounter.ktor.v2.impl
 
+import arrow.core.Either
 import com.dacosys.warehouseCounter.BuildConfig
+import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.httpClient
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
+import com.dacosys.warehouseCounter.ktor.v2.dto.apiParam.ErrorResponse
 import com.dacosys.warehouseCounter.ktor.v2.dto.apiParam.ListResponse
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.Barcode
 import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeCodeParam
@@ -17,13 +21,13 @@ import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderMovePayload
 import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam.Companion.ACTION_FILTER
 import com.dacosys.warehouseCounter.ktor.v2.impl.ApiFilterParam.Companion.ACTION_FILTER_LIKE
+import com.dacosys.warehouseCounter.ktor.v2.service.APIResponse
 import com.dacosys.warehouseCounter.misc.Statics
-import io.ktor.client.call.*
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.serialization.*
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonArray
@@ -32,43 +36,84 @@ import java.net.URL
 
 class ApiRequest {
     /**
-     * Get the barcodes for the desired list of objects IDs.
+     * Maneja una respuesta HTTP y la deserializa en un objeto del tipo especificado [T] si la respuesta es exitosa.
+     * En caso de una respuesta que no esté en el rango 200-299 o un error de serialización, se devuelve un objeto del tipo [ErrorResponse].
      *
-     * @param objPath Partial path of the object functions in the API.
-     * @param params [BarcodeParam] with the list of IDs, the template and the printer options.
-     * @return [ListResponse]<[Barcode]>
+     * @param T el tipo de objeto en el que se debe deserializar la respuesta exitosa.
+     * @param response la respuesta HTTP que se va a manejar.
+     * @param success una función que toma el contenido de la respuesta y lo deserializa en [T].
+     * @return un [Result] que contiene el objeto deserializado si la respuesta es exitosa, o un objeto [ErrorResponse] en caso de un error.
      */
-    suspend fun getBarcodeOf(objPath: String, params: BarcodeParam): List<Barcode> {
-        val url = URL(apiUrl)
+    suspend inline fun <reified T : Any> handleHttpResponse(
+        response: HttpResponse, success: (T) -> T, error: (ErrorResponse) -> ErrorResponse
+    ): Either<T, ErrorResponse> {
 
-        /** HTTP Post function */
-        val response = httpClient.post {
-            /** Set a Basic auth */
-            basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
-            )
-            /** Set the API URL */
-            url {
-                protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
-                else URLProtocol.HTTPS
-                host = url.host
-                path("${url.path}/$VERSION_PATH/$objPath/$BARCODE_PATH")
-            }
-            /** Body content */
-            contentType(ContentType.Application.Json)
-            setBody(params)
+        val content = response.bodyAsText()
+        if (BuildConfig.DEBUG) {
+            println(response.status.description)
+            println(content)
         }
 
-        println(response.status.description)
+        return try {
+            if (content.isEmpty()) {
+                Either.Right(error(ErrorResponse(context.getString(R.string.unknown_error))))
+            } else {
+                if (response.status in HttpStatusCode.OK..HttpStatusCode.MultiStatus) {
+                    Either.Left(success(json.decodeFromString<T>(content)))
+                } else {
+                    Either.Right(error(json.decodeFromString<ErrorResponse>(content)))
+                }
+            }
+        } catch (e: Exception) {
+            Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.unknown_error))))
+        }
+    }
+
+    /**
+     * Obtiene una lista de códigos de barras relacionados con el objeto especificado en [objPath] utilizando los parámetros proporcionados en [params].
+     *
+     * @param objPath la ruta al objeto para el cual se desea obtener códigos de barras relacionados.
+     * @param params los parámetros que controlan la consulta de códigos de barras.
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de obtención de códigos de barras.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es una lista de objetos [Barcode].
+     */
+    suspend fun getBarcodeOf(objPath: String, params: BarcodeParam, callback: (APIResponse<List<Barcode>>) -> Unit) {
+        suspend fun httpResponse(): HttpResponse {
+            val url = URL(apiUrl)
+
+            /** HTTP Post function */
+            val response = httpClient.post {
+                /** Set a Basic auth */
+                basicAuth(
+                    username = Statics.currentUserName, password = Statics.currentPass
+                )
+                /** Set the API URL */
+                url {
+                    protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
+                    else URLProtocol.HTTPS
+                    host = url.host
+                    path("${url.path}/$VERSION_PATH/$objPath/$BARCODE_PATH")
+                }
+                /** Body content */
+                contentType(ContentType.Application.Json)
+                setBody(params)
+            }
+            return response
+        }
+
+        val response = httpResponse()
+        val bodyStr = response.bodyAsText()
         val r = ArrayList<Barcode>()
+
+        if (BuildConfig.DEBUG) {
+            println(response.status.description)
+            println(bodyStr)
+        }
+
         try {
             when (response.status.value) {
                 in 200..299 -> {
-                    val bodyStr = response.bodyAsText()
-                    if (BuildConfig.DEBUG) println(bodyStr)
-
                     val jsonObject = json.parseToJsonElement(bodyStr).jsonObject
-
                     for (j in jsonObject) {
                         when (j.key) {
                             Barcode.BARCODE_LIST_KEY -> {
@@ -77,59 +122,75 @@ class ApiRequest {
                             }
                         }
                     }
+
+                    callback(APIResponse(response = r))
                 }
 
-                422 -> {}
-                401 -> {}
+                else -> {
+                    val error = json.decodeFromString<ErrorResponse>(bodyStr)
+                    callback(
+                        APIResponse(
+                            onEvent = SnackBarEventData(
+                                "${error.status}, ${error.name}. ${error.message}. ${error.type}", SnackBarType.ERROR
+                            )
+                        )
+                    )
+                }
             }
-        } catch (e: JsonConvertException) {
-            println(e.message)
-        } catch (e: SerializationException) {
-            println(e.message)
-        } catch (e: NullPointerException) {
-            println(e.message)
+        } catch (e: Exception) {
+            callback(
+                APIResponse(onEvent = SnackBarEventData(e.message.toString(), SnackBarType.ERROR))
+            )
         }
-        return r
     }
 
     /**
-     * Get the barcodes for the desired code object.
+     * Obtiene una lista de códigos de barras relacionados con el objeto especificado en [objPath] utilizando el código de barras proporcionado en [params].
      *
-     * @param objPath Partial path of the object functions in the API.
-     * @param params [BarcodeCodeParam] with the code, the template and the printer options.
-     * @return [ListResponse]<[Barcode]>
+     * @param objPath la ruta al objeto para el cual se desea obtener códigos de barras relacionados.
+     * @param params los parámetros que contienen el código de barras para la consulta.
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de obtención de códigos de barras.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es una lista de objetos [Barcode].
      */
-    suspend fun getBarcodeByCodeOf(objPath: String, params: BarcodeCodeParam): List<Barcode> {
-        val url = URL(apiUrl)
+    suspend fun getBarcodeByCodeOf(
+        objPath: String, params: BarcodeCodeParam, callback: (APIResponse<List<Barcode>>) -> Unit
+    ) {
+        suspend fun httpResponse(): HttpResponse {
+            val url = URL(apiUrl)
 
-        /** HTTP Post function */
-        val response = httpClient.post {
-            /** Set a Basic auth */
-            basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
-            )
-            /** Set the API URL */
-            url {
-                protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
-                else URLProtocol.HTTPS
-                host = url.host
-                path("${url.path}/$VERSION_PATH/$objPath/$BARCODE_CODE_PATH")
+            /** HTTP Post function */
+            val response = httpClient.post {
+                /** Set a Basic auth */
+                basicAuth(
+                    username = Statics.currentUserName, password = Statics.currentPass
+                )
+                /** Set the API URL */
+                url {
+                    protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
+                    else URLProtocol.HTTPS
+                    host = url.host
+                    path("${url.path}/$VERSION_PATH/$objPath/$BARCODE_CODE_PATH")
+                }
+                /** Body content */
+                contentType(ContentType.Application.Json)
+                setBody(params)
             }
-            /** Body content */
-            contentType(ContentType.Application.Json)
-            setBody(params)
+            return response
         }
 
-        println(response.status.description)
+        val response = httpResponse()
+        val bodyStr = response.bodyAsText()
         val r = ArrayList<Barcode>()
+
+        if (BuildConfig.DEBUG) {
+            println(response.status.description)
+            println(bodyStr)
+        }
+
         try {
             when (response.status.value) {
                 in 200..299 -> {
-                    val bodyStr = response.bodyAsText()
-                    if (BuildConfig.DEBUG) println(bodyStr)
-
                     val jsonObject = json.parseToJsonElement(bodyStr).jsonObject
-
                     for (j in jsonObject) {
                         when (j.key) {
                             Barcode.BARCODE_LIST_KEY -> {
@@ -138,37 +199,46 @@ class ApiRequest {
                             }
                         }
                     }
+
+                    callback(APIResponse(response = r))
                 }
 
-                422 -> {}
-                401 -> {}
+                else -> {
+                    val error = json.decodeFromString<ErrorResponse>(bodyStr)
+                    callback(
+                        APIResponse(
+                            onEvent = SnackBarEventData(
+                                "${error.status}, ${error.name}. ${error.message}. ${error.type}", SnackBarType.ERROR
+                            )
+                        )
+                    )
+                }
             }
-        } catch (e: JsonConvertException) {
-            println(e.message)
-        } catch (e: SerializationException) {
-            println(e.message)
-        } catch (e: NullPointerException) {
-            println(e.message)
+        } catch (e: Exception) {
+            callback(
+                APIResponse(onEvent = SnackBarEventData(e.message.toString(), SnackBarType.ERROR))
+            )
         }
-        return r
     }
 
     /**
-     * Get a list of [T]
+     * Obtiene una lista de objetos del tipo especificado [T] desde el recurso en [objPath], opcionalmente aplicando acciones y filtros.
      *
-     * @param T DTO Clazz
-     * @param objPath Partial path of the object functions in the API.
-     * @param listName Key of the item list in the Json.
-     * @param action API actions
-     * @param filter API filters (optional)
-     * @return [ListResponse]<[T]>
+     * @param T el tipo de objeto que se espera recibir en la lista.
+     * @param objPath la ruta al recurso desde el cual se obtendrán los objetos.
+     * @param listName el nombre de la lista en la respuesta que contiene los objetos.
+     * @param action una lista de parámetros de acción que pueden aplicarse a la solicitud (opcional).
+     * @param filter una lista de parámetros de filtro que controlan la consulta de objetos (opcional).
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de obtención de la lista de objetos.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es una lista de objetos [T].
      */
     suspend inline fun <reified T> getListOf(
         objPath: String,
         listName: String,
         action: ArrayList<ApiActionParam> = arrayListOf(),
-        filter: ArrayList<ApiFilterParam> = arrayListOf()
-    ): ListResponse<T> {
+        filter: ArrayList<ApiFilterParam> = arrayListOf(),
+        callback: (APIResponse<ListResponse<T>>) -> Unit
+    ) {
         val url = URL(apiUrl)
 
         /** We build the parameters (query actions) */
@@ -182,8 +252,7 @@ class ApiRequest {
                 val col = it.columnName
                 val like = if (it.like) "[$ACTION_FILTER_LIKE]" else ""
                 val value = it.value
-                if (col.isNotEmpty())
-                    this.append("$ACTION_FILTER[${col}]${like}", value)
+                if (col.isNotEmpty()) this.append("$ACTION_FILTER[${col}]${like}", value)
             }
         }
 
@@ -209,17 +278,18 @@ class ApiRequest {
             }
         }
 
-        /** Our response */
+        val bodyStr = response.bodyAsText()
         val r = ListResponse<T>()
-        try {
+
+        if (BuildConfig.DEBUG) {
             println(response.status.description)
+            println(bodyStr)
+        }
+
+        try {
             when (response.status.value) {
                 in 200..299 -> {
-                    val bodyStr = response.bodyAsText()
-                    if (BuildConfig.DEBUG) println(bodyStr)
-
                     val jsonObject = json.parseToJsonElement(bodyStr).jsonObject
-
                     for (j in jsonObject) {
                         when (j.key) {
                             ListResponse.LINKS_KEY -> {
@@ -236,34 +306,39 @@ class ApiRequest {
                             }
                         }
                     }
+                    callback(APIResponse(response = r))
                 }
 
-                422 -> {}
-                401 -> {}
+                else -> {
+                    val error = json.decodeFromString<ErrorResponse>(bodyStr)
+                    callback(
+                        APIResponse(
+                            onEvent = SnackBarEventData(
+                                "${error.status}, ${error.name}. ${error.message}. ${error.type}", SnackBarType.ERROR
+                            )
+                        )
+                    )
+                }
             }
-        } catch (e: JsonConvertException) {
-            println(e.message)
-        } catch (e: SerializationException) {
-            println(e.message)
-        } catch (e: NullPointerException) {
-            println(e.message)
         } catch (e: Exception) {
-            println(e.message)
+            callback(
+                APIResponse(onEvent = SnackBarEventData(e.message.toString(), SnackBarType.ERROR))
+            )
         }
-        return r
     }
 
     /**
-     * Create a new object of the desired [T] type.
+     * Crea un objeto del tipo especificado [T] en el recurso especificado por [objPath] utilizando los datos proporcionados en [payload].
      *
-     * @param T DTO Clazz of the response
-     * @param objPath Partial path of the object functions in the API.
-     * @param payload Payload object
-     * @return [T] Object created
+     * @param T el tipo de objeto que se espera recibir como respuesta.
+     * @param objPath la ruta al recurso donde se creará el objeto.
+     * @param payload un objeto que contiene los datos necesarios para crear el objeto en el recurso.
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de creación.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación.
      */
-    suspend inline fun <reified T> create(
-        objPath: String, payload: Any,
-    ): T {
+    suspend inline fun <reified T : Any> create(
+        objPath: String, payload: Any, callback: (APIResponse<T>) -> Unit
+    ) {
         val url = URL(apiUrl)
 
         /** HTTP Post function */
@@ -284,40 +359,33 @@ class ApiRequest {
             setBody(payload)
         }
 
-        println(response.status.description)
-        val entityClass: Class<T> = T::class.java
-        var r: T = entityClass.getDeclaredConstructor().newInstance()
+        val result = handleHttpResponse<T>(
+            response = response,
+            success = { it },
+            error = { it }
+        )
 
-        try {
-            when (response.status.value) {
-                in 200..299 -> {
-                    r = response.body<T>()
-                }
-
-                422 -> {}
-                401 -> {}
-            }
-        } catch (e: JsonConvertException) {
-            println(e.message)
-        } catch (e: SerializationException) {
-            println(e.message)
-        } catch (e: NullPointerException) {
-            println(e.message)
-        }
-        return r
+        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
+            callback(
+                APIResponse(
+                    onEvent = SnackBarEventData(it.message, SnackBarType.ERROR)
+                )
+            )
+        })
     }
 
     /**
-     * Update an object of the desired [T] type.
+     * Actualiza un objeto del tipo especificado [T] en el recurso especificado por [objPath] utilizando los datos proporcionados en [payload].
      *
-     * @param T DTO Clazz of the response
-     * @param objPath Partial path of the object functions in the API.
-     * @param payload Payload object
-     * @return [T] Object updated
+     * @param T el tipo de objeto que se espera recibir como respuesta.
+     * @param objPath la ruta al recurso donde se actualizará el objeto.
+     * @param payload un objeto que contiene los datos necesarios para actualizar el objeto en el recurso.
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de actualización.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación.
      */
-    suspend inline fun <reified T> update(
-        objPath: String, payload: Any,
-    ): T {
+    suspend inline fun <reified T : Any> update(
+        objPath: String, payload: Any, callback: (APIResponse<T>) -> Unit
+    ) {
         val url = URL(apiUrl)
 
         /** HTTP Post function */
@@ -338,137 +406,129 @@ class ApiRequest {
             setBody(payload)
         }
 
-        println(response.status.description)
-        val entityClass: Class<T> = T::class.java
-        var r: T = entityClass.getDeclaredConstructor().newInstance()
+        val result = handleHttpResponse<T>(
+            response = response,
+            success = { it },
+            error = { it }
+        )
 
-        try {
-            when (response.status.value) {
-                in 200..299 -> {
-                    r = response.body<T>()
-                }
-
-                422 -> {}
-                401 -> {}
-            }
-        } catch (e: JsonConvertException) {
-            println(e.message)
-        } catch (e: SerializationException) {
-            println(e.message)
-        } catch (e: NullPointerException) {
-            println(e.message)
-        }
-        return r
-    }
-
-    /**
-     * Move an order to a desired destination defined in the [payload].
-     *
-     * @param [payload] Payload object with the order ID, the destination ID and other optional parameters.
-     * @return [OrderResponse] with the order moved
-     */
-    suspend fun moveOrder(payload: OrderMovePayload): OrderResponse {
-        val url = URL(apiUrl)
-
-        /** HTTP Post function */
-        val response = httpClient.post {
-            /** Set a Basic auth */
-            basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
+        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
+            callback(
+                APIResponse(
+                    onEvent = SnackBarEventData(it.message, SnackBarType.ERROR)
+                )
             )
-            /** Set the API URL and parameters */
-            url {
-                protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
-                else URLProtocol.HTTPS
-                host = url.host
-                path("${url.path}/$VERSION_PATH/$ORDER_PATH/$MOVE_PATH")
-            }
-            /** Payload content */
-            contentType(ContentType.Application.Json)
-            setBody(payload)
-        }
-
-        println(response.status.description)
-        var r = OrderResponse()
-
-        try {
-            when (response.status.value) {
-                in 200..299 -> {
-                    r = response.body<OrderResponse>()
-                }
-
-                422 -> {}
-                401 -> {}
-            }
-        } catch (e: JsonConvertException) {
-            println(e.message)
-        } catch (e: SerializationException) {
-            println(e.message)
-        } catch (e: NullPointerException) {
-            println(e.message)
-        }
-        return r
+        })
     }
 
     /**
-     * Send an item code relation defined in the [payload].
+     * Mueve una orden utilizando los datos proporcionados en [payload].
      *
-     * @param [payload] Payload object with the item ID, the code and the represented amount.
-     * @return [ItemCodeResponse] with diverse data
+     * @param payload un objeto [OrderMovePayload] que contiene la información necesaria para mover la orden.
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de mover la orden.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación.
      */
-    suspend fun sendItemCode(payload: ItemCodePayload): ItemCodeResponse? {
-        val url = URL(apiUrl)
+    suspend fun moveOrder(
+        payload: OrderMovePayload, callback: (APIResponse<OrderResponse>) -> Unit
+    ) {
+        suspend fun httpResponse(): HttpResponse {
+            val url = URL(apiUrl)
 
-        /** HTTP Post function */
-        val response = httpClient.post {
-            /** Set a Basic auth */
-            basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
+            /** HTTP Post function */
+            val response = httpClient.post {
+                /** Set a Basic auth */
+                basicAuth(
+                    username = Statics.currentUserName, password = Statics.currentPass
+                )
+                /** Set the API URL and parameters */
+                url {
+                    protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
+                    else URLProtocol.HTTPS
+                    host = url.host
+                    path("${url.path}/$VERSION_PATH/$ORDER_PATH/$MOVE_PATH")
+                }
+                /** Payload content */
+                contentType(ContentType.Application.Json)
+                setBody(payload)
+            }
+
+            return response
+        }
+
+        val result = handleHttpResponse<OrderResponse>(
+            response = httpResponse(),
+            success = { it },
+            error = { it }
+        )
+
+        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
+            callback(
+                APIResponse(onEvent = SnackBarEventData(it.message, SnackBarType.ERROR))
             )
-            /** Set the API URL and parameters */
-            url {
-                protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
-                else URLProtocol.HTTPS
-                host = url.host
-                path("${url.path}/$VERSION_PATH/$ITEM_CODE_PATH/$CREATE_PATH")
-            }
-            /** Payload content */
-            contentType(ContentType.Application.Json)
-            setBody(payload)
-        }
-
-        println(response.status.description)
-        var r: ItemCodeResponse? = null
-
-        try {
-            when (response.status.value) {
-                in 200..299 -> {
-                    r = response.body<ItemCodeResponse>()
-                }
-
-                422 -> {}
-                401 -> {}
-            }
-        } catch (e: JsonConvertException) {
-            println(e.message)
-        } catch (e: SerializationException) {
-            println(e.message)
-        } catch (e: NullPointerException) {
-            println(e.message)
-        }
-        return r
+        })
     }
 
     /**
-     * View an object defined by [T] and ID.
+     * Envía un código de artículo utilizando el objeto [payload] y procesa la respuesta.
      *
-     * @param T DTO Clazz of the response. **Make sure the response class has a parameterless constructor**.
-     * @param objPath Partial path of the object functions in the API.
-     * @param id Object ID.
-     * @param action List of parameters.
-     * @return The desired [T] object.
+     * @param payload un objeto que contiene el código de artículo a enviar.
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de envío de código de artículo.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es un objeto [ItemCodeResponse].
      */
-    suspend inline fun <reified T> view(objPath: String, id: Long, action: ArrayList<ApiActionParam>): T {
+    suspend fun sendItemCode(
+        payload: ItemCodePayload, callback: (APIResponse<ItemCodeResponse>) -> Unit
+    ) {
+        suspend fun httpResponse(): HttpResponse {
+            val url = URL(apiUrl)
+
+            /** HTTP Post function */
+            val response = httpClient.post {
+                /** Set a Basic auth */
+                basicAuth(
+                    username = Statics.currentUserName, password = Statics.currentPass
+                )
+                /** Set the API URL and parameters */
+                url {
+                    protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
+                    else URLProtocol.HTTPS
+                    host = url.host
+                    path("${url.path}/$VERSION_PATH/$ITEM_CODE_PATH/$CREATE_PATH")
+                }
+                /** Payload content */
+                contentType(ContentType.Application.Json)
+                setBody(payload)
+            }
+            return response
+        }
+
+        val result = handleHttpResponse<ItemCodeResponse>(
+            response = httpResponse(),
+            success = { it },
+            error = { it }
+        )
+
+        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
+            callback(
+                APIResponse(
+                    onEvent = SnackBarEventData(it.message, SnackBarType.ERROR)
+                )
+            )
+        })
+    }
+
+    /**
+     * Obtiene y muestra información detallada de un objeto específico del tipo [T] en [objPath] con el ID proporcionado.
+     *
+     * @param T el tipo de objeto que se espera recibir y mostrar.
+     * @param objPath la ruta al objeto que se desea ver en detalle.
+     * @param id el ID del objeto que se desea ver en detalle.
+     * @param action una lista de parámetros de acción que pueden aplicarse a la solicitud (opcional).
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de vista del objeto.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es un objeto [T].
+     */
+    suspend inline fun <reified T : Any> view(
+        objPath: String, id: Long, action: ArrayList<ApiActionParam>, callback: (APIResponse<T>) -> Unit
+    ) {
         val url = URL(apiUrl)
         val columnName = "id"
 
@@ -504,129 +564,121 @@ class ApiRequest {
             }
         }
 
-        println(response.status.description)
+        val result = handleHttpResponse<T>(
+            response = response,
+            success = { it },
+            error = { it }
+        )
 
-        /** The generic class is required to have a parameterless constructor. */
-        val entityClass: Class<T> = T::class.java
-        var r: T = entityClass.getDeclaredConstructor().newInstance()
-
-        try {
-            when (response.status.value) {
-                in 200..299 -> {
-                    r = response.body<T>()
-                }
-
-                422 -> {}
-                401 -> {}
-            }
-        } catch (e: JsonConvertException) {
-            println(e.message)
-        } catch (e: SerializationException) {
-            println(e.message)
-        } catch (e: NullPointerException) {
-            println(e.message)
-        }
-        return r
-    }
-
-    /**
-     * Get the database data for the current user
-     * @param version Version of the Database (empty value is for V1)
-     * @return [DatabaseData] with the client data
-     */
-    suspend fun getDatabase(version: String): DatabaseData {
-        val url = URL(apiUrl)
-
-        /** HTTP Post function */
-        val response = httpClient.get {
-            /** Set a Basic auth */
-            basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
+        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
+            callback(
+                APIResponse(
+                    onEvent = SnackBarEventData(it.message, SnackBarType.ERROR)
+                )
             )
-            /** Set the API URL and parameters */
-            url {
-                protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
-                else URLProtocol.HTTPS
-                host = url.host
-                path("${url.path}/$VERSION_PATH/$DATABASE_PATH/$DB_PATH$version")
-            }
-        }
-
-        println(response.status.description)
-        var r = DatabaseData()
-
-        try {
-            when (response.status.value) {
-                in 200..299 -> {
-                    r = response.body<DatabaseData>()
-                }
-
-                422 -> {}
-                401 -> {}
-            }
-        } catch (e: JsonConvertException) {
-            println(e.message)
-        } catch (e: SerializationException) {
-            println(e.message)
-        } catch (e: NullPointerException) {
-            println(e.message)
-        }
-        return r
+        })
     }
 
     /**
-     * Get a list of order location
+     * Obtiene información de la base de datos correspondiente a la versión especificada.
      *
-     * @param filter API Filters
-     * @return List of [OrderLocation]
+     * @param version la versión de la base de datos para la que se desea obtener información.
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de obtención de información de la base de datos.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es un objeto [DatabaseData].
+     */
+    suspend fun getDatabase(version: String, callback: (APIResponse<DatabaseData>) -> Unit) {
+        suspend fun httpResponse(): HttpResponse {
+            val url = URL(apiUrl)
+
+            /** HTTP Post function */
+            val response = httpClient.get {
+                /** Set a Basic auth */
+                basicAuth(
+                    username = Statics.currentUserName, password = Statics.currentPass
+                )
+                /** Set the API URL and parameters */
+                url {
+                    protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
+                    else URLProtocol.HTTPS
+                    host = url.host
+                    path("${url.path}/$VERSION_PATH/$DATABASE_PATH/$DB_PATH$version")
+                }
+            }
+            return response
+        }
+
+        val result = handleHttpResponse<DatabaseData>(
+            response = httpResponse(),
+            success = { it },
+            error = { it }
+        )
+
+        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
+            callback(
+                APIResponse(onEvent = SnackBarEventData(it.message, SnackBarType.ERROR))
+            )
+        })
+    }
+
+    /**
+     * Obtiene una lista de ubicaciones de pedidos utilizando los filtros proporcionados en [filter].
+     *
+     * @param filter una lista de parámetros de filtro que controlan la consulta de ubicaciones de pedidos.
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de obtención de ubicaciones de pedidos.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es una lista de objetos [OrderLocation].
      */
     suspend fun getListOfOrderLocation(
-        filter: ArrayList<ApiFilterParam>,
-    ): List<OrderLocation> {
-        val url = URL(apiUrl)
+        filter: ArrayList<ApiFilterParam>, callback: (APIResponse<List<OrderLocation>>) -> Unit
+    ) {
+        suspend fun httpResponse(): HttpResponse {
+            val url = URL(apiUrl)
 
-        /** We build the parameters (query actions) */
-        val params = Parameters.build {
-            filter.forEach {
-                val col = it.columnName
-                val like = if (it.like) "[$ACTION_FILTER_LIKE]" else ""
-                val value = it.value
-                if (col.isNotEmpty())
-                    this.append("$ACTION_FILTER[${col}]${like}", value)
+            /** We build the parameters (query actions) */
+            val params = Parameters.build {
+                filter.forEach {
+                    val col = it.columnName
+                    val like = if (it.like) "[$ACTION_FILTER_LIKE]" else ""
+                    val value = it.value
+                    if (col.isNotEmpty()) this.append("$ACTION_FILTER[${col}]${like}", value)
+                }
             }
-        }
 
-        val urlComplete = "${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH"
-        if (BuildConfig.DEBUG) {
-            println("URL: $urlComplete")
-            println("PARAMS: $params")
-        }
-
-        /** HTTP Get function */
-        val response = httpClient.get {
-            /** Set a Basic auth */
-            basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
-            )
-            /** Set the API URL and parameters */
-            url {
-                protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
-                else URLProtocol.HTTPS
-                host = url.host
-                path(urlComplete)
-                parameters.appendAll(params)
+            val urlComplete = "${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH"
+            if (BuildConfig.DEBUG) {
+                println("URL: $urlComplete")
+                println("PARAMS: $params")
             }
+
+            /** HTTP Get function */
+            val response = httpClient.get {
+                /** Set a Basic auth */
+                basicAuth(
+                    username = Statics.currentUserName, password = Statics.currentPass
+                )
+                /** Set the API URL and parameters */
+                url {
+                    protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
+                    else URLProtocol.HTTPS
+                    host = url.host
+                    path(urlComplete)
+                    parameters.appendAll(params)
+                }
+            }
+            return response
         }
 
-        /** Our response */
+        val response = httpResponse()
+        val bodyStr = response.bodyAsText()
         val r: ArrayList<OrderLocation> = arrayListOf()
-        try {
+
+        if (BuildConfig.DEBUG) {
             println(response.status.description)
+            println(bodyStr)
+        }
+
+        try {
             when (response.status.value) {
                 in 200..299 -> {
-                    val bodyStr = response.bodyAsText()
-                    if (BuildConfig.DEBUG) println(bodyStr)
-
                     val jsonObject = json.parseToJsonElement(bodyStr).jsonObject
                     if (jsonObject.containsKey(ORDER_LOCATION_LIST_KEY)) {
                         val jsonArray = jsonObject[ORDER_LOCATION_LIST_KEY]?.jsonArray
@@ -637,22 +689,25 @@ class ApiRequest {
                             }
                         }
                     }
+                    callback(APIResponse(response = r.toList()))
                 }
 
-                422 -> {}
-                401 -> {}
+                else -> {
+                    val error = json.decodeFromString<ErrorResponse>(bodyStr)
+                    callback(
+                        APIResponse(
+                            onEvent = SnackBarEventData(
+                                "${error.status}, ${error.name}. ${error.message}. ${error.type}", SnackBarType.ERROR
+                            )
+                        )
+                    )
+                }
             }
-        } catch (e: JsonConvertException) {
-            println(e.message)
-        } catch (e: SerializationException) {
-            println(e.message)
-        } catch (e: NullPointerException) {
-            println(e.message)
         } catch (e: Exception) {
-            println(e.message)
+            callback(
+                APIResponse(onEvent = SnackBarEventData(e.message.toString(), SnackBarType.ERROR))
+            )
         }
-
-        return r.toList()
     }
 
     companion object {

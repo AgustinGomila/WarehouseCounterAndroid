@@ -224,6 +224,9 @@ dependencies {
 
     // KotlinX Serialization
     runtimeOnly 'org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.5.1'
+
+    // Arrows
+    implementation "io.arrow-kt:arrow-core:0.13.2"
 }
 
 repositories {

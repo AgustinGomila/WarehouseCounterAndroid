@@ -63,6 +63,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import java.util.*
@@ -591,7 +592,7 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
 
         val wa = destinationHeader.warehouseArea
         val r = destinationHeader.rack
-        if (wa == null) {
+        if (wa == null && r == null) {
             showSnackBar(getString(R.string.you_must_select_a_destination), ERROR)
             return
         }
@@ -603,45 +604,51 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
             return
         }
 
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(context.getString(R.string.confirm_movement))
-        builder.setMessage(getString(R.string.are_you_sure_to_move_the_selected_orders))
-        builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
-            moveOrder(selectedOrders, wa, r)
-            dialogInterface.dismiss()
+        runOnUiThread {
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(context.getString(R.string.confirm_movement))
+            builder.setMessage(getString(R.string.are_you_sure_to_move_the_selected_orders))
+            builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
+                moveOrder(selectedOrders, wa, r)
+                dialogInterface.dismiss()
+            }
+            builder.setNegativeButton(getString(R.string.no)) { dialogInterface, _ ->
+                dialogInterface.dismiss()
+            }
+            val dialog = builder.create()
+            dialog.show()
         }
-        builder.setNegativeButton(getString(R.string.no)) { dialogInterface, _ ->
-            dialogInterface.dismiss()
-        }
-        val dialog = builder.create()
-        dialog.show()
     }
 
-    private fun moveOrder(itemArray: List<OrderResponse>, wa: WarehouseArea, r: Rack?) {
+    private fun moveOrder(itemArray: List<OrderResponse>, wa: WarehouseArea?, r: Rack?) {
         for ((index, or) in itemArray.withIndex()) {
             val payload = getPayload(or, wa, r)
             MoveOrder(
                 order = payload,
                 onFinish = {
                     if (index == itemArray.lastIndex) {
-                        isFinishingByUser = true
-                        finish()
+                        showSnackBar(getString(R.string.move_ok), SUCCESS)
+                        filterFragment.clear()
+                    } else {
+                        showSnackBar(getString(R.string.move_error), ERROR)
                     }
-                }
+                },
+                onEvent = { showSnackBar(it.text, it.snackBarType) }
             ).execute()
         }
     }
 
-    private fun getPayload(or: OrderResponse, wa: WarehouseArea, r: Rack?): OrderMovePayload {
-        val payload = OrderMovePayload().apply {
-            orderRequestId = or.id
-            warehouseAreaId = wa.id
-            orderExternalId = or.externalId
-            orderPackageExternalId = ""
-            orderPackageCode = ""
-            orderDescription = or.description
-            warehouseAreaExternalId = wa.externalId
-            rackExternalId = r?.extId ?: ""
+    private fun getPayload(or: OrderResponse, wa: WarehouseArea?, r: Rack?): OrderMovePayload {
+        val payload = if (r != null) {
+            OrderMovePayload().apply {
+                orderRequestId = or.id
+                rackId = r.id
+            }
+        } else {
+            OrderMovePayload().apply {
+                orderRequestId = or.id
+                warehouseAreaId = wa!!.id
+            }
         }
         return payload
     }
@@ -649,6 +656,7 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
     private fun getOrders() {
         val filter = filterFragment.getFilters()
         if (!filter.any()) {
+            fillAdapter(arrayListOf())
             showProgressBar(false)
             return
         }
@@ -754,7 +762,9 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
     }
 
     override fun onSearchTextChanged(searchText: String) {
-        adapter?.refreshFilter(FilterOptions(searchText))
+        runOnUiThread {
+            adapter?.refreshFilter(FilterOptions(searchText))
+        }
     }
 
     override fun onRequestPermissionsResult(

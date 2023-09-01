@@ -66,7 +66,6 @@ class GetWarehouse(
 
     private fun sendEvent(event: SnackBarEventData) {
         onEvent.invoke(event)
-
         if (event.snackBarType in getFinish() || event.snackBarType == SnackBarType.INFO) {
             onFinish.invoke(r)
         }

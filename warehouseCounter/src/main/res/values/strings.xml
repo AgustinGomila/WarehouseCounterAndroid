@@ -764,4 +764,7 @@
     <string name="default_item_adapter_view_height">Altura predeterminada para la vista de ítems</string>
     <string name="default_location_adapter_view_height">Altura predeterminada para la vista de ubicaciones</string>
     <string name="status_out_of_stock">Agotado</string>
+    <string name="move_ok">Movimiento OK</string>
+    <string name="move_error">Error al mover el pedido</string>
+    <string name="unknown_error">Error desconocido</string>
 </resources>

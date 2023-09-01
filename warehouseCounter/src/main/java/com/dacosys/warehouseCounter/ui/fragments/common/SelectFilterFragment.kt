@@ -1029,6 +1029,21 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         return filter
     }
 
+    fun clear() {
+        description = ""
+        itemCode = ""
+        itemEan = ""
+        itemCategory = null
+        orderId = ""
+        orderExternalId = ""
+        warehouse = null
+        warehouseArea = null
+        rack = null
+
+        refreshViews()
+        onFilterChanged()
+    }
+
     init {
         // Values
         description = builder.description
