@@ -767,4 +767,6 @@
     <string name="move_ok">Movimiento OK</string>
     <string name="move_error">Error al mover el pedido</string>
     <string name="unknown_error">Error desconocido</string>
+    <string name="error_when_updating_the_order">Error al actualizar el pedido</string>
+    <string name="error_when_creating_the_order">Error al crear el pedido</string>
 </resources>

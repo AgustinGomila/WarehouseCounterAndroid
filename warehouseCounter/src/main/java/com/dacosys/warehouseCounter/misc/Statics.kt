@@ -33,7 +33,7 @@ import java.util.*
 
 class Statics {
     companion object {
-        var appName: String = "${applicationName()}M12"
+        var appName: String = "${applicationName}M12"
 
         // Este flag es para reinicializar el colector después de cambiar en Settings.
         var collectorTypeChanged = false

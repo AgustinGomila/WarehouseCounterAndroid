@@ -13,6 +13,7 @@ import com.dacosys.warehouseCounter.misc.Statics.Companion.INTERNAL_IMAGE_CONTRO
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.settings.SettingsViewModel
+import com.dacosys.warehouseCounter.sync.Sync
 import com.dacosys.warehouseCounter.sync.SyncViewModel
 import id.pahlevikun.jotter.Jotter
 import id.pahlevikun.jotter.event.ActivityEvent
@@ -77,6 +78,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
         viewModel { SettingsViewModel() }
         viewModel { SyncViewModel() }
 
+        /** Proxy */
         single {
             val sv = settingViewModel
             if (sv.useProxy) {
@@ -91,6 +93,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
             }
         }
 
+        /** Json instance */
         single {
             Json {
                 prettyPrint = true
@@ -100,7 +103,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
             }
         }
 
-        // Ktor
+        /** Ktor Client */
         single {
             HttpClient(OkHttp) {
                 engine {
@@ -135,6 +138,9 @@ class WarehouseCounterApp : Application(), KoinComponent {
         /** API Version 2 */
         single { com.dacosys.warehouseCounter.ktor.v2.impl.APIServiceImpl() }
         single { ApiRequest() }
+
+        /** Synchronization */
+        single { Sync.Builder().build() }
     }
 
     companion object {
@@ -174,11 +180,15 @@ class WarehouseCounterApp : Application(), KoinComponent {
         val apiRequest: ApiRequest
             get() = get().get()
 
-        fun applicationName(): String {
-            val applicationInfo = context.applicationInfo
-            val stringId = applicationInfo.labelRes
-            return if (stringId == 0) applicationInfo.nonLocalizedLabel.toString()
-            else context.getString(stringId)
-        }
+        val sync: Sync
+            get() = get().get()
+
+        val applicationName: String
+            get() {
+                val applicationInfo = context.applicationInfo
+                val stringId = applicationInfo.labelRes
+                return if (stringId == 0) applicationInfo.nonLocalizedLabel.toString()
+                else context.getString(stringId)
+            }
     }
 }

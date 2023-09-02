@@ -36,6 +36,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sync
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
 import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
@@ -305,7 +306,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     private fun pauseInboxOutboxListener() {
-        Sync.stopSync()
+        sync.stopSync()
     }
 
     override fun onButtonClicked(button: Button) {
@@ -812,6 +813,13 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+
+        sync.onCompletedOrders { syncVm.setSyncCompleted(it) }
+        sync.onTimerTick { syncVm.setSyncTimer(it) }
+    }
+
     private fun onUploadImagesProgress(it: UploadImagesProgress) {
         if (isDestroyed || isFinishing) return
 
@@ -1025,13 +1033,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     private fun startSync() {
-        Thread {
-            Sync.startSync(
-                onNewOrders = { /* syncVm.setSyncNew(it)*/ },
-                onCompletedOrders = { syncVm.setSyncCompleted(it) },
-                onTimerTick = { syncVm.setSyncTimer(it) }
-            )
-        }.start()
+        Thread { sync.startSync() }.start()
     }
 
     override fun onRequestPermissionsResult(

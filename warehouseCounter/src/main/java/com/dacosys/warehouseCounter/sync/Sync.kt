@@ -11,120 +11,164 @@ import java.util.*
 import kotlin.concurrent.thread
 
 /**
- * Esta clase se encarga de ejecutar cada cierto período
- * de tiempo dos procesos:
+ * Esta clase se encarga de ejecutar cada cierto período de tiempo dos procesos:
  * 1. Solicitar nuevas órdenes de arqueo (en la web)
  * 2. Solicitar los arqueos completados (en el dispositivo)
  */
-class Sync {
-    companion object {
-        // Thread status
-        @get:Synchronized
-        private var syncNewOrderStatus: DownloadStatus = DownloadStatus.NOT_RUNNING
+class Sync private constructor(builder: Builder) {
+    private var onNewOrders: (ArrayList<OrderRequest>) -> Unit = {}
+    private var onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {}
+    private var onTimerTick: (Int) -> Unit = {}
 
-        @get:Synchronized
-        private var syncCompletedOrderStatus: DownloadStatus = DownloadStatus.NOT_RUNNING
+    // Thread status
+    @get:Synchronized
+    private var syncNewOrderStatus: DownloadStatus = DownloadStatus.NOT_RUNNING
 
-        enum class DownloadStatus(val id: Int) { NOT_RUNNING(1), RUNNING(2) }
+    @get:Synchronized
+    private var syncCompletedOrderStatus: DownloadStatus = DownloadStatus.NOT_RUNNING
 
-        private var timer: Timer? = null
-        private var timerTask: TimerTask? = null
-        private val handler = Handler(Looper.getMainLooper())
+    private enum class DownloadStatus { NOT_RUNNING, RUNNING }
 
-        @get:Synchronized
-        private var ticks = 0
+    private var timer: Timer? = null
+    private var timerTask: TimerTask? = null
+    private val handler = Handler(Looper.getMainLooper())
 
-        //To stop timer
-        fun stopSync() {
-            Log.d(this::class.java.simpleName, "Deteniendo sincronizador de órdenes")
-            if (timer != null) {
-                timer?.cancel()
-                timer?.purge()
+    @get:Synchronized
+    private var ticks = 0
+
+    @Suppress("unused")
+    fun onNewOrders(`val`: (ArrayList<OrderRequest>) -> Unit) {
+        onNewOrders = `val`
+    }
+
+    @Suppress("unused")
+    fun onCompletedOrders(`val`: (ArrayList<OrderRequest>) -> Unit) {
+        onCompletedOrders = `val`
+    }
+
+    @Suppress("unused")
+    fun onTimerTick(`val`: (Int) -> Unit) {
+        onTimerTick = `val`
+    }
+
+    //To stop timer
+    fun stopSync() {
+        Log.d(this::class.java.simpleName, "Deteniendo sincronizador de órdenes")
+        if (timer != null) {
+            timer?.cancel()
+            timer?.purge()
+        }
+    }
+
+    //To start timer
+    fun startSync() {
+        Log.d(this::class.java.simpleName, "Iniciando sincronizador de órdenes...")
+
+        timer = Timer()
+        val interval = settingViewModel.wcSyncInterval
+
+        timerTask = object : TimerTask() {
+            override fun run() {
+                ticks++
+                onTimerTick(ticks)
+
+                if (ticks < interval.toLong()) return
+                goSync(onNewOrders, onCompletedOrders)
+            }
+
+            override fun cancel(): Boolean {
+                stopSync()
+                return super.cancel()
             }
         }
 
-        //To start timer
-        fun startSync(
-            onNewOrders: (ArrayList<OrderRequest>) -> Unit = {},
-            onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {},
-            onTimerTick: (Int) -> Unit = {},
-        ) {
-            Log.d(this::class.java.simpleName, "Iniciando sincronizador de órdenes...")
+        // Primera ejecución
+        if (ticks == 0) goSync(onNewOrders, onCompletedOrders)
 
-            timer = Timer()
-            val interval = settingViewModel.wcSyncInterval
+        timer?.scheduleAtFixedRate(
+            timerTask, 100, 1000
+        )
+    }
 
-            timerTask = object : TimerTask() {
-                override fun run() {
-                    ticks++
-                    onTimerTick(ticks)
+    private fun goSync(
+        onNewOrders: (ArrayList<OrderRequest>) -> Unit = {},
+        onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {},
+    ) {
+        ticks = 0
 
-                    if (ticks < interval.toLong()) return
-                    goSync(onNewOrders, onCompletedOrders)
-                }
-
-                override fun cancel(): Boolean {
-                    stopSync()
-                    return super.cancel()
-                }
-            }
-
-            // Primera ejecución
-            if (ticks == 0) goSync(onNewOrders, onCompletedOrders)
-
-            timer?.scheduleAtFixedRate(
-                timerTask, 100, 1000
-            )
+        handler.post {
+            getNewOrderRequest(onNewOrders)
+            getCompletedOrderRequest(onCompletedOrders)
         }
+    }
+    // endregion
 
-        private fun goSync(
-            onNewOrders: (ArrayList<OrderRequest>) -> Unit = {},
-            onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {},
-        ) {
-            ticks = 0
+    @Suppress("UNUSED_PARAMETER")
+    private fun getNewOrderRequest(onNewOrders: (ArrayList<OrderRequest>) -> Unit = {}) {
+        if (syncNewOrderStatus != DownloadStatus.NOT_RUNNING) return
+        syncNewOrderStatus = DownloadStatus.RUNNING
 
-            handler.post {
-                getNewOrderRequest(onNewOrders)
-                getCompletedOrderRequest(onCompletedOrders)
+        thread {
+            try {
+                // TODO: Hacer una función que permita descargar nuevas órdenes.
+                // GetNewOrder(onEvent = { }, onFinish = { onNewOrders.invoke(it) }).execute()
+            } catch (ex: Exception) {
+                ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
+                syncNewOrderStatus = DownloadStatus.NOT_RUNNING
             }
         }
-        // endregion
+    }
 
-        private fun getNewOrderRequest(onNewOrders: (ArrayList<OrderRequest>) -> Unit = {}) {
-            if (syncNewOrderStatus != DownloadStatus.NOT_RUNNING) return
-            syncNewOrderStatus = DownloadStatus.RUNNING
+    private fun getCompletedOrderRequest(
+        onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {},
+    ) {
+        if (syncCompletedOrderStatus != DownloadStatus.NOT_RUNNING) return
+        syncCompletedOrderStatus = DownloadStatus.RUNNING
 
-            thread {
-                try {
-                    // TODO: Hacer una función que permita descargar nuevas órdenes.
-                    // GetNewOrder(
-                    //     onEvent = { },
-                    //     onFinish = { onNewOrders.invoke(it) }
-                    // ).execute()
-                } catch (ex: Exception) {
-                    ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
-                    syncNewOrderStatus = DownloadStatus.NOT_RUNNING
-                }
+        thread {
+            try {
+                onCompletedOrders.invoke(getCompletedOrders())
+            } catch (ex: java.lang.Exception) {
+                ErrorLog.writeLog(
+                    null, this::class.java.simpleName, ex.message.toString()
+                )
+            } finally {
+                syncCompletedOrderStatus = DownloadStatus.NOT_RUNNING
             }
         }
+    }
 
-        private fun getCompletedOrderRequest(
-            onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {},
-        ) {
-            if (syncCompletedOrderStatus != DownloadStatus.NOT_RUNNING) return
-            syncCompletedOrderStatus = DownloadStatus.RUNNING
+    init {
+        this.onNewOrders = builder.onNewOrders
+        this.onCompletedOrders = builder.onCompletedOrders
+        this.onTimerTick = builder.onTimerTick
+    }
 
-            thread {
-                try {
-                    onCompletedOrders.invoke(getCompletedOrders())
-                } catch (ex: java.lang.Exception) {
-                    ErrorLog.writeLog(
-                        null, this::class.java.simpleName, ex.message.toString()
-                    )
-                } finally {
-                    syncCompletedOrderStatus = DownloadStatus.NOT_RUNNING
-                }
-            }
+    class Builder {
+        fun build(): Sync {
+            return Sync(this)
+        }
+
+        internal var onNewOrders: (ArrayList<OrderRequest>) -> Unit = {}
+        internal var onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {}
+        internal var onTimerTick: (Int) -> Unit = {}
+
+        @Suppress("unused", "unused")
+        fun onNewOrders(`val`: (ArrayList<OrderRequest>) -> Unit): Builder {
+            onNewOrders = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun onCompletedOrders(`val`: (ArrayList<OrderRequest>) -> Unit): Builder {
+            onCompletedOrders = `val`
+            return this
+        }
+
+        @Suppress("unused")
+        fun onTimerTick(`val`: (Int) -> Unit): Builder {
+            onTimerTick = `val`
+            return this
         }
     }
 }
