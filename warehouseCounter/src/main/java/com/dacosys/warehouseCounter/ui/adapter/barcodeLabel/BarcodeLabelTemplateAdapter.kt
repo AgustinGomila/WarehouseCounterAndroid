@@ -14,8 +14,8 @@ import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelType
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import java.util.*
 
 

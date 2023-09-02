@@ -27,18 +27,18 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
-import com.dacosys.imageControl.adapter.ImageAdapter
-import com.dacosys.imageControl.adapter.ImageAdapter.Companion.GetImageStatus
-import com.dacosys.imageControl.adapter.ImageAdapter.Companion.ImageControlHolder
 import com.dacosys.imageControl.network.common.ProgramData
+import com.dacosys.imageControl.ui.adapter.ImageAdapter
+import com.dacosys.imageControl.ui.adapter.ImageAdapter.Companion.GetImageStatus
+import com.dacosys.imageControl.ui.adapter.ImageAdapter.Companion.ImageControlHolder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Location
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.LocationType
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Status
 import com.dacosys.warehouseCounter.databinding.LocationRowBinding
 import com.dacosys.warehouseCounter.databinding.LocationRowExpandedBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.Location
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.LocationType
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.Status
 import com.dacosys.warehouseCounter.misc.objects.table.Table
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
@@ -1184,6 +1184,7 @@ class LocationAdapter private constructor(builder: Builder) :
             Handler(Looper.getMainLooper()).postDelayed({
                 adapter.run {
                     ImageAdapter.getImages(
+                        context = context,
                         programData = ProgramData(
                             programObjectId = tableId(item.locationType).toLong(),
                             objId1 = item.locationId.toString()
@@ -1225,6 +1226,13 @@ class LocationAdapter private constructor(builder: Builder) :
         showImagesChanged = builder.showImagesChanged
         visibleStatus = builder.visibleStatus
         filterOptions = builder.filterOptions
+
+        dataSetChangedListener = builder.dataSetChangedListener
+        selectedItemChangedListener = builder.selectedItemChangedListener
+        checkedChangedListener = builder.checkedChangedListener
+        editItemRequiredListener = builder.editItemRequiredListener
+        addPhotoRequiredListener = builder.addPhotoRequiredListener
+        albumViewRequiredListener = builder.albumViewRequiredListener
 
         // TODO: Dummy status list, FIX Later
         if (visibleStatus.isEmpty()) {

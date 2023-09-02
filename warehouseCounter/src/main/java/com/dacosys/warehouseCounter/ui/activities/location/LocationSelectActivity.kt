@@ -16,11 +16,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.*
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouse
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
 import com.dacosys.warehouseCounter.databinding.LocationSelectActivityBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.*
-import com.dacosys.warehouseCounter.ktor.v2.functions.location.GetRack
-import com.dacosys.warehouseCounter.ktor.v2.functions.location.GetWarehouse
-import com.dacosys.warehouseCounter.ktor.v2.functions.location.GetWarehouseArea
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.ui.adapter.location.RackAdapter
 import com.dacosys.warehouseCounter.ui.adapter.location.WarehouseAdapter

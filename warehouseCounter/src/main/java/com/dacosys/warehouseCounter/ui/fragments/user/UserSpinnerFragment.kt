@@ -8,10 +8,10 @@ import android.view.ViewGroup
 import android.widget.AdapterView
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.data.room.dao.user.UserCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.user.User
 import com.dacosys.warehouseCounter.databinding.FragmentSpinnerBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.room.dao.user.UserCoroutines
-import com.dacosys.warehouseCounter.room.entity.user.User
 import com.dacosys.warehouseCounter.ui.adapter.user.UserAdapter
 import org.parceler.Parcels
 

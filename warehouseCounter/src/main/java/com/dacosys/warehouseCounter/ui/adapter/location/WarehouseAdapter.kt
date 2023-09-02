@@ -13,7 +13,7 @@ import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.Warehouse
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import java.util.*
 
 /**

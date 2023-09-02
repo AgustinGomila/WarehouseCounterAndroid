@@ -12,12 +12,10 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.applicationName
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
-import com.dacosys.warehouseCounter.room.dao.user.UserCoroutines
-import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
-import com.dacosys.warehouseCounter.room.entity.user.User
-import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.vh75.Vh75Bt
+import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.user.UserCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
+import com.dacosys.warehouseCounter.data.room.entity.user.User
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
@@ -109,19 +107,6 @@ class Statics {
                 }
             }
             return false
-        }
-
-        fun initRequired(): Boolean {
-            val sv = settingViewModel
-            return if (sv.useBtRfid) {
-                if (Rfid.rfidDevice == null) {
-                    true
-                } else {
-                    if ((Rfid.rfidDevice is Vh75Bt)) {
-                        (Rfid.rfidDevice as Vh75Bt).mState == Vh75Bt.STATE_NONE
-                    } else false
-                }
-            } else false
         }
 
         // region Variables con valores predefinidos para el selector de cantidades

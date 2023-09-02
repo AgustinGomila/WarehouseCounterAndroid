@@ -11,16 +11,15 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package
-import com.dacosys.warehouseCounter.ktor.v1.functions.GetClientPackages
-import com.dacosys.warehouseCounter.ktor.v1.service.PackagesResult
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages
+import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
+import com.dacosys.warehouseCounter.data.room.database.helper.FileHelper
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType
+import com.dacosys.warehouseCounter.data.sync.ClientPackage
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.database.FileHelper
-import com.dacosys.warehouseCounter.settings.SettingsRepository
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType
-import com.dacosys.warehouseCounter.sync.ClientPackage
-import com.dacosys.warehouseCounter.sync.ProgressStatus
+import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.bindPreferenceSummaryToValue
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
@@ -234,7 +233,8 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
 
     private fun onGetPackagesEnded(packagesResult: PackagesResult) {
         val status: ProgressStatus = packagesResult.status
-        val result: ArrayList<Package> = packagesResult.result
+        val result: ArrayList<com.dacosys.warehouseCounter.data.ktor.v1.dto.clientPackage.Package> =
+            packagesResult.result
         val clientEmail: String = packagesResult.clientEmail
         val clientPassword: String = packagesResult.clientPassword
         val msg: String = packagesResult.msg

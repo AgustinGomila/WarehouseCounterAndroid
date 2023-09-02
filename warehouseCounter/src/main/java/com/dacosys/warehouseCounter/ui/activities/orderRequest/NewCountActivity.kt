@@ -17,11 +17,11 @@ import androidx.appcompat.view.menu.MenuBuilder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
+import com.dacosys.warehouseCounter.data.room.dao.client.ClientCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.client.Client
 import com.dacosys.warehouseCounter.databinding.NewCountActivityBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
-import com.dacosys.warehouseCounter.room.entity.client.Client
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc

@@ -10,10 +10,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log
+import com.dacosys.warehouseCounter.data.room.dao.orderRequest.LogCoroutines
 import com.dacosys.warehouseCounter.databinding.LogContentActivityBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.Log
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.dao.orderRequest.LogCoroutines
 import com.dacosys.warehouseCounter.ui.adapter.log.LogAdapter
 import com.dacosys.warehouseCounter.ui.utils.Screen
 

@@ -31,6 +31,7 @@
 * [Koin](https://github.com/InsertKoinIO/koin)
 * [Room](https://android.googlesource.com/platform/frameworks/support/+/androidx-master-dev/room)
 * [Ktor](https://github.com/ktorio/ktor)
+* [Arrow](https://github.com/arrow-kt/arrow)
 * [Zxing](https://github.com/journeyapps/zxing-android-embedded)
 
 ## Algunas características

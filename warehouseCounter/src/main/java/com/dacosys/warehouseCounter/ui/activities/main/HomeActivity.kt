@@ -38,13 +38,17 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sync
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.CreateOrder
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.ViewOrder
+import com.dacosys.warehouseCounter.data.ktor.v2.sync.SyncViewModel
+import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.client.Client
+import com.dacosys.warehouseCounter.data.sync.*
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.ktor.v2.functions.order.CreateOrder
-import com.dacosys.warehouseCounter.ktor.v2.functions.order.ViewOrder
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.DATE_FORMAT
@@ -53,11 +57,9 @@ import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
-import com.dacosys.warehouseCounter.room.dao.orderRequest.OrderRequestCoroutines
-import com.dacosys.warehouseCounter.room.entity.client.Client
+import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
-import com.dacosys.warehouseCounter.sync.*
 import com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity
 import com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
 import com.dacosys.warehouseCounter.ui.activities.order.OrderMoveActivity
@@ -85,7 +87,7 @@ import java.io.UnsupportedEncodingException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.concurrent.thread
-import com.dacosys.warehouseCounter.room.entity.orderRequest.OrderRequest as OrderRequestRoom
+import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequest as OrderRequestRoom
 
 class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFragment.ButtonClickedListener {
 

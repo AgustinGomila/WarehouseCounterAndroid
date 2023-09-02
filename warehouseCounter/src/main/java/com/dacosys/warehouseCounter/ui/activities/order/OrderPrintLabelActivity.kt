@@ -37,25 +37,25 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.*
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.*
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrderBarcode
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelType
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeParam
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.PrintOps
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.*
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.ktor.v2.functions.*
-import com.dacosys.warehouseCounter.ktor.v2.functions.order.GetOrder
-import com.dacosys.warehouseCounter.ktor.v2.functions.order.GetOrderBarcode
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.scanCode.CheckScannedCode
-import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -857,17 +857,17 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         val sv = settingViewModel
         when (id) {
             settingRepository.orderSearchByOrderId.key.hashCode() -> {
-                filterFragment.setOrderIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment.setOrderIdVisibility(if (item.isChecked) VISIBLE else GONE)
                 sv.orderSearchByOrderId = item.isChecked
             }
 
             settingRepository.orderSearchByOrderExtId.key.hashCode() -> {
-                filterFragment.setOrderExtIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment.setOrderExtIdVisibility(if (item.isChecked) VISIBLE else GONE)
                 sv.orderSearchByOrderExtId = item.isChecked
             }
 
             settingRepository.orderSearchByOrderDescription.key.hashCode() -> {
-                filterFragment.setDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                filterFragment.setDescriptionVisibility(if (item.isChecked) VISIBLE else GONE)
                 sv.orderSearchByOrderDescription = item.isChecked
             }
 

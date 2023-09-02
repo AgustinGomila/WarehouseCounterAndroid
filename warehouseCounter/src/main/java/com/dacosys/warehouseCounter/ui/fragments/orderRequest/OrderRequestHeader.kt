@@ -7,14 +7,14 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.TooltipCompat
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
+import com.dacosys.warehouseCounter.data.room.dao.client.ClientCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.databinding.OrderRequestHeaderBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequest
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
-import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
-import com.dacosys.warehouseCounter.room.dao.orderRequest.OrderRequestCoroutines
 
 /**
  * A simple [Fragment] subclass.

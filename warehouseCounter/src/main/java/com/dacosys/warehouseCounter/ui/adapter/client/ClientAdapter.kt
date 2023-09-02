@@ -14,7 +14,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.room.entity.client.Client
+import com.dacosys.warehouseCounter.data.room.entity.client.Client
 import java.util.*
 
 /**

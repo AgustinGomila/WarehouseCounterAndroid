@@ -1,14 +1,14 @@
 package com.dacosys.warehouseCounter.scanners.scanCode
 
 import android.util.Log
-import com.dacosys.warehouseCounter.ktor.v2.dto.item.Item
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.Rack
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.WarehouseArea
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.ktor.v2.functions.item.ViewItem
-import com.dacosys.warehouseCounter.ktor.v2.functions.location.ViewRack
-import com.dacosys.warehouseCounter.ktor.v2.functions.location.ViewWarehouseArea
-import com.dacosys.warehouseCounter.ktor.v2.functions.order.ViewOrder
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.ViewItem
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewRack
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.ViewOrder
 import kotlin.concurrent.thread
 
 class CheckScannedCode(

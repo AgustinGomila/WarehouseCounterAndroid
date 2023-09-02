@@ -37,22 +37,22 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.*
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.*
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.MoveOrder
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.*
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderMovePayload
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.ktor.v2.functions.*
-import com.dacosys.warehouseCounter.ktor.v2.functions.order.GetOrder
-import com.dacosys.warehouseCounter.ktor.v2.functions.order.MoveOrder
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.scanCode.CheckScannedCode
-import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -671,7 +671,7 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
             GetOrder(
                 filter = filter,
                 action = GetOrder.defaultAction,
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
                     fillAdapter(ArrayList(it))
                 }

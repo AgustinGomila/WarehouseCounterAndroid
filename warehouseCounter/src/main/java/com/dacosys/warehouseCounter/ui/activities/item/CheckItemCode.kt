@@ -3,11 +3,11 @@ package com.dacosys.warehouseCounter.ui.activities.item
 import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.item.Item
+import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
-import com.dacosys.warehouseCounter.room.entity.item.Item
-import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*

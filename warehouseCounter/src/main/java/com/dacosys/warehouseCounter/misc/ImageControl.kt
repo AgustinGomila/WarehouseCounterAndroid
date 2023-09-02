@@ -1,34 +1,39 @@
 package com.dacosys.warehouseCounter.misc
 
+import com.dacosys.imageControl.ImageControl
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import org.koin.core.context.GlobalContext
 
 class ImageControl {
     companion object {
+        val imageControl: ImageControl
+            get() = GlobalContext.get().get()
+
         fun closeImageControl() {
-            com.dacosys.imageControl.Statics.cleanInstance()
+            imageControl.cleanInstance()
         }
 
         fun setupImageControl() {
             // Setup ImageControl
-            com.dacosys.imageControl.Statics.appAllowScreenRotation = settingViewModel.allowScreenRotation
+            imageControl.cleanInstance()
 
-            com.dacosys.imageControl.Statics.currentUserId = Statics.currentUserId
-            com.dacosys.imageControl.Statics.currentUserName = Statics.currentUserName
-            com.dacosys.imageControl.Statics.newInstance()
+            imageControl.userId = Statics.currentUserId
+            imageControl.userName = Statics.currentUserName
 
-            com.dacosys.imageControl.Statics.useImageControl = settingViewModel.useImageControl
-            com.dacosys.imageControl.Statics.wsIcUrl = settingViewModel.icWsServer
-            com.dacosys.imageControl.Statics.wsIcNamespace = settingViewModel.icWsNamespace
-            com.dacosys.imageControl.Statics.wsIcProxy = settingViewModel.icWsProxy
-            com.dacosys.imageControl.Statics.wsIcProxyPort = settingViewModel.icWsProxyPort
-            com.dacosys.imageControl.Statics.wsIcUseProxy = settingViewModel.icWsUseProxy
-            com.dacosys.imageControl.Statics.wsIcProxyUser = settingViewModel.icWsProxyUser
-            com.dacosys.imageControl.Statics.wsIcProxyPass = settingViewModel.icWsProxyPass
-            com.dacosys.imageControl.Statics.icUser = settingViewModel.icUser
-            com.dacosys.imageControl.Statics.icPass = settingViewModel.icPass
-            com.dacosys.imageControl.Statics.wsIcUser = settingViewModel.icWsUser
-            com.dacosys.imageControl.Statics.wsIcPass = settingViewModel.icWsPass
-            com.dacosys.imageControl.Statics.maxHeightOrWidth = settingViewModel.icPhotoMaxHeightOrWidth
+            imageControl.appAllowScreenRotation = settingViewModel.allowScreenRotation
+            imageControl.useImageControl = settingViewModel.useImageControl
+            imageControl.wsIcUrl = settingViewModel.icWsServer
+            imageControl.wsIcNamespace = settingViewModel.icWsNamespace
+            imageControl.wsIcProxy = settingViewModel.icWsProxy
+            imageControl.wsIcProxyPort = settingViewModel.icWsProxyPort
+            imageControl.wsIcUseProxy = settingViewModel.icWsUseProxy
+            imageControl.wsIcProxyUser = settingViewModel.icWsProxyUser
+            imageControl.wsIcProxyPass = settingViewModel.icWsProxyPass
+            imageControl.icUser = settingViewModel.icUser
+            imageControl.icPass = settingViewModel.icPass
+            imageControl.wsIcUser = settingViewModel.icWsUser
+            imageControl.wsIcPass = settingViewModel.icWsPass
+            imageControl.maxHeightOrWidth = settingViewModel.icPhotoMaxHeightOrWidth
         }
     }
 }

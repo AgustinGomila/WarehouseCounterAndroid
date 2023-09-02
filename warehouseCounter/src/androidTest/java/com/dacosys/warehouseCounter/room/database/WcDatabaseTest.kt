@@ -1,11 +1,11 @@
-package com.dacosys.warehouseCounter.room.database
+package com.dacosys.warehouseCounter.data.room.database
 
 
 import android.content.Context
 import androidx.room.Room.inMemoryDatabaseBuilder
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.dacosys.warehouseCounter.room.dao.item.ItemDao
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemDao
 import org.junit.After
 import org.junit.Before
 import org.junit.runner.RunWith

@@ -14,21 +14,20 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
+import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
+import com.dacosys.warehouseCounter.data.room.database.helper.FileHelper.Companion.removeDataBases
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType.CREATOR.QRConfigApp
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType.CREATOR.QRConfigClientAccount
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType.CREATOR.QRConfigWebservice
+import com.dacosys.warehouseCounter.data.sync.ClientPackage
+import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.getConfigFromScannedCode
+import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.selectClientPackage
 import com.dacosys.warehouseCounter.databinding.SettingsActivityBinding
-import com.dacosys.warehouseCounter.ktor.v1.dto.clientPackage.Package
-import com.dacosys.warehouseCounter.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.database.FileHelper.Companion.removeDataBases
+import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType.CREATOR.QRConfigApp
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType.CREATOR.QRConfigClientAccount
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType.CREATOR.QRConfigWebservice
-import com.dacosys.warehouseCounter.sync.ClientPackage
-import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.getConfigFromScannedCode
-import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.selectClientPackage
-import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.fragments.settings.HeaderFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -165,7 +164,8 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
 
     private fun onGetPackagesEnded(packagesResult: PackagesResult) {
         val status: ProgressStatus = packagesResult.status
-        val result: ArrayList<Package> = packagesResult.result
+        val result: ArrayList<com.dacosys.warehouseCounter.data.ktor.v1.dto.clientPackage.Package> =
+            packagesResult.result
         val clientEmail: String = packagesResult.clientEmail
         val clientPassword: String = packagesResult.clientPassword
         val msg: String = packagesResult.msg
@@ -243,7 +243,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
          */
         fun bindPreferenceSummaryToValue(
             frag: PreferenceFragmentCompat,
-            pref: com.dacosys.warehouseCounter.settings.Preference,
+            pref: com.dacosys.warehouseCounter.data.settings.Preference,
         ) {
             val preference = frag.findPreference<Preference>(pref.key) ?: return
             val defaultValue: Any = pref.value

@@ -47,23 +47,23 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.*
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.*
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.*
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelTemplate
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeLabelType
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.BarcodeParam
-import com.dacosys.warehouseCounter.ktor.v2.dto.barcode.PrintOps
-import com.dacosys.warehouseCounter.ktor.v2.dto.location.*
-import com.dacosys.warehouseCounter.ktor.v2.functions.*
-import com.dacosys.warehouseCounter.ktor.v2.functions.location.*
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.scanCode.CheckScannedCode
-import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.location.LocationAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -1149,7 +1149,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             objId1 = tempObjectId
         )
 
-        ImageCoroutines().get(programData = programData) {
+        ImageCoroutines().get(context = context, programData = programData) {
             val allLocal = toDocumentContentList(images = it, programData = programData)
             if (allLocal.isEmpty()) {
                 getFromWebservice()

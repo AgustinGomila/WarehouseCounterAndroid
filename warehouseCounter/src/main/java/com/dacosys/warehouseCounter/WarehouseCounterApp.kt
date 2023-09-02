@@ -6,15 +6,14 @@ import android.content.SharedPreferences
 import android.util.Base64
 import androidx.preference.PreferenceManager
 import com.dacosys.imageControl.ImageControl
-import com.dacosys.warehouseCounter.ktor.v1.impl.DacoServiceImpl
-import com.dacosys.warehouseCounter.ktor.v2.impl.ApiRequest
+import com.dacosys.warehouseCounter.data.ktor.v1.impl.DacoServiceImpl
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest
+import com.dacosys.warehouseCounter.data.ktor.v2.sync.Sync
+import com.dacosys.warehouseCounter.data.ktor.v2.sync.SyncViewModel
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
+import com.dacosys.warehouseCounter.data.settings.SettingsViewModel
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.INTERNAL_IMAGE_CONTROL_APP_ID
 import com.dacosys.warehouseCounter.scanners.JotterListener
-import com.dacosys.warehouseCounter.settings.SettingsRepository
-import com.dacosys.warehouseCounter.settings.SettingsViewModel
-import com.dacosys.warehouseCounter.sync.Sync
-import com.dacosys.warehouseCounter.sync.SyncViewModel
 import id.pahlevikun.jotter.Jotter
 import id.pahlevikun.jotter.event.ActivityEvent
 import io.ktor.client.*
@@ -64,11 +63,6 @@ class WarehouseCounterApp : Application(), KoinComponent {
                 )
             )
             .setJotterListener(JotterListener).build().startListening()
-
-        /** Setup ImageControl context and app identification */
-        ImageControl().create(
-            context = applicationContext, id = INTERNAL_IMAGE_CONTROL_APP_ID
-        )
     }
 
     private fun koinAppModule() = module {
@@ -131,16 +125,19 @@ class WarehouseCounterApp : Application(), KoinComponent {
 
         /** Services for the different versions of the API and the Client Configuration service */
         /** API Version 1 */
-        single { com.dacosys.warehouseCounter.ktor.v1.impl.APIServiceImpl() }
+        single { com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl() }
         /** Client packages API Service Version 1 */
         single { DacoServiceImpl() }
 
         /** API Version 2 */
-        single { com.dacosys.warehouseCounter.ktor.v2.impl.APIServiceImpl() }
+        single { com.dacosys.warehouseCounter.data.ktor.v2.impl.APIServiceImpl() }
         single { ApiRequest() }
 
         /** Synchronization */
         single { Sync.Builder().build() }
+
+        /** Setup ImageControl app identification */
+        single { ImageControl.Builder(Statics.INTERNAL_IMAGE_CONTROL_APP_ID).build() }
     }
 
     companion object {
@@ -159,13 +156,13 @@ class WarehouseCounterApp : Application(), KoinComponent {
         val httpClient: HttpClient
             get() = get().get()
 
-        val ktorApiServiceV1: com.dacosys.warehouseCounter.ktor.v1.impl.APIServiceImpl
+        val ktorApiServiceV1: com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl
             get() = get().get()
 
         val ktorDacoService: DacoServiceImpl
             get() = get().get()
 
-        val ktorApiServiceV2: com.dacosys.warehouseCounter.ktor.v2.impl.APIServiceImpl
+        val ktorApiServiceV2: com.dacosys.warehouseCounter.data.ktor.v2.impl.APIServiceImpl
             get() = get().get()
 
         val currentProxy: Proxy

@@ -27,18 +27,18 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
-import com.dacosys.imageControl.adapter.ImageAdapter
-import com.dacosys.imageControl.adapter.ImageAdapter.Companion.GetImageStatus
-import com.dacosys.imageControl.adapter.ImageAdapter.Companion.ImageControlHolder
 import com.dacosys.imageControl.network.common.ProgramData
+import com.dacosys.imageControl.ui.adapter.ImageAdapter
+import com.dacosys.imageControl.ui.adapter.ImageAdapter.Companion.GetImageStatus
+import com.dacosys.imageControl.ui.adapter.ImageAdapter.Companion.ImageControlHolder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.databinding.ItemRowBinding
 import com.dacosys.warehouseCounter.databinding.ItemRowExpandedBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.table.Table
-import com.dacosys.warehouseCounter.room.entity.item.Item
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
@@ -1076,29 +1076,32 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
 
             Handler(Looper.getMainLooper()).postDelayed({
                 adapter.run {
-                    ImageAdapter.getImages(programData = ProgramData(
-                        programObjectId = Table.item.tableId.toLong(), objId1 = item.itemId.toString()
-                    ), onProgress = {
-                        when (it.status) {
-                            GetImageStatus.STARTING -> {
-                                waitingImagePanel(holder)
-                            }
-
-                            GetImageStatus.NO_IMAGES -> {
-                                idWithImage.remove(item.itemId)
-                                collapseImagePanel(holder)
-                            }
-
-                            GetImageStatus.IMAGE_BROKEN, GetImageStatus.NO_AVAILABLE, GetImageStatus.IMAGE_AVAILABLE -> {
-                                if (!idWithImage.contains(item.itemId)) {
-                                    idWithImage.add(item.itemId)
+                    ImageAdapter.getImages(
+                        context = context,
+                        programData = ProgramData(
+                            programObjectId = Table.item.tableId.toLong(),
+                            objId1 = item.itemId.toString()
+                        ), onProgress = {
+                            when (it.status) {
+                                GetImageStatus.STARTING -> {
+                                    waitingImagePanel(holder)
                                 }
-                                val image = it.image
-                                if (image != null) showImagePanel(holder, image)
-                                else collapseImagePanel(holder)
+
+                                GetImageStatus.NO_IMAGES -> {
+                                    idWithImage.remove(item.itemId)
+                                    collapseImagePanel(holder)
+                                }
+
+                                GetImageStatus.IMAGE_BROKEN, GetImageStatus.NO_AVAILABLE, GetImageStatus.IMAGE_AVAILABLE -> {
+                                    if (!idWithImage.contains(item.itemId)) {
+                                        idWithImage.add(item.itemId)
+                                    }
+                                    val image = it.image
+                                    if (image != null) showImagePanel(holder, image)
+                                    else collapseImagePanel(holder)
+                                }
                             }
-                        }
-                    })
+                        })
                 }
             }, 0)
         }
@@ -1116,6 +1119,13 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
         showImagesChanged = builder.showImagesChanged
         visibleStatus = builder.visibleStatus
         filterOptions = builder.filterOptions
+
+        dataSetChangedListener = builder.dataSetChangedListener
+        selectedItemChangedListener = builder.selectedItemChangedListener
+        checkedChangedListener = builder.checkedChangedListener
+        editItemRequiredListener = builder.editItemRequiredListener
+        addPhotoRequiredListener = builder.addPhotoRequiredListener
+        albumViewRequiredListener = builder.albumViewRequiredListener
 
         // Configuramos variables de estilo que se van a reutilizar.
         setupColors()

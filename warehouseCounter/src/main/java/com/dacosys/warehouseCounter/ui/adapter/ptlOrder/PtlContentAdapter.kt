@@ -26,11 +26,11 @@ import androidx.recyclerview.widget.RecyclerView.*
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.ContentStatus
+import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlContent
+import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlItem
 import com.dacosys.warehouseCounter.databinding.PtlItemRowBinding
 import com.dacosys.warehouseCounter.databinding.PtlItemRowExpandedBinding
-import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.ContentStatus
-import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlContent
-import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlItem
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText

@@ -30,12 +30,12 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlOrder
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetPtlOrder
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetPtlOrderByCode
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.databinding.PtlSelectOrderActivityBinding
-import com.dacosys.warehouseCounter.ktor.v1.dto.ptlOrder.PtlOrder
-import com.dacosys.warehouseCounter.ktor.v1.functions.GetPtlOrder
-import com.dacosys.warehouseCounter.ktor.v1.functions.GetPtlOrderByCode
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc

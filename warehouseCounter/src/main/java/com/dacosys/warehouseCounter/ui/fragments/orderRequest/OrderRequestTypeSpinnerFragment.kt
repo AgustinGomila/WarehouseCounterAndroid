@@ -8,8 +8,8 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.databinding.FragmentSpinnerBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderRequestType
 
 /**
  * A simple [Fragment] subclass.

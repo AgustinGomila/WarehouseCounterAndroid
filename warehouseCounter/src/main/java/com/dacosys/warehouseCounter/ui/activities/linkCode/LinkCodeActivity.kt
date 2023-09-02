@@ -53,23 +53,22 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.SendItemCodeArray
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.item.Item
+import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategory
+import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.LinkCodeActivityBottomPanelCollapsedBinding
-import com.dacosys.warehouseCounter.ktor.v2.functions.itemCode.SendItemCodeArray
-import com.dacosys.warehouseCounter.misc.CounterHandler
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.room.dao.itemCode.ItemCodeCoroutines
-import com.dacosys.warehouseCounter.room.entity.item.Item
-import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
-import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.settings.SettingsRepository
 import com.dacosys.warehouseCounter.ui.activities.item.CheckItemCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemRecyclerAdapter
@@ -81,6 +80,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.views.CounterHandler
 import java.util.*
 import kotlin.concurrent.thread
 
@@ -1331,7 +1331,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             objId1 = tempObjectId
         )
 
-        ImageCoroutines().get(programData = programData) {
+        ImageCoroutines().get(context = context, programData = programData) {
             val allLocal = toDocumentContentList(images = it, programData = programData)
             if (allLocal.isEmpty()) {
                 getFromWebservice()

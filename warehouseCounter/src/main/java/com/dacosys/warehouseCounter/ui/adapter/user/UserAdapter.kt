@@ -9,7 +9,7 @@ import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.R.id.descriptionTextView
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.room.entity.user.User
+import com.dacosys.warehouseCounter.data.room.entity.user.User
 
 
 /**

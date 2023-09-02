@@ -20,9 +20,9 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.LogStatus
 import com.dacosys.warehouseCounter.databinding.LogContentRowBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.Log
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.LogStatus
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions

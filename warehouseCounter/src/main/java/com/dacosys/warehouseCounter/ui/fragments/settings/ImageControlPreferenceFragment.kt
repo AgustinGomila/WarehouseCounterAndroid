@@ -13,14 +13,14 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.room.database.helper.FileHelper
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
+import com.dacosys.warehouseCounter.data.settings.utils.ImageControlCheckUser
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType
+import com.dacosys.warehouseCounter.data.sync.ClientPackage
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.database.FileHelper
-import com.dacosys.warehouseCounter.settings.SettingsRepository
-import com.dacosys.warehouseCounter.settings.utils.ImageControlCheckUser
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType
-import com.dacosys.warehouseCounter.sync.ClientPackage
-import com.dacosys.warehouseCounter.sync.ProgressStatus
+import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.bindPreferenceSummaryToValue
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
@@ -185,7 +185,7 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
             .setTitle(getString(R.string.delete))
             .setMessage(getString(R.string.do_you_want_to_delete_the_image_cache_question))
             .setPositiveButton(getString(R.string.delete)) { dialog, _ ->
-                val album = albumFolder
+                val album = albumFolder(requireContext())
                 if (album.isDirectory) {
                     val files = album.listFiles()
                     if (files != null && files.any()) {

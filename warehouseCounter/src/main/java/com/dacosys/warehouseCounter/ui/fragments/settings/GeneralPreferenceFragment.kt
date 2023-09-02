@@ -9,11 +9,11 @@ import androidx.preference.PreferenceScreen
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType
+import com.dacosys.warehouseCounter.data.sync.ClientPackage
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.settings.SettingsRepository
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType
-import com.dacosys.warehouseCounter.sync.ClientPackage
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.bindPreferenceSummaryToValue
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText

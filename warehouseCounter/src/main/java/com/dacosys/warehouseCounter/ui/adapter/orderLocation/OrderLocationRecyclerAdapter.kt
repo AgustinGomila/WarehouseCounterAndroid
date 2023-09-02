@@ -24,10 +24,10 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderLocation
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderLocation.OrderLocationStatus
 import com.dacosys.warehouseCounter.databinding.OrderLocationRowBinding
 import com.dacosys.warehouseCounter.databinding.OrderLocationRowExpandedBinding
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderLocation
-import com.dacosys.warehouseCounter.ktor.v2.dto.order.OrderLocation.OrderLocationStatus
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
