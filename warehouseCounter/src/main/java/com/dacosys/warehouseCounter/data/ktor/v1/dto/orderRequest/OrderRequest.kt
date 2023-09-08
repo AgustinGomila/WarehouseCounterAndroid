@@ -4,6 +4,8 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.dacosys.imageControl.dto.Document
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getFiles
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getJsonFromFile
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.log.Log
 import com.dacosys.warehouseCounter.misc.Statics
 import kotlinx.serialization.SerialName
@@ -140,7 +142,7 @@ class OrderRequest() : Parcelable {
     }
 
     constructor(filename: String) : this() {
-        val jsonString = Statics.getJsonFromFile(filename)
+        val jsonString = getJsonFromFile(filename)
 
         try {
             val or = json.decodeFromString<OrderRequest>(jsonString)
@@ -253,7 +255,7 @@ class OrderRequest() : Parcelable {
             val orArray: ArrayList<OrderRequest> = ArrayList()
             if (Statics.isExternalStorageReadable) {
                 // Get the directory for the user's public pictures' directory.
-                val filesInFolder = Statics.getFiles(path.absolutePath)
+                val filesInFolder = getFiles(path.absolutePath)
                 if (!filesInFolder.isNullOrEmpty()) {
                     for (filename in filesInFolder) {
                         val filePath = path.absolutePath + File.separator + filename

@@ -21,9 +21,10 @@
     <string name="an_error_occurred_while_trying_to_delete_the_count">Ha ocurrido un error al intentar eliminar el
         arqueo
     </string>
-    <string name="an_error_occurred_while_trying_to_load_the_order">Ha ocurrido un error al intentar cargar el arqueo
+    <string name="an_error_occurred_while_trying_to_reset_the_count">Ha ocurrido un error al intentar reiniciar el
+        arqueo
     </string>
-    <string name="an_error_occurred_while_trying_to_send_the_order">Ha ocurrido un error al intentar enviar el arqueo
+    <string name="an_error_occurred_while_trying_to_load_the_order">Ha ocurrido un error al intentar cargar el arqueo
     </string>
     <string name="an_error_occurred_while_trying_to_save_the_count">Ha ocurrido un error al intentar guardar el arqueo
     </string>
@@ -236,6 +237,7 @@
     <string name="program_options">Opciones del programa</string>
     <string name="proxy">Proxy</string>
     <string name="qty">Cantidad</string>
+    <string name="qty_requested">Solicitado</string>
     <string name="qty_requested_exceeded">Cantidad solicitada superada</string>
     <string name="qty_requested_reached">Cantidad solicitada alcanzada</string>
     <string name="read_barcode">Leer código</string>
@@ -247,7 +249,7 @@
     <string name="removed">Eliminado</string>
     <string name="removed_plural">Eliminados</string>
     <string name="requested">solicitado</string>
-    <string name="requested_count_state_">Arqueo solicitado: %1$s Estado: %2$s</string>
+    <string name="requested_count_state_">Arqueo: %1$s Estado: %2$s</string>
     <string name="requested_plural">solicitados</string>
     <string name="required_description">Descripción obligatoria</string>
     <string name="resume">Resumen</string>
@@ -769,4 +771,13 @@
     <string name="unknown_error">Error desconocido</string>
     <string name="error_when_updating_the_order">Error al actualizar el pedido</string>
     <string name="error_when_creating_the_order">Error al crear el pedido</string>
+    <string name="new_product">Nuevo producto</string>
+    <string name="without_id">Sin ID</string>
+    <string name="first">Primero</string>
+    <string name="second">Segundo</string>
+    <string name="third">Tercero</string>
+    <string name="products">Productos</string>
+    <string name="json_convertion_failed">Falló la conversión Json</string>
+    <string name="serialization_failed">Falló la serialización</string>
+    <string name="null_error">Error de puntero nulo</string>
 </resources>

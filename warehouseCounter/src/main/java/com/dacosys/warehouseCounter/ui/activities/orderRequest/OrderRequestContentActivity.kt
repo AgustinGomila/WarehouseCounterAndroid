@@ -38,6 +38,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeJsonToFile
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
@@ -80,7 +81,7 @@ import java.util.*
 class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChangedListener,
     OrcAdapter.EditQtyListener, OrcAdapter.EditDescriptionListener,
     Scanner.ScannerListener,
-    SwipeRefreshLayout.OnRefreshListener, Rfid.RfidDeviceListener {
+    SwipeRefreshLayout.OnRefreshListener, Rfid.RfidDeviceListener, OrcAdapter.CheckedChangedListener {
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
             binding.swipeRefreshItem.isRefreshing = false
@@ -243,14 +244,27 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             id = orderRequestId,
             onResult = {
                 if (it != null) {
+
                     orderRequest = it
                     completeList = ArrayList(it.contents)
 
-                    fillHeader()
-                    fillAdapter(completeList)
+                    fillOrderRequest()
                 }
             }
         )
+    }
+
+    private fun fillOrderRequest() {
+        showSnackBar(
+            String.format(
+                getString(R.string.requested_count_state_),
+                if (orderRequest.description == "") getString(R.string.no_description) else orderRequest.description,
+                if (orderRequest.completed == true) getString(R.string.completed) else getString(R.string.pending)
+            ), INFO
+        )
+
+        fillHeader()
+        fillAdapter(completeList)
     }
 
     private fun loadDefaultValues() {
@@ -308,7 +322,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             android.R.color.holo_red_light
         )
 
-        // Para expandir y colapsar el panel inferior
         setBottomPanelAnimation()
         setTopPanelAnimation()
 
@@ -628,6 +641,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     .checkedIdArray(checkedIdArray)
                     .orType(orderRequest.orderRequestType)
                     .dataSetChangedListener(this)
+                    .checkedChangedListener(this)
                     .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
@@ -876,7 +890,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     this, Manifest.permission.WRITE_EXTERNAL_STORAGE
                 )
             ) {
-                error = !Statics.writeJsonToFile(
+                error = !writeJsonToFile(
                     v = binding.root,
                     filename = orFileName,
                     value = orJson,
@@ -1102,6 +1116,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         intent.putExtra(ARG_TITLE, context.getString(R.string.enter_description))
         intent.putExtra(EnterCodeActivity.ARG_HINT, context.getString(R.string.item_description_hint))
+        intent.putExtra(EnterCodeActivity.ARG_CAP_SENTENCES, true)
         intent.putExtra(EnterCodeActivity.ARG_ORC, orc)
         resultForAddDescription.launch(intent)
     }
@@ -1184,7 +1199,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     override fun onReadCompleted(scanCode: String) {
         scannerCompleted(scanCode)
     }
-//endregion READERS Reception
+    //endregion READERS Reception
 
     public override fun onStart() {
         super.onStart()
@@ -1206,15 +1221,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 tempTitle = "${context.getString(R.string.count)}: ${orderRequest.description}"
             }
 
-            if (orderRequest.orderRequestType != OrderRequestType.notDefined) {
-                binding.orTypeTextView.text = when (orderRequest.orderRequestType) {
-                    OrderRequestType.deliveryAudit -> OrderRequestType.deliveryAudit.description
-                    OrderRequestType.prepareOrder -> OrderRequestType.prepareOrder.description
-                    OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
-                    OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
-                    OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
-                    else -> context.getString(R.string.counted)
-                }
+            binding.orTypeTextView.text = when (orderRequest.orderRequestType) {
+                OrderRequestType.deliveryAudit -> OrderRequestType.deliveryAudit.description
+                OrderRequestType.notDefined -> OrderRequestType.notDefined.description
+                OrderRequestType.packaging -> OrderRequestType.packaging.description
+                OrderRequestType.prepareOrder -> OrderRequestType.prepareOrder.description
+                OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
+                OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
+                OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
+                else -> context.getString(R.string.total_count)
             }
             binding.topAppbar.title = tempTitle
         }
@@ -1256,7 +1271,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     val orc =
                         Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT))
 
-                    // La descripción puede modificarse desde el selector de cantidades
+                    /**
+                     * En este momento no nos preocupamos por la descripción, ya que puede modificarse
+                     * desde el selector de cantidades que se ejecuta a continuación
+                     */
                     setDescription(
                         orc = orc,
                         description = orc.itemDescription,
@@ -1282,7 +1300,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     val orc =
                         Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT))
 
-                    // La descripción puede modificarse desde el selector de cantidades
+                    /**
+                     * En este momento no nos preocupamos por la descripción, ya que puede modificarse
+                     * desde el selector de cantidades que se ejecuta a continuación
+                     */
                     setDescription(
                         orc = orc,
                         description = orc.itemDescription,
@@ -1362,8 +1383,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             return
         }
 
-        // Si viene del selector de cantidad manual ya está aplicado el multiplicador
-        // Usar el valor del multiplicador si no se escaneó un código con cantidad determinada (itemCode)
+        /**
+         * 1. En caso de un agregado manual, venimos del selector de cantidades y ya está aplicado el multiplicador.
+         * 2. En caso de un ItemCode, utilizar su multiplicador interno de código.
+         * 3. En caso contrario utilizar el multiplicador de la configuración.
+         */
+
+        //
+        //
         val multi: Long = when {
             manualAdd -> 1L
             else -> {
@@ -1441,7 +1468,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                             getString(R.string.cannot_write_images_to_external_storage), ERROR
                         )
                     } else {
-                        val error = !Statics.writeJsonToFile(
+                        val error = !writeJsonToFile(
                             v = binding.root,
                             filename = orFileName,
                             value = orJson,
@@ -1454,7 +1481,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
     }
 
-    // Este flag lo vamos a usar para saber si estamos tratando con un
+    // Este flag lo vamos a usar para saber si estamos tratando con un Regex
     private var lastRegexResult: ItemRegex.Companion.RegexResult? = null
 
     override fun scannerCompleted(scanCode: String) {
@@ -1495,7 +1522,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
 
                 // Qty NULL →
-                //    Actualizar scanned code y proseguir como
+                //    Actualizar el código escaneado y proseguir como
                 //    un código corriente pero advertir sobre el error.
 
                 // Mostrar advertencia.
@@ -1557,8 +1584,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 R.string.unknown_item
             )
         ) {
-            // Antes agregar descripción si es obligatorio.
-            // La función itemDescriptionDialog(orc) al final llama a setQty(orc)
+            // En primer lugar, agregamos la descripción ya que es obligatoria.
+            // Esta función, si la descripción es válida, continuará con setQty
             showDialogForAddDescription(orc)
             return
         }
@@ -1713,25 +1740,47 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
     }
 
-    override fun onDataSetChanged() {
-        runOnUiThread {
-            Handler(Looper.getMainLooper()).postDelayed({
-                val labelCant: Boolean
-                val totalVisible: Int
-                if (orderRequest.orderRequestType == OrderRequestType.stockAuditFromDevice) {
-                    labelCant = false
-                    totalVisible = totalCollected
-                } else {
-                    labelCant = true
-                    totalVisible = totalRequested
-                }
+    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
+        fillSummaryFragment()
+    }
 
-                summaryFragment
-                    .multiSelect(labelCant) // This is to set fragments captions
-                    .totalVisible(totalVisible)
-                    .totalChecked(countChecked)
-                    .fill()
-            }, 100)
+    override fun onDataSetChanged() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            fillSummaryFragment()
+        }, 100)
+    }
+
+    private fun fillSummaryFragment() {
+        runOnUiThread {
+            val firstValue: Int
+            val firstLabel: String
+            val secondValue: Int
+            val secondLabel: String
+            var thirdValue = 0
+            var thirdLabel = ""
+
+            if (orderRequest.orderRequestType == OrderRequestType.stockAuditFromDevice) {
+                firstValue = totalCollected
+                firstLabel = getString(R.string.total)
+                secondValue = totalRequested
+                secondLabel = getString(R.string.requested)
+                thirdValue = itemCount
+                thirdLabel = getString(R.string.products)
+            } else {
+                firstValue = totalCollected
+                firstLabel = getString(R.string.total)
+                secondValue = itemCount
+                secondLabel = getString(R.string.products)
+            }
+
+            summaryFragment
+                .first(firstValue)
+                .firstLabel(firstLabel)
+                .second(secondValue)
+                .secondLabel(secondLabel)
+                .third(thirdValue)
+                .thirdLabel(thirdLabel)
+                .fill()
         }
     }
 

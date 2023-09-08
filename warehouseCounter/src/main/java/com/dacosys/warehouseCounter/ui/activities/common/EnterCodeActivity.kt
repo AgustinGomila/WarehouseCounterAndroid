@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.text.InputType
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import androidx.appcompat.app.AppCompatActivity
@@ -17,11 +18,13 @@ import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import org.parceler.Parcels
 
 
 class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
+    private var capSentences: Boolean = false
     private var orc: OrderRequestContent? = null
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
@@ -31,6 +34,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         savedInstanceState.putString(ARG_HINT, binding.codeEditText.hint.toString())
         savedInstanceState.putParcelable(ARG_ORC, orc)
         savedInstanceState.putString(ARG_DEFAULT_VALUE, binding.codeEditText.editableText.toString().trim())
+        savedInstanceState.putBoolean(ARG_CAP_SENTENCES, capSentences)
     }
 
     private lateinit var binding: EnterCodeActivityBinding
@@ -59,6 +63,8 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
             orc = savedInstanceState.getParcelable(ARG_ORC)
 
+            capSentences = savedInstanceState.getBoolean(ARG_CAP_SENTENCES)
+
             defaultValue = savedInstanceState.getString(ARG_DEFAULT_VALUE) ?: ""
         } else {
             val extras = intent.extras
@@ -72,6 +78,8 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                 val t3 = extras.getParcelable(ARG_ORC) as OrderRequestContent?
                 if (t3 != null) orc = t3
 
+                capSentences = extras.getBoolean(ARG_CAP_SENTENCES)
+
                 defaultValue = extras.getString(ARG_DEFAULT_VALUE) ?: ""
             }
         }
@@ -81,6 +89,11 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         binding.okButton.setOnClickListener { codeSelect() }
 
         binding.codeEditText.hint = tempHint
+
+        if (capSentences) {
+            binding.codeEditText.inputType = InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+        }
+
         binding.codeEditText.setOnEditorActionListener { _, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_DONE || event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
                 codeSelect()
@@ -107,6 +120,8 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     }
 
     private fun codeSelect() {
+        closeKeyboard(this)
+
         val data = Intent()
         val result: Int = if (binding.codeEditText.editableText.toString().isEmpty()) {
             RESULT_CANCELED
@@ -121,7 +136,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     }
 
     override fun onBackPressed() {
-        Screen.closeKeyboard(this)
+        closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()
@@ -159,6 +174,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     companion object {
         const val ARG_TITLE = "title"
         const val ARG_HINT = "hint"
+        const val ARG_CAP_SENTENCES = "captFirst"
         const val ARG_ORC = "orc"
         const val ARG_CODE = "code"
         const val ARG_DEFAULT_VALUE = "defaultValue"

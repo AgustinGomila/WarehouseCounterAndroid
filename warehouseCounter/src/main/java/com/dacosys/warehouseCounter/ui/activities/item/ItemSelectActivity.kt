@@ -170,18 +170,28 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
+    private var filterItemDescription: String = ""
+    private var filterItemEan: String = ""
+    private var filterItemCategory: ItemCategory? = null
+    private var filterOnlyActive: Boolean = true
+    private var filterItemCode: String = ""
+
+    private var searchedText: String = ""
+
+    private var currentPrintQty: Int = 1
+    private var currentTemplateId: Long = 0L
+
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         saveBundleValues(savedInstanceState)
     }
 
     private fun saveBundleValues(b: Bundle) {
-        b.putString(ARG_TITLE, title.toString())
-
+        b.putString(ARG_TITLE, tempTitle)
         b.putBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
-
         b.putBoolean(ARG_MULTI_SELECT, multiSelect)
         b.putBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
+
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
         b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
 
@@ -192,6 +202,17 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             b.putLongArray("checkedIdArray", allChecked.map { it.itemId }.toLongArray())
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
+
+        b.putString("filterItemDescription", filterItemDescription)
+        b.putString("filterItemEan", filterItemEan)
+        b.putParcelable("filterItemCategory", filterItemCategory)
+        b.putString("filterItemCode", filterItemCode)
+        b.putBoolean("filterOnlyActive", filterOnlyActive)
+
+        b.putString("searchedText", searchedText)
+
+        b.putInt("currentPrintQty", currentPrintQty)
+        b.putLong("currentTemplateId", currentTemplateId)
     }
 
     private fun loadBundleValues(b: Bundle) {
@@ -211,6 +232,20 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         lastSelected = b.getParcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
+
+        // Filter Fragment
+        filterItemDescription = b.getString("filterItemDescription") ?: ""
+        filterItemEan = b.getString("filterItemEan") ?: ""
+        filterItemCategory = b.getParcelable("filterItemCategory")
+        filterItemCode = b.getString("filterItemCode") ?: ""
+        filterOnlyActive = b.getBoolean("filterOnlyActive")
+
+        // Search Text Fragment
+        searchedText = b.getString("searchedText") ?: ""
+
+        // Printer Fragment
+        currentPrintQty = b.getInt("currentPrintQty")
+        currentTemplateId = b.getLong("currentTemplateId")
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
@@ -235,6 +270,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        filterFragment = supportFragmentManager.findFragmentById(R.id.filterFragment) as SelectFilterFragment
+        printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
+        summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
+        searchTextFragment = supportFragmentManager.findFragmentById(R.id.searchTextFragment) as SearchTextFragment
+
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 currentScrollPosition =
@@ -245,11 +285,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         // Para el llenado en el onStart siguiente de onCreate
         fillRequired = true
 
-        filterFragment = supportFragmentManager.findFragmentById(R.id.filterFragment) as SelectFilterFragment
-        printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
-        summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
-        searchTextFragment = supportFragmentManager.findFragmentById(R.id.searchTextFragment) as SearchTextFragment
-
         if (savedInstanceState != null) {
             loadBundleValues(savedInstanceState)
         } else {
@@ -258,11 +293,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             if (extras != null) loadExtrasBundleValues(extras)
         }
 
-        binding.topAppbar.title = tempTitle
-
         setupFilterFragment()
         setupSearchTextFragment()
         setupPrintLabelFragment()
+
+        binding.topAppbar.title = tempTitle
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
         binding.swipeRefreshItem.setColorSchemeResources(
@@ -296,10 +331,16 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private fun setupPrintLabelFragment() {
         binding.printFragment.visibility = View.VISIBLE
+
+        if (currentTemplateId == 0L) {
+            currentTemplateId = settingViewModel.defaultItemTemplateId
+        }
+
         printLabelFragment =
             PrintLabelFragment.Builder()
                 .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.item.id))
-                .setTemplateId(settingViewModel.defaultItemTemplateId)
+                .setTemplateId(currentTemplateId)
+                .setQty(currentPrintQty)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
     }
@@ -309,6 +350,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             SearchTextFragment.Builder()
                 .focusChangedCallback(this)
                 .searchTextChangedCallback(this)
+                .setSearchText(searchedText)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.searchTextFragment, searchTextFragment).commit()
     }
@@ -321,6 +363,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 .searchByItemDescription(sv.itemSearchByItemDescription, sr.itemSearchByItemDescription)
                 .searchByItemEan(sv.itemSearchByItemEan, sr.itemSearchByItemEan)
                 .searchByCategory(sv.itemSearchByCategory, sr.itemSearchByCategory)
+                .itemDescription(filterItemDescription)
+                .itemEan(filterItemEan)
+                .itemCategory(filterItemCategory)
+                .itemCode(filterItemCode)
+                .onlyActive(filterOnlyActive)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
@@ -332,11 +379,13 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         itemCategory: ItemCategory?,
         onlyActive: Boolean
     ) {
-        closeKeyboard(this)
-        thread {
-            checkedIdArray.clear()
-            getItems()
-        }
+        filterItemDescription = description
+        filterItemEan = ean
+        filterItemCategory = itemCategory
+        filterItemCode = code
+        filterOnlyActive = onlyActive
+
+        Handler(Looper.getMainLooper()).postDelayed({ getItems() }, 200)
     }
 
     // region Inset animation
@@ -588,7 +637,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private fun refreshTextViews() {
         runOnUiThread {
             if (panelTopIsExpanded) printLabelFragment.refreshViews()
-            if (panelBottomIsExpanded) filterFragment.refreshViews()
+            if (panelBottomIsExpanded ||
+                resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT
+            )
+                filterFragment.refreshViews()
         }
     }
 
@@ -617,12 +669,15 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     private fun getItems() {
+        // Limpiamos los ítems marcados
+        checkedIdArray.clear()
+
         val itemEan = filterFragment.itemEan.trim()
         val itemDescription = filterFragment.description.trim()
         val itemCategory = filterFragment.itemCategory
 
         if (itemEan.isEmpty() && itemDescription.isEmpty() && itemCategory == null) {
-            showProgressBar(false)
+            fillAdapter(arrayListOf())
             return
         }
 
@@ -633,8 +688,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 description = itemDescription,
                 itemCategoryId = itemCategory?.itemCategoryId
             ) {
-                if (it.any()) fillAdapter(it)
-                showProgressBar(false)
+                fillAdapter(it)
             }
         } catch (ex: java.lang.Exception) {
             ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
@@ -645,11 +699,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private fun fillAdapter(t: ArrayList<Item>) {
         showProgressBar(true)
 
-        if (!t.any()) {
-            checkedIdArray.clear()
-            getItems()
-            return
-        }
         completeList = t
 
         runOnUiThread {
@@ -668,7 +717,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                     .multiSelect(multiSelect)
                     .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
                     .showImages(`val` = showImages, listener = { showImages = it })
-                    .filterOptions(FilterOptions(searchTextFragment.searchText))
+                    .filterOptions(FilterOptions(searchedText))
                     .checkedChangedListener(this)
                     .dataSetChangedListener(this)
                     .addPhotoRequiredListener(this)
@@ -730,7 +779,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun onSearchTextChanged(searchText: String) {
-        adapter?.refreshFilter(FilterOptions(searchText))
+        searchedText = searchText
+        runOnUiThread {
+            adapter?.refreshFilter(FilterOptions(searchedText))
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -954,14 +1006,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
-        runOnUiThread {
-            summaryFragment
-                .totalChecked(countChecked)
-                .fill()
-        }
-    }
-
     private fun onCheckCodeEnded(it: CheckItemCode.CheckCodeEnded) {
         JotterListener.lockScanner(this, false)
 
@@ -981,8 +1025,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {
-        val templateId = template?.templateId ?: return
-        settingViewModel.defaultItemTemplateId = templateId
+        currentPrintQty = qty ?: 1
+        currentTemplateId = template?.templateId ?: return
+
+        settingViewModel.defaultItemTemplateId = currentTemplateId
     }
 
     override fun onPrintRequested(printer: String, qty: Int) {
@@ -1012,15 +1058,24 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
+    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
+        fillSummaryFragment()
+    }
+
     override fun onDataSetChanged() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            fillSummaryFragment()
+        }, 100)
+    }
+
+    private fun fillSummaryFragment() {
         runOnUiThread {
-            Handler(Looper.getMainLooper()).postDelayed({
-                summaryFragment
-                    .multiSelect(multiSelect)
-                    .totalVisible(adapter?.totalVisible() ?: 0)
-                    .totalChecked(countChecked)
-                    .fill()
-            }, 100)
+            summaryFragment
+                .firstLabel(getString(R.string.total))
+                .first(adapter?.totalVisible() ?: 0)
+                .secondLabel(getString(R.string.total_count))
+                .second(countChecked)
+                .fill()
         }
     }
 

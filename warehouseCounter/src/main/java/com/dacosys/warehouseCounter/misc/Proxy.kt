@@ -17,7 +17,6 @@ import java.lang.ref.WeakReference
 
 class Proxy {
     companion object {
-        // region PROXY THINGS
         private var avoidSetupProxyDialog = false
 
         interface TaskSetupProxyEnded {

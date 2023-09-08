@@ -38,6 +38,8 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sync
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeJsonToFile
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeToFile
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
@@ -54,7 +56,6 @@ import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.DATE_FORMAT
 import com.dacosys.warehouseCounter.misc.Statics.Companion.isDebuggable
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
-import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
@@ -87,6 +88,7 @@ import java.io.UnsupportedEncodingException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.concurrent.thread
+import kotlin.io.path.Path
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequest as OrderRequestRoom
 
 class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFragment.ButtonClickedListener {
@@ -100,13 +102,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         if (orders.isNotEmpty() && settingViewModel.autoSend) {
             try {
                 thread {
-
                     CreateOrder(
                         payload = orders,
                         onEvent = { showSnackBar(it.text, it.snackBarType) },
                         onFinish = { successFiles ->
-
-                            /** We delete the files of the orders sent */
+                            if (successFiles.isEmpty()) return@CreateOrder
                             /** We delete the files of the orders sent */
                             OrderRequest.removeCountFiles(
                                 successFiles = successFiles,
@@ -318,121 +318,43 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private fun clickButton(clickedButton: Button) {
         when (MainButton.getById(clickedButton.tag.toString().toLong())) {
             MainButton.NewCount -> {
-                if (rejectNewInstances) return
-                rejectNewInstances = true
-
-                val intent = Intent(context, NewCountActivity::class.java)
-                intent.putExtra(NewCountActivity.ARG_TITLE, getString(R.string.new_count))
-                resultForNewCount.launch(intent)
+                launchNewCountActivity()
             }
 
             MainButton.PendingCounts -> {
-                if (rejectNewInstances) return
-                rejectNewInstances = true
-                JotterListener.lockScanner(this, true)
-
-                val intent = Intent(context, InboxActivity::class.java)
-                intent.putExtra(InboxActivity.ARG_TITLE, getString(R.string.pending_counts))
-                resultForPendingCount.launch(intent)
+                launchInboxActivity()
             }
 
             MainButton.CompletedCounts -> {
-                if (rejectNewInstances) return
-                rejectNewInstances = true
-
-                val intent = Intent(context, OutboxActivity::class.java)
-                intent.putExtra(OutboxActivity.ARG_TITLE, getString(R.string.completed_counts))
-                startActivity(intent)
+                launchOutboxActivity()
             }
 
             MainButton.CodeRead -> {
-                if (rejectNewInstances) return
-                rejectNewInstances = true
-
-                val intent = Intent(context, CodeCheckActivity::class.java)
-                intent.putExtra(CodeCheckActivity.ARG_TITLE, getString(R.string.code_read))
-                intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                startActivity(intent)
+                launchCodeReadActivity()
             }
 
             MainButton.LinkItemCodes -> {
-                if (rejectNewInstances) return
-                rejectNewInstances = true
-
-                try {
-                    val intent = Intent(context, LinkCodeActivity::class.java)
-                    intent.putExtra(LinkCodeActivity.ARG_TITLE, getString(R.string.link_code))
-                    startActivity(intent)
-                } catch (ex: Exception) {
-                    showSnackBar("Error:" + ex.message, ERROR)
-                }
+                launchLinkCodeActivity()
             }
 
             MainButton.PtlOrder -> {
-                if (rejectNewInstances) return
-                rejectNewInstances = true
-
-                startNewPtlOrderActivity()
+                launchNewPtlOrderActivity()
             }
 
             MainButton.PrintLabels -> {
-                if (rejectNewInstances) return
-                rejectNewInstances = true
-                JotterListener.lockScanner(this, true)
-
-                try {
-                    val intent = Intent(baseContext, PrintLabelActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    startActivity(intent)
-                } catch (ex: Exception) {
-                    showSnackBar("Error:" + ex.message, ERROR)
-                }
+                launchPrintLabelsActivity()
             }
 
             MainButton.OrderLocationLabel -> {
-                if (rejectNewInstances) return
-                rejectNewInstances = true
-                JotterListener.lockScanner(this, true)
-
-                try {
-                    val intent = Intent(context, OrderLocationSelectActivity::class.java)
-                    intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.order_location))
-                    intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, true)
-                    intent.putExtra(OrderLocationSelectActivity.ARG_SHOW_SELECT_BUTTON, false)
-                    startActivity(intent)
-                } catch (ex: Exception) {
-                    showSnackBar("Error:" + ex.message, ERROR)
-                }
+                launchOrderLocationLabelActivity()
             }
 
             MainButton.MoveOrder -> {
-                if (rejectNewInstances) return
-                rejectNewInstances = true
-                JotterListener.lockScanner(this, true)
-
-                try {
-                    val intent = Intent(context, OrderMoveActivity::class.java)
-                    intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.move_order))
-                    intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, false)
-                    startActivity(intent)
-                } catch (ex: Exception) {
-                    showSnackBar("Error:" + ex.message, ERROR)
-                }
+                launchMoveOrderActivity()
             }
 
             MainButton.PackUnpackOrder -> {
-                if (rejectNewInstances) return
-                rejectNewInstances = true
-                JotterListener.lockScanner(this, true)
-
-                try {
-                    val intent = Intent(context, OrderPackUnpackActivity::class.java)
-                    intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.pack_unpack))
-                    intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, false)
-                    resultForUnpackOrder.launch(intent)
-                } catch (ex: Exception) {
-                    showSnackBar("Error:" + ex.message, ERROR)
-                }
+                launchPackUnpackOrderActivity()
             }
 
             MainButton.Configuration -> {
@@ -440,6 +362,127 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             }
         }
     }
+
+    private fun launchPackUnpackOrderActivity() {
+        if (rejectNewInstances) return
+        rejectNewInstances = true
+        JotterListener.lockScanner(this, true)
+
+        val intent = Intent(context, OrderPackUnpackActivity::class.java)
+        intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.pack_unpack))
+        intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, false)
+        resultForUnpackOrder.launch(intent)
+    }
+
+    private fun launchMoveOrderActivity() {
+        if (rejectNewInstances) return
+        rejectNewInstances = true
+        JotterListener.lockScanner(this, true)
+
+        val intent = Intent(context, OrderMoveActivity::class.java)
+        intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.move_order))
+        intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, false)
+        startActivity(intent)
+    }
+
+    private fun launchOrderLocationLabelActivity() {
+        if (rejectNewInstances) return
+        rejectNewInstances = true
+        JotterListener.lockScanner(this, true)
+
+        val intent = Intent(context, OrderLocationSelectActivity::class.java)
+        intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.order_location))
+        intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, true)
+        intent.putExtra(OrderLocationSelectActivity.ARG_SHOW_SELECT_BUTTON, false)
+        startActivity(intent)
+    }
+
+    private fun launchPrintLabelsActivity() {
+        if (rejectNewInstances) return
+        rejectNewInstances = true
+        JotterListener.lockScanner(this, true)
+
+        val intent = Intent(baseContext, PrintLabelActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        startActivity(intent)
+    }
+
+    private fun launchLinkCodeActivity() {
+        if (rejectNewInstances) return
+        rejectNewInstances = true
+
+        val intent = Intent(context, LinkCodeActivity::class.java)
+        intent.putExtra(LinkCodeActivity.ARG_TITLE, getString(R.string.link_code))
+        startActivity(intent)
+    }
+
+    private fun launchCodeReadActivity() {
+        if (rejectNewInstances) return
+        rejectNewInstances = true
+
+        val intent = Intent(context, CodeCheckActivity::class.java)
+        intent.putExtra(CodeCheckActivity.ARG_TITLE, getString(R.string.code_read))
+        intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        startActivity(intent)
+    }
+
+    private fun launchNewCountActivity() {
+        if (rejectNewInstances) return
+        rejectNewInstances = true
+
+        val intent = Intent(context, NewCountActivity::class.java)
+        intent.putExtra(NewCountActivity.ARG_TITLE, getString(R.string.new_count))
+        resultForNewCount.launch(intent)
+    }
+
+    private fun launchOutboxActivity() {
+        if (rejectNewInstances) return
+        rejectNewInstances = true
+
+        val intent = Intent(context, OutboxActivity::class.java)
+        intent.putExtra(OutboxActivity.ARG_TITLE, getString(R.string.completed_counts))
+        resultForCompletedCount.launch(intent)
+    }
+
+    private fun launchInboxActivity() {
+        if (rejectNewInstances) return
+        rejectNewInstances = true
+        JotterListener.lockScanner(this, true)
+
+        val intent = Intent(context, InboxActivity::class.java)
+        intent.putExtra(InboxActivity.ARG_TITLE, getString(R.string.pending_counts))
+        resultForPendingCount.launch(intent)
+    }
+
+    private fun launchNewPtlOrderActivity() {
+        if (rejectNewInstances) return
+        rejectNewInstances = true
+
+        val intent = Intent(context, NewPtlOrdersActivity::class.java)
+        intent.putExtra(NewPtlOrdersActivity.ARG_TITLE, getString(R.string.setup_new_ptl))
+        resultForNewPtl.launch(intent)
+    }
+
+    private val resultForCompletedCount =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            val data = it?.data
+            try {
+                if (it?.resultCode == RESULT_OK && data != null) {
+                    val filenames: ArrayList<String> =
+                        data.getStringArrayListExtra(OutboxActivity.ARG_ORDER_REQUEST_FILENAMES)
+                            ?: return@registerForActivityResult
+
+                    if (filenames.isEmpty()) return@registerForActivityResult
+
+                    addOrderRequestFromJson(filenames[0])
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            } finally {
+                rejectNewInstances = false
+            }
+        }
 
     private val resultForUnpackOrder = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         val data = it?.data
@@ -465,12 +508,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             ex.printStackTrace()
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         }
-    }
-
-    private fun startNewPtlOrderActivity() {
-        val intent = Intent(context, NewPtlOrdersActivity::class.java)
-        intent.putExtra(NewPtlOrdersActivity.ARG_TITLE, getString(R.string.setup_new_ptl))
-        resultForNewPtl.launch(intent)
     }
 
     private val resultForNewPtl =
@@ -509,7 +546,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private val resultForPtlFinish =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             try {
-                startNewPtlOrderActivity()
+                launchNewPtlOrderActivity()
             } catch (ex: Exception) {
                 ex.printStackTrace()
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex)
@@ -602,6 +639,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             orderRequest = orderRequest,
             onResult = { newId ->
                 if (newId != null) {
+                    orderRequest.orderRequestId = newId
                     OrderRequestCoroutines.update(
                         orderRequest = orderRequest.toKtor,
                         contents = order.contentToKtor(),
@@ -626,35 +664,13 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val orArray: ArrayList<OrderRequest> =
-                        data.getParcelableArrayListExtra(InboxActivity.ARG_ORDER_REQUESTS)
+                    val filenames: ArrayList<String> =
+                        data.getStringArrayListExtra(InboxActivity.ARG_ORDER_REQUEST_FILENAMES)
                             ?: return@registerForActivityResult
 
-                    if (orArray.isEmpty()) return@registerForActivityResult
+                    if (filenames.isEmpty()) return@registerForActivityResult
 
-                    try {
-                        val or = orArray[0]
-                        showSnackBar(
-                            String.format(
-                                getString(R.string.requested_count_state_),
-                                if (equals(or.description, "")) getString(R.string.no_description)
-                                else or.description,
-                                if (or.completed == true) getString(R.string.completed) else getString(
-                                    R.string.pending
-                                )
-                            ), INFO
-                        )
-
-                        val intent = Intent(context, OrderRequestContentActivity::class.java)
-                        intent.putExtra(OrderRequestContentActivity.ARG_ID, or.orderRequestId)
-                        intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
-                        startActivity(intent)
-                    } catch (ex: Exception) {
-                        val res =
-                            getString(R.string.an_error_occurred_while_trying_to_load_the_order)
-                        showSnackBar(res, ERROR)
-                        android.util.Log.e(this::class.java.simpleName, res)
-                    }
+                    addOrderRequestFromJson(filenames[0])
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -663,6 +679,51 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 rejectNewInstances = false
             }
         }
+
+    private fun addOrderRequestFromJson(filename: String) {
+        val order = OrderRequest(Path(Statics.completePendingPath, filename).toString())
+        val completeList = ArrayList(order.contents)
+
+        val orderRequest = OrderRequestRoom(
+            clientId = order.clientId ?: 0,
+            creationDate = order.creationDate.toString(),
+            description = order.description,
+            orderTypeDescription = OrderRequestType.packaging.description,
+            orderTypeId = OrderRequestType.packaging.id.toInt(),
+            resultAllowDiff = if (order.resultAllowDiff == true) 1 else 0,
+            resultAllowMod = if (order.resultAllowMod == true) 1 else 0,
+            resultDiffProduct = if (order.resultDiffProduct == true) 1 else 0,
+            resultDiffQty = if (order.resultDiffQty == true) 1 else 0,
+            startDate = order.startDate.toString(),
+            userId = Statics.currentUserId,
+        )
+
+        OrderRequestCoroutines.add(
+            orderRequest = orderRequest,
+            onResult = { newId ->
+                if (newId != null) {
+                    orderRequest.orderRequestId = newId
+                    OrderRequestCoroutines.update(
+                        orderRequest = orderRequest.toKtor,
+                        contents = completeList,
+                        onResult = {
+                            try {
+                                val intent = Intent(context, OrderRequestContentActivity::class.java)
+                                intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
+                                intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
+                                startActivity(intent)
+                            } catch (ex: Exception) {
+                                val res =
+                                    getString(R.string.an_error_occurred_while_trying_to_load_the_order)
+                                showSnackBar(res, ERROR)
+                                android.util.Log.e(this::class.java.simpleName, res)
+                            }
+                        })
+                } else {
+                    showSnackBar(getString(R.string.error_when_creating_the_order), ERROR)
+                }
+            })
+    }
 
     private fun configApp() {
         val realPass = settingViewModel.confPassword
@@ -819,6 +880,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         super.onStart()
 
         sync.onCompletedOrders { syncVm.setSyncCompleted(it) }
+        sync.onNewOrders { syncVm.setSyncNew(it) }
         sync.onTimerTick { syncVm.setSyncTimer(it) }
     }
 
@@ -1128,7 +1190,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             android.util.Log.i(this::class.java.simpleName, orJson)
             val orFileName = origOrder.filename.substringAfterLast('/')
 
-            error = !Statics.writeJsonToFile(
+            error = !writeJsonToFile(
                 v = binding.root,
                 filename = orFileName,
                 value = orJson,

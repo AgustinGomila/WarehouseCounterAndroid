@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -29,6 +30,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeToFile
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
@@ -37,7 +39,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.CreateOrder
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.databinding.OutboxActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
+import com.dacosys.warehouseCounter.misc.Statics.Companion.completeCompletedPath
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderRequestAdapter
@@ -48,6 +50,7 @@ import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.io.File
 import java.io.UnsupportedEncodingException
 import kotlin.concurrent.thread
+import kotlin.io.path.Path
 
 class OutboxActivity : AppCompatActivity() {
 
@@ -167,7 +170,7 @@ class OutboxActivity : AppCompatActivity() {
         binding.detailButton.setOnClickListener { showDetail() }
         binding.removeResetButton.setOnClickListener { removeResetDialog() }
 
-        // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
+        /* Oculta el teclado en pantalla cuando pierden el foco los controles que lo necesitan */
         Screen.setupUI(binding.root, this)
     }
 
@@ -247,16 +250,17 @@ class OutboxActivity : AppCompatActivity() {
             paddingBottom
         )
 
-        android.util.Log.d(javaClass.simpleName, "IME Size: ${imeInsets.bottom}")
+        Log.d(javaClass.simpleName, "IME Size: ${imeInsets.bottom}")
     }
     // endregion
 
     private fun showDetail() {
-        val id = currentItem?.orderRequestId ?: return
+        val filename = currentItem?.filename ?: return
+        val completePath = Path(completeCompletedPath, filename).toString()
 
         val intent = Intent(context, OrderRequestDetailActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra(OrderRequestDetailActivity.ARG_ID, id)
+        intent.putExtra(OrderRequestDetailActivity.ARG_FILENAME, completePath)
         startActivity(intent)
     }
 
@@ -291,13 +295,12 @@ class OutboxActivity : AppCompatActivity() {
     private fun sendSelected(orArray: ArrayList<OrderRequest>) {
         try {
             thread {
-
                 CreateOrder(
                     payload = orArray,
                     onEvent = { showSnackBar(it.text, it.snackBarType) },
                     onFinish = { successFiles ->
+                        if (successFiles.isEmpty()) return@CreateOrder
 
-                        /** We delete the files of the orders sent */
                         /** We delete the files of the orders sent */
                         OrderRequest.removeCountFiles(
                             successFiles = successFiles,
@@ -306,15 +309,11 @@ class OutboxActivity : AppCompatActivity() {
 
                         /** We remove the reference to the order in room database,
                          * and we fill the list adapter at the end. */
-
-                        /** We remove the reference to the order in room database,
-                         * and we fill the list adapter at the end. */
                         OrderRequestCoroutines.removeById(
                             idList = orArray.mapNotNull { orderRequest -> orderRequest.orderRequestId },
                             onResult = {
                                 fillAdapter(ArrayList())
                             })
-
                     }).execute()
             }
         } catch (ex: Exception) {
@@ -375,21 +374,15 @@ class OutboxActivity : AppCompatActivity() {
 
     private fun removeSelected(toRemove: ArrayList<OrderRequest>) {
         var isOk = true
-
-        val currentDir = Statics.getCompletedPath()
         for (i in toRemove) {
-            val filePath = currentDir.absolutePath + File.separator + i.filename
-            val fl = File(filePath)
-            if (!fl.delete()) {
-                isOk = false
-                break
-            }
+            val filePath = Path(completeCompletedPath, i.filename)
+            val fl = File(filePath.toString())
+            isOk = !fl.delete()
+            if (!isOk) break
         }
 
         if (!isOk) {
-            showSnackBar(
-                getString(R.string.an_error_occurred_while_trying_to_delete_the_count), ERROR
-            )
+            showSnackBar(getString(R.string.an_error_occurred_while_trying_to_delete_the_count), ERROR)
         }
 
         thread { fillAdapter(ArrayList()) }
@@ -420,14 +413,15 @@ class OutboxActivity : AppCompatActivity() {
 
             try {
                 orJson = json.encodeToString(OrderRequest.serializer(), orderRequest)
-                orderRequest.filename.substringAfterLast('/')
+                orFileName = orderRequest.filename.substringAfterLast('/')
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
                     PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
                         this, Manifest.permission.WRITE_EXTERNAL_STORAGE
                     )
                 ) {
-                    write(orFileName, orJson)
+                    isOk = write(orFileName, orJson)
+                    if (!isOk) break
                 } else {
                     requestPermissions(
                         arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
@@ -436,33 +430,30 @@ class OutboxActivity : AppCompatActivity() {
                 }
             } catch (e: UnsupportedEncodingException) {
                 e.printStackTrace()
-                android.util.Log.e(this::class.java.simpleName, e.message ?: "")
-            }
-
-            val fl = File(orderRequest.filename)
-            if (!fl.delete()) {
-                isOk = false
-                break
+                Log.e(this::class.java.simpleName, e.message ?: "")
             }
         }
 
-        if (!isOk) {
-            showSnackBar(
-                getString(R.string.an_error_occurred_while_trying_to_delete_the_count), ERROR
-            )
-        }
-
-        thread { fillAdapter(ArrayList()) }
-    }
-
-    private fun write(filename: String, value: String) {
-        val path = Statics.getPendingPath()
-        if (writeToFile(fileName = filename, data = value, directory = path)) {
+        if (isOk) {
+            val data = Intent()
+            data.putStringArrayListExtra(ARG_ORDER_REQUEST_FILENAMES, ArrayList(toReset.map { it.filename }))
+            setResult(RESULT_OK, data)
             finish()
         } else {
-            val res = getString(R.string.an_error_occurred_while_trying_to_save_the_count)
+            val res = getString(R.string.an_error_occurred_while_trying_to_reset_the_count)
             showSnackBar(res, ERROR)
-            android.util.Log.e(this::class.java.simpleName, res)
+            Log.e(this::class.java.simpleName, res)
+        }
+    }
+
+    private fun write(filename: String, value: String): Boolean {
+        val path = Statics.getPendingPath()
+        return if (writeToFile(fileName = filename, data = value, directory = path)) {
+            val completedPath = Path(completeCompletedPath, filename)
+            val fl = File(completedPath.toString())
+            fl.delete()
+        } else {
+            false
         }
     }
 
@@ -538,12 +529,8 @@ class OutboxActivity : AppCompatActivity() {
         val set = settingViewModel.orderRequestVisibleStatus
         for (i in set) {
             if (i.trim().isEmpty()) continue
-            val status = OrderRequestType.getById(i.toLong())
-            if (status != OrderRequestType.notDefined) {
-                visibleStatusArray.add(status)
-            }
+            visibleStatusArray.add(OrderRequestType.getById(i.toLong()))
         }
-
         return visibleStatusArray
     }
 
@@ -556,12 +543,17 @@ class OutboxActivity : AppCompatActivity() {
 
         // Opciones de visibilidad del menú
         for (i in OrderRequestType.getAll()) {
-            menu.add(0, i.id.toInt(), i.id.toInt(), i.description)
-                .setChecked(getPrefVisibleStatus().contains(i)).isCheckable = true
+            menu.add(
+                0,
+                i.id.toInt(),
+                i.id.toInt(),
+                i.description
+            ).setChecked(getPrefVisibleStatus().contains(i)).isCheckable = true
         }
 
         //region Icon colors
         val colors: ArrayList<Int> = ArrayList()
+        colors.add(getColor(R.color.status_default))
         colors.add(getColor(R.color.status_prepare_order))
         colors.add(getColor(R.color.status_stock_audit_from_device))
         colors.add(getColor(R.color.status_stock_audit))
@@ -574,10 +566,10 @@ class OutboxActivity : AppCompatActivity() {
             val icon = ResourcesCompat.getDrawable(context.resources, R.drawable.ic_lens, null)
             icon?.mutate()?.colorFilter =
                 BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                    colors[i.id.toInt() - 1], BlendModeCompat.SRC_IN
+                    colors[i.id.toInt()], BlendModeCompat.SRC_IN
                 )
 
-            val item = menu.getItem(i.id.toInt() - 1)
+            val item = menu.getItem(i.id.toInt())
             item.icon = icon
 
             // Keep the popup menu open
@@ -612,9 +604,6 @@ class OutboxActivity : AppCompatActivity() {
         }
 
         val it = OrderRequestType.getById(id.toLong())
-        if (it == OrderRequestType.notDefined) {
-            return false
-        }
 
         item.isChecked = !item.isChecked
         var visibleStatus = adapter?.visibleStatus ?: ArrayList()
@@ -646,9 +635,9 @@ class OutboxActivity : AppCompatActivity() {
                     showSnackBar(
                         getString(R.string.cannot_write_to_external_storage), ERROR
                     )
-                } else {
-                    write(orFileName, orJson)
+                    return
                 }
+                write(orFileName, orJson)
             }
         }
     }
@@ -663,6 +652,7 @@ class OutboxActivity : AppCompatActivity() {
     companion object {
         const val ARG_TITLE = "title"
         const val ARG_MULTISELECT = "multiSelect"
+        const val ARG_ORDER_REQUEST_FILENAMES = "filenames"
 
         private const val REQUEST_EXTERNAL_STORAGE = 5001
 

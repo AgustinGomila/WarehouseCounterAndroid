@@ -286,7 +286,6 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
                 }
             }
 
-            // Notificamos al Listener superior
             dataSetChangedListener?.onDataSetChanged()
             return@OnLongClickListener true
         }
@@ -418,8 +417,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
 
     fun add(item: OrderLocation, position: Int) {
         fullList.add(position, item)
-        submitList(fullList) {
-            // Notificamos al Listener superior
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
             selectItem(position)
         }
@@ -430,8 +428,7 @@ class OrderLocationRecyclerAdapter private constructor(builder: Builder) :
         checkedIdArray.remove(id)
 
         fullList.removeAt(position)
-        submitList(fullList) {
-            /** Notificamos al Listener superior */
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
         }
     }

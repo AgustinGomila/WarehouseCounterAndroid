@@ -61,7 +61,6 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import java.util.*
-import kotlin.concurrent.thread
 
 class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
@@ -144,14 +143,26 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
+    private var filterCode: String = ""
+    private var filterDescription: String = ""
+    private var filterEan: String = ""
+    private var filterItemCategory: ItemCategory? = null
+    private var filterOrderId: String = ""
+    private var filterOrderExternalId: String = ""
+    private var filterWarehouse: Warehouse? = null
+    private var filterWarehouseArea: WarehouseArea? = null
+    private var filterRack: Rack? = null
+    private var filterOnlyActive: Boolean = true
+
+    private var searchedText: String = ""
+
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         saveBundleValues(savedInstanceState)
     }
 
     private fun saveBundleValues(b: Bundle) {
-        b.putString(ARG_TITLE, title.toString())
-
+        b.putString(ARG_TITLE, tempTitle)
         b.putBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
         b.putBoolean(ARG_MULTI_SELECT, multiSelect)
         b.putBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
@@ -165,6 +176,19 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             b.putLongArray("checkedIdArray", allChecked.map { it.uniqueId }.toLongArray())
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
+
+        b.putString("filterCode", filterCode)
+        b.putString("filterDescription", filterDescription)
+        b.putString("filterEan", filterEan)
+        b.putParcelable("filterItemCategory", filterItemCategory)
+        b.putString("filterOrderId", filterOrderId)
+        b.putString("filterOrderExternalId", filterOrderExternalId)
+        b.putParcelable("filterWarehouse", filterWarehouse)
+        b.putParcelable("filterWarehouseArea", filterWarehouseArea)
+        b.putParcelable("filterRack", filterRack)
+        b.putBoolean("filterOnlyActive", filterOnlyActive)
+
+        b.putString("searchedText", searchedText)
     }
 
     private fun loadBundleValues(b: Bundle) {
@@ -183,6 +207,19 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         lastSelected = b.getParcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
+
+        filterCode = b.getString("filterCode") ?: ""
+        filterDescription = b.getString("filterDescription") ?: ""
+        filterEan = b.getString("filterEan") ?: ""
+        filterItemCategory = b.getParcelable("filterItemCategory")
+        filterOrderId = b.getString("filterOrderId") ?: ""
+        filterOrderExternalId = b.getString("filterOrderExternalId") ?: ""
+        filterWarehouse = b.getParcelable("filterWarehouse")
+        filterWarehouseArea = b.getParcelable("filterWarehouseArea")
+        filterRack = b.getParcelable("filterRack")
+        filterOnlyActive = b.getBoolean("filterOnlyActive")
+
+        searchedText = b.getString("searchedText") ?: ""
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
@@ -266,6 +303,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             SearchTextFragment.Builder()
                 .focusChangedCallback(this)
                 .searchTextChangedCallback(this)
+                .setSearchText(searchedText)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.searchTextFragment, searchTextFragment).commit()
     }
@@ -280,30 +318,22 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                     sv.orderLocationSearchByItemDescription,
                     sr.orderLocationSearchByItemDescription
                 )
-                .searchByItemEan(
-                    sv.orderLocationSearchByItemEan,
-                    sr.orderLocationSearchByItemEan
-                )
-                .searchByOrderId(
-                    sv.orderLocationSearchByOrderId,
-                    sr.orderLocationSearchByOrderId
-                )
-                .searchByOrderExtId(
-                    sv.orderLocationSearchByOrderExtId,
-                    sr.orderLocationSearchByOrderExtId
-                )
-                .searchByWarehouse(
-                    sv.orderLocationSearchByWarehouse,
-                    sr.orderLocationSearchByWarehouse
-                )
-                .searchByArea(
-                    sv.orderLocationSearchByArea,
-                    sr.orderLocationSearchByArea
-                )
-                .searchByRack(
-                    sv.orderLocationSearchByRack,
-                    sr.orderLocationSearchByRack
-                )
+                .searchByItemEan(sv.orderLocationSearchByItemEan, sr.orderLocationSearchByItemEan)
+                .searchByOrderId(sv.orderLocationSearchByOrderId, sr.orderLocationSearchByOrderId)
+                .searchByOrderExtId(sv.orderLocationSearchByOrderExtId, sr.orderLocationSearchByOrderExtId)
+                .searchByWarehouse(sv.orderLocationSearchByWarehouse, sr.orderLocationSearchByWarehouse)
+                .searchByArea(sv.orderLocationSearchByArea, sr.orderLocationSearchByArea)
+                .searchByRack(sv.orderLocationSearchByRack, sr.orderLocationSearchByRack)
+                .itemCode(filterCode)
+                .itemDescription(filterDescription)
+                .itemEan(filterEan)
+                .itemCategory(filterItemCategory)
+                .orderId(filterOrderId)
+                .orderExternalId(filterOrderExternalId)
+                .warehouse(filterWarehouse)
+                .warehouseArea(filterWarehouseArea)
+                .rack(filterRack)
+                .onlyActive(filterOnlyActive)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
@@ -425,7 +455,10 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     override fun onSearchTextChanged(searchText: String) {
-        adapter?.refreshFilter(FilterOptions(searchText))
+        searchedText = searchText
+        runOnUiThread {
+            adapter?.refreshFilter(FilterOptions(searchedText))
+        }
     }
 
     private val requiredLayout: Int
@@ -544,7 +577,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
         val filter = filterFragment.getFilters()
         if (!filter.any()) {
-            showProgressBar(false)
+            fillAdapter(arrayListOf())
             return
         }
 
@@ -588,7 +621,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                     .checkedIdArray(checkedIdArray)
                     .multiSelect(multiSelect)
                     .showCheckBoxes(`val` = showCheckBoxes, callback = { showCheckBoxes = it })
-                    .filterOptions(FilterOptions(searchTextFragment.searchText))
+                    .filterOptions(FilterOptions(searchedText))
                     .checkedChangedListener(this)
                     .dataSetChangedListener(this)
                     .build()
@@ -842,16 +875,24 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         rack: Rack?,
         onlyActive: Boolean
     ) {
+        filterCode = code
+        filterDescription = description
+        filterEan = ean
+        filterItemCategory = itemCategory
+        filterOrderId = orderId
+        filterOrderExternalId = orderExternalId
+        filterWarehouse = warehouse
+        filterWarehouseArea = warehouseArea
+        filterRack = rack
+        filterOnlyActive = onlyActive
+
         Handler(Looper.getMainLooper()).postDelayed({
-            closeKeyboard(this)
-
-            panelIsExpanded = false
-            setPanels()
+            if (filterFragment.validFilters()) {
+                panelIsExpanded = false
+                setPanels()
+            }
         }, 100)
-
-        thread {
-            getItems()
-        }
+        Handler(Looper.getMainLooper()).postDelayed({ getItems() }, 200)
     }
 
     private fun enterCode() {
@@ -873,22 +914,23 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
-        runOnUiThread {
-            summaryFragment
-                .totalChecked(countChecked)
-                .fill()
-        }
+        fillSummaryFragment()
     }
 
     override fun onDataSetChanged() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            fillSummaryFragment()
+        }, 100)
+    }
+
+    private fun fillSummaryFragment() {
         runOnUiThread {
-            Handler(Looper.getMainLooper()).postDelayed({
-                summaryFragment
-                    .multiSelect(multiSelect)
-                    .totalVisible(adapter?.totalVisible() ?: 0)
-                    .totalChecked(countChecked)
-                    .fill()
-            }, 100)
+            summaryFragment
+                .firstLabel(getString(R.string.total))
+                .first(adapter?.totalVisible() ?: 0)
+                .secondLabel(getString(R.string.total_count))
+                .second(countChecked)
+                .fill()
         }
     }
 

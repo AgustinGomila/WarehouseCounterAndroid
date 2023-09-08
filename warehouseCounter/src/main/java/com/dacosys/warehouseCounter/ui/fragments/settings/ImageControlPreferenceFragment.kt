@@ -23,7 +23,7 @@ import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.bindPreferenceSummaryToValue
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 
@@ -229,6 +229,6 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
         if (requireActivity().isDestroyed || requireActivity().isFinishing) return
 
-        MakeText.makeText(requireView(), text, snackBarType)
+        makeText(requireView(), text, snackBarType)
     }
 }

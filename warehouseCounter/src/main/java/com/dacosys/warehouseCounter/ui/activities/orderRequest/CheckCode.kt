@@ -79,7 +79,7 @@ class CheckCode(
                     callback.invoke(
                         CheckCodeEnded(
                             orc = OrderRequestContent().apply {
-                                codeRead = code // TODO: Ver esto...
+                                codeRead = code
                                 itemId = itemObj.itemId
                                 itemDescription = itemObj.description
                                 ean = itemObj.ean
@@ -99,18 +99,16 @@ class CheckCode(
 
                 ItemCodeCoroutines.getByCode(code) { icList ->
                     itemCode = icList.firstOrNull()
-                    val itemId = itemCode?.itemId
-                    if (itemId == null) {
-                        callback.invoke(CheckCodeEnded(null, null))
-                        return@getByCode
-                    }
 
-                    // Buscar de nuevo dentro del adaptador del control
-                    for (x in 0 until count) {
-                        val item = list[x]
-                        if (item.itemId == itemId) {
-                            callback.invoke(CheckCodeEnded(item, itemCode))
-                            return@getByCode
+                    val tempItemId = itemCode?.itemId
+                    if (tempItemId != null) {
+                        // Buscar de nuevo dentro del adaptador del control
+                        for (x in 0 until count) {
+                            val item = list[x]
+                            if (item.itemId == tempItemId) {
+                                callback.invoke(CheckCodeEnded(item, itemCode))
+                                return@getByCode
+                            }
                         }
                     }
 
@@ -125,7 +123,8 @@ class CheckCode(
                                 callback.invoke(
                                     CheckCodeEnded(
                                         OrderRequestContent().apply {
-                                            this.itemId = item.itemId
+                                            codeRead = code
+                                            itemId = id
                                             itemDescription = item.description
                                             ean = item.ean
                                             price = item.price?.toDouble()

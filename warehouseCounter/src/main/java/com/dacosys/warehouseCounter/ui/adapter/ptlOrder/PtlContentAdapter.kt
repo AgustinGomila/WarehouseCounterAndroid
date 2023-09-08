@@ -377,7 +377,6 @@ class PtlContentAdapter private constructor(builder: Builder) :
                 }
             }
 
-            // Notificamos al Listener superior
             dataSetChangedListener?.onDataSetChanged()
             return@OnLongClickListener true
         }
@@ -511,8 +510,7 @@ class PtlContentAdapter private constructor(builder: Builder) :
 
     fun add(content: PtlContent, position: Int) {
         fullList.add(position, content)
-        submitList(fullList) {
-            // Notificamos al Listener superior
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
             selectItem(position)
         }
@@ -523,8 +521,7 @@ class PtlContentAdapter private constructor(builder: Builder) :
         checkedIdArray.remove(id)
 
         fullList.removeAt(position)
-        submitList(fullList) {
-            /** Notificamos al Listener superior */
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
         }
     }
@@ -547,16 +544,12 @@ class PtlContentAdapter private constructor(builder: Builder) :
 
         t.qtyCollected = qtyCollected
 
-        submitList(fullList) {
+        submitList(fullList).apply {
             notifyItemChanged(index)
 
-            // Mostrar un cartelito, si jode sacarlo.
             reportQtyCollectedChange(content)
 
-            // Notificamos al Listener superior
             dataSetChangedListener?.onDataSetChanged()
-
-            // Seleccionamos el ítem y hacemos scroll hasta él.
             selectItem(content, scrollToPos)
         }
     }

@@ -435,7 +435,6 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
                 }
             }
 
-            // Notificamos al Listener superior
             dataSetChangedListener?.onDataSetChanged()
             return@OnLongClickListener true
         }
@@ -559,8 +558,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
 
     fun add(item: Item, position: Int) {
         fullList.add(position, item)
-        submitList(fullList) {
-            // Notificamos al Listener superior
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
             selectItem(position)
         }
@@ -571,8 +569,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
         checkedIdArray.remove(id)
 
         fullList.removeAt(position)
-        submitList(fullList) {
-            /** Notificamos al Listener superior */
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
         }
     }
@@ -593,11 +590,8 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
         t.lotEnabled = item.lotEnabled
         t.itemCategoryStr = item.itemCategoryStr
 
-        submitList(fullList) {
-            // Notificamos al Listener superior
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
-
-            // Seleccionamos el ítem y hacemos scroll hasta él.
             selectItem(item, scrollToPos)
         }
     }

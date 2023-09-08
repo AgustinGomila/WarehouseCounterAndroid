@@ -10,7 +10,7 @@ buildscript {
         androidTargetSdk = 34
         androidMinSdk = 23
         zxingCore = 'com.google.zxing:core:3.4.1'
-        kTorVersion = '2.3.2'
+        kTorVersion = '2.3.4'
 
         // testing
         coreTestingVersion = '2.2.0'

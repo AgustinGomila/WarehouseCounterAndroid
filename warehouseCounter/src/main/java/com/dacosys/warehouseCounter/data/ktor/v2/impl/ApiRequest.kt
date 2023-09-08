@@ -28,6 +28,8 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.serialization.*
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonArray
@@ -64,6 +66,12 @@ class ApiRequest {
                     Either.Right(error(json.decodeFromString<ErrorResponse>(content)))
                 }
             }
+        } catch (e: JsonConvertException) {
+            Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.json_convertion_failed))))
+        } catch (e: SerializationException) {
+            Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.serialization_failed))))
+        } catch (e: NullPointerException) {
+            Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.null_error))))
         } catch (e: Exception) {
             Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.unknown_error))))
         }

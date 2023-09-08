@@ -78,7 +78,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     private var currentScrollPosition: Int = 0
     private var firstVisiblePos: Int? = null
 
-    private var searchText: String = ""
+    private var searchedText: String = ""
 
     // region Variables para LoadOnDemand
     private var completeList: ArrayList<PtlOrder> = ArrayList()
@@ -99,8 +99,8 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     }
 
     private fun saveBundleValues(b: Bundle) {
-        b.putString(ARG_TITLE, title.toString())
-        b.putBoolean("multiSelect", multiSelect)
+        b.putString(ARG_TITLE, tempTitle)
+        b.putBoolean(ARG_MULTI_SELECT, multiSelect)
 
         if (adapter != null) {
             b.putParcelable("lastSelected", (adapter ?: return).currentPtlOrder())
@@ -110,7 +110,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
-        b.putString("searchText", searchText)
+        b.putString("searchText", searchedText)
     }
 
 
@@ -120,7 +120,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
         multiSelect = b.getBoolean("multiSelect", multiSelect)
 
-        searchText = b.getString("searchText") ?: ""
+        searchedText = b.getString("searchText") ?: ""
 
         // Adapter
         checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
@@ -190,11 +190,11 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                 s: CharSequence, start: Int,
                 before: Int, count: Int,
             ) {
-                searchText = s.toString()
-                adapter?.refreshFilter(FilterOptions(searchText))
+                searchedText = s.toString()
+                adapter?.refreshFilter(FilterOptions(searchedText))
             }
         })
-        binding.searchEditText.setText(searchText, TextView.BufferType.EDITABLE)
+        binding.searchEditText.setText(searchedText, TextView.BufferType.EDITABLE)
         binding.searchEditText.setOnKeyListener { _, keyCode, event ->
             if (event.action == KeyEvent.ACTION_DOWN) {
                 when (keyCode) {
@@ -363,7 +363,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                     .checkedIdArray(checkedIdArray)
                     .multiSelect(multiSelect)
                     .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
-                    .filterOptions(FilterOptions(searchText))
+                    .filterOptions(FilterOptions(searchedText))
                     .checkedChangedListener(this)
                     .dataSetChangedListener(this)
                     .build()
@@ -387,41 +387,6 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                 ErrorLog.writeLog(this, this::class.java.simpleName, ex)
             } finally {
                 showProgressBar(false)
-            }
-        }
-    }
-
-    private fun fillSummaryRow() {
-        Log.d(this::class.java.simpleName, "fillSummaryRow")
-        runOnUiThread {
-            if (multiSelect) {
-                binding.totalLabelTextView.text = context.getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context.getString(R.string.cant)
-                binding.selectedLabelTextView.text = context.getString(R.string.checked)
-
-                if (adapter != null) {
-                    binding.totalTextView.text = adapter?.itemCount.toString()
-                    binding.qtyReqTextView.text = "0"
-                    binding.selectedTextView.text = adapter?.countChecked().toString()
-                }
-            } else {
-                binding.totalLabelTextView.text = context.getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
-                binding.selectedLabelTextView.text = context.getString(R.string.orders)
-
-                if (adapter != null) {
-                    val cont = 0
-                    val t = adapter?.itemCount ?: 0
-                    binding.totalTextView.text = t.toString()
-                    binding.qtyReqTextView.text = cont.toString()
-                    binding.selectedTextView.text = (t - cont).toString()
-                }
-            }
-
-            if (adapter == null) {
-                binding.totalTextView.text = 0.toString()
-                binding.qtyReqTextView.text = 0.toString()
-                binding.selectedTextView.text = 0.toString()
             }
         }
     }
@@ -567,15 +532,48 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     }
 
     override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
-        runOnUiThread {
-            binding.selectedTextView.text = adapter?.countChecked().toString()
-        }
+        fillSummaryRow()
     }
 
     override fun onDataSetChanged() {
         Handler(Looper.getMainLooper()).postDelayed({
             fillSummaryRow()
         }, 100)
+    }
+
+    private fun fillSummaryRow() {
+        Log.d(this::class.java.simpleName, "fillSummaryRow")
+        runOnUiThread {
+            if (multiSelect) {
+                binding.totalLabelTextView.text = context.getString(R.string.total)
+                binding.qtyReqLabelTextView.text = context.getString(R.string.cant)
+                binding.selectedLabelTextView.text = context.getString(R.string.checked)
+
+                if (adapter != null) {
+                    binding.totalTextView.text = adapter?.itemCount.toString()
+                    binding.qtyReqTextView.text = "0"
+                    binding.selectedTextView.text = adapter?.countChecked().toString()
+                }
+            } else {
+                binding.totalLabelTextView.text = context.getString(R.string.total)
+                binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
+                binding.selectedLabelTextView.text = context.getString(R.string.orders)
+
+                if (adapter != null) {
+                    val cont = 0
+                    val t = adapter?.itemCount ?: 0
+                    binding.totalTextView.text = t.toString()
+                    binding.qtyReqTextView.text = cont.toString()
+                    binding.selectedTextView.text = (t - cont).toString()
+                }
+            }
+
+            if (adapter == null) {
+                binding.totalTextView.text = 0.toString()
+                binding.qtyReqTextView.text = 0.toString()
+                binding.selectedTextView.text = 0.toString()
+            }
+        }
     }
 
     // region READERS Reception
@@ -597,6 +595,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
     companion object {
         const val ARG_TITLE = "title"
+        const val ARG_MULTI_SELECT = "multiSelect"
         const val ARG_PTL_ORDER = "ptlOrder"
     }
 }

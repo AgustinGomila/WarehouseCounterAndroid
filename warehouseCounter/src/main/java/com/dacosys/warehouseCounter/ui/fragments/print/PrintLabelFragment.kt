@@ -287,17 +287,21 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
 
     //endregion
 
+    @Suppress("UNCHECKED_CAST")
     private fun loadBundleValues(b: Bundle) {
         printer = b.getString(ARG_PRINTER) ?: ""
         template = b.getParcelable(ARG_TEMPLATE)
-        templateTypeIdList = (b.getLongArray(ARG_TEMPLATE_TYPE_ID_LIST) ?: longArrayOf()).toCollection(ArrayList())
+        val temp = b.getSerializable(TemplateSelectActivity.ARG_TEMPLATE_TYPE_ID_LIST) as ArrayList<*>
+        if (temp.first() is Long) {
+            templateTypeIdList = temp as ArrayList<Long>
+        }
         qty = b.getInt(ARG_QTY)
     }
 
     private fun saveBundleValues(b: Bundle) {
         b.putString(ARG_PRINTER, printer)
         b.putParcelable(ARG_TEMPLATE, template)
-        b.putLongArray(ARG_TEMPLATE_TYPE_ID_LIST, templateTypeIdList.toLongArray())
+        b.putSerializable(ARG_TEMPLATE_TYPE_ID_LIST, templateTypeIdList)
         b.putInt(ARG_QTY, Integer.parseInt(binding.qtyEditText.text.toString()))
     }
 
@@ -346,7 +350,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
             .isCycle(true) // 49,50,-50,-49 and so on
             .counterDelay(50) // speed of counter
             .startNumber(qty.toDouble()).counterStep(1)  // steps e.g. 0,2,4,6...
-            .listener(this) // to listen to counter results and show them in app
+            .listener(this) // to listen to counter-results and show them in app
             .build()
 
         binding.qtyEditText.addTextChangedListener(object : TextWatcher {
@@ -848,14 +852,18 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
         }
     }
 
-// endregion
+    // endregion
 
     override fun onIncrement(view: View?, number: Double) {
         binding.qtyEditText.setText(number.toString())
+        qty = number.toInt()
+        sendMessage()
     }
 
     override fun onDecrement(view: View?, number: Double) {
         binding.qtyEditText.setText(number.toString())
+        qty = number.toInt()
+        sendMessage()
     }
 
     private fun connectToPrinter(deviceAddress: String) {

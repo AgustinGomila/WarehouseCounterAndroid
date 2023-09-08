@@ -13,6 +13,7 @@ import android.transition.TransitionManager
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -59,7 +60,7 @@ import kotlin.concurrent.thread
 class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     PtlContentAdapter.DataSetChangedListener, Scanner.ScannerListener, Rfid.RfidDeviceListener,
     PtlOrderHeaderFragment.OrderChangedListener, SwipeRefreshLayout.OnRefreshListener,
-    PrintLabelFragment.FragmentListener {
+    PrintLabelFragment.FragmentListener, PtlContentAdapter.CheckedChangedListener {
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -201,28 +202,47 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         }
     }
 
-    override fun onDataSetChanged() {
-        runOnUiThread {
-            Handler(Looper.getMainLooper()).postDelayed({
-                val labelCant: Boolean
-                val totalVisible: Int
-                val totalChecked: Int
-                if (multiselect) {
-                    labelCant = false
-                    totalVisible = totalCollected
-                    totalChecked = countChecked
-                } else {
-                    labelCant = true
-                    totalVisible = totalRequested
-                    totalChecked = totalCollected
-                }
+    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
+        fillSummaryFragment()
+    }
 
-                summaryFragment
-                    .multiSelect(labelCant) // This is to set fragments captions
-                    .totalVisible(totalVisible)
-                    .totalChecked(totalChecked)
-                    .fill()
-            }, 100)
+    override fun onDataSetChanged() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            fillSummaryFragment()
+        }, 100)
+    }
+
+    private fun fillSummaryFragment() {
+        runOnUiThread {
+            val firstValue: Int
+            val firstLabel: String
+            val secondValue: Int
+            val secondLabel: String
+            var thirdValue = 0
+            var thirdLabel = ""
+
+            if (multiselect) {
+                firstValue = totalRequested
+                firstLabel = getString(R.string.requested)
+                secondValue = totalCollected
+                secondLabel = getString(R.string.total)
+                thirdValue = countChecked
+                thirdLabel = getString(R.string.checked)
+            } else {
+                firstValue = totalRequested
+                firstLabel = getString(R.string.requested)
+                secondValue = totalCollected
+                secondLabel = getString(R.string.total)
+            }
+
+            summaryFragment
+                .first(firstValue)
+                .firstLabel(firstLabel)
+                .second(secondValue)
+                .secondLabel(secondLabel)
+                .third(thirdValue)
+                .thirdLabel(thirdLabel)
+                .fill()
         }
     }
 
@@ -284,10 +304,6 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     private var allowClicks = true
     private var rejectNewInstances = false
 
-    private lateinit var headerFragment: PtlOrderHeaderFragment
-    private lateinit var printLabelFragment: PrintLabelFragment
-    private lateinit var summaryFragment: SummaryFragment
-
     private var panelBottomIsExpanded = false
     private var panelTopIsExpanded = true
 
@@ -299,13 +315,20 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     private var timer: Timer? = null
     private var timerTask: TimerTask? = null
 
+    private lateinit var headerFragment: PtlOrderHeaderFragment
+    private lateinit var printLabelFragment: PrintLabelFragment
+    private lateinit var summaryFragment: SummaryFragment
+
+    private var currentPrintQty: Int = 1
+    private var currentTemplateId: Long = 0L
+
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         saveBundleValues(savedInstanceState)
     }
 
     private fun saveBundleValues(b: Bundle) {
-        b.putString(ARG_TITLE, title.toString())
+        b.putString(ARG_TITLE, tempTitle)
 
         b.putParcelableArrayList("tempWacArray", tempContArray)
         if (adapter != null) {
@@ -321,6 +344,9 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         b.putParcelable(ARG_WAREHOUSE_AREA, headerFragment.warehouseArea)
         b.putParcelable(ARG_PTL_ORDER, headerFragment.ptlOrder)
+
+        b.putInt("currentPrintQty", currentPrintQty)
+        b.putLong("currentTemplateId", currentTemplateId)
     }
 
     private fun loadBundleValues(b: Bundle) {
@@ -341,6 +367,9 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
         panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
+
+        currentPrintQty = b.getInt("currentPrintQty")
+        currentTemplateId = b.getLong("currentTemplateId")
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
@@ -389,7 +418,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         binding.topAppbar.title = tempTitle
 
         setupHeaderFragments()
-        setupPrinterLabelFragments()
+        setupPrintLabelFragment()
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
         binding.swipeRefreshItem.setColorSchemeResources(
@@ -399,7 +428,6 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
             android.R.color.holo_red_light
         )
 
-        // Para expandir y colapsar el panel inferior
         setBottomPanelAnimation()
         setTopPanelAnimation()
 
@@ -411,7 +439,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         binding.addBoxButton.setOnClickListener { addBox() }
 
-        // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
+        /* Oculta el teclado en pantalla cuando pierden el foco los controles que lo necesitan */
         Screen.setupUI(binding.root, this)
     }
 
@@ -550,11 +578,18 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         supportFragmentManager.beginTransaction().replace(R.id.headerFragment, headerFragment).commit()
     }
 
-    private fun setupPrinterLabelFragments() {
+    private fun setupPrintLabelFragment() {
+        binding.printFragment.visibility = View.VISIBLE
+
+        if (currentTemplateId == 0L) {
+            currentTemplateId = settingViewModel.defaultOrderTemplateId
+        }
+
         printLabelFragment =
             PrintLabelFragment.Builder()
                 .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.order.id))
-                .setTemplateId(settingViewModel.defaultOrderTemplateId)
+                .setTemplateId(currentTemplateId)
+                .setQty(currentPrintQty)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
     }
@@ -745,6 +780,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                     .checkedIdArray(checkedIdArray)
                     .showQtyPanel(true)
                     .dataSetChangedListener(this)
+                    .checkedChangedListener(this)
                     .allowEditQty(true, this)
                     .build()
 
@@ -1027,8 +1063,10 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     }
 
     override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {
-        val templateId = template?.templateId ?: return
-        settingViewModel.defaultOrderTemplateId = templateId
+        currentPrintQty = qty ?: 1
+        currentTemplateId = template?.templateId ?: return
+
+        settingViewModel.defaultOrderTemplateId = currentTemplateId
     }
 
     override fun onPrintRequested(printer: String, qty: Int) {

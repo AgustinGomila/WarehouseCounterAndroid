@@ -10,7 +10,6 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp
 
 class BtPrinter {
     companion object {
-
         var printerBluetoothDevice: BluetoothDevice? = null
             get() {
                 if (field == null) {

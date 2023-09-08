@@ -67,7 +67,6 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import java.util.*
-import kotlin.concurrent.thread
 
 class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
@@ -157,18 +156,22 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
+    private var filterOrderId: String = ""
+    private var filterOrderExternalId: String = ""
+    private var filterOrderDescription: String = ""
+
+    private var searchedText: String = ""
+
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         saveBundleValues(savedInstanceState)
     }
 
     private fun saveBundleValues(b: Bundle) {
-        b.putString(ARG_TITLE, title.toString())
-
+        b.putString(ARG_TITLE, tempTitle)
         b.putBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
         b.putBoolean(ARG_MULTI_SELECT, multiSelect)
         b.putBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
-
         b.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
         b.putParcelable(ARG_RACK, rack)
 
@@ -182,6 +185,12 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
             b.putIntArray("checkedHashArray", allChecked.map { it.hashCode }.toIntArray())
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
+
+        b.putString("filterOrderId", filterOrderId)
+        b.putString("filterOrderExternalId", filterOrderExternalId)
+        b.putString("filterOrderDescription", filterOrderDescription)
+
+        b.putString("searchedText", searchedText)
     }
 
     private fun loadBundleValues(b: Bundle) {
@@ -204,6 +213,12 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         lastSelected = b.getParcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
+
+        filterOrderId = b.getString("filterOrderId") ?: ""
+        filterOrderExternalId = b.getString("filterOrderExternalId") ?: ""
+        filterOrderDescription = b.getString("filterOrderDescription") ?: ""
+
+        searchedText = b.getString("searchedText") ?: ""
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
@@ -311,6 +326,7 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
             SearchTextFragment.Builder()
                 .focusChangedCallback(this)
                 .searchTextChangedCallback(this)
+                .setSearchText(searchedText)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.searchTextFragment, searchTextFragment).commit()
     }
@@ -323,6 +339,9 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
                 .searchByOrderId(sv.orderSearchByOrderId, sr.orderSearchByOrderId)
                 .searchByOrderExtId(sv.orderSearchByOrderExtId, sr.orderSearchByOrderExtId)
                 .searchByOrderDescription(sv.orderSearchByOrderDescription, sr.orderSearchByOrderDescription)
+                .orderId(filterOrderId)
+                .orderExternalId(filterOrderExternalId)
+                .orderDescription(filterOrderDescription)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
@@ -654,6 +673,8 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
     }
 
     private fun getOrders() {
+        checkedHashArray.clear()
+
         val filter = filterFragment.getFilters()
         if (!filter.any()) {
             fillAdapter(arrayListOf())
@@ -702,7 +723,7 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
                     .checkedHashArray(checkedHashArray)
                     .multiSelect(multiSelect)
                     .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
-                    .filterOptions(FilterOptions(searchTextFragment.searchText))
+                    .filterOptions(FilterOptions(searchedText))
                     .checkedChangedListener(this)
                     .dataSetChangedListener(this)
                     .build()
@@ -762,8 +783,9 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
     }
 
     override fun onSearchTextChanged(searchText: String) {
+        searchedText = searchText
         runOnUiThread {
-            adapter?.refreshFilter(FilterOptions(searchText))
+            adapter?.refreshFilter(FilterOptions(searchedText))
         }
     }
 
@@ -985,19 +1007,11 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
     }
 
     override fun onFilterChanged(orderId: String, orderExternalId: String, orderDescription: String) {
-        closeKeyboard(this)
-        thread {
-            checkedHashArray.clear()
-            getOrders()
-        }
-    }
+        filterOrderId = orderId
+        filterOrderExternalId = orderExternalId
+        filterOrderDescription = orderDescription
 
-    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
-        runOnUiThread {
-            summaryFragment
-                .totalChecked(countChecked)
-                .fill()
-        }
+        Handler(Looper.getMainLooper()).postDelayed({ getOrders() }, 200)
     }
 
     override fun onLocationChanged(
@@ -1008,15 +1022,24 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         closeKeyboard(this)
     }
 
+    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
+        fillSummaryFragment()
+    }
+
     override fun onDataSetChanged() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            fillSummaryFragment()
+        }, 100)
+    }
+
+    private fun fillSummaryFragment() {
         runOnUiThread {
-            Handler(Looper.getMainLooper()).postDelayed({
-                summaryFragment
-                    .multiSelect(multiSelect)
-                    .totalVisible(adapter?.totalVisible() ?: 0)
-                    .totalChecked(countChecked)
-                    .fill()
-            }, 100)
+            summaryFragment
+                .firstLabel(getString(R.string.products))
+                .first(adapter?.totalVisible() ?: 0)
+                .secondLabel(getString(R.string.total_count))
+                .second(countChecked)
+                .fill()
         }
     }
 

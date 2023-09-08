@@ -264,7 +264,6 @@ class PtlOrderAdapter private constructor(builder: Builder) :
                 }
             }
 
-            // Notificamos al Listener superior
             dataSetChangedListener?.onDataSetChanged()
             return@OnLongClickListener true
         }
@@ -389,8 +388,7 @@ class PtlOrderAdapter private constructor(builder: Builder) :
 
     fun add(ptlOrder: PtlOrder, position: Int) {
         fullList.add(position, ptlOrder)
-        submitList(fullList) {
-            // Notificamos al Listener superior
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
             selectItem(position)
         }
@@ -401,8 +399,7 @@ class PtlOrderAdapter private constructor(builder: Builder) :
         checkedIdArray.remove(id)
 
         fullList.removeAt(position)
-        submitList(fullList) {
-            /** Notificamos al Listener superior */
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
         }
     }

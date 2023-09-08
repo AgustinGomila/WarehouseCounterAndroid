@@ -16,7 +16,7 @@ import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.bindPreferenceSummaryToValue
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.io.File
@@ -76,9 +76,7 @@ class GeneralPreferenceFragment : PreferenceFragmentCompat() {
                 true
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                if (view != null) MakeText.makeText(
-                    requireView(), "${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR
-                )
+                if (view != null) showSnackBar("${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR)
                 ErrorLog.writeLog(null, this::class.java.simpleName, ex)
                 false
             }
@@ -108,6 +106,10 @@ class GeneralPreferenceFragment : PreferenceFragmentCompat() {
             )
             true
         }
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(requireView(), text, snackBarType)
     }
 
     private fun askForDelete(): AlertDialog {

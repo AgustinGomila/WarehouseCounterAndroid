@@ -452,7 +452,6 @@ class LocationAdapter private constructor(builder: Builder) :
                 }
             }
 
-            // Notificamos al Listener superior
             dataSetChangedListener?.onDataSetChanged()
             return@OnLongClickListener true
         }
@@ -584,8 +583,7 @@ class LocationAdapter private constructor(builder: Builder) :
 
     fun add(item: Location, position: Int) {
         fullList.add(position, item)
-        submitList(fullList) {
-            // Notificamos al Listener superior
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
             selectItem(position)
         }
@@ -596,8 +594,7 @@ class LocationAdapter private constructor(builder: Builder) :
         checkedHashArray.remove(location.hashCode)
 
         fullList.removeAt(position)
-        submitList(fullList) {
-            /** Notificamos al Listener superior */
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
         }
     }
@@ -610,11 +607,8 @@ class LocationAdapter private constructor(builder: Builder) :
 
         // TODO: Update ítem here
 
-        submitList(fullList) {
-            // Notificamos al Listener superior
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
-
-            // Seleccionamos el ítem y hacemos scroll hasta él.
             selectItem(item, scrollToPos)
         }
     }

@@ -60,7 +60,6 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import java.util.*
-import kotlin.concurrent.thread
 
 class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener,
@@ -143,14 +142,19 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
+    private var filterOrderId: String = ""
+    private var filterOrderExternalId: String = ""
+    private var filterOrderDescription: String = ""
+
+    private var searchedText: String = ""
+
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         saveBundleValues(savedInstanceState)
     }
 
     private fun saveBundleValues(b: Bundle) {
-        b.putString(ARG_TITLE, title.toString())
-
+        b.putString(ARG_TITLE, tempTitle)
         b.putBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
         b.putBoolean(ARG_MULTI_SELECT, multiSelect)
         b.putBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
@@ -164,6 +168,12 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             b.putIntArray("checkedHashArray", allChecked.map { it.hashCode }.toIntArray())
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
+
+        b.putString("filterOrderId", filterOrderId)
+        b.putString("filterOrderExternalId", filterOrderExternalId)
+        b.putString("filterOrderDescription", filterOrderDescription)
+
+        b.putString("searchedText", searchedText)
     }
 
     private fun loadBundleValues(b: Bundle) {
@@ -182,6 +192,12 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         lastSelected = b.getParcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
+
+        filterOrderId = b.getString("filterOrderId") ?: ""
+        filterOrderExternalId = b.getString("filterOrderExternalId") ?: ""
+        filterOrderDescription = b.getString("filterOrderDescription") ?: ""
+
+        searchedText = b.getString("searchedText") ?: ""
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
@@ -271,6 +287,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             SearchTextFragment.Builder()
                 .focusChangedCallback(this)
                 .searchTextChangedCallback(this)
+                .setSearchText(searchedText)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.searchTextFragment, searchTextFragment).commit()
     }
@@ -283,6 +300,9 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                 .searchByOrderId(sv.orderSearchByOrderId, sr.orderSearchByOrderId)
                 .searchByOrderExtId(sv.orderSearchByOrderExtId, sr.orderSearchByOrderExtId)
                 .searchByOrderDescription(sv.orderSearchByOrderDescription, sr.orderSearchByOrderDescription)
+                .orderId(filterOrderId)
+                .orderExternalId(filterOrderExternalId)
+                .orderDescription(filterOrderDescription)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
@@ -404,7 +424,10 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     }
 
     override fun onSearchTextChanged(searchText: String) {
-        adapter?.refreshFilter(FilterOptions(searchText))
+        searchedText = searchText
+        runOnUiThread {
+            adapter?.refreshFilter(FilterOptions(searchedText))
+        }
     }
 
     private val requiredLayout: Int
@@ -508,6 +531,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                 payload = arrayListOf(OrderRequest(item)),
                 onEvent = { showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
+                    if (it.isEmpty()) return@UpdateOrder
                     askForRepack(item.id)
                 }
             ).execute()
@@ -520,6 +544,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                     payload = payload,
                     onEvent = { showSnackBar(it.text, it.snackBarType) },
                     onFinish = {
+                        if (it.isEmpty()) return@UpdateOrder
                         if (index == itemArray.lastIndex) {
                             isFinishingByUser = true
                             finish()
@@ -553,9 +578,11 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     }
 
     private fun getOrders() {
+        checkedHashArray.clear()
+
         val filter = filterFragment.getFilters()
         if (!filter.any()) {
-            showProgressBar(false)
+            fillAdapter(arrayListOf())
             return
         }
 
@@ -600,7 +627,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                     .checkedHashArray(checkedHashArray)
                     .multiSelect(multiSelect)
                     .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
-                    .filterOptions(FilterOptions(searchTextFragment.searchText))
+                    .filterOptions(FilterOptions(searchedText))
                     .checkedChangedListener(this)
                     .dataSetChangedListener(this)
                     .build()
@@ -853,11 +880,11 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     }
 
     override fun onFilterChanged(orderId: String, orderExternalId: String, orderDescription: String) {
-        closeKeyboard(this)
-        thread {
-            checkedHashArray.clear()
-            getOrders()
-        }
+        filterOrderId = orderId
+        filterOrderExternalId = orderExternalId
+        filterOrderDescription = orderDescription
+
+        Handler(Looper.getMainLooper()).postDelayed({ getOrders() }, 200)
     }
 
     private fun enterCode() {
@@ -879,20 +906,23 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     }
 
     override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
-        runOnUiThread {
-            summaryFragment
-                .totalChecked(countChecked)
-                .fill()
-        }
+        fillSummaryFragment()
     }
 
     override fun onDataSetChanged() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            fillSummaryFragment()
+        }, 100)
+    }
+
+    private fun fillSummaryFragment() {
         runOnUiThread {
             Handler(Looper.getMainLooper()).postDelayed({
                 summaryFragment
-                    .multiSelect(multiSelect)
-                    .totalVisible(adapter?.totalVisible() ?: 0)
-                    .totalChecked(countChecked)
+                    .firstLabel(getString(R.string.total))
+                    .first(adapter?.totalVisible() ?: 0)
+                    .secondLabel(getString(R.string.total_count))
+                    .second(countChecked)
                     .fill()
             }, 100)
         }

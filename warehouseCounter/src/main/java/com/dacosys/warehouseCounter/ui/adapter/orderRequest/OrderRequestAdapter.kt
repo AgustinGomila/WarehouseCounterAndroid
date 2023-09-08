@@ -287,7 +287,6 @@ class OrderRequestAdapter private constructor(builder: Builder) :
                 }
             }
 
-            // Notificamos al Listener superior
             dataSetChangedListener?.onDataSetChanged()
             return@OnLongClickListener true
         }
@@ -413,8 +412,7 @@ class OrderRequestAdapter private constructor(builder: Builder) :
 
     fun add(orderRequest: OrderRequest, position: Int) {
         fullList.add(position, orderRequest)
-        submitList(fullList) {
-            // Notificamos al Listener superior
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
             selectItem(position)
         }
@@ -425,8 +423,7 @@ class OrderRequestAdapter private constructor(builder: Builder) :
         checkedIdArray.remove(id)
 
         fullList.removeAt(position)
-        submitList(fullList) {
-            /** Notificamos al Listener superior */
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
         }
     }
@@ -457,11 +454,8 @@ class OrderRequestAdapter private constructor(builder: Builder) :
         t.packages = orderRequest.packages
         t.logs = orderRequest.logs
 
-        submitList(fullList) {
-            // Notificamos al Listener superior
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
-
-            // Seleccionamos el pedido y hacemos scroll hasta él.
             selectItem(orderRequest, scrollToPos)
         }
     }
@@ -663,11 +657,13 @@ class OrderRequestAdapter private constructor(builder: Builder) :
             // Background layouts
             // Resalta por estado del pedido
             val default = getDrawable(context.resources, R.drawable.layout_thin_border, null)!!
-            val prepareOrder = getDrawable(context.resources, R.drawable.layout_thin_border_green, null)!!
-            val stockAuditFromDevice = getDrawable(context.resources, R.drawable.layout_thin_border_yellow, null)!!
-            val stockAudit = getDrawable(context.resources, R.drawable.layout_thin_border_blue, null)!!
-            val receptionAudit = getDrawable(context.resources, R.drawable.layout_thin_border_orange, null)!!
-            val deliveryAudit = getDrawable(context.resources, R.drawable.layout_thin_border_green_2, null)!!
+            val prepareOrder = getDrawable(context.resources, R.drawable.layout_this_border_prepare_order, null)!!
+            val stockAuditFromDevice =
+                getDrawable(context.resources, R.drawable.layout_thin_border_stock_audit_from_device, null)!!
+            val stockAudit = getDrawable(context.resources, R.drawable.layout_thin_border_stock_audit, null)!!
+            val receptionAudit = getDrawable(context.resources, R.drawable.layout_thin_border_reception_audit, null)!!
+            val deliveryAudit = getDrawable(context.resources, R.drawable.layout_thin_border_delivery_audit, null)!!
+            val packaging = getDrawable(context.resources, R.drawable.layout_thin_border_packaging, null)!!
 
             val backColor: Drawable
             val foreColor: Int
@@ -696,6 +692,11 @@ class OrderRequestAdapter private constructor(builder: Builder) :
                 OrderRequestType.deliveryAudit -> {
                     backColor = deliveryAudit
                     foreColor = deliveryAuditSelectedForeColor
+                }
+
+                OrderRequestType.packaging -> {
+                    backColor = packaging
+                    foreColor = packagingSelectedForeColor
                 }
 
                 else -> {
@@ -745,11 +746,13 @@ class OrderRequestAdapter private constructor(builder: Builder) :
             // Background layouts
             // Resalta por estado del pedido
             val default = getDrawable(context.resources, R.drawable.layout_thin_border, null)!!
-            val prepareOrder = getDrawable(context.resources, R.drawable.layout_thin_border_green, null)!!
-            val stockAuditFromDevice = getDrawable(context.resources, R.drawable.layout_thin_border_yellow, null)!!
-            val stockAudit = getDrawable(context.resources, R.drawable.layout_thin_border_blue, null)!!
-            val receptionAudit = getDrawable(context.resources, R.drawable.layout_thin_border_orange, null)!!
-            val deliveryAudit = getDrawable(context.resources, R.drawable.layout_thin_border_green_2, null)!!
+            val prepareOrder = getDrawable(context.resources, R.drawable.layout_this_border_prepare_order, null)!!
+            val stockAuditFromDevice =
+                getDrawable(context.resources, R.drawable.layout_thin_border_stock_audit_from_device, null)!!
+            val stockAudit = getDrawable(context.resources, R.drawable.layout_thin_border_stock_audit, null)!!
+            val receptionAudit = getDrawable(context.resources, R.drawable.layout_thin_border_reception_audit, null)!!
+            val deliveryAudit = getDrawable(context.resources, R.drawable.layout_thin_border_delivery_audit, null)!!
+            val packaging = getDrawable(context.resources, R.drawable.layout_thin_border_packaging, null)!!
 
             val backColor: Drawable
             val foreColor: Int
@@ -778,6 +781,11 @@ class OrderRequestAdapter private constructor(builder: Builder) :
                 OrderRequestType.deliveryAudit -> {
                     backColor = deliveryAudit
                     foreColor = deliveryAuditForeColor
+                }
+
+                OrderRequestType.packaging -> {
+                    backColor = packaging
+                    foreColor = packagingForeColor
                 }
 
                 else -> {
@@ -832,6 +840,7 @@ class OrderRequestAdapter private constructor(builder: Builder) :
         private var stockAuditForeColor: Int = 0
         private var receptionAuditForeColor: Int = 0
         private var deliveryAuditForeColor: Int = 0
+        private var packagingForeColor: Int = 0
         private var defaultForeColor: Int = 0
 
         private var prepareOrderSelectedForeColor: Int = 0
@@ -839,6 +848,7 @@ class OrderRequestAdapter private constructor(builder: Builder) :
         private var stockAuditSelectedForeColor: Int = 0
         private var receptionAuditSelectedForeColor: Int = 0
         private var deliveryAuditSelectedForeColor: Int = 0
+        private var packagingSelectedForeColor: Int = 0
         private var defaultSelectedForeColor: Int = 0
 
         private var darkslategray: Int = 0
@@ -855,6 +865,7 @@ class OrderRequestAdapter private constructor(builder: Builder) :
             val stockAudit = getColor(context.resources, R.color.status_stock_audit, null)
             val receptionAudit = getColor(context.resources, R.color.status_reception_audit, null)
             val deliveryAudit = getColor(context.resources, R.color.status_delivery_audit, null)
+            val packaging = getColor(context.resources, R.color.status_packaging, null)
             val default = getColor(context.resources, R.color.status_default, null)
 
             // Mejor contraste para los pedidos seleccionados
@@ -863,6 +874,7 @@ class OrderRequestAdapter private constructor(builder: Builder) :
             stockAuditSelectedForeColor = getBestContrastColor(manipulateColor(stockAudit, 0.5f))
             receptionAuditSelectedForeColor = getBestContrastColor(manipulateColor(receptionAudit, 0.5f))
             deliveryAuditSelectedForeColor = getBestContrastColor(manipulateColor(deliveryAudit, 0.5f))
+            packagingSelectedForeColor = getBestContrastColor(manipulateColor(packaging, 0.5f))
             defaultSelectedForeColor = getBestContrastColor(manipulateColor(default, 0.5f))
 
             // Mejor contraste para los pedidos no seleccionados
@@ -871,6 +883,7 @@ class OrderRequestAdapter private constructor(builder: Builder) :
             stockAuditForeColor = getBestContrastColor(stockAudit)
             receptionAuditForeColor = getBestContrastColor(receptionAudit)
             deliveryAuditForeColor = getBestContrastColor(deliveryAudit)
+            packagingForeColor = getBestContrastColor(packaging)
             defaultForeColor = getBestContrastColor(default)
 
             // CheckBox color

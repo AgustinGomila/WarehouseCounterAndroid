@@ -14,11 +14,12 @@ object OrderRequestCoroutines {
         onResult: (OrderRequestKtor?) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = async { database.orderRequestDao().getById(id)?.toKtor ?: OrderRequestKtor() }.await()
-            val rc =
-                async { database.orderRequestContentDao().getByOrderId(id).map { it.toKtor } }.await()
-
-            r.contents = rc
+            val r = async { database.orderRequestDao().getById(id)?.toKtor }.await()
+            if (r != null) {
+                val rc =
+                    async { database.orderRequestContentDao().getByOrderId(id).map { it.toKtor } }.await()
+                r.contents = rc
+            }
             onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
@@ -48,10 +49,13 @@ object OrderRequestCoroutines {
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
             async {
+                val id = orderRequest.orderRequestId ?: 0
+                val newContent = contents.map { it.toRoom(id) }.toList()
                 val orRoom = orderRequest.toRoom
+
                 database.orderRequestDao().update(
                     orderRequest = orRoom,
-                    contents = orderRequest.contentToRoom(),
+                    contents = ArrayList(newContent),
                 )
             }.await()
             onResult(true)

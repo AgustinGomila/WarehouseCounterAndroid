@@ -33,6 +33,9 @@
                 android:hint="@string/item_code"
                 android:importantForAutofill="no"
                 android:inputType="text"
+                android:lines="1"
+                android:maxLines="1"
+                android:singleLine="true"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toTopOf="parent"/>

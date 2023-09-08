@@ -38,6 +38,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.io.File
 import kotlin.concurrent.thread
+import kotlin.io.path.Path
 
 class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener {
 
@@ -168,7 +169,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         binding.removeButton.setOnClickListener { removeDialog() }
         binding.detailButton.setOnClickListener { showDetail() }
 
-        // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
+        /* Oculta el teclado en pantalla cuando pierden el foco los controles que lo necesitan */
         Screen.setupUI(binding.root, this)
     }
 
@@ -252,15 +253,6 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
     }
     // endregion
 
-    private fun showDetail() {
-        val id = currentItem?.orderRequestId ?: return
-
-        val intent = Intent(context, OrderRequestDetailActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra(OrderRequestDetailActivity.ARG_ID, id)
-        startActivity(intent)
-    }
-
     private fun removeDialog() {
         val checked = countChecked
         val orderRequest = currentItem
@@ -311,24 +303,32 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
     }
 
     private fun continueOrder() {
+        Screen.closeKeyboard(this)
+
         val currentItem = currentItem
         val allChecked = allChecked
 
         if (!multiSelect && currentItem != null) {
-            Screen.closeKeyboard(this)
-
             val data = Intent()
-            data.putParcelableArrayListExtra(ARG_ORDER_REQUESTS, arrayListOf(currentItem))
+            data.putStringArrayListExtra(ARG_ORDER_REQUEST_FILENAMES, arrayListOf(currentItem.filename))
             setResult(RESULT_OK, data)
             finish()
         } else if (multiSelect && allChecked.any()) {
-            Screen.closeKeyboard(this)
-
             val data = Intent()
-            data.putParcelableArrayListExtra(ARG_ORDER_REQUESTS, allChecked)
+            data.putStringArrayListExtra(ARG_ORDER_REQUEST_FILENAMES, ArrayList(allChecked.map { it.filename }))
             setResult(RESULT_OK, data)
             finish()
         }
+    }
+
+    private fun showDetail() {
+        val filename = currentItem?.filename ?: return
+        val completePath = Path(Statics.completePendingPath, filename).toString()
+
+        val intent = Intent(context, OrderRequestDetailActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        intent.putExtra(OrderRequestDetailActivity.ARG_FILENAME, completePath)
+        startActivity(intent)
     }
 
     private fun showProgressBar(show: Boolean) {
@@ -401,12 +401,8 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         val set = settingViewModel.orderRequestVisibleStatus
         for (i in set) {
             if (i.trim().isEmpty()) continue
-            val status = OrderRequestType.getById(i.toLong())
-            if (status != OrderRequestType.notDefined) {
-                visibleStatusArray.add(status)
-            }
+            visibleStatusArray.add(OrderRequestType.getById(i.toLong()))
         }
-
         return visibleStatusArray
     }
 
@@ -419,12 +415,17 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
 
         // Opciones de visibilidad del menú
         for (i in OrderRequestType.getAll()) {
-            menu.add(0, i.id.toInt(), i.id.toInt(), i.description)
-                .setChecked(getPrefVisibleStatus().contains(i)).isCheckable = true
+            menu.add(
+                0,
+                i.id.toInt(),
+                i.id.toInt(),
+                i.description
+            ).setChecked(getPrefVisibleStatus().contains(i)).isCheckable = true
         }
 
         //region Icon colors
         val colors: ArrayList<Int> = ArrayList()
+        colors.add(getColor(R.color.status_default))
         colors.add(getColor(R.color.status_prepare_order))
         colors.add(getColor(R.color.status_stock_audit_from_device))
         colors.add(getColor(R.color.status_stock_audit))
@@ -437,11 +438,11 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
             val icon = ResourcesCompat.getDrawable(context.resources, R.drawable.ic_lens, null)
             icon?.mutate()?.colorFilter =
                 BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                    colors[i.id.toInt() - 1],
+                    colors[i.id.toInt()],
                     BlendModeCompat.SRC_IN
                 )
 
-            val item = menu.getItem(i.id.toInt() - 1)
+            val item = menu.getItem(i.id.toInt())
             item.icon = icon
 
             // Keep the popup menu open
@@ -476,9 +477,6 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         }
 
         val it = OrderRequestType.getById(id.toLong())
-        if (it == OrderRequestType.notDefined) {
-            return false
-        }
 
         item.isChecked = !item.isChecked
         var visibleStatus = adapter?.visibleStatus ?: ArrayList()
@@ -514,6 +512,6 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
     companion object {
         const val ARG_TITLE = "title"
         const val ARG_MULTISELECT = "multiSelect"
-        const val ARG_ORDER_REQUESTS = "orderRequests"
+        const val ARG_ORDER_REQUEST_FILENAMES = "filenames"
     }
 }

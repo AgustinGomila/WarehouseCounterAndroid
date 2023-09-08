@@ -28,6 +28,7 @@ import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
 import kotlin.concurrent.thread
 
+
 class TemplateSelectActivity : AppCompatActivity(),
     ContractsAutoCompleteTextView.OnContractsAvailability, KeyboardVisibilityEventListener {
     override fun onDestroy() {
@@ -48,18 +49,21 @@ class TemplateSelectActivity : AppCompatActivity(),
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         savedInstanceState.putParcelable(ARG_TEMPLATE, template)
-        savedInstanceState.putLongArray(ARG_TEMPLATE_TYPE_ID_LIST, templateTypeIdList.toLongArray())
+        savedInstanceState.putSerializable(ARG_TEMPLATE_TYPE_ID_LIST, templateTypeIdList)
         savedInstanceState.putString(ARG_TITLE, title.toString())
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun loadFromBundle(b: Bundle) {
         val t1 = b.getString(ARG_TITLE)
         title = if (!t1.isNullOrEmpty()) t1
         else getString(R.string.search_by_template)
 
         template = b.getParcelable(ARG_TEMPLATE)
-        templateTypeIdList =
-            (b.getLongArray(ARG_TEMPLATE_TYPE_ID_LIST) ?: longArrayOf()).toCollection(java.util.ArrayList())
+        val temp = b.getSerializable(ARG_TEMPLATE_TYPE_ID_LIST) as ArrayList<*>
+        if (temp.first() is Long) {
+            templateTypeIdList = temp as ArrayList<Long>
+        }
     }
 
     private lateinit var binding: CodeSelectActivityBinding

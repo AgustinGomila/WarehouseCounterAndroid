@@ -7,7 +7,6 @@ import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Environment
 import android.util.Log
-import android.view.View
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.applicationName
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
@@ -16,17 +15,11 @@ import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.user.UserCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.data.room.entity.user.User
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.journeyapps.barcodescanner.ScanOptions
 import org.json.JSONObject
-import java.io.*
+import java.io.File
 import java.math.BigDecimal
 import java.net.NetworkInterface
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
-import java.nio.charset.Charset
 import java.util.*
 
 class Statics {
@@ -75,12 +68,18 @@ class Statics {
         private const val PENDING_COUNT_PATH = "/pending_counts"
         private const val COMPLETED_COUNT_PATH = "/completed_counts"
 
+        val completePendingPath: String =
+            "${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingViewModel.installationCode}$PENDING_COUNT_PATH/"
+
         fun getPendingPath(): File {
-            return File("${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingViewModel.installationCode}$PENDING_COUNT_PATH/")
+            return File(completePendingPath)
         }
 
+        val completeCompletedPath: String =
+            "${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingViewModel.installationCode}$COMPLETED_COUNT_PATH/"
+
         fun getCompletedPath(): File {
-            return File("${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingViewModel.installationCode}$COMPLETED_COUNT_PATH/")
+            return File(completeCompletedPath)
         }
 
         fun isOnline(): Boolean {
@@ -299,109 +298,5 @@ class Statics {
         //    // for now eat exceptions
         //    return ""
         //}
-
-        // region Operaciones de escritura en almacenamiento de Órdenes
-
-        fun writeJsonToFile(v: View, filename: String, value: String, completed: Boolean): Boolean {
-
-            fun showSnackBar(text: String, snackBarType: SnackBarType) {
-                makeText(v, text, snackBarType)
-            }
-
-            if (!isExternalStorageWritable) {
-                val res =
-                    context.getString(R.string.error_external_storage_not_available_for_reading_or_writing)
-                Log.e(this::class.java.simpleName, res)
-                showSnackBar(res, ERROR)
-                return false
-            }
-
-            var error = false
-
-            val path = if (completed) getCompletedPath() else getPendingPath()
-            if (writeToFile(fileName = filename, data = value, directory = path)) {
-                if (completed) {
-                    // Elimino la orden original
-                    val file = File(getPendingPath(), filename)
-                    if (file.exists()) file.delete()
-                }
-            } else {
-                val res =
-                    context.getString(R.string.an_error_occurred_while_trying_to_save_the_count)
-                Log.e(this::class.java.simpleName, res)
-                showSnackBar(res, ERROR)
-                error = true
-            }
-
-            return !error
-        }
-
-        fun writeToFile(fileName: String, data: String, directory: File): Boolean {
-            try {
-                val file = File(directory, fileName)
-
-                // Save your stream, don't forget to flush() it before closing it.
-                file.parentFile?.mkdirs()
-                file.createNewFile()
-
-                val fOut = FileOutputStream(file)
-                val outWriter = OutputStreamWriter(fOut)
-                outWriter.append(data)
-
-                outWriter.close()
-
-                fOut.flush()
-                fOut.close()
-
-                return true
-            } catch (e: IOException) {
-                Log.e(this::class.java.simpleName, "File write failed: $e")
-                return false
-            }
-        }
-
-        fun getFiles(directoryPath: String): ArrayList<String>? {
-            val filesArrayList = ArrayList<String>()
-            val f = File(directoryPath)
-
-            f.mkdirs()
-            val files = f.listFiles()
-            if (files == null || files.isEmpty()) return null
-            else {
-                files.filter { it.name.endsWith(".json") }.mapTo(filesArrayList) { it.name }
-            }
-
-            return filesArrayList
-        }
-
-        fun getJsonFromFile(filename: String): String {
-            if (filename.isEmpty()) {
-                return ""
-            }
-
-            val file = File(filename)
-            if (!file.exists()) {
-                Log.e("WC", "No existe el archivo: ${file.absolutePath}")
-                return ""
-            }
-
-            val stream = FileInputStream(file)
-            val jsonStr: String
-            try {
-                val fc: FileChannel = stream.channel
-                val bb: MappedByteBuffer = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size())
-
-                jsonStr = Charset.defaultCharset().decode(bb).toString()
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                return ""
-            } finally {
-                stream.close()
-            }
-
-            return jsonStr
-        }
-
-        // endregion
     }
 }

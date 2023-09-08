@@ -67,7 +67,6 @@ class ViewItem
                 if (it.onEvent != null) sendEvent(it.onEvent)
                 if (it.response != null) r = it.response
                 if (r != null) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
-                else sendEvent(context.getString(R.string.item_not_exists), SnackBarType.INFO)
             })
     }
 

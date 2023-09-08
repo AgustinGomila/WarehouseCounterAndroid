@@ -22,12 +22,12 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.imageControl.ui.fragments.ImageControlButtonsFragment
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
-import com.dacosys.warehouseCounter.data.room.entity.client.Client
 import com.dacosys.warehouseCounter.databinding.OrderRequestConfirmActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
@@ -37,14 +37,18 @@ import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderRequestHeader
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import org.parceler.Parcels
 
 class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
-    OrcAdapter.DataSetChangedListener {
+    OrcAdapter.DataSetChangedListener, OrcAdapter.CheckedChangedListener {
 
     private var panelIsExpanded = true
     private var finishOrder: Boolean = true
+
+    // Título de la actividad
+    private var tempTitle: String = ""
 
     // Header que depende del tipo de conteo
     private var headerFragment: Fragment? = null
@@ -59,10 +63,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     private var firstVisiblePos: Int? = null
     private var currentScrollPosition: Int = 0
 
-    // Cliente
-    private var client: Client? = null
-
-    // OrderRequest
+    // OrderRequest    
     private var orderRequestId: Long = 0L
     private lateinit var orderRequest: OrderRequest
 
@@ -74,9 +75,9 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     // Se usa para saber si estamos en onStart luego de onCreate
     private var fillRequired = false
 
-    private val countChecked: Int
+    private val itemCount: Int
         get() {
-            return adapter?.countChecked() ?: 0
+            return adapter?.itemCount ?: 0
         }
 
     private val totalCollected: Int
@@ -108,8 +109,9 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
+        savedInstanceState.putString(ARG_TITLE, tempTitle)
+
         savedInstanceState.putLong(ARG_ID, orderRequestId)
-        savedInstanceState.putParcelable(ARG_CLIENT, client)
 
         if (adapter != null) {
             savedInstanceState.putParcelable("lastSelected", currentItem)
@@ -118,11 +120,30 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         }
 
         savedInstanceState.putBoolean("finishOrder", finishOrder)
+
         savedInstanceState.putBoolean("panelIsExpanded", panelIsExpanded)
 
         supportFragmentManager.putFragment(
             savedInstanceState, "imageControlFragment", imageControlFragment as Fragment
         )
+    }
+
+    private fun loadFromBundleValues(b: Bundle) {
+        tempTitle = b.getString(ARG_TITLE) ?: ""
+        if (tempTitle.isEmpty()) tempTitle = getString(R.string.confirm_count)
+
+        orderRequestId = b.getLong(ARG_ID)
+
+        lastSelected = b.getParcelable("lastSelected")
+        firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
+        currentScrollPosition = b.getInt("currentScrollPosition")
+
+        finishOrder = b.getBoolean("finishOrder")
+
+        panelIsExpanded = b.getBoolean("panelIsExpanded")
+
+        imageControlFragment =
+            supportFragmentManager.getFragment(b, "imageControlFragment") as ImageControlButtonsFragment
     }
 
     override fun onDestroy() {
@@ -164,37 +185,14 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
         summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
 
-        var tempTitle = getString(R.string.confirm_count)
-
         if (savedInstanceState != null) {
-            // region Recuperar el título de la ventana
-            val t2 = savedInstanceState.getString(ARG_TITLE)
-            if (!t2.isNullOrEmpty()) tempTitle = t2
-            // endregion
-
-            finishOrder = savedInstanceState.getBoolean("finishOrder")
-
-            orderRequestId = savedInstanceState.getLong(ARG_ID)
-            client = savedInstanceState.getParcelable(ARG_CLIENT)
-            panelIsExpanded = savedInstanceState.getBoolean("panelIsExpanded")
-            lastSelected = savedInstanceState.getParcelable("lastSelected")
-            firstVisiblePos =
-                if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos") else -1
-            currentScrollPosition = savedInstanceState.getInt("currentScrollPosition")
-
-            //Restore the fragment's instance
-            imageControlFragment = supportFragmentManager.getFragment(
-                savedInstanceState, "imageControlFragment"
-            ) as ImageControlButtonsFragment
+            loadFromBundleValues(savedInstanceState)
         } else {
-            // Nueva instancia de la actividad
-
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString(ARG_TITLE)
-                if (!t1.isNullOrEmpty()) tempTitle = t1
+                tempTitle = extras.getString(ARG_TITLE) ?: ""
+                if (tempTitle.isEmpty()) tempTitle = getString(R.string.confirm_count)
 
-                client = Parcels.unwrap<Client>(extras.getParcelable(ARG_CLIENT))
                 orderRequestId = extras.getLong(ARG_ID)
             }
 
@@ -213,17 +211,15 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             android.R.color.holo_red_light
         )
 
-        // Para expandir y colapsar el panel inferior
-        setTopPanelAnimation()
+        setPanelAnimation()
 
         binding.confirmButton.setOnClickListener { confirm() }
 
-        // Si no está configurado el WebService de ImageControl ocultar botones
-        if (settingViewModel.icWsServer.isEmpty()) {
+        if (!settingViewModel.useImageControl || settingViewModel.icWsServer.isEmpty()) {
             binding.imageControlLayout.visibility = View.GONE
         }
 
-        // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
+        /* Oculta el teclado en pantalla cuando pierden el foco los controles que lo necesitan */
         Screen.setupUI(binding.root, this)
 
         showProgressBar(false)
@@ -246,27 +242,44 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             id = orderRequestId,
             onResult = {
                 if (it != null) {
+
                     orderRequest = it
                     completeList = ArrayList(it.contents)
 
-                    setImageControlFragment()
-                    fillHeader()
-                    fillAdapter(completeList)
+                    fillOrderRequest()
                 }
             }
         )
+    }
+
+    private fun fillOrderRequest() {
+        /** Ambos fragmentos requieren que [orderRequest] esté inicializado */
+        setHeaderFragment()
+        setImageControlFragment()
+
+        showSnackBar(
+            String.format(
+                getString(R.string.requested_count_state_),
+                if (orderRequest.description == "") getString(R.string.no_description) else orderRequest.description,
+                if (orderRequest.completed == true) getString(R.string.completed) else getString(R.string.pending)
+            ), INFO
+        )
+
+        fillHeader()
+        fillAdapter(completeList)
     }
 
     private fun fillHeader() {
         runOnUiThread {
             binding.countTypeActionTextView.text = when (orderRequest.orderRequestType) {
                 OrderRequestType.deliveryAudit -> OrderRequestType.deliveryAudit.description
+                OrderRequestType.notDefined -> OrderRequestType.notDefined.description
+                OrderRequestType.packaging -> OrderRequestType.packaging.description
                 OrderRequestType.prepareOrder -> OrderRequestType.prepareOrder.description
                 OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
                 OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
                 OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
-                OrderRequestType.packaging -> OrderRequestType.packaging.description
-                else -> getString(R.string.counted)
+                else -> WarehouseCounterApp.context.getString(R.string.total_count)
             }
         }
     }
@@ -276,8 +289,6 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
      * dependiendo del tipo de conteo que se está haciendo.
      */
     private fun setHeaderFragment() {
-        if (adapter == null) return
-
         val orType = orderRequest.orderRequestType
         val newFragment: Fragment =
             if (orType == OrderRequestType.deliveryAudit ||
@@ -391,15 +402,15 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             currentLayout.load(this, requiredLayout)
             currentLayout.applyTo(binding.root)
 
-            if (panelIsExpanded) binding.expandTopPanelButton?.text = getString(R.string.collapse_panel)
-            else binding.expandTopPanelButton?.text = getString(R.string.client_and_description)
+            if (panelIsExpanded) binding.expandPanelButton?.text = getString(R.string.collapse_panel)
+            else binding.expandPanelButton?.text = getString(R.string.client_and_description)
         }
     }
 
-    private fun setTopPanelAnimation() {
+    private fun setPanelAnimation() {
         if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
-        binding.expandTopPanelButton!!.setOnClickListener {
+        binding.expandPanelButton!!.setOnClickListener {
             panelIsExpanded = !panelIsExpanded
             val nextLayout = ConstraintSet()
             nextLayout.load(this, requiredLayout)
@@ -417,8 +428,8 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             TransitionManager.beginDelayedTransition(binding.root, transition)
             nextLayout.applyTo(binding.root)
 
-            if (panelIsExpanded) binding.expandTopPanelButton?.text = getString(R.string.collapse_panel)
-            else binding.expandTopPanelButton?.text = getString(R.string.client_and_description)
+            if (panelIsExpanded) binding.expandPanelButton?.text = getString(R.string.collapse_panel)
+            else binding.expandPanelButton?.text = getString(R.string.client_and_description)
         }
     }
 
@@ -469,6 +480,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                     .fullList(filteredList)
                     .orType(orderRequest.orderRequestType)
                     .dataSetChangedListener(this)
+                    .checkedChangedListener(this)
                     .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
@@ -549,32 +561,53 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         } else super.onOptionsItemSelected(item)
     }
 
-    override fun onDataSetChanged() {
-        runOnUiThread {
-            Handler(Looper.getMainLooper()).postDelayed({
-                val labelCant: Boolean
-                val totalVisible: Int
-                if (orderRequest.orderRequestType == OrderRequestType.stockAuditFromDevice) {
-                    labelCant = false
-                    totalVisible = totalCollected
-                } else {
-                    labelCant = true
-                    totalVisible = totalRequested
-                }
+    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
+        fillSummaryFragment()
+    }
 
-                summaryFragment
-                    .multiSelect(labelCant) // This is to set fragments captions
-                    .totalVisible(totalVisible)
-                    .totalChecked(countChecked)
-                    .fill()
-            }, 100)
+    override fun onDataSetChanged() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            fillSummaryFragment()
+        }, 100)
+    }
+
+    private fun fillSummaryFragment() {
+        runOnUiThread {
+            val firstValue: Int
+            val firstLabel: String
+            val secondValue: Int
+            val secondLabel: String
+            var thirdValue = 0
+            var thirdLabel = ""
+
+            if (orderRequest.orderRequestType == OrderRequestType.stockAuditFromDevice) {
+                firstValue = totalCollected
+                firstLabel = getString(R.string.total)
+                secondValue = totalRequested
+                secondLabel = getString(R.string.requested)
+                thirdValue = itemCount
+                thirdLabel = getString(R.string.products)
+            } else {
+                firstValue = totalCollected
+                firstLabel = getString(R.string.total)
+                secondValue = itemCount
+                secondLabel = getString(R.string.products)
+            }
+
+            summaryFragment
+                .first(firstValue)
+                .firstLabel(firstLabel)
+                .second(secondValue)
+                .secondLabel(secondLabel)
+                .third(thirdValue)
+                .thirdLabel(thirdLabel)
+                .fill()
         }
     }
 
     companion object {
         const val ARG_TITLE = "title"
         const val ARG_ID = "id"
-        const val ARG_CLIENT = "client"
         const val ARG_CONFIRM_STATUS = "confirmStatus"
         const val ARG_IS_SIGNED = "isSigned"
 

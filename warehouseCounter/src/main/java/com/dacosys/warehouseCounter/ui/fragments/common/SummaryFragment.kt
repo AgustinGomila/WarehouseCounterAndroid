@@ -5,17 +5,18 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.databinding.SummaryFragmentBinding
 
 /**
  * Summary fragment
  */
 class SummaryFragment : Fragment() {
-    private var multiSelect: Boolean = false
-    private var totalVisible: Int = 0
-    private var totalRequired: Int = 0
-    private var totalChecked: Int = 0
+    private var first: Int = 0
+    private var second: Int = 0
+    private var third: Int = 0
+    private var firstLabel: String = ""
+    private var secondLabel: String = ""
+    private var thirdLabel: String = ""
 
     private var _binding: SummaryFragmentBinding? = null
 
@@ -40,62 +41,90 @@ class SummaryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         if (arguments != null) {
-            multiSelect = requireArguments().getBoolean(ARG_MULTISELECT)
-            totalVisible = requireArguments().getInt(ARG_TOTAL_VISIBLE)
-            totalChecked = requireArguments().getInt(ARG_TOTAL_CHECKED)
-            totalRequired = requireArguments().getInt(ARG_TOTAL_REQUIRED)
+            firstLabel = requireArguments().getString(ARG_FIRST_LABEL) ?: ""
+            secondLabel = requireArguments().getString(ARG_SECOND_LABEL) ?: ""
+            thirdLabel = requireArguments().getString(ARG_THIRD_LABEL) ?: ""
+            first = requireArguments().getInt(ARG_FIRST)
+            second = requireArguments().getInt(ARG_SECOND)
+            third = requireArguments().getInt(ARG_THIRD)
         }
         fill()
     }
 
     @Suppress("unused")
-    fun multiSelect(`val`: Boolean): SummaryFragment {
-        multiSelect = `val`
+    fun firstLabel(`val`: String): SummaryFragment {
+        firstLabel = `val`
         return this
     }
 
     @Suppress("unused")
-    fun totalVisible(`val`: Int): SummaryFragment {
-        totalVisible = `val`
+    fun secondLabel(`val`: String): SummaryFragment {
+        secondLabel = `val`
         return this
     }
 
     @Suppress("unused")
-    fun totalChecked(`val`: Int): SummaryFragment {
-        totalChecked = `val`
+    fun thirdLabel(`val`: String): SummaryFragment {
+        thirdLabel = `val`
         return this
     }
 
     @Suppress("unused")
-    fun totalRequired(`val`: Int): SummaryFragment {
-        totalRequired = `val`
+    fun first(`val`: Int): SummaryFragment {
+        first = `val`
+        return this
+    }
+
+    @Suppress("unused")
+    fun second(`val`: Int): SummaryFragment {
+        second = `val`
+        return this
+    }
+
+    @Suppress("unused")
+    fun third(`val`: Int): SummaryFragment {
+        third = `val`
         return this
     }
 
     fun fill() {
-        if (multiSelect) {
-            binding.totalLabelTextView.text = getString(R.string.total)
-            binding.qtyReqLabelTextView.text = getString(R.string.cant)
-            binding.selectedLabelTextView.text = getString(R.string.checked)
-
-            binding.totalTextView.text = totalVisible.toString()
-            binding.qtyReqTextView.text = totalRequired.toString()
-            binding.selectedTextView.text = totalChecked.toString()
+        if (firstLabel.isEmpty()) {
+            binding.firstLabelTextView.visibility = View.GONE
+            binding.firstTextView.visibility = View.GONE
         } else {
-            binding.totalLabelTextView.text = getString(R.string.total)
-            binding.qtyReqLabelTextView.text = getString(R.string.cont_)
-            binding.selectedLabelTextView.text = getString(R.string.items)
+            binding.firstLabelTextView.visibility = View.VISIBLE
+            binding.firstTextView.visibility = View.VISIBLE
+            binding.firstLabelTextView.text = firstLabel
+            binding.firstTextView.text = first.toString()
+        }
 
-            binding.totalTextView.text = totalVisible.toString()
-            binding.qtyReqTextView.text = totalRequired.toString()
-            binding.selectedTextView.text = (totalVisible - totalRequired).toString()
+        if (secondLabel.isEmpty()) {
+            binding.secondLabelTextView.visibility = View.GONE
+            binding.secondTextView.visibility = View.GONE
+        } else {
+            binding.secondLabelTextView.visibility = View.VISIBLE
+            binding.secondTextView.visibility = View.VISIBLE
+            binding.secondLabelTextView.text = secondLabel
+            binding.secondTextView.text = second.toString()
+        }
+
+        if (thirdLabel.isEmpty()) {
+            binding.thirdLabelTextView.visibility = View.GONE
+            binding.thirdTextView.visibility = View.GONE
+        } else {
+            binding.thirdLabelTextView.visibility = View.VISIBLE
+            binding.thirdTextView.visibility = View.VISIBLE
+            binding.thirdLabelTextView.text = thirdLabel
+            binding.thirdTextView.text = third.toString()
         }
     }
 
     companion object {
-        const val ARG_MULTISELECT = "multiSelect"
-        const val ARG_TOTAL_VISIBLE = "totalVisible"
-        const val ARG_TOTAL_REQUIRED = "totalRequired"
-        const val ARG_TOTAL_CHECKED = "totalChecked"
+        const val ARG_FIRST = "first"
+        const val ARG_SECOND = "second"
+        const val ARG_THIRD = "third"
+        const val ARG_FIRST_LABEL = "firstLabel"
+        const val ARG_SECOND_LABEL = "secondLabel"
+        const val ARG_THIRD_LABEL = "thirdLabel"
     }
 }

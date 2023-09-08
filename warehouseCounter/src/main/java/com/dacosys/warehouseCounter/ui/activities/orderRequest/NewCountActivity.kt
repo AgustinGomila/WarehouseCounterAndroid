@@ -212,10 +212,9 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     private fun attemptSetupNewCount() {
         // Reset errors.
-        //clientSpinnerFragment.setError(null);
         binding.descEditText.error = null
 
-        // Store values at the time of the setupnewcount attempt.
+        // Store values at the time of the attempt.
         val description = binding.descEditText.text.toString()
 
         var cancel = false

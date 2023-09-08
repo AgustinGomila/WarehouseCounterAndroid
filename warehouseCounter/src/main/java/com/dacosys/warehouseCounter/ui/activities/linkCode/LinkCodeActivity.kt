@@ -182,24 +182,12 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         binding.qtyEditText.setText(number.toString())
     }
 
-    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
-        runOnUiThread {
-            summaryFragment
-                .totalChecked(countChecked)
-                .fill()
-        }
-    }
-
     private var rejectNewInstances = false
 
     private var tempTitle = ""
 
     private var panelIsExpanded = false
     private var searchTextIsFocused = false
-
-    private lateinit var filterFragment: SelectFilterFragment
-    private lateinit var summaryFragment: SummaryFragment
-    private lateinit var searchTextFragment: SearchTextFragment
 
     private var linkCode: String = ""
 
@@ -214,12 +202,23 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     // Se usa para saber si estamos en onStart luego de onCreate
     private var fillRequired = false
 
-    private var searchText: String = ""
-
     // region Variables para LoadOnDemand
     private var completeList: ArrayList<Item> = ArrayList()
     private var checkedIdArray: ArrayList<Long> = ArrayList()
     // endregion
+
+    // Fragments
+    private lateinit var filterFragment: SelectFilterFragment
+    private lateinit var summaryFragment: SummaryFragment
+    private lateinit var searchTextFragment: SearchTextFragment
+
+    private var filterItemDescription: String = ""
+    private var filterItemEan: String = ""
+    private var filterItemCategory: ItemCategory? = null
+    private var filterOnlyActive: Boolean = true
+    private var filterItemCode: String = ""
+
+    private var searchedText: String = ""
 
     private val menuItemShowImages = 9999
     private var showImages
@@ -247,8 +246,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun saveBundleValues(b: Bundle) {
-        b.putString(ARG_TITLE, title.toString())
+        b.putString(ARG_TITLE, tempTitle)
         b.putBoolean(ARG_MULTISELECT, multiSelect)
+
         b.putString("linkCode", linkCode)
         b.putBoolean("panelIsExpanded", panelIsExpanded)
 
@@ -260,7 +260,13 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
-        b.putString("searchText", searchText)
+        b.putString("filterItemDescription", filterItemDescription)
+        b.putString("filterItemEan", filterItemEan)
+        b.putParcelable("filterItemCategory", filterItemCategory)
+        b.putString("filterItemCode", filterItemCode)
+        b.putBoolean("filterOnlyActive", filterOnlyActive)
+
+        b.putString("searchedText", searchedText)
     }
 
     private fun loadBundleValues(b: Bundle) {
@@ -279,7 +285,15 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
 
-        searchText = b.getString("searchText") ?: ""
+        // Filter Fragment
+        filterItemDescription = b.getString("filterItemDescription") ?: ""
+        filterItemEan = b.getString("filterItemEan") ?: ""
+        filterItemCategory = b.getParcelable("filterItemCategory")
+        filterItemCode = b.getString("filterItemCode") ?: ""
+        filterOnlyActive = b.getBoolean("filterOnlyActive")
+
+        // Search Text Fragment
+        searchedText = b.getString("searchedText") ?: ""
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
@@ -337,7 +351,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             .isCycle(true) // 49,50,-50,-49 and so on
             .counterDelay(50) // speed of counter
             .startNumber(1.0).counterStep(1L)  // steps e.g. 0,2,4,6...
-            .listener(this) // to listen to counter results and show them in app
+            .listener(this) // to listen to counter-results and show them in app
             .build()
 
         binding.qtyEditText.addTextChangedListener(object : TextWatcher {
@@ -421,6 +435,11 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 .searchByItemDescription(sv.linkCodeSearchByItemDescription, sr.linkCodeSearchByItemDescription)
                 .searchByItemEan(sv.linkCodeSearchByItemEan, sr.linkCodeSearchByItemEan)
                 .searchByCategory(sv.linkCodeSearchByCategory, sr.linkCodeSearchByCategory)
+                .itemDescription(filterItemDescription)
+                .itemEan(filterItemEan)
+                .itemCategory(filterItemCategory)
+                .itemCode(filterItemCode)
+                .onlyActive(filterOnlyActive)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
@@ -430,6 +449,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             SearchTextFragment.Builder()
                 .focusChangedCallback(this)
                 .searchTextChangedCallback(this)
+                .setSearchText(searchedText)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.searchTextFragment, searchTextFragment).commit()
     }
@@ -811,11 +831,6 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     private fun fillAdapter(t: ArrayList<Item>) {
         showProgressBar(true)
 
-        if (!t.any()) {
-            checkedIdArray.clear()
-            getItems()
-            return
-        }
         completeList = t
 
         runOnUiThread {
@@ -834,7 +849,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     .multiSelect(multiSelect)
                     .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
                     .showImages(`val` = showImages, listener = { showImages = it })
-                    .filterOptions(FilterOptions(searchText))
+                    .filterOptions(FilterOptions(searchedText))
                     .checkedChangedListener(this)
                     .dataSetChangedListener(this)
                     .selectedItemChangedListener(this)
@@ -1050,11 +1065,14 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun getItems() {
+        // Limpiamos los ítems marcados
+        checkedIdArray.clear()
+
         val itemCode = filterFragment.itemCode
         val itemCategory = filterFragment.itemCategory
 
         if (itemCode.isEmpty() && itemCategory == null) {
-            showProgressBar(false)
+            fillAdapter(arrayListOf())
             return
         }
 
@@ -1065,8 +1083,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 description = itemCode.trim(),
                 itemCategoryId = itemCategory?.itemCategoryId
             ) {
-                if (it.any()) fillAdapter(it)
-                showProgressBar(false)
+                fillAdapter(it)
             }
         } catch (ex: java.lang.Exception) {
             ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
@@ -1130,7 +1147,10 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     override fun onSearchTextChanged(searchText: String) {
-        adapter?.refreshFilter(FilterOptions(searchText))
+        searchedText = searchText
+        runOnUiThread {
+            adapter?.refreshFilter(FilterOptions(searchedText))
+        }
     }
 
     /**
@@ -1211,11 +1231,13 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         itemCategory: ItemCategory?,
         onlyActive: Boolean
     ) {
-        Screen.closeKeyboard(this)
-        thread {
-            checkedIdArray.clear()
-            getItems()
-        }
+        filterItemCode = code
+        filterItemDescription = description
+        filterItemEan = ean
+        filterItemCategory = itemCategory
+        filterOnlyActive = onlyActive
+
+        Handler(Looper.getMainLooper()).postDelayed({ getItems() }, 200)
     }
 
     private fun onCheckCodeEnded(it: CheckItemCode.CheckCodeEnded) {
@@ -1252,15 +1274,24 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }, 100)
     }
 
+    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
+        fillSummaryFragment()
+    }
+
     override fun onDataSetChanged() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            fillSummaryFragment()
+        }, 100)
+    }
+
+    private fun fillSummaryFragment() {
         runOnUiThread {
-            Handler(Looper.getMainLooper()).postDelayed({
-                summaryFragment
-                    .multiSelect(multiSelect)
-                    .totalVisible(adapter?.totalVisible() ?: 0)
-                    .totalChecked(countChecked)
-                    .fill()
-            }, 100)
+            summaryFragment
+                .firstLabel(getString(R.string.total))
+                .first(adapter?.totalVisible() ?: 0)
+                .secondLabel(getString(R.string.total_count))
+                .second(countChecked)
+                .fill()
         }
     }
 

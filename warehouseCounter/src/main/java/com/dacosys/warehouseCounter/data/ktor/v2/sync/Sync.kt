@@ -103,15 +103,15 @@ class Sync private constructor(builder: Builder) {
     }
     // endregion
 
-    @Suppress("UNUSED_PARAMETER")
     private fun getNewOrderRequest(onNewOrders: (ArrayList<OrderRequest>) -> Unit = {}) {
         if (syncNewOrderStatus != DownloadStatus.NOT_RUNNING) return
         syncNewOrderStatus = DownloadStatus.RUNNING
 
         thread {
             try {
-                // TODO: Hacer una función que permita descargar nuevas órdenes.
+                /** TODO: Hacer la función que traiga nuevos pedidos desde la API */
                 // GetNewOrder(onEvent = { }, onFinish = { onNewOrders.invoke(it) }).execute()
+                onNewOrders.invoke(arrayListOf())
             } catch (ex: Exception) {
                 ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
                 syncNewOrderStatus = DownloadStatus.NOT_RUNNING

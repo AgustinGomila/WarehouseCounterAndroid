@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ui.views.scaleImageView
+package com.dacosys.warehouseCounter.ui.views
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -12,7 +12,7 @@ import androidx.appcompat.widget.AppCompatImageView
  *            deslizamiento del dedo y establezca el tamaño de la ventana flotante
  * @date: 2019-08-05  09:55
  */
-class ScaleImage(context: Context, attrs: AttributeSet? = null) :
+class ScaleImageView(context: Context, attrs: AttributeSet? = null) :
     AppCompatImageView(context, attrs) {
 
     private var touchDownX = 0f
@@ -26,7 +26,7 @@ class ScaleImage(context: Context, attrs: AttributeSet? = null) :
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if (event == null) return super.onTouchEvent(event)
+        if (event == null) return super.onTouchEvent(null)
 
         // Bloquea la intercepción de eventos de la ventana flotante, solo consumida por sí misma
         parent?.requestDisallowInterceptTouchEvent(true)

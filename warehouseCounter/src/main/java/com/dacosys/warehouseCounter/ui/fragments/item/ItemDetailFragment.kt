@@ -15,7 +15,7 @@ import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.databinding.ItemDetailBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlin.concurrent.thread
 
@@ -234,7 +234,7 @@ class ItemDetailFragment : Fragment() {
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
-        MakeText.makeText(binding.root, text, snackBarType)
+        makeText(binding.root, text, snackBarType)
     }
 
     companion object {

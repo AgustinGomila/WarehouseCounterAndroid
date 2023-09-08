@@ -27,33 +27,33 @@
             app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
-            android:id="@+id/totalLabelTextView"
+            android:id="@+id/firstLabelTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="@string/total"
+            android:text="@string/first"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
-            android:id="@+id/selectedLabelTextView"
+            android:id="@+id/secondLabelTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="@string/checked"
+            android:text="@string/second"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="@+id/guidelineSum33"
             app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
-            android:id="@+id/qtyReqLabelTextView"
+            android:id="@+id/thirdLabelTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="@string/cant"
+            android:text="@string/third"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="@+id/guidelineSum66"
@@ -74,7 +74,7 @@
             app:layout_constraintGuide_percent="0.66"/>
 
     <TextView
-            android:id="@+id/totalTextView"
+            android:id="@+id/firstTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -83,11 +83,11 @@
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/guidelineSum33"
-            app:layout_constraintStart_toEndOf="@+id/totalLabelTextView"
+            app:layout_constraintStart_toEndOf="@+id/firstLabelTextView"
             app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
-            android:id="@+id/selectedTextView"
+            android:id="@+id/secondTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -96,11 +96,11 @@
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/guidelineSum66"
-            app:layout_constraintStart_toEndOf="@+id/selectedLabelTextView"
+            app:layout_constraintStart_toEndOf="@+id/secondLabelTextView"
             app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
-            android:id="@+id/qtyReqTextView"
+            android:id="@+id/thirdTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -109,7 +109,7 @@
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/qtyReqLabelTextView"
+            app:layout_constraintStart_toEndOf="@+id/thirdLabelTextView"
             app:layout_constraintTop_toTopOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

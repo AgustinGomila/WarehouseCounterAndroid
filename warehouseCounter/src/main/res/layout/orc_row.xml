@@ -196,7 +196,7 @@
                 android:maxLines="2"
                 android:minLines="1"
                 android:text="@string/description"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 app:autoSizeMaxTextSize="12sp"
                 app:autoSizeMinTextSize="10dp"
                 app:autoSizeStepGranularity="1sp"

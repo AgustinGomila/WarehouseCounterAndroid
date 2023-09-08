@@ -70,6 +70,7 @@ data class OrderRequestType(
             val allSections = ArrayList<OrderRequestType>()
             Collections.addAll(
                 allSections,
+                notDefined,
                 prepareOrder,
                 stockAudit,
                 receptionAudit,

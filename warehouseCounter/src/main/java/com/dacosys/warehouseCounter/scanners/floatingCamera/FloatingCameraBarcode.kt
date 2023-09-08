@@ -25,7 +25,7 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import com.dacosys.warehouseCounter.ui.views.scaleImageView.ScaleImage
+import com.dacosys.warehouseCounter.ui.views.ScaleImageView
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.client.android.BeepManager
 import com.journeyapps.barcodescanner.BarcodeCallback
@@ -208,7 +208,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
         //////////////////////////////////////////////////////////////
 
         // Scale Button
-        ivScale.onScaledListener = object : ScaleImage.OnScaledListener {
+        ivScale.onScaledListener = object : ScaleImageView.OnScaledListener {
             override fun onScaled(x: Float, y: Float, event: MotionEvent) {
                 params.width = min(max(params.width + x.toInt(), flCameraMinWidth), screenWidth)
                 params.height = min(max(params.height + y.toInt(), flCameraMinHeight), screenHeight)

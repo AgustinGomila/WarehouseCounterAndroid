@@ -5,6 +5,8 @@ import android.os.Parcelable
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getFiles
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getJsonFromFile
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log.CREATOR.LOG_LIST_KEY
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent.CREATOR.CONTENT_LIST_KEY
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderStatus.CREATOR.outOfStock
@@ -21,22 +23,22 @@ import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequestCo
 
 @Serializable
 data class OrderRequest(
-    @SerialName(ORDER_REQUEST_ID_KEY) var orderRequestId: Long? = null,
-    @SerialName(EXTERNAL_ID_KEY) var externalId: String = "",
+    @SerialName(CLIENT_ID_KEY) var clientId: Long? = null,
+    @SerialName(COMPLETED_KEY) var completed: Boolean? = null,
     @SerialName(CREATION_DATE_KEY) var creationDate: String? = null,
     @SerialName(DESCRIPTION_KEY) var description: String = "",
-    @SerialName(ZONE_KEY) var zone: String = "",
-    @SerialName(ORDER_TYPE_ID_KEY) var orderTypeId: Long? = null,
+    @SerialName(EXTERNAL_ID_KEY) var externalId: String = "",
+    @SerialName(FINISH_DATE_KEY) var finishDate: String? = null,
+    @SerialName(ORDER_REQUEST_ID_KEY) var orderRequestId: Long? = null,
     @SerialName(ORDER_TYPE_DESCRIPTION_KEY) var orderTypeDescription: String = "",
-    @SerialName(RESULT_DIFF_QTY_KEY) var resultDiffQty: Boolean? = null,
-    @SerialName(RESULT_DIFF_PRODUCT_KEY) var resultDiffProduct: Boolean? = null,
+    @SerialName(ORDER_TYPE_ID_KEY) var orderTypeId: Long? = null,
     @SerialName(RESULT_ALLOW_DIFF_KEY) var resultAllowDiff: Boolean? = null,
     @SerialName(RESULT_ALLOW_MOD_KEY) var resultAllowMod: Boolean? = null,
-    @SerialName(COMPLETED_KEY) var completed: Boolean? = null,
+    @SerialName(RESULT_DIFF_PRODUCT_KEY) var resultDiffProduct: Boolean? = null,
+    @SerialName(RESULT_DIFF_QTY_KEY) var resultDiffQty: Boolean? = null,
     @SerialName(START_DATE_KEY) var startDate: String? = null,
-    @SerialName(FINISH_DATE_KEY) var finishDate: String? = null,
-    @SerialName(CLIENT_ID_KEY) var clientId: Long? = null,
     @SerialName(USER_ID_KEY) var userId: Long? = null,
+    @SerialName(ZONE_KEY) var zone: String = "",
     @SerialName(CONTENT_LIST_KEY) var contents: List<OrderRequestContent> = listOf(),
     @SerialName(LOG_LIST_KEY) var logs: List<Log> = listOf(),
     @SerialName(PACKAGE_LIST_KEY) var packages: List<Package> = listOf(),
@@ -50,32 +52,25 @@ data class OrderRequest(
         }
 
     constructor(parcel: Parcel) : this(
-        orderRequestId = parcel.readValue(Long::class.java.classLoader) as? Long,
-        externalId = parcel.readString() ?: "",
+        clientId = parcel.readValue(Long::class.java.classLoader) as? Long,
+        completed = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
         creationDate = parcel.readString(),
         description = parcel.readString() ?: "",
-        zone = parcel.readString() ?: "",
-        orderTypeId = parcel.readValue(Long::class.java.classLoader) as? Long,
+        externalId = parcel.readString() ?: "",
+        finishDate = parcel.readString(),
+        orderRequestId = parcel.readValue(Long::class.java.classLoader) as? Long,
         orderTypeDescription = parcel.readString() ?: "",
-        resultDiffQty = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
-        resultDiffProduct = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
+        orderTypeId = parcel.readValue(Long::class.java.classLoader) as? Long,
         resultAllowDiff = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
         resultAllowMod = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
-        completed = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
+        resultDiffProduct = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
+        resultDiffQty = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
         startDate = parcel.readString(),
-        finishDate = parcel.readString(),
-        clientId = parcel.readValue(Long::class.java.classLoader) as? Long,
         userId = parcel.readValue(Long::class.java.classLoader) as? Long,
-
-        contents = parcel.readParcelableArray(OrderRequestContent::class.java.classLoader)
-            ?.mapNotNull { if (it != null) it as OrderRequestContent else null }
-            ?: listOf(),
-        logs = parcel.readParcelableArray(Log::class.java.classLoader)
-            ?.mapNotNull { if (it != null) it as Log else null }
-            ?: listOf(),
-        packages = parcel.readParcelableArray(Package::class.java.classLoader)
-            ?.mapNotNull { if (it != null) it as Package else null }
-            ?: listOf(),
+        zone = parcel.readString() ?: "",
+        contents = parcel.createTypedArrayList(OrderRequestContent)?.toList() ?: listOf(),
+        logs = parcel.createTypedArrayList(Log)?.toList() ?: listOf(),
+        packages = parcel.createTypedArrayList(Package)?.toList() ?: listOf(),
     ) {
         filename = parcel.readString() ?: ""
     }
@@ -83,13 +78,13 @@ data class OrderRequest(
     val toRoom: OrderRequestRoom
         get() {
             return OrderRequestRoom(
-                orderRequestId = this.orderRequestId ?: 0L,
                 clientId = this.clientId ?: 0L,
                 completed = if (this.completed == true) 1 else 0,
                 creationDate = this.creationDate ?: "",
                 description = this.description,
                 externalId = this.externalId,
                 finishDate = this.finishDate ?: "",
+                orderRequestId = this.orderRequestId ?: 0L,
                 orderTypeDescription = this.orderTypeDescription,
                 orderTypeId = this.orderTypeId?.toInt() ?: 0,
                 resultAllowDiff = if (this.resultAllowDiff == true) 1 else 0,
@@ -110,31 +105,31 @@ data class OrderRequest(
     }
 
     constructor(filename: String) : this() {
-        val jsonString = Statics.getJsonFromFile(filename)
+        val jsonString = getJsonFromFile(filename)
 
         try {
             val or = json.decodeFromString<OrderRequest>(jsonString)
             if (or.orderRequestId == null || or.orderRequestId!! <= 0L) return
 
-            this.orderRequestId = or.orderRequestId
-            this.externalId = or.externalId
+            this.clientId = or.clientId
+            this.completed = or.completed
             this.creationDate = or.creationDate
             this.description = or.description
-            this.zone = or.zone
-            this.orderTypeId = or.orderTypeId
+            this.externalId = or.externalId
+            this.finishDate = or.finishDate
+            this.orderRequestId = or.orderRequestId
             this.orderTypeDescription = or.orderTypeDescription
-            this.resultDiffQty = or.resultDiffQty
-            this.resultDiffProduct = or.resultDiffProduct
+            this.orderTypeId = or.orderTypeId
             this.resultAllowDiff = or.resultAllowDiff
             this.resultAllowMod = or.resultAllowMod
-            this.completed = or.completed
+            this.resultDiffProduct = or.resultDiffProduct
+            this.resultDiffQty = or.resultDiffQty
             this.startDate = or.startDate
-            this.finishDate = or.finishDate
-            this.clientId = or.clientId
             this.userId = or.userId
+            this.zone = or.zone
 
-            this.logs = or.logs
             this.contents = or.contents
+            this.logs = or.logs
             this.packages = or.packages
 
             this.filename = filename.substringAfterLast('/')
@@ -144,24 +139,26 @@ data class OrderRequest(
     }
 
     constructor(orderResponse: OrderResponse) : this() {
-        this.orderRequestId = orderResponse.id
-        this.externalId = orderResponse.externalId
+        this.clientId = orderResponse.clientId
+        this.completed = orderResponse.completed.isNotEmpty()
         this.creationDate = orderResponse.receivedDate
         this.description = orderResponse.description
-        this.zone = orderResponse.zone
-        this.orderTypeId = orderResponse.orderTypeId
+        this.externalId = orderResponse.externalId
+        this.finishDate = orderResponse.finishDate
+        this.orderRequestId = orderResponse.id
         this.orderTypeDescription = orderResponse.orderType.description
-        this.resultDiffQty = orderResponse.resultDiffQty
-        this.resultDiffProduct = orderResponse.resultDiffProduct
+        this.orderTypeId = orderResponse.orderTypeId
         this.resultAllowDiff = orderResponse.resultAllowDiff
         this.resultAllowMod = orderResponse.resultAllowMod
-        this.completed = orderResponse.completed.isNotEmpty()
+        this.resultDiffProduct = orderResponse.resultDiffProduct
+        this.resultDiffQty = orderResponse.resultDiffQty
         this.startDate = orderResponse.startDate
-        this.finishDate = orderResponse.finishDate
-        this.clientId = orderResponse.clientId
         this.userId = orderResponse.collectorUserId
+        this.zone = orderResponse.zone
 
         this.contents = orderResponse.contents.map { OrderRequestContent(it) }
+        this.logs = listOf()
+        this.packages = listOf()
     }
 
     override fun toString(): String {
@@ -198,25 +195,27 @@ data class OrderRequest(
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeValue(orderRequestId)
-        parcel.writeString(externalId)
+        parcel.writeValue(clientId)
+        parcel.writeValue(completed)
         parcel.writeString(creationDate)
         parcel.writeString(description)
-        parcel.writeString(zone)
-        parcel.writeValue(orderTypeId)
+        parcel.writeString(externalId)
+        parcel.writeString(finishDate)
+        parcel.writeValue(orderRequestId)
         parcel.writeString(orderTypeDescription)
-        parcel.writeValue(resultDiffQty)
-        parcel.writeValue(resultDiffProduct)
+        parcel.writeValue(orderTypeId)
         parcel.writeValue(resultAllowDiff)
         parcel.writeValue(resultAllowMod)
-        parcel.writeValue(completed)
+        parcel.writeValue(resultDiffProduct)
+        parcel.writeValue(resultDiffQty)
         parcel.writeString(startDate)
-        parcel.writeString(finishDate)
-        parcel.writeValue(clientId)
         parcel.writeValue(userId)
+        parcel.writeString(zone)
+
         parcel.writeTypedList(contents)
         parcel.writeTypedList(logs)
         parcel.writeTypedList(packages)
+
         parcel.writeString(filename)
     }
 
@@ -252,9 +251,7 @@ data class OrderRequest(
 
         fun toUpdatePayload(or: OrderRequest): OrderUpdatePayload {
             return OrderUpdatePayload(
-                externalId = or.externalId,
-                description = or.description,
-                statusId = outOfStock.id.toInt()
+                externalId = or.externalId, description = or.description, statusId = outOfStock.id.toInt()
             )
         }
 
@@ -262,7 +259,7 @@ data class OrderRequest(
             val orArray: ArrayList<OrderRequest> = ArrayList()
             if (Statics.isExternalStorageReadable) {
                 // Get the directory for the user's public pictures' directory.
-                val filesInFolder = Statics.getFiles(path.absolutePath)
+                val filesInFolder = getFiles(path.absolutePath)
                 if (!filesInFolder.isNullOrEmpty()) {
                     for (filename in filesInFolder) {
                         val filePath = path.absolutePath + File.separator + filename
@@ -284,8 +281,7 @@ data class OrderRequest(
             } else {
                 sendEvent(
                     SnackBarEventData(
-                        context.getString(R.string.an_error_occurred_while_deleting_counts),
-                        SnackBarType.ERROR
+                        context.getString(R.string.an_error_occurred_while_deleting_counts), SnackBarType.ERROR
                     )
                 )
             }

@@ -36,7 +36,6 @@ class UpdateOrder(
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         var isDone = false
-        var errorOccurred = false
         for ((index, order) in payload.withIndex()) {
             if (BuildConfig.DEBUG) println(json.encodeToString(OrderRequest.serializer(), order))
 
@@ -47,7 +46,6 @@ class UpdateOrder(
                 if (it.response != null) id = it.response.id
 
                 if (id > 0) successIdList.add(id)
-                else errorOccurred = true
                 isDone = index == payload.lastIndex
             })
         }
@@ -58,10 +56,6 @@ class UpdateOrder(
                 sendEvent(context.getString(R.string.connection_timeout), SnackBarType.ERROR)
                 isDone = true
             }
-        }
-
-        if (errorOccurred) {
-            sendEvent(context.getString(R.string.an_error_occurred_while_trying_to_send_the_order), SnackBarType.ERROR)
         }
 
         onFinish(successIdList)

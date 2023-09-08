@@ -8,20 +8,20 @@ import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequestCo
 
 @Serializable
 data class OrderRequestContent(
-    @SerialName(ITEM_ID_KEY) var itemId: Long? = null,
-    @SerialName(ITEM_DESCRIPTION_KEY) var itemDescription: String = "",
     @SerialName(ITEM_CODE_READ_KEY) var codeRead: String = "",
     @SerialName(ITEM_EAN_KEY) var ean: String = "",
-    @SerialName(ITEM_PRICE_KEY) var price: Double? = null,
-    @SerialName(ITEM_ACTIVE_KEY) var itemActive: Boolean? = null,
     @SerialName(ITEM_EXTERNAL_ID_KEY) var externalId: String? = null,
+    @SerialName(ITEM_ACTIVE_KEY) var itemActive: Boolean? = null,
     @SerialName(ITEM_CATEGORY_ID_KEY) var itemCategoryId: Long? = null,
+    @SerialName(ITEM_DESCRIPTION_KEY) var itemDescription: String = "",
+    @SerialName(ITEM_ID_KEY) var itemId: Long? = null,
+    @SerialName(LOT_ACTIVE_KEY) var lotActive: Boolean? = null,
+    @SerialName(LOT_CODE_KEY) var lotCode: String = "",
     @SerialName(LOT_ENABLED_KEY) var lotEnabled: Boolean? = null,
     @SerialName(LOT_ID_KEY) var lotId: Long? = null,
-    @SerialName(LOT_CODE_KEY) var lotCode: String = "",
-    @SerialName(LOT_ACTIVE_KEY) var lotActive: Boolean? = null,
-    @SerialName(QTY_REQUESTED_KEY) var qtyRequested: Double? = null,
+    @SerialName(ITEM_PRICE_KEY) var price: Double? = null,
     @SerialName(QTY_COLLECTED_KEY) var qtyCollected: Double? = null,
+    @SerialName(QTY_REQUESTED_KEY) var qtyRequested: Double? = null,
 ) : Parcelable {
 
     val contentStatus: ContentStatus
@@ -34,45 +34,45 @@ data class OrderRequestContent(
 
     fun toRoom(id: Long): OrderRequestContentRoom {
         return OrderRequestContentRoom(
-            orderRequestId = id,
-            itemId = itemId ?: 0L,
-            itemDescription = itemDescription,
             codeRead = codeRead,
             ean = ean,
-            price = price?.toFloat() ?: 0F,
-            itemActive = if (itemActive == true) 1 else 0,
             externalId = externalId ?: "",
+            itemActive = if (itemActive == true) 1 else 0,
             itemCategoryId = itemCategoryId ?: 0L,
+            itemDescription = itemDescription,
+            itemId = itemId ?: 0L,
+            lotActive = if (lotActive == true) 1 else 0,
+            lotCode = lotCode,
             lotEnabled = if (lotEnabled == true) 1 else 0,
             lotId = lotId ?: 0L,
-            lotCode = lotCode,
-            lotActive = if (lotActive == true) 1 else 0,
-            qtyRequested = qtyRequested ?: 0.0,
+            orderRequestId = id,
+            price = price?.toFloat() ?: 0F,
             qtyCollected = qtyCollected ?: 0.0,
+            qtyRequested = qtyRequested ?: 0.0,
         )
     }
 
     constructor(parcel: Parcel) : this(
-        itemId = parcel.readValue(Long::class.java.classLoader) as? Long,
-        itemDescription = parcel.readString() ?: "",
         codeRead = parcel.readString() ?: "",
         ean = parcel.readString() ?: "",
-        price = parcel.readValue(Double::class.java.classLoader) as? Double,
-        itemActive = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
         externalId = parcel.readString() ?: "",
+        itemActive = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
         itemCategoryId = parcel.readValue(Long::class.java.classLoader) as? Long,
+        itemDescription = parcel.readString() ?: "",
+        itemId = parcel.readValue(Long::class.java.classLoader) as? Long,
+        lotActive = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
+        lotCode = parcel.readString() ?: "",
         lotEnabled = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
         lotId = parcel.readValue(Long::class.java.classLoader) as? Long,
-        lotCode = parcel.readString() ?: "",
-        lotActive = parcel.readValue(Boolean::class.java.classLoader) as? Boolean,
-        qtyRequested = parcel.readValue(Double::class.java.classLoader) as? Double,
+        price = parcel.readValue(Double::class.java.classLoader) as? Double,
         qtyCollected = parcel.readValue(Double::class.java.classLoader) as? Double,
+        qtyRequested = parcel.readValue(Double::class.java.classLoader) as? Double,
     )
 
     constructor(orCont: OrderResponseContent) : this(
         itemId = orCont.itemId,
-        qtyRequested = orCont.qtyRequested,
         qtyCollected = orCont.qtyCollected,
+        qtyRequested = orCont.qtyRequested,
     )
 
     override fun equals(other: Any?): Boolean {
@@ -103,20 +103,20 @@ data class OrderRequestContent(
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeValue(itemId)
-        parcel.writeString(itemDescription)
         parcel.writeString(codeRead)
         parcel.writeString(ean)
-        parcel.writeValue(price)
-        parcel.writeValue(itemActive)
         parcel.writeString(externalId)
+        parcel.writeValue(itemActive)
         parcel.writeValue(itemCategoryId)
+        parcel.writeString(itemDescription)
+        parcel.writeValue(itemId)
+        parcel.writeValue(lotActive)
+        parcel.writeString(lotCode)
         parcel.writeValue(lotEnabled)
         parcel.writeValue(lotId)
-        parcel.writeString(lotCode)
-        parcel.writeValue(lotActive)
-        parcel.writeValue(qtyRequested)
+        parcel.writeValue(price)
         parcel.writeValue(qtyCollected)
+        parcel.writeValue(qtyRequested)
     }
 
     override fun describeContents(): Int {
@@ -124,20 +124,20 @@ data class OrderRequestContent(
     }
 
     companion object CREATOR : Parcelable.Creator<OrderRequestContent> {
-        const val ITEM_ID_KEY = "itemId"
-        const val ITEM_DESCRIPTION_KEY = "itemDescription"
-        const val ITEM_CODE_READ_KEY = "itemCodeRead"
-        const val ITEM_EAN_KEY = "itemEan"
-        const val ITEM_PRICE_KEY = "itemPrice"
         const val ITEM_ACTIVE_KEY = "itemActive"
-        const val ITEM_EXTERNAL_ID_KEY = "itemExternalId"
         const val ITEM_CATEGORY_ID_KEY = "itemCategoryId"
+        const val ITEM_CODE_READ_KEY = "itemCodeRead"
+        const val ITEM_DESCRIPTION_KEY = "itemDescription"
+        const val ITEM_EAN_KEY = "itemEan"
+        const val ITEM_EXTERNAL_ID_KEY = "itemExternalId"
+        const val ITEM_ID_KEY = "itemId"
+        const val ITEM_PRICE_KEY = "itemPrice"
+        const val LOT_ACTIVE_KEY = "lotActive"
+        const val LOT_CODE_KEY = "lotCode"
         const val LOT_ENABLED_KEY = "itemLotEnabled"
         const val LOT_ID_KEY = "lotId"
-        const val LOT_CODE_KEY = "lotCode"
-        const val LOT_ACTIVE_KEY = "lotActive"
-        const val QTY_REQUESTED_KEY = "qtyRequested"
         const val QTY_COLLECTED_KEY = "qtyCollected"
+        const val QTY_REQUESTED_KEY = "qtyRequested"
 
         const val CONTENT_LIST_KEY = "contents"
 

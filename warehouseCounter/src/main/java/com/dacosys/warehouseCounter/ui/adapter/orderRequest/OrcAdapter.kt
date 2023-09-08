@@ -430,7 +430,6 @@ class OrcAdapter private constructor(builder: Builder) :
                 }
             }
 
-            // Notificamos al Listener superior
             dataSetChangedListener?.onDataSetChanged()
             return@OnLongClickListener true
         }
@@ -566,8 +565,7 @@ class OrcAdapter private constructor(builder: Builder) :
 
     fun add(asset: OrderRequestContent, position: Int) {
         fullList.add(position, asset)
-        submitList(fullList) {
-            // Notificamos al Listener superior
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
             selectItem(position)
         }
@@ -583,8 +581,7 @@ class OrcAdapter private constructor(builder: Builder) :
             }
         }
 
-        submitList(fullList) {
-            // Notificamos al Listener superior
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
             selectItem(orcs.last())
         }
@@ -595,8 +592,7 @@ class OrcAdapter private constructor(builder: Builder) :
         checkedIdArray.remove(id)
 
         fullList.removeAt(position)
-        submitList(fullList) {
-            /** Notificamos al Listener superior */
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
         }
     }
@@ -614,8 +610,7 @@ class OrcAdapter private constructor(builder: Builder) :
             }
         }
 
-        submitList(fullList) {
-            /** Notificamos al Listener superior */
+        submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
         }
     }
@@ -631,10 +626,8 @@ class OrcAdapter private constructor(builder: Builder) :
         if (content.itemDescription != desc) {
             content.itemDescription = desc
 
-            submitList(fullList) {
+            submitList(fullList).apply {
                 notifyItemChanged(index)
-
-                // Seleccionamos el ítem y hacemos scroll hasta él.
                 selectItem(content)
             }
         }
@@ -654,10 +647,8 @@ class OrcAdapter private constructor(builder: Builder) :
         content.lotId = longLotId
         content.lotActive = true
 
-        submitList(fullList) {
+        submitList(fullList).apply {
             notifyItemChanged(index)
-
-            // Seleccionamos el ítem y hacemos scroll hasta él.
             selectItem(content)
         }
     }
@@ -670,7 +661,7 @@ class OrcAdapter private constructor(builder: Builder) :
 
         content.qtyCollected = qtyCollected
 
-        submitList(fullList) {
+        submitList(fullList).apply {
             notifyItemChanged(index)
 
             if (qtyRequested == qtyCollected) {
@@ -681,10 +672,7 @@ class OrcAdapter private constructor(builder: Builder) :
                 reportQtyCollectedChange(content)
             }
 
-            // Notificamos al Listener superior
             dataSetChangedListener?.onDataSetChanged()
-
-            // Seleccionamos el ítem y hacemos scroll hasta él.
             selectItem(content)
         }
     }
@@ -912,7 +900,10 @@ class OrcAdapter private constructor(builder: Builder) :
             binding.qtyRequestedTextView.text =
                 Statics.roundToString(content.qtyRequested ?: 0.toDouble(), Statics.decimalPlaces)
 
-            binding.itemIdCheckedTextView.text = itemId.toString()
+            binding.itemIdCheckedTextView.text =
+                if (itemId < 0) context.getString(R.string.new_product)
+                else if (itemId == 0L) context.getString(R.string.without_id)
+                else itemId.toString()
             binding.extIdCheckedTextView.text = content.externalId ?: ""
             binding.lotIdCheckedTextView.text = content.lotId?.toString() ?: ""
 
