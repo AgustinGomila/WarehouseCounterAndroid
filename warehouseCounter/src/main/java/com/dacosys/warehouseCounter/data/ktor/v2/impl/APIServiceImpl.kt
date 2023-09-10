@@ -446,8 +446,8 @@ class APIServiceImpl : APIService {
     override suspend fun getOrderLocation(
         filter: ArrayList<ApiFilterParam>, callback: (APIResponse<List<OrderLocation>>) -> Unit
     ) {
-        apiRequest.getListOfOrderLocation(
-            filter = filter, callback = callback
+        apiRequest.getListOf(
+            listKey = OrderLocation.ORDER_LOCATION_LIST_KEY, filter = filter, callback = callback
         )
     }
 }
