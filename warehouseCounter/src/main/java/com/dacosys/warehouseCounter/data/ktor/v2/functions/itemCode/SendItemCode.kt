@@ -29,6 +29,7 @@ class SendItemCode
     private var r: ItemCodeResponse? = null
 
     fun execute() {
+        onEvent(SnackBarEventData(context.getString(R.string.sending_item_codes_), SnackBarType.RUNNING))
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

@@ -49,6 +49,12 @@ class GetWarehouse
     private var r: ArrayList<Warehouse> = ArrayList()
 
     fun execute() {
+        onEvent(
+            SnackBarEventData(
+                context.getString(R.string.searching_warehouses),
+                SnackBarType.RUNNING
+            )
+        )
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

@@ -20,6 +20,12 @@ class GetOrderBarcode(
     private var r: ArrayList<Barcode> = ArrayList()
 
     fun execute() {
+        onEvent(
+            SnackBarEventData(
+                context.getString(R.string.searching_barcodes),
+                SnackBarType.RUNNING
+            )
+        )
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

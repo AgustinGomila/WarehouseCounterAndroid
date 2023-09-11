@@ -1516,7 +1516,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     CheckCode(callback = { onCheckCodeEnded(it) },
                         scannedCode = regexRes.ean,
                         list = fullList,
-                        onEventData = { showSnackBar(it.text, it.snackBarType) }).execute()
+                        onEvent = { showSnackBar(it.text, it.snackBarType) }).execute()
 
                     return@tryToRegex
                 }
@@ -1543,7 +1543,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             CheckCode(callback = { onCheckCodeEnded(it) },
                 scannedCode = code,
                 list = fullList,
-                onEventData = { it2 -> showSnackBar(it2.text, it2.snackBarType) }).execute()
+                onEvent = { it2 -> showSnackBar(it2.text, it2.snackBarType) }).execute()
 
             gentlyReturn()
         }

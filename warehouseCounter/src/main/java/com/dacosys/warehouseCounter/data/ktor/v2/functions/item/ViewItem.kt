@@ -48,6 +48,12 @@ class ViewItem
     private var r: Item? = null
 
     fun execute() {
+        onEvent(
+            SnackBarEventData(
+                context.getString(R.string.searching_items),
+                SnackBarType.RUNNING
+            )
+        )
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

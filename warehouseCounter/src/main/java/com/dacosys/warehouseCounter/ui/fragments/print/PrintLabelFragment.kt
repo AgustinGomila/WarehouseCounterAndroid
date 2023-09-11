@@ -133,15 +133,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
         saveBundleValues(savedInstanceState)
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        loadPrinterPreferences()
-        initializePrinter()
-    }
-
     private fun loadPrinterPreferences() {
-        // Cantidad inicial 1
         if (qty <= 0) qty = 1
 
         // Impresora guardada en preferencias
@@ -461,6 +453,9 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        loadPrinterPreferences()
+        initializePrinter()
 
         refreshViews()
     }

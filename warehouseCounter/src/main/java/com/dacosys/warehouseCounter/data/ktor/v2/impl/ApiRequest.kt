@@ -74,7 +74,7 @@ class ApiRequest {
                 }
             }
         } catch (e: JsonConvertException) {
-            Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.json_convertion_failed))))
+            Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.json_conversion_failed))))
         } catch (e: SerializationException) {
             Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.serialization_failed))))
         } catch (e: NullPointerException) {
@@ -133,7 +133,7 @@ class ApiRequest {
                 }
             }
         } catch (e: JsonConvertException) {
-            Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.json_convertion_failed))))
+            Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.json_conversion_failed))))
         } catch (e: SerializationException) {
             Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.serialization_failed))))
         } catch (e: NullPointerException) {
@@ -203,7 +203,7 @@ class ApiRequest {
                 }
             }
         } catch (e: JsonConvertException) {
-            Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.json_convertion_failed))))
+            Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.json_conversion_failed))))
         } catch (e: SerializationException) {
             Either.Right(error(ErrorResponse(e.message ?: context.getString(R.string.serialization_failed))))
         } catch (e: NullPointerException) {

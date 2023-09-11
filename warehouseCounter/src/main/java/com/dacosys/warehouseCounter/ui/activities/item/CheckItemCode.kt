@@ -15,7 +15,7 @@ import kotlinx.coroutines.*
 class CheckItemCode(
     private var scannedCode: String,
     private var list: ArrayList<Item>,
-    private var onEventData: (SnackBarEventData) -> Unit = {},
+    private var onEvent: (SnackBarEventData) -> Unit = {},
     private var onFinish: (CheckCodeEnded) -> Unit = {},
 ) {
     data class CheckCodeEnded(
@@ -114,6 +114,6 @@ class CheckItemCode(
     }
 
     private fun sendEvent(event: SnackBarEventData) {
-        onEventData.invoke(event)
+        onEvent.invoke(event)
     }
 }

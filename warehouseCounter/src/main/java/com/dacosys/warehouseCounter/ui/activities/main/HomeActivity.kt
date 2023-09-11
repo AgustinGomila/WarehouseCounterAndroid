@@ -850,6 +850,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         if (!isDebuggable() && !BuildConfig.DEBUG) {
             // Mostramos el Timer solo en DEBUG
             binding.timeTextView.visibility = View.GONE
+            binding.syncImageView.visibility = View.GONE
+        }
+
+        binding.syncImageView.setOnClickListener {
+            sync.forceSync()
         }
 
         if (savedInstanceState != null) {

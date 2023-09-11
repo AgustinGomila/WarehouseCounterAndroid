@@ -60,6 +60,10 @@ class Sync private constructor(builder: Builder) {
         }
     }
 
+    fun forceSync() {
+        goSync(onNewOrders, onCompletedOrders)
+    }
+
     //To start timer
     fun startSync() {
         Log.d(this::class.java.simpleName, "Iniciando sincronizador de órdenes...")

@@ -47,6 +47,12 @@ class ViewRack
     private var r: Rack? = null
 
     fun execute() {
+        onEvent(
+            SnackBarEventData(
+                context.getString(R.string.searching_racks),
+                SnackBarType.RUNNING
+            )
+        )
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

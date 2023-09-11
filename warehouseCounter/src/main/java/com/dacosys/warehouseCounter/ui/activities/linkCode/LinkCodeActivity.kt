@@ -157,7 +157,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             CheckItemCode(
                 scannedCode = scanCode,
                 list = adapter?.fullList ?: ArrayList(),
-                onEventData = { showSnackBar(it.text, it.snackBarType) },
+                onEvent = { showSnackBar(it.text, it.snackBarType) },
                 onFinish = { onCheckCodeEnded(it) },
             ).execute()
         } catch (ex: Exception) {

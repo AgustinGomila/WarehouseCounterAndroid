@@ -20,6 +20,7 @@ class UpdateOrder(
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
     fun execute() {
+        onEvent(SnackBarEventData(context.getString(R.string.updating_order_), SnackBarType.RUNNING))
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

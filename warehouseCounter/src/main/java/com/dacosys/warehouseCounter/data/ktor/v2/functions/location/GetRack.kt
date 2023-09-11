@@ -40,6 +40,12 @@ class GetRack(
     private var r: ArrayList<Rack> = ArrayList()
 
     fun execute() {
+        onEvent(
+            SnackBarEventData(
+                context.getString(R.string.searching_racks),
+                SnackBarType.RUNNING
+            )
+        )
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

@@ -22,6 +22,12 @@ class GetBarcodeLabelTemplate(
     private var r: ArrayList<BarcodeLabelTemplate> = ArrayList()
 
     fun execute() {
+        onEvent(
+            SnackBarEventData(
+                context.getString(R.string.searching_templates),
+                SnackBarType.RUNNING
+            )
+        )
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

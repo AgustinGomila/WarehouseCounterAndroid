@@ -18,7 +18,7 @@ class CheckCode(
     private var callback: (CheckCodeEnded) -> Unit = {},
     private var scannedCode: String,
     private var list: ArrayList<OrderRequestContent>,
-    private var onEventData: (SnackBarEventData) -> Unit = {},
+    private var onEvent: (SnackBarEventData) -> Unit = {},
 ) {
     data class CheckCodeEnded(var orc: OrderRequestContent?, var itemCode: ItemCode?)
 
@@ -170,6 +170,6 @@ class CheckCode(
     }
 
     private fun sendEvent(event: SnackBarEventData) {
-        onEventData.invoke(event)
+        onEvent.invoke(event)
     }
 }

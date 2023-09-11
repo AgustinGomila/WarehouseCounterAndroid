@@ -665,7 +665,7 @@
     <string name="invalid_response">Respuesta inválida</string>
     <string name="invalid_contents">Contenidos inválidos</string>
     <string name="ptl_order">Orden PTL</string>
-    <string name="orders">Órdenes</string>
+    <string name="ptl_orders">Órdenes</string>
     <string name="zone">Zona</string>
     <string name="search_area_">Buscar área…</string>
     <string name="area">Área</string>
@@ -777,7 +777,21 @@
     <string name="second">Segundo</string>
     <string name="third">Tercero</string>
     <string name="products">Productos</string>
-    <string name="json_convertion_failed">Falló la conversión Json</string>
+    <string name="json_conversion_failed">Falló la conversión Json</string>
     <string name="serialization_failed">Falló la serialización</string>
     <string name="null_error">Error de puntero nulo</string>
+    <string name="sending_item_codes_">Enviando códigos de ítems…</string>
+    <string name="creating_order_">Creando pedido…</string>
+    <string name="moving_order_">Moviendo pedido…</string>
+    <string name="updating_order_">Actualizando pedido…</string>
+    <string name="searching_database">Buscando base de datos…</string>
+    <string name="searching_orders">Buscando pedidos…</string>
+    <string name="searching_templates">Buscando plantillas…</string>
+    <string name="searching_barcodes">Buscando etiquetas…</string>
+    <string name="searching_order_locations">Buscando ubicaciones de pedidos…</string>
+    <string name="searching_order_packages">Buscando empaquetados…</string>
+    <string name="searching_racks">Buscando racks…</string>
+    <string name="searching_areas">Buscando áreas…</string>
+    <string name="searching_items">Buscando ítems…</string>
+    <string name="searching_warehouses">Buscando depósitos…</string>
 </resources>

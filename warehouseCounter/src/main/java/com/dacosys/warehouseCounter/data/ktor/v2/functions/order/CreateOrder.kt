@@ -19,6 +19,7 @@ class CreateOrder(
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
     fun execute() {
+        onEvent(SnackBarEventData(context.getString(R.string.creating_order_), SnackBarType.RUNNING))
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

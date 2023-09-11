@@ -20,6 +20,12 @@ class GetOrderLocation(
     private var r: List<OrderLocation> = listOf()
 
     fun execute() {
+        onEvent(
+            SnackBarEventData(
+                context.getString(R.string.searching_order_locations),
+                SnackBarType.RUNNING
+            )
+        )
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

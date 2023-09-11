@@ -557,7 +557,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             } else {
                 binding.totalLabelTextView.text = context.getString(R.string.total)
                 binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
-                binding.selectedLabelTextView.text = context.getString(R.string.orders)
+                binding.selectedLabelTextView.text = context.getString(R.string.ptl_orders)
 
                 if (adapter != null) {
                     val cont = 0

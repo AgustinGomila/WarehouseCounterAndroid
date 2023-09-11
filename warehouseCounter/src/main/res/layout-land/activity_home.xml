@@ -74,7 +74,6 @@
                 android:id="@+id/timeTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
                 android:gravity="center|end"
                 android:maxLines="1"
                 android:text="@string/_00_00"
@@ -82,9 +81,18 @@
                 android:textSize="10sp"
                 android:textStyle="italic"
                 app:layout_constraintBottom_toBottomOf="@+id/versionTextView"
-                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/clientTextView" android:layout_marginStart="8dp"/>
+                app:layout_constraintTop_toTopOf="@+id/clientTextView" android:layout_marginStart="8dp"
+                app:layout_constraintEnd_toStartOf="@+id/syncImageView"/>
+
+        <ImageView
+                android:src="@drawable/ic_sync"
+                android:clickable="true"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp" android:id="@+id/syncImageView"
+                android:layout_marginTop="8dp" app:layout_constraintTop_toTopOf="@+id/versionTextView"
+                app:layout_constraintBottom_toBottomOf="@+id/clientTextView"
+                app:layout_constraintEnd_toEndOf="parent" android:layout_marginBottom="8dp" android:focusable="true"/>
 
         <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/imageViewHeader"

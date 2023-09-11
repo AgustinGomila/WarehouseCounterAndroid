@@ -43,6 +43,12 @@ class GetOrder(
     private var r: ArrayList<OrderResponse> = ArrayList()
 
     fun execute() {
+        onEvent(
+            SnackBarEventData(
+                context.getString(R.string.searching_orders),
+                SnackBarType.RUNNING
+            )
+        )
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

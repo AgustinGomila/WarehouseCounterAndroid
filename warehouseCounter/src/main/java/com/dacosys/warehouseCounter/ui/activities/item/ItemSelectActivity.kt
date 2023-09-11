@@ -811,7 +811,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         CheckItemCode(
             scannedCode = scanCode,
             list = adapter?.fullList ?: ArrayList(),
-            onEventData = { showSnackBar(it.text, it.snackBarType) },
+            onEvent = { showSnackBar(it.text, it.snackBarType) },
             onFinish = { onCheckCodeEnded(it) },
         ).execute()
     }

@@ -1,9 +1,12 @@
 package com.dacosys.warehouseCounter.data.ktor.v2.functions.order
 
+import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
 
 class MoveOrder(
@@ -14,6 +17,7 @@ class MoveOrder(
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
     fun execute() {
+        onEvent(SnackBarEventData(context.getString(R.string.moving_order_), SnackBarType.RUNNING))
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }
