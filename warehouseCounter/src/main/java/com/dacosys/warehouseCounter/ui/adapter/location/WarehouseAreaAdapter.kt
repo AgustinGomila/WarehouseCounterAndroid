@@ -262,14 +262,10 @@ class WarehouseAreaAdapter(
                 }
 
                 // Background colors
-                val white = ResourcesCompat.getColor(
-                    WarehouseCounterApp.context.resources, R.color.text_light, null
-                )
+                val white = ResourcesCompat.getColor(context.resources, R.color.text_light, null)
 
                 // Font colors
-                val black = ResourcesCompat.getColor(
-                    WarehouseCounterApp.context.resources, R.color.text_dark, null
-                )
+                val black = ResourcesCompat.getColor(context.resources, R.color.text_dark, null)
 
                 v.setBackgroundColor(white)
                 holder.areaTextView?.setTextColor(black)

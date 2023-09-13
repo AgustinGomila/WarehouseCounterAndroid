@@ -15,6 +15,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages
 import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.data.settings.Preference
@@ -92,7 +93,7 @@ class ClientPackage {
             if (!allProductArray.any()) {
                 onEventData(
                     SnackBarEventData(
-                        WarehouseCounterApp.context.getString(R.string.there_are_no_valid_products_for_the_selected_client),
+                        context.getString(R.string.there_are_no_valid_products_for_the_selected_client),
                         SnackBarType.ERROR
                     )
                 )
@@ -113,7 +114,7 @@ class ClientPackage {
                 } else {
                     onEventData(
                         SnackBarEventData(
-                            WarehouseCounterApp.context.getString(R.string.there_are_no_valid_products_for_the_selected_client),
+                            context.getString(R.string.there_are_no_valid_products_for_the_selected_client),
                             SnackBarType.ERROR
                         )
                     )
@@ -142,7 +143,7 @@ class ClientPackage {
             if (!validProducts) {
                 onEventData(
                     SnackBarEventData(
-                        WarehouseCounterApp.context.getString(R.string.there_are_no_valid_products_for_the_selected_client),
+                        context.getString(R.string.there_are_no_valid_products_for_the_selected_client),
                         SnackBarType.ERROR
                     )
                 )
@@ -156,7 +157,7 @@ class ClientPackage {
 
             val title = TextView(activity)
             title.text = String.format(
-                "%s - %s", client, WarehouseCounterApp.context.getString(R.string.select_package)
+                "%s - %s", client, context.getString(R.string.select_package)
             )
             title.textSize = 16F
             title.gravity = Gravity.CENTER_HORIZONTAL
@@ -185,9 +186,7 @@ class ClientPackage {
                 dialog.dismiss()
             }
 
-            val layoutDefault = ResourcesCompat.getDrawable(
-                WarehouseCounterApp.context.resources, R.drawable.layout_thin_border, null
-            )
+            val layoutDefault = ResourcesCompat.getDrawable(context.resources, R.drawable.layout_thin_border, null)
             val inset = InsetDrawable(layoutDefault, 20)
 
             val dialog = builder.create()
@@ -214,7 +213,7 @@ class ClientPackage {
                 if (active == 0) {
                     onEventData(
                         SnackBarEventData(
-                            WarehouseCounterApp.context.getString(R.string.inactive_installation),
+                            context.getString(R.string.inactive_installation),
                             SnackBarType.ERROR
                         )
                     )
@@ -229,7 +228,7 @@ class ClientPackage {
                 if (appUrl.isEmpty()) {
                     onEventData(
                         SnackBarEventData(
-                            WarehouseCounterApp.context.getString(R.string.app_panel_url_can_not_be_obtained),
+                            context.getString(R.string.app_panel_url_can_not_be_obtained),
                             SnackBarType.ERROR
                         )
                     )
@@ -303,7 +302,7 @@ class ClientPackage {
                 onEvent.invoke(
                     PackagesResult(
                         status = ProgressStatus.crashed,
-                        msg = WarehouseCounterApp.context.getString(R.string.invalid_code)
+                        msg = context.getString(R.string.invalid_code)
                     )
                 )
                 return
@@ -335,7 +334,7 @@ class ClientPackage {
                                 status = ProgressStatus.crashed,
                                 clientEmail = email,
                                 clientPassword = password,
-                                msg = WarehouseCounterApp.context.getString(R.string.invalid_code)
+                                msg = context.getString(R.string.invalid_code)
                             )
                         )
                     }
@@ -346,15 +345,15 @@ class ClientPackage {
                     onEvent.invoke(
                         PackagesResult(
                             status = ProgressStatus.success, msg = when (mode) {
-                                QRConfigType.QRConfigImageControl -> WarehouseCounterApp.context.getString(
+                                QRConfigType.QRConfigImageControl -> context.getString(
                                     R.string.imagecontrol_configured
                                 )
 
-                                QRConfigType.QRConfigWebservice -> WarehouseCounterApp.context.getString(
+                                QRConfigType.QRConfigWebservice -> context.getString(
                                     R.string.server_configured
                                 )
 
-                                else -> WarehouseCounterApp.context.getString(R.string.configuration_applied)
+                                else -> context.getString(R.string.configuration_applied)
                             }
                         )
                     )
@@ -364,7 +363,7 @@ class ClientPackage {
                     onEvent.invoke(
                         PackagesResult(
                             status = ProgressStatus.crashed,
-                            msg = WarehouseCounterApp.context.getString(R.string.invalid_code)
+                            msg = context.getString(R.string.invalid_code)
                         )
                     )
                 }

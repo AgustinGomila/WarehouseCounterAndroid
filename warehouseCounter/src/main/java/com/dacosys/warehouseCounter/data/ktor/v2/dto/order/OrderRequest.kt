@@ -17,6 +17,8 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequest as OrderRequestRoom
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequestContent as OrderRequestContentRoom
 
@@ -258,38 +260,31 @@ data class OrderRequest(
         private fun getOrders(path: File): ArrayList<OrderRequest> {
             val orArray: ArrayList<OrderRequest> = ArrayList()
             if (Statics.isExternalStorageReadable) {
-                // Get the directory for the user's public pictures' directory.
+
                 val filesInFolder = getFiles(path.absolutePath)
                 if (!filesInFolder.isNullOrEmpty()) {
+
                     for (filename in filesInFolder) {
                         val filePath = path.absolutePath + File.separator + filename
                         val tempOr = OrderRequest(filePath)
+
                         if (tempOr.orderRequestId != null && !orArray.contains(tempOr)) {
                             tempOr.filename = filename
                             orArray.add(tempOr)
                         }
                     }
+
                 }
             }
             return orArray
         }
 
-        fun removeCountFiles(successFiles: ArrayList<String>, sendEvent: (SnackBarEventData) -> Unit) {
-            val isOk = removeOrders(successFiles)
-            if (isOk) {
-                sendEvent(SnackBarEventData(context.getString(R.string.ok), SnackBarType.SUCCESS))
-            } else {
-                sendEvent(
-                    SnackBarEventData(
-                        context.getString(R.string.an_error_occurred_while_deleting_counts), SnackBarType.ERROR
-                    )
-                )
-            }
+        fun removeCountFiles(path: File, successFiles: ArrayList<String>, sendEvent: (SnackBarEventData) -> Unit) {
+            sendEvent(removeOrders(path, successFiles))
         }
 
-        private fun removeOrders(files: ArrayList<String>): Boolean {
-            var isOk = true
-            val path = Statics.getCompletedPath()
+        private fun removeOrders(path: File, files: ArrayList<String>): SnackBarEventData {
+            var result = SnackBarEventData(context.getString(R.string.ok), SnackBarType.SUCCESS)
 
             if (Statics.isExternalStorageWritable) {
                 for (f in files) {
@@ -297,16 +292,25 @@ data class OrderRequest(
                     val fl = File(filePath)
                     if (fl.exists()) {
                         if (!fl.delete()) {
-                            isOk = false
+                            result = SnackBarEventData(
+                                context.getString(R.string.error_when_deleting_counts),
+                                SnackBarType.ERROR
+                            )
                             break
                         }
+                    } else {
+                        result = SnackBarEventData(
+                            context.getString(R.string.error_when_deleting_counts_file_not_found),
+                            SnackBarType.ERROR
+                        )
+                        break
                     }
                 }
             } else {
-                isOk = false
+                result = SnackBarEventData(context.getString(R.string.external_storage_unwritable), SnackBarType.ERROR)
             }
 
-            return isOk
+            return result
         }
 
         override fun createFromParcel(parcel: Parcel): OrderRequest {
@@ -315,6 +319,11 @@ data class OrderRequest(
 
         override fun newArray(size: Int): Array<OrderRequest?> {
             return arrayOfNulls(size)
+        }
+
+        fun generateFilename(): String {
+            val df = SimpleDateFormat(Statics.FILENAME_DATE_FORMAT, Locale.getDefault())
+            return df.format(Date())
         }
     }
 }

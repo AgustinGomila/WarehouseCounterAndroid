@@ -169,7 +169,6 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         binding.removeButton.setOnClickListener { removeDialog() }
         binding.detailButton.setOnClickListener { showDetail() }
 
-        /* Oculta el teclado en pantalla cuando pierden el foco los controles que lo necesitan */
         Screen.setupUI(binding.root, this)
     }
 

@@ -83,4 +83,16 @@
     <color name="status_deactivated">#FFA000</color>
     <color name="status_flashing">#FBC02D</color>
 
+    <color name="button_pending">#b594b6</color>
+    <color name="button_completed">#FBC02D</color>
+    <color name="button_new_count">#395b50</color>
+    <color name="button_code_read">#9EBF77</color>
+    <color name="button_ptl_order">#ea526f</color>
+    <color name="button_link_code">#ff8a5b</color>
+    <color name="button_print_label">#6b2737</color>
+    <color name="button_location_order">#ffb997</color>
+    <color name="button_move_order">#6874e8</color>
+    <color name="button_pack_unpack">#af9164</color>
+    <color name="button_test">#0b4f6c</color>
+    <color name="button_configuration">#808f87</color>
 </resources>

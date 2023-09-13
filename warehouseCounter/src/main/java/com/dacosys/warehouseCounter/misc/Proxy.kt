@@ -10,6 +10,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -43,28 +44,28 @@ class Proxy {
             avoidSetupProxyDialog = true
 
             val alert: AlertDialog.Builder = AlertDialog.Builder(activity)
-            alert.setTitle(WarehouseCounterApp.context.getString(R.string.configure_proxy_question))
+            alert.setTitle(context.getString(R.string.configure_proxy_question))
 
             val proxyEditText = EditText(activity)
-            proxyEditText.hint = WarehouseCounterApp.context.getString(R.string.proxy)
+            proxyEditText.hint = context.getString(R.string.proxy)
             proxyEditText.isFocusable = true
             proxyEditText.isFocusableInTouchMode = true
 
             val proxyPortEditText = EditText(activity)
             proxyPortEditText.inputType = InputType.TYPE_CLASS_NUMBER
-            proxyPortEditText.hint = WarehouseCounterApp.context.getString(R.string.port)
+            proxyPortEditText.hint = context.getString(R.string.port)
             proxyPortEditText.isFocusable = true
             proxyPortEditText.isFocusableInTouchMode = true
 
             val proxyUserEditText = EditText(activity)
             proxyUserEditText.inputType = InputType.TYPE_CLASS_TEXT
-            proxyUserEditText.hint = WarehouseCounterApp.context.getString(R.string.user)
+            proxyUserEditText.hint = context.getString(R.string.user)
             proxyUserEditText.isFocusable = true
             proxyUserEditText.isFocusableInTouchMode = true
 
             val proxyPassEditText = TextInputEditText(activity)
             proxyPassEditText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            proxyPassEditText.hint = WarehouseCounterApp.context.getString(R.string.password)
+            proxyPassEditText.hint = context.getString(R.string.password)
             proxyPassEditText.isFocusable = true
             proxyPassEditText.isFocusableInTouchMode = true
             proxyPassEditText.typeface = Typeface.DEFAULT

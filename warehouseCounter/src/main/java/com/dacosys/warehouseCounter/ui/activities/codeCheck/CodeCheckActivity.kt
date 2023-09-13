@@ -83,7 +83,6 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         binding.codeEditText.requestFocus()
 
-        /* Oculta el teclado en pantalla cuando pierden el foco los controles que lo necesitan */
         Screen.setupUI(binding.root, this)
     }
 

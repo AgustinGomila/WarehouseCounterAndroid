@@ -2,6 +2,7 @@ package com.dacosys.warehouseCounter.ui.activities.order
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
@@ -12,12 +13,9 @@ import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import android.view.*
 import android.view.View.GONE
 import android.view.View.VISIBLE
-import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -68,6 +66,8 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import java.util.*
 
 class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
@@ -918,19 +918,44 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
     private fun enterCode() {
         runOnUiThread {
+            var alertDialog: AlertDialog? = null
             val builder = AlertDialog.Builder(this)
-            builder.setTitle(R.string.enter_code)
+            builder.setTitle(getString(R.string.enter_code))
 
-            val input = EditText(this)
-            input.inputType = InputType.TYPE_CLASS_TEXT
-            builder.setView(input)
+            val inputLayout = TextInputLayout(this)
+            inputLayout.endIconMode = TextInputLayout.END_ICON_CLEAR_TEXT
 
-            builder.setPositiveButton(R.string.ok) { _, _ ->
+            val input = TextInputEditText(this)
+            input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS
+            input.isFocusable = true
+            input.isFocusableInTouchMode = true
+            input.setOnKeyListener { _, keyCode, event ->
+                if (event.action == KeyEvent.ACTION_DOWN) {
+                    when (keyCode) {
+                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                            if (alertDialog != null) {
+                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
+                                    .performClick()
+                            }
+                        }
+                    }
+                }
+                false
+            }
+
+            inputLayout.addView(input)
+            builder.setView(inputLayout)
+            builder.setPositiveButton(R.string.accept) { _, _ ->
                 scannerCompleted(input.text.toString())
             }
-            builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
+            builder.setNegativeButton(R.string.cancel, null)
+            alertDialog = builder.create()
 
-            builder.show()
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            alertDialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+            alertDialog.show()
+            input.requestFocus()
         }
     }
 

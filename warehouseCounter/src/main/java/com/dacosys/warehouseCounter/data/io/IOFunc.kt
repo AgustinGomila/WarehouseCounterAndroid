@@ -1,11 +1,13 @@
 package com.dacosys.warehouseCounter.data.io
 
 import android.util.Log
-import android.view.View
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import java.io.*
 import java.nio.MappedByteBuffer
@@ -14,17 +16,98 @@ import java.nio.charset.Charset
 
 class IOFunc {
     companion object {
-        fun writeJsonToFile(v: View, filename: String, value: String, completed: Boolean): Boolean {
+        fun writeNewOrderRequest(newOrArray: java.util.ArrayList<OrderRequest>, onEvent: (SnackBarEventData) -> Unit) {
+            val pendingOrderArray = OrderRequest.getPendingOrders()
 
-            fun showSnackBar(text: String, snackBarType: SnackBarType) {
-                makeText(v, text, snackBarType)
+            var isOk = true
+            for (newOrder in newOrArray) {
+                val orJson = WarehouseCounterApp.json.encodeToString(OrderRequest.serializer(), newOrder)
+
+                // Acá se comprueba si el ID ya existe y actualizamos la orden.
+                // Si no se agrega una orden nueva.
+                var alreadyExists = false
+                if (pendingOrderArray.any()) {
+                    for (pendingOr in pendingOrderArray) {
+                        if (pendingOr.orderRequestId == newOrder.orderRequestId) {
+                            alreadyExists = true
+
+                            isOk = if (newOrder.completed == true) {
+                                // Está completada, eliminar localmente
+                                val currentDir = Statics.getPendingPath()
+                                val filePath = "${currentDir.absolutePath}${File.separator}${pendingOr.filename}"
+                                val fl = File(filePath)
+                                fl.delete()
+                            } else {
+                                // Actualizar contenido local
+                                updateOrder(origOrder = pendingOr, newOrder = newOrder, onEvent = onEvent)
+                            }
+
+                            break
+                        }
+                    }
+                }
+
+                if (!alreadyExists) {
+                    val orFileName = "${OrderRequest.generateFilename()}.json"
+                    if (!writeToFile(
+                            fileName = orFileName,
+                            data = orJson,
+                            directory = Statics.getPendingPath()
+                        )
+                    ) {
+                        isOk = false
+                        break
+                    }
+                }
             }
 
+            newOrArray.clear()
+
+            if (isOk) {
+                val res = context.getString(R.string.new_counts_saved)
+                onEvent(SnackBarEventData(res, SnackBarType.SUCCESS))
+            } else {
+                val res = context.getString(R.string.an_error_occurred_while_trying_to_save_the_count)
+                onEvent(SnackBarEventData(res, SnackBarType.ERROR))
+            }
+        }
+
+        private fun updateOrder(
+            origOrder: OrderRequest,
+            newOrder: OrderRequest,
+            onEvent: (SnackBarEventData) -> Unit
+        ): Boolean {
+            var error: Boolean
+            try {
+                val orJson = json.encodeToString(OrderRequest.serializer(), newOrder)
+                Log.i(this::class.java.simpleName, orJson)
+                val orFileName = origOrder.filename.substringAfterLast('/')
+
+                error = !writeJsonToFile(
+                    filename = orFileName,
+                    value = orJson,
+                    completed = newOrder.completed ?: false,
+                    onEvent = onEvent,
+                )
+            } catch (e: UnsupportedEncodingException) {
+                e.printStackTrace()
+                Log.e(this::class.java.simpleName, e.message ?: "")
+                error = true
+            }
+            return !error
+        }
+
+        fun writeJsonToFile(
+            filename: String,
+            value: String,
+            completed: Boolean,
+            onEvent: (SnackBarEventData) -> Unit
+        ): Boolean {
             if (!Statics.isExternalStorageWritable) {
                 val res =
                     context.getString(R.string.error_external_storage_not_available_for_reading_or_writing)
                 Log.e(this::class.java.simpleName, res)
-                showSnackBar(res, SnackBarType.ERROR)
+                onEvent(SnackBarEventData(res, SnackBarType.ERROR))
                 return false
             }
 
@@ -41,7 +124,7 @@ class IOFunc {
                 val res =
                     context.getString(R.string.an_error_occurred_while_trying_to_save_the_count)
                 Log.e(this::class.java.simpleName, res)
-                showSnackBar(res, SnackBarType.ERROR)
+                onEvent(SnackBarEventData(res, SnackBarType.ERROR))
                 error = true
             }
 

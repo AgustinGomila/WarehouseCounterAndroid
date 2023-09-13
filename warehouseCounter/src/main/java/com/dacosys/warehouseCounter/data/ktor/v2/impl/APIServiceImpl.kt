@@ -1,6 +1,7 @@
 package com.dacosys.warehouseCounter.data.ktor.v2.impl
 
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiRequest
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.apiParam.ListResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.Barcode
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeCodeParam
@@ -251,6 +252,32 @@ class APIServiceImpl : APIService {
         )
     }
 
+    suspend fun viewOrderResponse(
+        id: Long, action: ArrayList<ApiActionParam>
+    ): APIResponse<OrderResponse> {
+        var isDone = false
+        var response: APIResponse<OrderResponse> = APIResponse()
+
+        apiRequest.view<OrderResponse>(
+            objPath = ORDER_PATH,
+            id = id,
+            action = action,
+            callback = {
+                response = it
+                isDone = true
+            }
+        )
+
+        val startTime = System.currentTimeMillis()
+        while (!isDone) {
+            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong()) {
+                isDone = true
+            }
+        }
+
+        return response
+    }
+
     /**
      * Create a new [OrderResponse]
      *
@@ -303,6 +330,35 @@ class APIServiceImpl : APIService {
             filter = filter,
             callback = callback
         )
+    }
+
+    suspend fun getOrderResponse(
+        page: Int,
+        filter: ArrayList<ApiFilterParam>,
+        action: ArrayList<ApiActionParam>
+    ): APIResponse<ListResponse<OrderResponse>> {
+        var isDone = false
+        var response: APIResponse<ListResponse<OrderResponse>> = APIResponse()
+
+        apiRequest.getListOf<OrderResponse>(
+            objPath = ORDER_PATH,
+            listName = OrderResponse.ORDER_RESPONSE_LIST_KEY,
+            action = action,
+            filter = filter,
+            callback = {
+                response = it
+                isDone = true
+            }
+        )
+
+        val startTime = System.currentTimeMillis()
+        while (!isDone) {
+            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong()) {
+                isDone = true
+            }
+        }
+
+        return response
     }
 
     /**

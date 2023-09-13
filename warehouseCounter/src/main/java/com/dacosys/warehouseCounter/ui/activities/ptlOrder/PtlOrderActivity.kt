@@ -439,7 +439,6 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         binding.addBoxButton.setOnClickListener { addBox() }
 
-        /* Oculta el teclado en pantalla cuando pierden el foco los controles que lo necesitan */
         Screen.setupUI(binding.root, this)
     }
 

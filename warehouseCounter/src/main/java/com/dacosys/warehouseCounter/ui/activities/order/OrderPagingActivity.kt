@@ -15,30 +15,40 @@ import android.transition.TransitionManager
 import android.util.Log
 import android.view.*
 import android.view.View.GONE
+import android.view.View.VISIBLE
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
-import androidx.core.view.*
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsAnimationCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
+import androidx.lifecycle.lifecycleScope
+import androidx.paging.LoadState
+import androidx.paging.PagingData
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.*
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderStatus
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.UpdateOrder
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.*
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrderBarcode
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
-import com.dacosys.warehouseCounter.databinding.OrderLocationActivityBinding
+import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -46,11 +56,13 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.scanCode.CheckScannedCode
-import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
-import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
+import com.dacosys.warehouseCounter.ui.adapter.order.LoadMoreAdapter
+import com.dacosys.warehouseCounter.ui.adapter.order.OrderPagingAdapter
+import com.dacosys.warehouseCounter.ui.adapter.order.OrderViewModel
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SelectFilterFragment
 import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
+import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
@@ -59,13 +71,13 @@ import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.launch
 import java.util.*
 
-class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
-    Scanner.ScannerListener, Rfid.RfidDeviceListener,
-    SelectFilterFragment.OnFilterOrderChangedListener, OrderAdapter.CheckedChangedListener,
-    OrderAdapter.DataSetChangedListener,
-    SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
+class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, Scanner.ScannerListener,
+    Rfid.RfidDeviceListener, SelectFilterFragment.OnFilterOrderChangedListener, PrintLabelFragment.FragmentListener,
+    SearchTextFragment.OnSearchTextFocusChangedListener,
+    SearchTextFragment.OnSearchTextChangedListener {
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -80,7 +92,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             // ItemDbHelper().deleteTemp()
         }
 
-        adapter?.refreshListeners()
+        pagingAdapter.destroyListeners()
     }
 
     override fun onRefresh() {
@@ -95,50 +107,21 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
     private var isFinishingByUser = false
 
+    private var printQtyIsFocused = false
     private var searchTextIsFocused = false
 
     private var showSelectButton = true
 
-    private var multiSelect = false
-    private var adapter: OrderAdapter? = null
-    private var lastSelected: OrderResponse? = null
-    private var firstVisiblePos: Int? = null
-    private var currentScrollPosition: Int = 0
+    private lateinit var pagingAdapter: OrderPagingAdapter
+    private val viewModel: OrderViewModel by viewModels()
 
-    // Se usa para saber si estamos en onStart luego de onCreate
-    private var fillRequired = false
-
-    private var panelIsExpanded = true
+    private var panelBottomIsExpanded = true
+    private var panelTopIsExpanded = false
 
     private var hideFilterPanel = false
 
-    private var completeList: ArrayList<OrderResponse> = ArrayList()
-    private var checkedHashArray: ArrayList<Int> = ArrayList()
-
-    private var showCheckBoxes
-        get() =
-            if (!multiSelect) false
-            else settingViewModel.itemSelectShowCheckBoxes
-        set(value) {
-            settingViewModel.itemSelectShowCheckBoxes = value
-        }
-
-    private val countChecked: Int
-        get() {
-            return adapter?.countChecked() ?: 0
-        }
-
-    private val allChecked: ArrayList<OrderResponse>
-        get() {
-            return adapter?.getAllChecked() ?: arrayListOf()
-        }
-
-    private val currentItem: OrderResponse?
-        get() {
-            return adapter?.currentItem()
-        }
-
     private lateinit var filterFragment: SelectFilterFragment
+    private lateinit var printLabelFragment: PrintLabelFragment
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
@@ -148,6 +131,9 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
     private var searchedText: String = ""
 
+    private var currentPrintQty: Int = 1
+    private var currentTemplateId: Long = 0L
+
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         saveBundleValues(savedInstanceState)
@@ -156,85 +142,63 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     private fun saveBundleValues(b: Bundle) {
         b.putString(ARG_TITLE, tempTitle)
         b.putBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
-        b.putBoolean(ARG_MULTI_SELECT, multiSelect)
         b.putBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
 
-        b.putBoolean("panelIsExpanded", panelIsExpanded)
-
-        if (adapter != null) {
-            b.putParcelable("lastSelected", (adapter ?: return).currentItem())
-            b.putInt("firstVisiblePos", (adapter ?: return).firstVisiblePos())
-            b.putParcelableArrayList("completeList", adapter?.fullList)
-            b.putIntArray("checkedHashArray", allChecked.map { it.hashCode }.toIntArray())
-            b.putInt("currentScrollPosition", currentScrollPosition)
-        }
+        b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
+        b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
 
         b.putString("filterOrderId", filterOrderId)
         b.putString("filterOrderExternalId", filterOrderExternalId)
         b.putString("filterOrderDescription", filterOrderDescription)
 
         b.putString("searchedText", searchedText)
+
+        b.putInt("currentPrintQty", currentPrintQty)
+        b.putLong("currentTemplateId", currentTemplateId)
     }
 
     private fun loadBundleValues(b: Bundle) {
         tempTitle = b.getString(ARG_TITLE) ?: ""
-        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.order_location)
+        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
         showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
-        multiSelect = b.getBoolean(ARG_MULTI_SELECT, multiSelect)
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
 
-        panelIsExpanded = b.getBoolean("panelIsExpanded")
-
-        // Adapter
-        checkedHashArray = (b.getIntArray("checkedHashArray") ?: intArrayOf()).toCollection(ArrayList())
-        completeList = b.getParcelableArrayList("completeList") ?: ArrayList()
-        lastSelected = b.getParcelable("lastSelected")
-        firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
-        currentScrollPosition = b.getInt("currentScrollPosition")
+        panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
+        panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
 
         filterOrderId = b.getString("filterOrderId") ?: ""
         filterOrderExternalId = b.getString("filterOrderExternalId") ?: ""
         filterOrderDescription = b.getString("filterOrderDescription") ?: ""
 
         searchedText = b.getString("searchedText") ?: ""
+
+        currentPrintQty = b.getInt("currentPrintQty")
+        currentTemplateId = b.getLong("currentTemplateId")
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
         tempTitle = b.getString(ARG_TITLE) ?: ""
-        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.order_location)
+        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
-        multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
         showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, true)
     }
 
-    private lateinit var binding: OrderLocationActivityBinding
+    private lateinit var binding: ItemPrintLabelActivityTopPanelCollapsedBinding
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Screen.setScreenRotation(this)
-        binding = OrderLocationActivityBinding.inflate(layoutInflater)
+        binding = ItemPrintLabelActivityTopPanelCollapsedBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                currentScrollPosition =
-                    (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
-            }
-        })
-
-        // Para el llenado en el onStart siguiente de onCreate
-        fillRequired = true
-
-        // We change the title of the select button
-        binding.okButton.text = getString(R.string.unpack)
-
         filterFragment = supportFragmentManager.findFragmentById(R.id.filterFragment) as SelectFilterFragment
+        printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
         summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
         searchTextFragment = supportFragmentManager.findFragmentById(R.id.searchTextFragment) as SearchTextFragment
 
@@ -250,6 +214,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
         setupFilterFragment()
         setupSearchTextFragment()
+        setupPrintLabelFragment()
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
         binding.swipeRefreshItem.setColorSchemeResources(
@@ -260,21 +225,20 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         )
 
         // Para expandir y colapsar los paneles
-        setPanelAnimation()
+        setBottomPanelAnimation()
+        setTopPanelAnimation()
 
-        binding.okButton.setOnClickListener {
-            val id = currentItem?.id ?: return@setOnClickListener
-            askForRepack(id)
-        }
+        binding.okButton.setOnClickListener { itemSelect() }
 
         // OCULTAR PANEL DE CONTROLES DE FILTRADO
         if (hideFilterPanel) {
             if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-                panelIsExpanded = false
-                setPanels()
+                if (panelBottomIsExpanded) {
+                    binding.expandBottomPanelButton?.performClick()
+                }
 
                 runOnUiThread {
-                    binding.expandBottomPanelButton?.visibility = GONE
+                    binding.expandBottomPanelButton!!.visibility = GONE
                 }
             }
         }
@@ -282,13 +246,22 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         Screen.setupUI(binding.root, this)
     }
 
+    private fun setupPrintLabelFragment() {
+        binding.printFragment.visibility = VISIBLE
+
+        if (currentTemplateId == 0L) {
+            currentTemplateId = settingViewModel.defaultOrderTemplateId
+        }
+
+        printLabelFragment = PrintLabelFragment.Builder().setTemplateTypeIdList(arrayListOf(BarcodeLabelType.order.id))
+            .setTemplateId(currentTemplateId).setQty(currentPrintQty).build()
+        supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
+    }
+
     private fun setupSearchTextFragment() {
-        searchTextFragment =
-            SearchTextFragment.Builder()
-                .focusChangedCallback(this)
-                .searchTextChangedCallback(this)
-                .setSearchText(searchedText)
-                .build()
+        // Set up the search text fragment
+        searchTextFragment = SearchTextFragment.Builder().focusChangedCallback(this).searchTextChangedCallback(this)
+            .setSearchText(searchedText).build()
         supportFragmentManager.beginTransaction().replace(R.id.searchTextFragment, searchTextFragment).commit()
     }
 
@@ -296,13 +269,10 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         val sv = settingViewModel
         val sr = settingRepository
         filterFragment =
-            SelectFilterFragment.Builder()
-                .searchByOrderId(sv.orderSearchByOrderId, sr.orderSearchByOrderId)
+            SelectFilterFragment.Builder().searchByOrderId(sv.orderSearchByOrderId, sr.orderSearchByOrderId)
                 .searchByOrderExtId(sv.orderSearchByOrderExtId, sr.orderSearchByOrderExtId)
                 .searchByOrderDescription(sv.orderSearchByOrderDescription, sr.orderSearchByOrderDescription)
-                .orderId(filterOrderId)
-                .orderExternalId(filterOrderExternalId)
-                .orderDescription(filterOrderDescription)
+                .orderId(filterOrderId).orderExternalId(filterOrderExternalId).orderDescription(filterOrderDescription)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
@@ -328,7 +298,9 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
     private fun setupWindowInsetsAnimation() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
         adjustRootLayout()
+
         implWindowInsetsAnimation()
     }
 
@@ -348,8 +320,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     private fun implWindowInsetsAnimation() {
         val rootView = binding.root
 
-        ViewCompat.setWindowInsetsAnimationCallback(
-            rootView,
+        ViewCompat.setWindowInsetsAnimationCallback(rootView,
             object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
                 override fun onEnd(animation: WindowInsetsAnimationCompat) {
                     val isIme = animation.typeMask and WindowInsetsCompat.Type.ime() != 0
@@ -360,8 +331,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                 }
 
                 override fun onProgress(
-                    insets: WindowInsetsCompat,
-                    runningAnimations: MutableList<WindowInsetsAnimationCompat>
+                    insets: WindowInsetsCompat, runningAnimations: MutableList<WindowInsetsAnimationCompat>
                 ): WindowInsetsCompat {
                     paddingBottomView(rootView, insets)
 
@@ -378,10 +348,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         isKeyboardVisible = imeInsets.bottom > 0
 
         rootView.setPadding(
-            rootView.paddingLeft,
-            rootView.paddingTop,
-            rootView.paddingRight,
-            paddingBottom
+            rootView.paddingLeft, rootView.paddingTop, rootView.paddingRight, paddingBottom
         )
 
         Log.d(javaClass.simpleName, "IME Size: ${imeInsets.bottom}")
@@ -395,12 +362,19 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         } else if (isKeyboardVisible) {
             val orientation = resources.configuration.orientation
             when {
-                orientation == Configuration.ORIENTATION_PORTRAIT -> {
-                    panelIsExpanded = false
+                orientation == Configuration.ORIENTATION_PORTRAIT && !printQtyIsFocused -> {
+                    panelBottomIsExpanded = false
+                    panelTopIsExpanded = false
                     setPanels()
                 }
 
-                orientation != Configuration.ORIENTATION_PORTRAIT -> {
+                orientation == Configuration.ORIENTATION_PORTRAIT && printQtyIsFocused -> {
+                    panelBottomIsExpanded = false
+                    setPanels()
+                }
+
+                orientation != Configuration.ORIENTATION_PORTRAIT && !printQtyIsFocused -> {
+                    panelTopIsExpanded = false
                     setPanels()
                 }
             }
@@ -408,54 +382,50 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     }
     // endregion
 
-    override fun onSearchTextFocusChange(hasFocus: Boolean) {
-        searchTextIsFocused = hasFocus
-        if (hasFocus) {
-            /**
-            Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
-            Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
-            el teclado cambiará de tipo y puede tener una altura diferente.
-            Esto no dispara los eventos de animación del teclado.
-            Colapsar los paneles y reajustar el Layout al final es la solución temporal.
-             */
-            panelIsExpanded = false
-            setPanels()
-        }
-    }
-
-    override fun onSearchTextChanged(searchText: String) {
-        searchedText = searchText
-        runOnUiThread {
-            adapter?.refreshFilter(FilterOptions(searchedText))
-        }
-    }
-
     private val requiredLayout: Int
         get() {
-            val r =
-                if (panelIsExpanded) layoutPanelExpanded
-                else layoutPanelCollapsed
+            val r = if (panelBottomIsExpanded) {
+                if (panelTopIsExpanded) layoutBothPanelsExpanded
+                else layoutTopPanelCollapsed
+            } else {
+                if (panelTopIsExpanded) layoutBottomPanelCollapsed
+                else layoutBothPanelsCollapsed
+            }
 
             if (BuildConfig.DEBUG) {
                 when (r) {
-                    layoutPanelExpanded -> println("SELECTED LAYOUT: Panel Expanded")
-                    layoutPanelCollapsed -> println("SELECTED LAYOUT: Panel Collapsed")
+                    layoutBothPanelsExpanded -> println("SELECTED LAYOUT: Both Panels Expanded")
+                    layoutBothPanelsCollapsed -> println("SELECTED LAYOUT: Both Panels Collapsed")
+                    layoutTopPanelCollapsed -> println("SELECTED LAYOUT: Top Panel Collapsed")
+                    layoutBottomPanelCollapsed -> println("SELECTED LAYOUT: Bottom Panel Collapsed")
                 }
             }
 
             return r
         }
 
-    private val layoutPanelExpanded: Int
+    private val layoutBothPanelsExpanded: Int
         get() {
-            return if (showSelectButton) R.layout.order_location_activity
-            else R.layout.order_location_activity_wo_select_button
+            return if (showSelectButton) R.layout.item_print_label_activity
+            else R.layout.item_print_label_activity_wo_select_button
         }
 
-    private val layoutPanelCollapsed: Int
+    private val layoutBothPanelsCollapsed: Int
         get() {
-            return if (showSelectButton) R.layout.order_location_activity_bottom_panel_collapsed
-            else R.layout.order_location_activity_bottom_panel_collapsed_wo_select_button
+            return if (showSelectButton) R.layout.item_print_label_activity_both_panels_collapsed
+            else R.layout.item_print_label_activity_both_panels_collapsed_wo_select_button
+        }
+
+    private val layoutTopPanelCollapsed: Int
+        get() {
+            return if (showSelectButton) R.layout.item_print_label_activity_top_panel_collapsed
+            else R.layout.item_print_label_activity_top_panel_collapsed_wo_select_button
+        }
+
+    private val layoutBottomPanelCollapsed: Int
+        get() {
+            return if (showSelectButton) R.layout.item_print_label_activity_bottom_panel_collapsed
+            else R.layout.item_print_label_activity_bottom_panel_collapsed_wo_select_button
         }
 
     private fun setPanels() {
@@ -464,21 +434,24 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             currentLayout.load(this, requiredLayout)
             currentLayout.applyTo(binding.root)
 
-            if (panelIsExpanded) binding.expandBottomPanelButton?.text =
+            if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text =
                 context.getString(R.string.collapse_panel)
             else binding.expandBottomPanelButton?.text = context.getString(R.string.search_options)
+
+            if (panelTopIsExpanded) binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
+            else binding.expandTopPanelButton.text = context.getString(R.string.print_labels)
 
             refreshTextViews()
         }
     }
 
-    private fun setPanelAnimation() {
+    private fun setBottomPanelAnimation() {
         if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
-        binding.expandBottomPanelButton?.setOnClickListener {
-            val bottomVisible = panelIsExpanded
+        binding.expandBottomPanelButton!!.setOnClickListener {
+            val bottomVisible = panelBottomIsExpanded
             val imeVisible = isKeyboardVisible
-            panelIsExpanded = !panelIsExpanded
+            panelBottomIsExpanded = !panelBottomIsExpanded
             if (!bottomVisible && imeVisible) {
                 // Esperar que se cierre el teclado luego de perder el foco el TextView para expandir el panel
                 changePanelsStateAtFinish = true
@@ -504,15 +477,51 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             TransitionManager.beginDelayedTransition(binding.root, transition)
             nextLayout.applyTo(binding.root)
 
-            if (panelIsExpanded) binding.expandBottomPanelButton?.text =
+            if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text =
                 context.getString(R.string.collapse_panel)
             else binding.expandBottomPanelButton?.text = context.getString(R.string.search_options)
         }
     }
 
+    private fun setTopPanelAnimation() {
+        binding.expandTopPanelButton.setOnClickListener {
+            val topVisible = panelTopIsExpanded
+            val imeVisible = isKeyboardVisible
+            panelTopIsExpanded = !panelTopIsExpanded
+            if (!topVisible && imeVisible) {
+                // Esperar que se cierre el teclado luego de perder el foco el TextView para expandir el panel
+                changePanelsStateAtFinish = true
+                return@setOnClickListener
+            }
+
+            val nextLayout = ConstraintSet()
+            nextLayout.load(this, requiredLayout)
+
+            val transition = ChangeBounds()
+            transition.interpolator = FastOutSlowInInterpolator()
+            transition.addListener(object : Transition.TransitionListener {
+                override fun onTransitionResume(transition: Transition?) {}
+                override fun onTransitionPause(transition: Transition?) {}
+                override fun onTransitionStart(transition: Transition?) {}
+                override fun onTransitionEnd(transition: Transition?) {
+                    refreshTextViews()
+                }
+
+                override fun onTransitionCancel(transition: Transition?) {}
+            })
+
+            TransitionManager.beginDelayedTransition(binding.root, transition)
+            nextLayout.applyTo(binding.root)
+
+            if (panelTopIsExpanded) binding.expandTopPanelButton.text = context.getString(R.string.collapse_panel)
+            else binding.expandTopPanelButton.text = context.getString(R.string.print_labels)
+        }
+    }
+
     private fun refreshTextViews() {
         runOnUiThread {
-            if (panelIsExpanded) filterFragment.refreshViews()
+            if (panelTopIsExpanded) printLabelFragment.refreshViews()
+            if (panelBottomIsExpanded) filterFragment.refreshViews()
         }
     }
 
@@ -522,156 +531,97 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }, 20)
     }
 
-    private fun unpack(itemArray: ArrayList<OrderResponse>) {
-        if (itemArray.count() == 1) {
-            val item = itemArray.first()
-            // Agotado
-            item.statusId = OrderStatus.outOfStock.id
-            UpdateOrder(
-                payload = arrayListOf(OrderRequest(item)),
-                onEvent = { showSnackBar(it.text, it.snackBarType) },
-                onFinish = {
-                    if (it.isEmpty()) return@UpdateOrder
-                    askForRepack(item.id)
-                }
-            ).execute()
-        } else {
-            for ((index, or) in itemArray.withIndex()) {
-                // Agotado
-                or.statusId = OrderStatus.outOfStock.id
-                val payload = ArrayList(itemArray.mapNotNull { if (it.id == or.id) OrderRequest(it) else null })
-                UpdateOrder(
-                    payload = payload,
-                    onEvent = { showSnackBar(it.text, it.snackBarType) },
-                    onFinish = {
-                        if (it.isEmpty()) return@UpdateOrder
-                        if (index == itemArray.lastIndex) {
-                            isFinishingByUser = true
-                            finish()
-                        }
-                    }
-                ).execute()
-            }
-        }
-    }
+    private fun itemSelect() {
+        closeKeyboard(this)
 
-    private fun askForRepack(id: Long) {
-        runOnUiThread {
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle(context.getString(R.string.confirm_unpacking))
-            builder.setMessage(getString(R.string.are_you_sure_to_unpack_the_selected_orders))
-            builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
-                val data = Intent()
-                data.putExtra(ARG_REPACK_ORDER_ID, id)
-                setResult(RESULT_OK, data)
-                dialogInterface.dismiss()
-            }
-            builder.setNegativeButton(getString(R.string.no)) { dialogInterface, _ ->
-                dialogInterface.dismiss()
-            }
-            builder.setOnDismissListener {
-                finish()
-            }
-            val dialog = builder.create()
-            dialog.show()
-        }
-    }
-
-    private fun getOrders() {
-        checkedHashArray.clear()
-
-        val filter = filterFragment.getFilters()
-        if (!filter.any()) {
-            fillAdapter(arrayListOf())
+        val order = pagingAdapter.currentItem()
+        if (order == null) {
+            showSnackBar(getString(R.string.you_must_select_at_least_one_order), ERROR)
             return
         }
 
-        /** Usar pageNum y pageTotal
-         * filter.add(ApiFilterParam(EXTENSION_PAGE_NUMBER, pageNum.toString()))
-         */
-
-        try {
-            Log.d(this::class.java.simpleName, "Selecting orders...")
-
-            GetOrder(
-                filter = filter,
-                action = GetOrder.defaultAction,
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
-                onFinish = {
-                    fillAdapter(ArrayList(it))
-                }
-            ).execute()
-        } catch (ex: java.lang.Exception) {
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
-            showProgressBar(false)
-        }
+        val data = Intent()
+        data.putExtra(ARG_ORDER, order)
+        setResult(RESULT_OK, data)
+        isFinishingByUser = true
+        finish()
     }
 
-    private fun fillAdapter(t: ArrayList<OrderResponse>) {
-        showProgressBar(true)
+    override fun onStop() {
+        super.onStop()
 
-        completeList = t
-
-        runOnUiThread {
-            try {
-                if (adapter != null) {
-                    // Si el adapter es NULL es porque aún no fue creado.
-                    // Por lo tanto, puede ser que los valores de [lastSelected]
-                    // sean valores guardados de la instancia anterior y queremos preservarlos.
-                    lastSelected = currentItem
-                }
-
-                adapter = OrderAdapter.Builder()
-                    .recyclerView(binding.recyclerView)
-                    .fullList(completeList)
-                    .checkedHashArray(checkedHashArray)
-                    .multiSelect(multiSelect)
-                    .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
-                    .filterOptions(FilterOptions(searchedText))
-                    .checkedChangedListener(this)
-                    .dataSetChangedListener(this)
-                    .build()
-
-                binding.recyclerView.layoutManager = LinearLayoutManager(this)
-                binding.recyclerView.adapter = adapter
-
-                while (binding.recyclerView.adapter == null) {
-                    // Horrible wait for a full load
-                }
-
-                // Variables locales para evitar cambios posteriores de estado.
-                val ls = lastSelected
-                val cs = currentScrollPosition
-                Handler(Looper.getMainLooper()).postDelayed({
-                    adapter?.selectItem(ls, false)
-                    adapter?.scrollToPos(cs, true)
-                }, 200)
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
-            } finally {
-                showProgressBar(false)
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        rejectNewInstances = false
-
-        closeKeyboard(this)
-        JotterListener.resumeReaderDevices(this)
+        viewModel.filters.removeObservers(this)
+        viewModel.actions.removeObservers(this)
+        viewModel.searchedText.removeObservers(this)
     }
 
     public override fun onStart() {
         super.onStart()
+        rejectNewInstances = false
+
+        closeKeyboard(this)
+        JotterListener.resumeReaderDevices(this)
 
         setPanels()
+        setAdapter()
+        fillSummaryFragment()
+    }
 
-        if (fillRequired) {
-            fillRequired = false
-            fillAdapter(completeList)
+    private fun setAdapter() {
+        pagingAdapter = OrderPagingAdapter.Builder().build()
+
+        viewModel.filters.observe(this) { pagingAdapter.refresh() }
+        viewModel.actions.observe(this) { pagingAdapter.refresh() }
+        viewModel.searchedText.observe(this) { pagingAdapter.refresh() }
+
+        lifecycleScope.launch {
+            viewModel.orderList.collect {
+                pagingAdapter.submitData(it)
+            }
         }
+        lifecycleScope.launch {
+            pagingAdapter.loadStateFlow.collect {
+                val state = it.refresh
+                showProgressBar(state is LoadState.Loading)
+
+                if (state is LoadState.NotLoading)
+                    fillSummaryFragment()
+            }
+        }
+
+        binding.recyclerView.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = pagingAdapter
+            itemAnimator = null
+        }
+
+        binding.recyclerView.adapter = pagingAdapter.withLoadStateFooter(
+            LoadMoreAdapter(
+                retry = { pagingAdapter.retry() },
+                isLoading = { showProgressBar(it) })
+        )
+    }
+
+    override fun onSearchTextFocusChange(hasFocus: Boolean) {
+        searchTextIsFocused = hasFocus
+        if (hasFocus) {
+            /**
+            Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
+            Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
+            el teclado cambiará de tipo y puede tener una altura diferente.
+            Esto no dispara los eventos de animación del teclado.
+            Colapsar los paneles y reajustar el Layout al final es la solución temporal.
+             */
+            panelBottomIsExpanded = false
+            panelTopIsExpanded = false
+            setPanels()
+        }
+    }
+
+    override fun onSearchTextChanged(searchText: String) {
+        searchedText = searchText
+
+        viewModel.setSearchedText(searchedText)
     }
 
     override fun onRequestPermissionsResult(
@@ -680,8 +630,9 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+            this, requestCode, permissions, grantResults
+        )
     }
 
     override fun scannerCompleted(scanCode: String) {
@@ -696,17 +647,16 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
         JotterListener.lockScanner(this, true)
 
-        // Buscar por ubicación de destino o pedido
+        // Buscar por ubicación
         CheckScannedCode(
             code = scanCode,
             searchOrder = true,
             onFinish = {
-                val res = it.typedObject ?: return@CheckScannedCode
-                when (res) {
-                    is OrderResponse -> fillAdapter(arrayListOf(res))
+                val location = it.typedObject as OrderResponse? ?: return@CheckScannedCode
+                lifecycleScope.launch {
+                    pagingAdapter.submitData(PagingData.from(arrayListOf(location)))
                 }
-            }
-        )
+            })
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -748,7 +698,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         binding.topAppbar.overflowIcon = drawable
 
         // Opciones de visibilidad del menú
-        val allControls = SettingsRepository.getAllSelectOrderLocationVisibleControls()
+        val allControls = SettingsRepository.getAllSelectOrderVisibleControls()
         val visibleFilters = filterFragment.getVisibleFilters()
         allControls.forEach { p ->
             menu.add(0, p.key.hashCode(), menu.size(), p.description)
@@ -813,7 +763,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
             menuItemRandomOnListL -> {
                 val codes: ArrayList<String> = ArrayList()
-                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.externalId }
+                // TODO: (pagingAdapter.fullList ?: ArrayList()).mapTo(codes) { it.externalId }
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
@@ -834,57 +784,24 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         item.isChecked = !item.isChecked
         val sv = settingViewModel
         when (id) {
-            settingRepository.orderLocationSearchByItemDescription.key.hashCode() -> {
-                filterFragment.setDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByItemDescription = item.isChecked
+            settingRepository.orderSearchByOrderId.key.hashCode() -> {
+                filterFragment.setOrderIdVisibility(if (item.isChecked) VISIBLE else GONE)
+                sv.orderSearchByOrderId = item.isChecked
             }
 
-            settingRepository.orderLocationSearchByItemEan.key.hashCode() -> {
-                filterFragment.setEanVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByItemEan = item.isChecked
+            settingRepository.orderSearchByOrderExtId.key.hashCode() -> {
+                filterFragment.setOrderExtIdVisibility(if (item.isChecked) VISIBLE else GONE)
+                sv.orderSearchByOrderExtId = item.isChecked
             }
 
-            settingRepository.orderLocationSearchByItemCode.key.hashCode() -> {
-                filterFragment.setCodeVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByItemCode = item.isChecked
-            }
-
-            settingRepository.orderLocationSearchByOrderId.key.hashCode() -> {
-                filterFragment.setOrderIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByOrderId = item.isChecked
-            }
-
-            settingRepository.orderLocationSearchByOrderExtId.key.hashCode() -> {
-                filterFragment.setOrderExtIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByOrderExtId = item.isChecked
-            }
-
-            settingRepository.orderLocationSearchByWarehouse.key.hashCode() -> {
-                filterFragment.setWarehouseVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByWarehouse = item.isChecked
-            }
-
-            settingRepository.orderLocationSearchByArea.key.hashCode() -> {
-                filterFragment.setAreaVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByArea = item.isChecked
-            }
-
-            settingRepository.orderLocationSearchByRack.key.hashCode() -> {
-                filterFragment.setRackVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByRack = item.isChecked
+            settingRepository.orderSearchByOrderDescription.key.hashCode() -> {
+                filterFragment.setDescriptionVisibility(if (item.isChecked) VISIBLE else GONE)
+                sv.orderSearchByOrderDescription = item.isChecked
             }
 
             else -> return super.onOptionsItemSelected(item)
         }
         return true
-    }
-
-    override fun onFilterChanged(orderId: String, orderExternalId: String, orderDescription: String) {
-        filterOrderId = orderId
-        filterOrderExternalId = orderExternalId
-        filterOrderDescription = orderDescription
-
-        Handler(Looper.getMainLooper()).postDelayed({ getOrders() }, 200)
     }
 
     private fun enterCode() {
@@ -930,26 +847,68 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
     }
 
-    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
-        fillSummaryFragment()
+    override fun onFilterChanged(orderId: String, orderExternalId: String, orderDescription: String) {
+        filterOrderId = orderId
+        filterOrderExternalId = orderExternalId
+        filterOrderDescription = orderDescription
+
+        viewModel.setFilters(filterFragment.getFilters())
     }
 
-    override fun onDataSetChanged() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            fillSummaryFragment()
-        }, 100)
+    override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {
+        currentPrintQty = qty ?: 1
+        currentTemplateId = template?.templateId ?: return
+
+        settingViewModel.defaultOrderTemplateId = currentTemplateId
+    }
+
+    override fun onPrintRequested(printer: String, qty: Int) {
+        val template = printLabelFragment.template
+        if (template == null) {
+            showSnackBar(context.getString(R.string.you_must_select_a_template), ERROR)
+            return
+        }
+
+        val order = pagingAdapter.currentItem()
+        if (order == null) {
+            showSnackBar(getString(R.string.you_must_select_at_least_one_order), ERROR)
+            return
+        }
+
+        val printOps = PrintOps.getPrintOps()
+
+        GetOrderBarcode(
+            param = BarcodeParam(
+                idList = arrayListOf(order.id),
+                templateId = template.templateId,
+                printOps = printOps
+            ),
+            onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+            onFinish = {
+                printLabelFragment.printBarcodes(it)
+            }
+        )
+    }
+
+    override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {
+        printQtyIsFocused = hasFocus
+        if (hasFocus) {
+            /**
+            Acá el teclado Ime aparece y se tienen que colapsar los dos panels.
+            Si el teclado Ime ya estaba en la pantalla (por ejemplo el foco estaba el control de cantidad de etiquetas),
+            el teclado cambiará de tipo y puede tener una altura diferente.
+            Esto no dispara los eventos de animación del teclado.
+            Colapsar los paneles y reajustar el Layout al final es la solución temporal.
+             */
+            panelBottomIsExpanded = false
+            panelTopIsExpanded = true
+            setPanels()
+        }
     }
 
     private fun fillSummaryFragment() {
         runOnUiThread {
-            Handler(Looper.getMainLooper()).postDelayed({
-                summaryFragment
-                    .firstLabel(getString(R.string.total))
-                    .first(adapter?.totalVisible() ?: 0)
-                    .secondLabel(getString(R.string.total_count))
-                    .second(countChecked)
-                    .fill()
-            }, 100)
+            summaryFragment.firstLabel(getString(R.string.total)).first(pagingAdapter.itemCount).fill()
         }
     }
 
@@ -971,9 +930,8 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
     companion object {
         const val ARG_TITLE = "title"
-        const val ARG_MULTI_SELECT = "multiSelect"
-        const val ARG_HIDE_FILTER_PANEL = "hideFilterPanel"
         const val ARG_SHOW_SELECT_BUTTON = "showSelectButton"
-        const val ARG_REPACK_ORDER_ID = "orderId"
+        const val ARG_HIDE_FILTER_PANEL = "hideFilterPanel"
+        const val ARG_ORDER = "order"
     }
 }

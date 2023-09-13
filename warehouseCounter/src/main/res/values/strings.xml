@@ -10,6 +10,9 @@
     <string name="added">Agregado</string>
     <string name="added_plural">Agregados</string>
     <string name="reception_control">Control de recepción</string>
+    <string name="error_when_deleting_counts">Error al eliminar el arqueo.</string>
+    <string name="error_when_deleting_counts_file_not_found">Error al eliminar el arqueo. Archivo no encontrado.
+    </string>
     <string name="an_error_occurred_while_deleting_counts">Ha ocurrido un error al eliminar los arqueos</string>
     <string name="an_error_occurred_while_requesting_new_counts">Ha ocurrido un error al solicitar nuevos arqueos
     </string>
@@ -794,4 +797,8 @@
     <string name="searching_areas">Buscando áreas…</string>
     <string name="searching_items">Buscando ítems…</string>
     <string name="searching_warehouses">Buscando depósitos…</string>
+    <string name="problem_loading">Problema al cargar</string>
+    <string name="retry">Reintentar</string>
+    <string name="end_of_pagination">No hay más elementos</string>
+    <string name="external_storage_unwritable">Almacenamiento externo no grabable</string>
 </resources>

@@ -46,6 +46,7 @@ import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.io.File
 import java.io.UnsupportedEncodingException
@@ -170,7 +171,6 @@ class OutboxActivity : AppCompatActivity() {
         binding.detailButton.setOnClickListener { showDetail() }
         binding.removeResetButton.setOnClickListener { removeResetDialog() }
 
-        /* Oculta el teclado en pantalla cuando pierden el foco los controles que lo necesitan */
         Screen.setupUI(binding.root, this)
     }
 
@@ -303,17 +303,22 @@ class OutboxActivity : AppCompatActivity() {
 
                         /** We delete the files of the orders sent */
                         OrderRequest.removeCountFiles(
+                            path = Statics.getCompletedPath(),
                             successFiles = successFiles,
-                            sendEvent = { eventData -> showSnackBar(eventData.text, eventData.snackBarType) }
+                            sendEvent = { eventData ->
+                                if (eventData.snackBarType == SUCCESS) {
+                                    /** We remove the reference to the order in room database,
+                                     * and we fill the list adapter at the end. */
+                                    OrderRequestCoroutines.removeById(
+                                        idList = orArray.mapNotNull { orderRequest -> orderRequest.orderRequestId },
+                                        onResult = {
+                                            fillAdapter(ArrayList())
+                                        })
+                                } else {
+                                    showSnackBar(eventData.text, eventData.snackBarType)
+                                }
+                            }
                         )
-
-                        /** We remove the reference to the order in room database,
-                         * and we fill the list adapter at the end. */
-                        OrderRequestCoroutines.removeById(
-                            idList = orArray.mapNotNull { orderRequest -> orderRequest.orderRequestId },
-                            onResult = {
-                                fillAdapter(ArrayList())
-                            })
                     }).execute()
             }
         } catch (ex: Exception) {

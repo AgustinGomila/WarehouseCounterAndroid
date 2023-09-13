@@ -22,7 +22,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.imageControl.ui.fragments.ImageControlButtonsFragment
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
@@ -219,7 +219,6 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             binding.imageControlLayout.visibility = View.GONE
         }
 
-        /* Oculta el teclado en pantalla cuando pierden el foco los controles que lo necesitan */
         Screen.setupUI(binding.root, this)
 
         showProgressBar(false)
@@ -279,7 +278,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
                 OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
                 OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
-                else -> WarehouseCounterApp.context.getString(R.string.total_count)
+                else -> context.getString(R.string.total_count)
             }
         }
     }

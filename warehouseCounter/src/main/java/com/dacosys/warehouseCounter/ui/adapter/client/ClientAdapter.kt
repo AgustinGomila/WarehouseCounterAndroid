@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.data.room.entity.client.Client
@@ -258,20 +257,12 @@ class ClientAdapter(
                 }
 
                 // Background colors
-                val lightgray = ResourcesCompat.getColor(
-                    WarehouseCounterApp.context.resources, R.color.lightgray, null
-                )
-                val white = ResourcesCompat.getColor(
-                    WarehouseCounterApp.context.resources, R.color.text_light, null
-                )
+                val lightgray = ResourcesCompat.getColor(context.resources, R.color.lightgray, null)
+                val white = ResourcesCompat.getColor(context.resources, R.color.text_light, null)
 
                 // Font colors
-                val black = ResourcesCompat.getColor(
-                    WarehouseCounterApp.context.resources, R.color.text_dark, null
-                )
-                val dimgray = ResourcesCompat.getColor(
-                    WarehouseCounterApp.context.resources, R.color.dimgray, null
-                )
+                val black = ResourcesCompat.getColor(context.resources, R.color.text_dark, null)
+                val dimgray = ResourcesCompat.getColor(context.resources, R.color.dimgray, null)
 
                 val colorText = when (client.active) {
                     1 -> dimgray

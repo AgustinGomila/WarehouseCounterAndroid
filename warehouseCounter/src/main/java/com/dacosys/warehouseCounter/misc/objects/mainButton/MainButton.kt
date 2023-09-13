@@ -12,18 +12,26 @@ import java.util.*
  * Created by Agustin on 16/01/2017.
  */
 
-class MainButton(mainButton: Long = 0, description: String = "", iconResource: Int = 0, visibility: Boolean = false) :
+class MainButton(
+    mainButton: Long = 0,
+    description: String = "",
+    iconResource: Int = 0,
+    visibility: Boolean = false,
+    backColor: Int = 0
+) :
     Parcelable {
     var id: Long
     var description: String
     var iconResource: Int
     var visibility: Boolean
+    var backColor: Int
 
     constructor(parcel: Parcel) : this() {
         id = parcel.readLong()
         description = parcel.readString() ?: ""
         iconResource = parcel.readInt()
         visibility = parcel.readByte() != 0.toByte()
+        backColor = parcel.readInt()
     }
 
     init {
@@ -31,6 +39,7 @@ class MainButton(mainButton: Long = 0, description: String = "", iconResource: I
         this.id = mainButton
         this.iconResource = iconResource
         this.visibility = visibility
+        this.backColor = backColor
     }
 
     override fun toString(): String {
@@ -47,27 +56,101 @@ class MainButton(mainButton: Long = 0, description: String = "", iconResource: I
         }
 
         var PendingCounts =
-            MainButton(1, context.getString(R.string.pending_counts), R.drawable.ic_review, true)
+            MainButton(
+                mainButton = 1,
+                description = context.getString(R.string.pending_counts),
+                iconResource = R.drawable.ic_review,
+                visibility = true,
+                backColor = R.color.button_pending
+            )
         var CompletedCounts =
-            MainButton(2, context.getString(R.string.completed_counts), R.drawable.ic_send, true)
+            MainButton(
+                mainButton = 2,
+                description = context.getString(R.string.completed_counts),
+                iconResource = R.drawable.ic_send,
+                visibility = true,
+                backColor = R.color.button_completed
+            )
         var NewCount =
-            MainButton(3, context.getString(R.string.new_count), R.drawable.ic_new_count, true)
+            MainButton(
+                mainButton = 3,
+                description = context.getString(R.string.new_count),
+                iconResource = R.drawable.ic_new_count,
+                visibility = true,
+                backColor = R.color.button_new_count
+            )
         var CodeRead =
-            MainButton(4, context.getString(R.string.code_read), R.drawable.ic_coderead, true)
+            MainButton(
+                mainButton = 4,
+                description = context.getString(R.string.code_read),
+                iconResource = R.drawable.ic_coderead,
+                visibility = true,
+                backColor = R.color.button_code_read
+            )
         var PtlOrder =
-            MainButton(5, context.getString(R.string.ptl_order), R.drawable.ic_order, true)
+            MainButton(
+                mainButton = 5,
+                description = context.getString(R.string.ptl_order),
+                iconResource = R.drawable.ic_order,
+                visibility = true,
+                backColor = R.color.button_ptl_order
+            )
         var LinkItemCodes =
-            MainButton(6, context.getString(R.string.code_link), R.drawable.ic_barcode_link, true)
+            MainButton(
+                mainButton = 6,
+                description = context.getString(R.string.code_link),
+                iconResource = R.drawable.ic_barcode_link,
+                visibility = true,
+                backColor = R.color.button_link_code
+            )
         var PrintLabels =
-            MainButton(7, context.getString(R.string.print_code), R.drawable.ic_printer, true)
-        var OrderLocationLabel =
-            MainButton(8, context.getString(R.string.order_location), R.drawable.ic_order_location, true)
+            MainButton(
+                mainButton = 7,
+                description = context.getString(R.string.print_code),
+                iconResource = R.drawable.ic_printer,
+                visibility = true,
+                backColor = R.color.button_print_label
+            )
+        var OrderLocation =
+            MainButton(
+                mainButton = 8,
+                description = context.getString(R.string.order_location),
+                iconResource = R.drawable.ic_order_location,
+                visibility = true,
+                backColor = R.color.button_location_order
+            )
         var MoveOrder =
-            MainButton(9, context.getString(R.string.move_order), R.drawable.ic_move_order, true)
+            MainButton(
+                mainButton = 9,
+                description = context.getString(R.string.move_order),
+                iconResource = R.drawable.ic_move_order,
+                visibility = true,
+                backColor = R.color.button_move_order
+            )
         var PackUnpackOrder =
-            MainButton(10, context.getString(R.string.pack_unpack), R.drawable.ic_unboxing, true)
+            MainButton(
+                mainButton = 10,
+                description = context.getString(R.string.pack_unpack),
+                iconResource = R.drawable.ic_unboxing,
+                visibility = true,
+                backColor = R.color.button_pack_unpack
+            )
+        var TestButton =
+            MainButton(
+                mainButton = 50,
+                description = context.getString(R.string.test),
+                iconResource = R.drawable.ic_test,
+                visibility = false,
+                backColor = R.color.button_test
+            )
         var Configuration =
-            MainButton(100, context.getString(R.string.configuration), R.drawable.ic_settings, false)
+            MainButton(
+                mainButton = 100,
+                description = context.getString(R.string.configuration),
+                iconResource = R.drawable.ic_settings,
+                visibility = false,
+                backColor = R.color.button_configuration
+            )
 
         fun getAll(): ArrayList<MainButton> {
             val allSections = ArrayList<MainButton>()
@@ -80,9 +163,10 @@ class MainButton(mainButton: Long = 0, description: String = "", iconResource: I
                 PtlOrder,
                 LinkItemCodes,
                 PrintLabels,
-                OrderLocationLabel,
+                OrderLocation,
                 MoveOrder,
                 PackUnpackOrder,
+                TestButton,
                 Configuration
             )
 
@@ -99,6 +183,7 @@ class MainButton(mainButton: Long = 0, description: String = "", iconResource: I
         parcel.writeString(description)
         parcel.writeInt(iconResource)
         parcel.writeByte(if (visibility) 1 else 0)
+        parcel.writeInt(backColor)
     }
 
     override fun describeContents(): Int {

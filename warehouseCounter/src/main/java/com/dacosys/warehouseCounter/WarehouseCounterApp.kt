@@ -14,6 +14,7 @@ import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.data.settings.SettingsViewModel
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.ui.adapter.order.OrderViewModel
 import id.pahlevikun.jotter.Jotter
 import id.pahlevikun.jotter.event.ActivityEvent
 import io.ktor.client.*
@@ -71,6 +72,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
 
         viewModel { SettingsViewModel() }
         viewModel { SyncViewModel() }
+        viewModel { OrderViewModel() }
 
         /** Proxy */
         single {

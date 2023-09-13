@@ -1,7 +1,7 @@
 package com.dacosys.warehouseCounter.ui.activities.main
 
 import android.Manifest
-import android.annotation.SuppressLint
+import android.animation.ObjectAnimator
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -19,6 +19,7 @@ import android.text.InputType
 import android.text.format.DateFormat
 import android.view.*
 import android.view.animation.Animation
+import android.view.animation.Interpolator
 import android.view.animation.TranslateAnimation
 import android.widget.Button
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,12 +35,10 @@ import com.dacosys.imageControl.network.upload.UploadImagesProgress
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sync
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
-import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeJsonToFile
-import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeToFile
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeNewOrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
@@ -49,7 +48,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.ViewOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.sync.SyncViewModel
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.client.Client
-import com.dacosys.warehouseCounter.data.sync.*
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.Statics
@@ -65,6 +63,7 @@ import com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity
 import com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
 import com.dacosys.warehouseCounter.ui.activities.order.OrderMoveActivity
 import com.dacosys.warehouseCounter.ui.activities.order.OrderPackUnpackActivity
+import com.dacosys.warehouseCounter.ui.activities.order.OrderPagingActivity
 import com.dacosys.warehouseCounter.ui.activities.orderLocation.OrderLocationSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.NewCountActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity
@@ -83,10 +82,6 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
 import org.parceler.Parcels
-import java.io.File
-import java.io.UnsupportedEncodingException
-import java.text.SimpleDateFormat
-import java.util.*
 import kotlin.concurrent.thread
 import kotlin.io.path.Path
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequest as OrderRequestRoom
@@ -107,13 +102,23 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                         onEvent = { showSnackBar(it.text, it.snackBarType) },
                         onFinish = { successFiles ->
                             if (successFiles.isEmpty()) return@CreateOrder
+
                             /** We delete the files of the orders sent */
                             OrderRequest.removeCountFiles(
+                                path = Statics.getCompletedPath(),
                                 successFiles = successFiles,
-                                sendEvent = { eventData -> showSnackBar(eventData.text, eventData.snackBarType) }
-                            )
+                                sendEvent = { eventData ->
+                                    if (eventData.snackBarType == SnackBarType.CREATOR.SUCCESS) {
+                                        /** We remove the reference to the order in room database,
+                                         * and we fill the list adapter at the end. */
+                                        OrderRequestCoroutines.removeById(
+                                            idList = orders.mapNotNull { orderRequest -> orderRequest.orderRequestId },
+                                            onResult = { })
+                                    } else {
+                                        showSnackBar(eventData.text, eventData.snackBarType)
+                                    }
+                                })
                         }
-
                     ).execute()
                 }
             } catch (ex: Exception) {
@@ -153,7 +158,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 return
             }
 
-            writeNewOrderRequest(itemArray)
+            writeNewOrderRequest(itemArray) { showSnackBar(it.text, it.snackBarType) }
         }
 
         setTextButton(MainButton.PendingCounts, countPending())
@@ -200,19 +205,14 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
         Screen.closeKeyboard(this)
 
-        // Si ya está autentificado iniciar la sincronización
         if (Statics.currentUserId > 0L) {
             startSync()
         }
     }
 
-    override fun onDestroy() {
-        destroyLocals()
-        super.onDestroy()
-    }
-
-    private fun destroyLocals() {
-        pauseInboxOutboxListener()
+    override fun onBackPressed() {
+        super.onBackPressed()
+        Statics.cleanCurrentUser()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -275,39 +275,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         return BitmapDrawable(resources, bitmapResized)
     }
 
-    @SuppressLint("SetTextI18n")
-    @Throws(PackageManager.NameNotFoundException::class)
-    private fun initSetup() {
-        val pInfo = packageManager.getPackageInfo(packageName, 0)
-        var draw = ContextCompat.getDrawable(this, R.drawable.wc)
-
-        /// USUARIO
-        Statics.getCurrentUser {
-            if (it != null) {
-                binding.clientTextView.text =
-                    String.format("%s - %s", settingViewModel.installationCode, it.name)
-            }
-        }
-
-        /// VERSION
-        binding.versionTextView.text =
-            String.format("%s %s", getString(R.string.app_milestone), pInfo.versionName)
-
-        /// IMAGEN DE CABECERA
-        binding.imageViewHeader.setImageResource(0)
-        draw = resize(draw!!)
-        binding.imageViewHeader.setImageDrawable(draw)
-
-        /// SETUP VIEW PAGER AND BUTTONS
-        setupViewPager()
-    }
-
     override fun onPause() {
         super.onPause()
-        pauseInboxOutboxListener()
-    }
-
-    private fun pauseInboxOutboxListener() {
         sync.stopSync()
     }
 
@@ -345,7 +314,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 launchPrintLabelsActivity()
             }
 
-            MainButton.OrderLocationLabel -> {
+            MainButton.OrderLocation -> {
                 launchOrderLocationLabelActivity()
             }
 
@@ -357,10 +326,25 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 launchPackUnpackOrderActivity()
             }
 
+            MainButton.TestButton -> {
+                launchTestActivity()
+            }
+
             MainButton.Configuration -> {
                 configApp()
             }
         }
+    }
+
+    private fun launchTestActivity() {
+        if (rejectNewInstances) return
+        rejectNewInstances = true
+        JotterListener.lockScanner(this, true)
+
+        val intent = Intent(context, OrderPagingActivity::class.java)
+        intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.test))
+        intent.putExtra(OrderLocationSelectActivity.ARG_SHOW_SELECT_BUTTON, false)
+        resultForTestActivity.launch(intent)
     }
 
     private fun launchPackUnpackOrderActivity() {
@@ -462,6 +446,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         intent.putExtra(NewPtlOrdersActivity.ARG_TITLE, getString(R.string.setup_new_ptl))
         resultForNewPtl.launch(intent)
     }
+
+    private val resultForTestActivity =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            rejectNewInstances = false
+        }
 
     private val resultForCompletedCount =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -811,6 +800,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private lateinit var splashScreen: SplashScreen
     private lateinit var binding: ActivityHomeBinding
     private val syncVm: SyncViewModel by lazy { syncViewModel }
+    private var freshSessionReq = false
 
     private fun createSplashScreen() {
         // Set up 'core-splashscreen' to handle the splash screen in a backward compatible manner.
@@ -840,37 +830,37 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        syncVm.syncCompletedOrders.observe(this) { if (it != null) onCompletedOrder(it) }
-        syncVm.syncNewOrders.observe(this) { if (it != null) onNewOrder(it) }
-        syncVm.syncTimer.observe(this) { if (it != null) onTimerTick(it) }
-        syncVm.uploadImagesProgress.observe(this) { if (it != null) onUploadImagesProgress(it) }
-
-        var freshSessionReq = false
-
         if (!isDebuggable() && !BuildConfig.DEBUG) {
-            // Mostramos el Timer solo en DEBUG
             binding.timeTextView.visibility = View.GONE
             binding.syncImageView.visibility = View.GONE
         }
 
         binding.syncImageView.setOnClickListener {
+            runOnUiThread {
+                val rotationAnimator = ObjectAnimator.ofFloat(it, View.ROTATION, 0f, 360f)
+                rotationAnimator.duration = 1000
+                rotationAnimator.interpolator = Interpolator { input -> input * input * (3f - 2f * input) }
+                rotationAnimator.start()
+            }
             sync.forceSync()
         }
+    }
 
-        if (savedInstanceState != null) {
-            // Recuperar el estado previo de la actividad con los datos guardados.
-            if (Statics.currentUserId < 0L) {
-                freshSessionReq = true
-            } else {
-                initSetup()
-            }
-        } else {
-            // Primera inicialización
-            freshSessionReq = true
-        }
+    override fun onStop() {
+        super.onStop()
 
-        if (freshSessionReq) {
-            // Inicializar la actividad
+        sync.stopSync()
+
+        syncVm.syncCompletedOrders.removeObservers(this)
+        syncVm.syncNewOrders.removeObservers(this)
+        syncVm.syncTimer.removeObservers(this)
+        syncVm.uploadImagesProgress.removeObservers(this)
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        if (Statics.currentUserId < 0L) {
             if (settingViewModel.urlPanel.isEmpty()) {
                 showSnackBar(getString(R.string.server_is_not_configured), ERROR)
                 setupInitConfig()
@@ -879,14 +869,50 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             }
             return
         }
-    }
 
-    override fun onStart() {
-        super.onStart()
+        setHeader()
+
+        sync.resetSync()
 
         sync.onCompletedOrders { syncVm.setSyncCompleted(it) }
         sync.onNewOrders { syncVm.setSyncNew(it) }
         sync.onTimerTick { syncVm.setSyncTimer(it) }
+
+        syncVm.syncCompletedOrders.observe(this) { if (it != null) onCompletedOrder(it) }
+        syncVm.syncNewOrders.observe(this) { if (it != null) onNewOrder(it) }
+        syncVm.syncTimer.observe(this) { if (it != null) onTimerTick(it) }
+        syncVm.uploadImagesProgress.observe(this) { if (it != null) onUploadImagesProgress(it) }
+    }
+
+    private fun setHeader() {
+        runOnUiThread {
+            setHeaderUserName()
+            setHeaderVersion()
+            setHeaderImageBanner()
+            setupViewPager()
+        }
+    }
+
+    private fun setHeaderUserName() {
+        Statics.getCurrentUser {
+            if (it != null) {
+                binding.clientTextView.text =
+                    String.format("%s - %s", settingViewModel.installationCode, it.name)
+            }
+        }
+    }
+
+    private fun setHeaderVersion() {
+        val pInfo = packageManager.getPackageInfo(packageName, 0)
+        binding.versionTextView.text =
+            String.format("%s %s", getString(R.string.app_milestone), pInfo.versionName)
+    }
+
+    private fun setHeaderImageBanner() {
+        binding.imageViewHeader.setImageResource(0)
+        var draw = ContextCompat.getDrawable(this, R.drawable.wc)
+        draw = resize(draw!!)
+        binding.imageViewHeader.setImageDrawable(draw)
     }
 
     private fun onUploadImagesProgress(it: UploadImagesProgress) {
@@ -967,33 +993,25 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
     private val resultForLogin =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            try {
-                initSetup()
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
-            } finally {
-                rejectNewInstances = false
-                JotterListener.lockScanner(this, false)
-            }
+            rejectNewInstances = false
+            JotterListener.lockScanner(this, false)
         }
 
-// region ViewPager
+    // region ViewPager
     /**
-     * Así se construye el nombre de un fragmento en FragmentManager
+     * Construye el nombre apropiado para el fragmento en FragmentManager
      */
     private fun makeFragmentName(viewId: Long, id: Long): String {
         return "android:switcher:$viewId:$id"
     }
 
     private fun setTextButton(button: MainButton, newItems: Int) {
-        val name = makeFragmentName(
-            binding.buttonViewPager.id.toLong(),
-            (binding.buttonViewPager.adapter as ViewPagerAdapter).getItemId(0)
-        )
+        val adapter = binding.buttonViewPager.adapter ?: return
+        val itemId = (adapter as ViewPagerAdapter).getItemId(0)
 
-        // Así se obtiene correctamente y de manera segura el fragmento
-        // que estamos buscando
+        val name = makeFragmentName(binding.buttonViewPager.id.toLong(), itemId)
+
+        /** Obtiene correctamente y de manera segura el fragmento ButtonPageFragment **/
         val frag = supportFragmentManager.findFragmentByTag(name) as ButtonPageFragment
         if (!frag.isAdded) return
 
@@ -1017,7 +1035,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     private fun setupViewPager() {
-        // Paginado de botones
         val adapter = ViewPagerAdapter(supportFragmentManager)
         binding.buttonViewPager.offscreenPageLimit = 2
         binding.buttonViewPager.adapter = adapter
@@ -1049,7 +1066,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             return totalPages
         }
     }
-//endregion
+    //endregion
 
     /**
      *
@@ -1121,92 +1138,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     showSnackBar(getString(R.string.cannot_write_to_external_storage), ERROR)
                 } else {
-                    writeNewOrderRequest(newOrArray)
+                    writeNewOrderRequest(newOrArray) { showSnackBar(it.text, it.snackBarType) }
                 }
             }
         }
-    }
-
-    @SuppressLint("SimpleDateFormat")
-    private fun writeNewOrderRequest(newOrArray: ArrayList<OrderRequest>) {
-        val pendingOrderArray = OrderRequest.getPendingOrders()
-        val df = SimpleDateFormat("yyMMddHHmmssZ")
-
-        var isOk = true
-        for (newOrder in newOrArray) {
-            val orJson = json.encodeToString(OrderRequest.serializer(), newOrder)
-
-            // Acá se comprueba si el ID ya existe y actualizamos la orden.
-            // Si no se agrega una orden nueva.
-            var alreadyExists = false
-            if (pendingOrderArray.any()) {
-                for (pendingOr in pendingOrderArray) {
-                    if (pendingOr.orderRequestId == newOrder.orderRequestId) {
-                        alreadyExists = true
-
-                        isOk = if (newOrder.completed == true) {
-                            // Está completada, eliminar localmente
-                            val currentDir = Statics.getPendingPath()
-                            val filePath = "${currentDir.absolutePath}${File.separator}${pendingOr.filename}"
-                            val fl = File(filePath)
-                            fl.delete()
-                        } else {
-                            // Actualizar contenido local
-                            updateOrder(origOrder = pendingOr, newOrder = newOrder)
-                        }
-
-                        break
-                    }
-                }
-            }
-
-            if (!alreadyExists) {
-                val orFileName = String.format("%s.json", df.format(Calendar.getInstance().time))
-
-                if (!writeToFile(
-                        fileName = orFileName,
-                        data = orJson,
-                        directory = Statics.getPendingPath()
-                    )
-                ) {
-                    isOk = false
-                    break
-                }
-            }
-        }
-
-        newOrArray.clear()
-
-        if (isOk) {
-            val res = getString(R.string.new_counts_saved)
-            showSnackBar(res, SnackBarType.SUCCESS)
-            android.util.Log.d(this::class.java.simpleName, res)
-        } else {
-            val res = getString(R.string.an_error_occurred_while_trying_to_save_the_count)
-            showSnackBar(res, ERROR)
-            android.util.Log.e(this::class.java.simpleName, res)
-        }
-    }
-
-    private fun updateOrder(origOrder: OrderRequest, newOrder: OrderRequest): Boolean {
-        var error: Boolean
-        try {
-            val orJson = json.encodeToString(OrderRequest.serializer(), newOrder)
-            android.util.Log.i(this::class.java.simpleName, orJson)
-            val orFileName = origOrder.filename.substringAfterLast('/')
-
-            error = !writeJsonToFile(
-                v = binding.root,
-                filename = orFileName,
-                value = orJson,
-                completed = newOrder.completed ?: false
-            )
-        } catch (e: UnsupportedEncodingException) {
-            e.printStackTrace()
-            android.util.Log.e(this::class.java.simpleName, e.message ?: "")
-            error = true
-        }
-        return !error
     }
 
     companion object {

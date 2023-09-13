@@ -45,7 +45,7 @@ class Statics {
 
         val lineSeparator: String = System.getProperty("line.separator") ?: "\\r\\n"
         const val DATE_FORMAT: String = "yyyy-MM-dd hh:mm:ss"
-        const val FILENAME_DATE_FORMAT: String = "yyMMddHHmmssZ"
+        const val FILENAME_DATE_FORMAT: String = "yyyyMMddHHmmss"
 
         /**
          * Modo DEMO
@@ -166,6 +166,11 @@ class Statics {
 
         fun cleanCurrentUser() {
             currentUser = null
+
+            currentUserId = -1L
+            currentPass = ""
+            currentUserName = ""
+            isLogged = false
         }
         // endregion CURRENT USER
 

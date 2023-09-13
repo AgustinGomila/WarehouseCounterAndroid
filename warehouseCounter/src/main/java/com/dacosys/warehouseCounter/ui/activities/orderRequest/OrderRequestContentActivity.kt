@@ -11,7 +11,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.text.InputFilter
 import android.text.InputType
 import android.text.format.DateFormat
 import android.transition.ChangeBounds
@@ -21,7 +20,6 @@ import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.WindowManager
-import android.widget.EditText
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -52,7 +50,6 @@ import com.dacosys.warehouseCounter.databinding.OrderRequestActivityBothPanelsCo
 import com.dacosys.warehouseCounter.misc.ParcelLong
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.DATE_FORMAT
-import com.dacosys.warehouseCounter.misc.Statics.Companion.FILENAME_DATE_FORMAT
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.confirm
@@ -73,6 +70,8 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import org.parceler.Parcels
 import java.io.UnsupportedEncodingException
 import java.text.SimpleDateFormat
@@ -354,10 +353,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
         binding.manualCodeButton.setOnClickListener {
-            if (allowClicks) {
-                allowClicks = false
-                manualAddItem()
-            }
+            enterCode()
         }
 
         binding.requiredDescCheckBox.setOnCheckedChangeListener(null)
@@ -862,8 +858,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             else ""
 
         if (orderRequest.filename.isEmpty()) {
-            val df = SimpleDateFormat(FILENAME_DATE_FORMAT, Locale.getDefault())
-            orderRequest.filename = String.format("%s.json", df.format(Calendar.getInstance().time))
+            val filename = OrderRequest.generateFilename()
+            orderRequest.filename = "$filename.json"
         }
 
         setImagesJson()
@@ -891,7 +887,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 )
             ) {
                 error = !writeJsonToFile(
-                    v = binding.root,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
                     filename = orFileName,
                     value = orJson,
                     completed = tempCompleted
@@ -956,47 +952,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             gentlyReturn()
         }
-
-    private fun manualAddItem() {
-        runOnUiThread {
-            val input = EditText(this)
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle(R.string.manual_code)
-            builder.setMessage(R.string.enter_the_code)
-            builder.setView(input)
-            builder.setNegativeButton(R.string.cancel) { dialog, _ ->
-                dialog.dismiss()
-            }
-            builder.setPositiveButton(R.string.ok) { _, _ ->
-                scannerCompleted(input.text.toString())
-            }
-
-            val alert = builder.create()
-            alert.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
-            alert.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
-            alert.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-
-            input.isFocusable = true
-            input.isFocusableInTouchMode = true
-            input.maxLines = 1
-            input.inputType = InputType.TYPE_CLASS_TEXT
-            input.filters = arrayOf<InputFilter>(InputFilter.AllCaps())
-            input.setOnKeyListener { _, keyCode, event ->
-                if (event.action == KeyEvent.ACTION_DOWN) {
-                    when (keyCode) {
-                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                            alert.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
-                        }
-                    }
-                }
-                false
-            }
-
-            alert.show()
-            input.requestFocus()
-            allowClicks = true
-        }
-    }
 
     private fun setQtyManually(orc: OrderRequestContent) {
         val multi = if (itemCode == null) settingViewModel.scanMultiplier
@@ -1469,7 +1424,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                         )
                     } else {
                         val error = !writeJsonToFile(
-                            v = binding.root,
+                            onEvent = { showSnackBar(it.text, it.snackBarType) },
                             filename = orFileName,
                             value = orJson,
                             completed = tempCompleted
@@ -1693,19 +1648,44 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun enterCode() {
         runOnUiThread {
+            var alertDialog: AlertDialog? = null
             val builder = AlertDialog.Builder(this)
-            builder.setTitle(R.string.enter_code)
+            builder.setTitle(getString(R.string.enter_code))
 
-            val input = EditText(this)
-            input.inputType = InputType.TYPE_CLASS_TEXT
-            builder.setView(input)
+            val inputLayout = TextInputLayout(this)
+            inputLayout.endIconMode = TextInputLayout.END_ICON_CLEAR_TEXT
 
-            builder.setPositiveButton(R.string.ok) { _, _ ->
+            val input = TextInputEditText(this)
+            input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS
+            input.isFocusable = true
+            input.isFocusableInTouchMode = true
+            input.setOnKeyListener { _, keyCode, event ->
+                if (event.action == KeyEvent.ACTION_DOWN) {
+                    when (keyCode) {
+                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                            if (alertDialog != null) {
+                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
+                                    .performClick()
+                            }
+                        }
+                    }
+                }
+                false
+            }
+
+            inputLayout.addView(input)
+            builder.setView(inputLayout)
+            builder.setPositiveButton(R.string.accept) { _, _ ->
                 scannerCompleted(input.text.toString())
             }
-            builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
+            builder.setNegativeButton(R.string.cancel, null)
+            alertDialog = builder.create()
 
-            builder.show()
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            alertDialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+            alertDialog.show()
+            input.requestFocus()
         }
     }
 

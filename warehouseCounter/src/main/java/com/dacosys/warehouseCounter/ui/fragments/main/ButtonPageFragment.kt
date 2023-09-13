@@ -1,7 +1,11 @@
 package com.dacosys.warehouseCounter.ui.fragments.main
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
+import android.graphics.drawable.StateListDrawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -12,7 +16,9 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
+import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.Fragment
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.databinding.HomeActivityButtonPage1Binding
@@ -23,6 +29,7 @@ import com.dacosys.warehouseCounter.ui.activities.main.HomeActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Colors
+
 
 /**
  * A simple [Fragment] subclass.
@@ -90,14 +97,10 @@ class ButtonPageFragment : Fragment() {
         if (allButton == null) return
 
         val allButtonMain: ArrayList<MainButton> = ArrayList()
-        var index = 0
         val buttonCollection = getButtonCollection()
-        for (b in allButton!!) {
-            if (b.visibility) {
+        for ((index, b) in allButton!!.withIndex()) {
+            if (b.visibility || BuildConfig.DEBUG) {
                 allButtonMain.add(b)
-
-                // Si alcanza el máximo salir
-                index++
                 if (index == buttonCollection.size) {
                     break
                 }
@@ -119,25 +122,37 @@ class ButtonPageFragment : Fragment() {
     }
 
     private fun setupButton(b: Button, m: MainButton) {
-        val backColor: Int = Colors.getBackColor(b)
-        val textColor = Colors.getBestContrastColor("#" + Integer.toHexString(backColor))
+        val colorId = m.backColor
+        val color = resources.getColor(colorId, null)
+        val textColor = Colors.getBestContrastColor(color)
 
         b.setTextColor(textColor)
         b.visibility = View.VISIBLE
         b.tag = m.id
         b.text = m.description
-        b.textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+
+        val stateListDrawable = StateListDrawable()
+        val pressedColor = color.toDrawable() // darkenColor(color, 0.1F).toDrawable()
+        val defaultColor = color.toDrawable()
+        stateListDrawable.addState(intArrayOf(android.R.attr.state_pressed), pressedColor)
+        stateListDrawable.addState(intArrayOf(), defaultColor)
+
+        b.background = stateListDrawable
+
+        val orientation = resources.configuration.orientation
+
+        val icon = AppCompatResources.getDrawable(requireContext(), m.iconResource).apply {
+            this?.setBounds(0, 0, 115, 115)
+        }
 
         try {
-            b.setCompoundDrawablesWithIntrinsicBounds(
-                AppCompatResources.getDrawable(
-                    requireContext(),
-                    m.iconResource
-                ),
-                null,
-                null,
-                null
-            )
+            if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                b.setCompoundDrawables(null, icon, null, null)
+                b.textAlignment = View.TEXT_ALIGNMENT_CENTER
+            } else {
+                b.setCompoundDrawables(icon, null, null, null)
+                b.textAlignment = View.TEXT_ALIGNMENT_TEXT_START
+            }
         } catch (ex: Exception) {
             Log.e(this::class.java.simpleName, ex.message.toString())
         }
@@ -188,18 +203,36 @@ class ButtonPageFragment : Fragment() {
     private fun touchButton(motionEvent: MotionEvent, button: Button) {
         when (motionEvent.action) {
             MotionEvent.ACTION_UP -> {
-                button.isPressed = false
+                buttonPressed(button, false)
                 button.performClick()
             }
 
             MotionEvent.ACTION_DOWN -> {
-                button.isPressed = true
+                buttonPressed(button, true)
+                Handler(Looper.getMainLooper()).postDelayed({
+                    if (button.isPressed) {
+                        buttonPressed(button, false)
+                    }
+                }, 1500)
             }
 
             MotionEvent.ACTION_CANCEL -> {
-                button.isPressed = false
+                buttonPressed(button, false)
             }
         }
+    }
+
+    private fun buttonPressed(button: View, isPressed: Boolean) {
+        if (isPressed) {
+            button.isPressed = true
+            button.background.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
+                Colors.getColorWithAlpha(colorId = R.color.lightslategray, alpha = 220), BlendModeCompat.MODULATE
+            )
+        } else {
+            button.isPressed = false
+            button.background.colorFilter = null
+        }
+        button.refreshDrawableState()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -238,13 +271,16 @@ class ButtonPageFragment : Fragment() {
             pageIndex = savedInstanceState.getInt("pageIndex")
         }
 
-        setupMainButton()
-
         return if (pageIndex == 0) binding1.root else binding2.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        setupMainButton()
+    }
+
     companion object {
-        // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
         private const val ARG_ALL_BUTTONS = "allButtons"
         private const val ARG_PAGE_INDEX = "pageIndex"
 

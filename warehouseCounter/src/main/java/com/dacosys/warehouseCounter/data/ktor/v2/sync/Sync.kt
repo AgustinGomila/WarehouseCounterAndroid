@@ -60,6 +60,10 @@ class Sync private constructor(builder: Builder) {
         }
     }
 
+    fun resetSync() {
+        ticks = 0
+    }
+
     fun forceSync() {
         goSync(onNewOrders, onCompletedOrders)
     }
@@ -98,7 +102,7 @@ class Sync private constructor(builder: Builder) {
         onNewOrders: (ArrayList<OrderRequest>) -> Unit = {},
         onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {},
     ) {
-        ticks = 0
+        resetSync()
 
         handler.post {
             getNewOrderRequest(onNewOrders)
@@ -118,6 +122,7 @@ class Sync private constructor(builder: Builder) {
                 onNewOrders.invoke(arrayListOf())
             } catch (ex: Exception) {
                 ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
+            } finally {
                 syncNewOrderStatus = DownloadStatus.NOT_RUNNING
             }
         }
@@ -133,9 +138,7 @@ class Sync private constructor(builder: Builder) {
             try {
                 onCompletedOrders.invoke(getCompletedOrders())
             } catch (ex: java.lang.Exception) {
-                ErrorLog.writeLog(
-                    null, this::class.java.simpleName, ex.message.toString()
-                )
+                ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
             } finally {
                 syncCompletedOrderStatus = DownloadStatus.NOT_RUNNING
             }

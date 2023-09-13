@@ -17,7 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
@@ -181,7 +181,6 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
         showProgressBar(false)
 
-        /* Oculta el teclado en pantalla cuando pierden el foco los controles que lo necesitan */
         Screen.setupUI(binding.root, this)
     }
 
@@ -303,7 +302,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
                 OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
                 OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
-                else -> WarehouseCounterApp.context.getString(R.string.total_count)
+                else -> context.getString(R.string.total_count)
             }
         }
     }

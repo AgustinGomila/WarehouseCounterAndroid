@@ -1,6 +1,8 @@
 package com.dacosys.warehouseCounter.ui.activities.main
 
 import android.Manifest
+import android.animation.Animator
+import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
@@ -17,6 +19,8 @@ import android.view.MenuItem
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.view.WindowManager
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.Animation
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -61,6 +65,7 @@ import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Compan
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -70,6 +75,7 @@ import org.json.JSONObject
 import org.parceler.Parcels
 import java.lang.ref.WeakReference
 import kotlin.concurrent.thread
+
 
 class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedListener,
     UserSpinnerFragment.OnSpinnerFillListener, Scanner.ScannerListener,
@@ -155,11 +161,9 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 showProgressBar(getString(R.string.downloading_database))
             }
 
-            DownloadDb.DownloadStatus.FINISHED,
-            DownloadDb.DownloadStatus.CANCELED,
+            DownloadDb.DownloadStatus.FINISHED, /* FINISHED = Ok */
+            DownloadDb.DownloadStatus.CANCELED, /* CANCELED = Sin conexión */
             -> {
-                // FINISHED = Ok
-                // CANCELED = Sin conexión
                 showProgressBar()
                 enableLogin()
             }
@@ -232,7 +236,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
     private fun setButton(style: ButtonStyle) {
         runOnUiThread {
-            connectionSuccess = style == ButtonStyle.READY
             when (style) {
                 ButtonStyle.READY -> setLoginButton()
                 ButtonStyle.REFRESH -> setRefreshButton()
@@ -249,19 +252,37 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             binding.loginImageView.contentDescription = getString(R.string.retry_connection)
             binding.loginImageView.foregroundTintList =
                 ColorStateList.valueOf(ResourcesCompat.getColor(resources, R.color.black, null))
+
+            binding.loginImageView.setOnClickListener {
+                initialSetup()
+            }
         }
     }
 
     private fun setWaitButton() {
         runOnUiThread {
-            binding.loginImageView.setImageResource(R.drawable.ic_hourglass)
+            binding.loginImageView.setOnClickListener { }
+
+            binding.loginImageView.setImageResource(R.drawable.ic_refresh_rotate)
             binding.loginImageView.background = ResourcesCompat.getDrawable(
                 resources, R.drawable.rounded_corner_button_steelblue, null
             )
             binding.loginImageView.contentDescription = getString(R.string.connecting)
             binding.loginImageView.foregroundTintList =
                 ColorStateList.valueOf(ResourcesCompat.getColor(resources, R.color.white, null))
+
+            val drawable: Drawable = binding.loginImageView.drawable ?: return@runOnUiThread
+            val anim = createRotationAnimator(drawable)
+            anim.start()
         }
+    }
+
+    private fun createRotationAnimator(drawable: Drawable): Animator {
+        val anim = ObjectAnimator.ofInt(drawable, "level", 0, 10000)
+        anim.setDuration(2000)
+        anim.repeatCount = Animation.INFINITE
+        anim.interpolator = AccelerateDecelerateInterpolator()
+        return anim
     }
 
     private fun setLoginButton() {
@@ -273,6 +294,12 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             binding.loginImageView.contentDescription = getString(R.string.sign_in)
             binding.loginImageView.foregroundTintList =
                 ColorStateList.valueOf(ResourcesCompat.getColor(resources, R.color.cornsilk, null))
+
+            binding.loginImageView.setOnClickListener {
+                user = userSpinnerFragment!!.selectedUser
+                password = binding.passwordEditText.text.toString()
+                attemptLogin()
+            }
         }
     }
 
@@ -318,7 +345,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
     private var attemptSync = false
     private var attemptRunning = false
-    private var connectionSuccess = false
 
     private var user: User? = null
     private var password: String = ""
@@ -350,26 +376,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             }
         }
 
-        // region Mostrar número de versión, etc.
-        val pInfo = packageManager.getPackageInfo(packageName, 0)
-        val str = "${getString(R.string.app_milestone)} ${pInfo.versionName}"
-        binding.versionTextView.text = str
-
-        // Cliente
-        binding.clientTextView.text = settingViewModel.installationCode
-        // endregion
-
-        // region Mostar la imagen de cabecera
-        binding.imageView.setImageResource(0)
-
-        var draw = ContextCompat.getDrawable(this, R.drawable.wc)
-        draw = resize(draw!!)
-
-        binding.imageView.setImageDrawable(draw)
-        // endregion
-
-        userSpinnerFragment!!.selectedUser = user
-
         binding.passwordEditText.setText(password, TextView.BufferType.EDITABLE)
         binding.passwordEditText.setOnKeyListener { _, keyCode, keyEvent ->
             if (keyEvent.action == KeyEvent.ACTION_UP && (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
@@ -398,20 +404,42 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         }
         binding.passwordEditText.requestFocus()
 
-        binding.loginImageView.setOnClickListener {
-            if (connectionSuccess) {
-                user = userSpinnerFragment!!.selectedUser
-                password = binding.passwordEditText.text.toString()
-                attemptLogin()
-            } else {
-                initialSetup()
-            }
-        }
+        Screen.setupUI(binding.root, this)
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        userSpinnerFragment?.selectedUser = user
+
+        setHeader()
 
         initialSetup()
+    }
 
-        /* Oculta el teclado en pantalla cuando pierden el foco los controles que lo necesitan */
-        Screen.setupUI(binding.root, this)
+    private fun setHeader() {
+        runOnUiThread {
+            setHeaderUserName()
+            setHeaderVersion()
+            setHeaderImageBanner()
+        }
+    }
+
+    private fun setHeaderUserName() {
+        binding.clientTextView.text = settingViewModel.installationCode
+    }
+
+    private fun setHeaderVersion() {
+        val pInfo = packageManager.getPackageInfo(packageName, 0)
+        val str = "${getString(R.string.app_milestone)} ${pInfo.versionName}"
+        binding.versionTextView.text = str
+    }
+
+    private fun setHeaderImageBanner() {
+        binding.imageView.setImageResource(0)
+        var draw = ContextCompat.getDrawable(this, R.drawable.wc)
+        draw = resize(draw!!)
+        binding.imageView.setImageDrawable(draw)
     }
 
     private fun showProgressBar(msg: String = "", progress: Int? = null) {
@@ -441,7 +469,9 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
         thread {
             GetDatabase(
-                onEvent = { showSnackBar(it.text, it.snackBarType) },
+                onEvent = {
+                    if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType)
+                },
                 onFinish = { onGetDatabaseData(it) }).execute()
         }
     }
@@ -601,12 +631,13 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         } else {
             // Show a progress spinner and kick off a background task to
             // perform the user login attempt.
-            if (userPass == Md5.getMd5(password)) {
-
+            val tempUser = user
+            if (tempUser != null && userPass == Md5.getMd5(password)) {
                 Statics.cleanCurrentUser()
-                Statics.currentUserId = user!!.userId
-                Statics.currentUserName = user!!.name
-                Statics.currentPass = user!!.password ?: ""
+
+                Statics.currentUserId = tempUser.userId
+                Statics.currentUserName = tempUser.name
+                Statics.currentPass = tempUser.password ?: ""
                 Statics.isLogged = true
 
                 setupImageControl()
@@ -752,7 +783,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             R.id.action_trigger_scan -> {
                 ///* For Debug */
                 //scannerCompleted(
-                //    """{"config":{"client_email":"miguel@dacosys.com","client_password":"sarasa123!!"}}""".trimIndent()
+                //    """{"config":{"client_email":"example@mail.com","client_password":"1234"}}""".trimIndent()
                 //)
                 //return super.onOptionsItemSelected(item)
 

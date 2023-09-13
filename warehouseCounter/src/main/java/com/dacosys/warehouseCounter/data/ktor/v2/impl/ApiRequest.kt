@@ -253,13 +253,15 @@ class ApiRequest {
             error = { it }
         )
 
-        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
-            callback(
-                APIResponse(
-                    onEvent = SnackBarEventData(it.message, SnackBarType.ERROR)
-                )
-            )
-        })
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
     }
 
     /**
@@ -303,13 +305,15 @@ class ApiRequest {
             error = { it }
         )
 
-        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
-            callback(
-                APIResponse(
-                    onEvent = SnackBarEventData(it.message, SnackBarType.ERROR)
-                )
-            )
-        })
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
     }
 
     /**
@@ -376,13 +380,15 @@ class ApiRequest {
             error = { it }
         )
 
-        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
-            callback(
-                APIResponse(
-                    onEvent = SnackBarEventData(it.message, SnackBarType.ERROR)
-                )
-            )
-        })
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
     }
 
     /**
@@ -423,13 +429,15 @@ class ApiRequest {
             error = { it }
         )
 
-        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
-            callback(
-                APIResponse(
-                    onEvent = SnackBarEventData(it.message, SnackBarType.ERROR)
-                )
-            )
-        })
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
     }
 
     /**
@@ -470,13 +478,15 @@ class ApiRequest {
             error = { it }
         )
 
-        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
-            callback(
-                APIResponse(
-                    onEvent = SnackBarEventData(it.message, SnackBarType.ERROR)
-                )
-            )
-        })
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
     }
 
     /**
@@ -519,11 +529,15 @@ class ApiRequest {
             error = { it }
         )
 
-        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
-            callback(
-                APIResponse(onEvent = SnackBarEventData(it.message, SnackBarType.ERROR))
-            )
-        })
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
     }
 
     /**
@@ -565,13 +579,15 @@ class ApiRequest {
             error = { it }
         )
 
-        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
-            callback(
-                APIResponse(
-                    onEvent = SnackBarEventData(it.message, SnackBarType.ERROR)
-                )
-            )
-        })
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
     }
 
     /**
@@ -628,13 +644,15 @@ class ApiRequest {
             error = { it }
         )
 
-        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
-            callback(
-                APIResponse(
-                    onEvent = SnackBarEventData(it.message, SnackBarType.ERROR)
-                )
-            )
-        })
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
     }
 
     /**
@@ -671,11 +689,15 @@ class ApiRequest {
             error = { it }
         )
 
-        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
-            callback(
-                APIResponse(onEvent = SnackBarEventData(it.message, SnackBarType.ERROR))
-            )
-        })
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
     }
 
     /**
@@ -728,13 +750,15 @@ class ApiRequest {
             listKey = listKey
         )
 
-        result.fold(ifLeft = { callback(APIResponse(it)) }, ifRight = {
-            callback(
-                APIResponse(
-                    onEvent = SnackBarEventData(it.message, SnackBarType.ERROR)
-                )
-            )
-        })
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
     }
 
     companion object {
