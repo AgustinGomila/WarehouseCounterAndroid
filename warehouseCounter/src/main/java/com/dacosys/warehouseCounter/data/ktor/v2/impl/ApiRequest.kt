@@ -445,14 +445,27 @@ class ApiRequest {
      *
      * @param T el tipo de objeto que se espera recibir como respuesta.
      * @param objPath la ruta al recurso donde se actualizará el objeto.
+     * @param id el ID del objeto que se desea ver en detalle.
      * @param payload un objeto que contiene los datos necesarios para actualizar el objeto en el recurso.
      * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de actualización.
      *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación.
      */
     suspend inline fun <reified T : Any> update(
-        objPath: String, payload: Any, callback: (APIResponse<T>) -> Unit
+        objPath: String, id: Long, payload: Any, callback: (APIResponse<T>) -> Unit
     ) {
         val url = URL(apiUrl)
+        val columnName = "id"
+
+        /** We build the parameters */
+        val params = Parameters.build {
+            append(columnName, id.toString())
+        }
+
+        val urlComplete = "${url.path}/$VERSION_PATH/$objPath/$UPDATE_PATH"
+        if (BuildConfig.DEBUG) {
+            println("URL: $urlComplete")
+            println("PARAMS: $params")
+        }
 
         /** HTTP Post function */
         val response = httpClient.put {
@@ -465,7 +478,8 @@ class ApiRequest {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS
                 host = url.host
-                path("${url.path}/$VERSION_PATH/$objPath/$UPDATE_PATH")
+                path(urlComplete)
+                parameters.appendAll(params)
             }
             /** Payload content */
             contentType(ContentType.Application.Json)

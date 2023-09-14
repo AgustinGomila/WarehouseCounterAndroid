@@ -138,6 +138,32 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             return adapter?.currentItem()
         }
 
+    /** Acá seleccionamos siguiendo estos criterios:
+     * 1. Si NO es [multiSelect] tomamos el ítem seleccionado de forma simple.
+     * 2. Si es [multiSelect] nos fijamos que o bien estén marcados algunos ítems o bien tengamos un ítem seleccionado de forma simple.
+     *     1. Si es así, vamos a devolver los ítems marcados si existen como prioridad.
+     *     2. Si no, nos fijamos que NO sean visibles los CheckBoxes, esto quiere decir que el usuario está seleccionado el ítem de forma simple y devolvemos este ítem.
+     **/
+    private fun selectedOrders(): ArrayList<OrderResponse> {
+        val item = currentItem
+        val countChecked = countChecked
+        var itemArray: ArrayList<OrderResponse> = ArrayList()
+
+        if (!multiSelect && item != null) {
+            itemArray = arrayListOf(item)
+        } else if (multiSelect) {
+            if (countChecked > 0 || item != null) {
+                if (countChecked > 0) {
+                    itemArray = allChecked
+                } else if (!showCheckBoxes) {
+                    itemArray = arrayListOf(item!!)
+                }
+                itemArray.map { it } as ArrayList<OrderResponse>
+            }
+        }
+        return itemArray
+    }
+
     private lateinit var filterFragment: SelectFilterFragment
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
@@ -263,8 +289,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         setPanelAnimation()
 
         binding.okButton.setOnClickListener {
-            val id = currentItem?.id ?: return@setOnClickListener
-            askForRepack(id)
+            askForUnpack(selectedOrders())
         }
 
         // OCULTAR PANEL DE CONTROLES DE FILTRADO
@@ -527,12 +552,13 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             val item = itemArray.first()
             // Agotado
             item.statusId = OrderStatus.outOfStock.id
+
             UpdateOrder(
                 payload = arrayListOf(OrderRequest(item)),
                 onEvent = { showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
                     if (it.isEmpty()) return@UpdateOrder
-                    askForRepack(item.id)
+                    askForRepack(item)
                 }
             ).execute()
         } else {
@@ -540,6 +566,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                 // Agotado
                 or.statusId = OrderStatus.outOfStock.id
                 val payload = ArrayList(itemArray.mapNotNull { if (it.id == or.id) OrderRequest(it) else null })
+
                 UpdateOrder(
                     payload = payload,
                     onEvent = { showSnackBar(it.text, it.snackBarType) },
@@ -555,14 +582,14 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
     }
 
-    private fun askForRepack(id: Long) {
+    private fun askForRepack(order: OrderResponse) {
         runOnUiThread {
             val builder = AlertDialog.Builder(this)
-            builder.setTitle(context.getString(R.string.confirm_unpacking))
-            builder.setMessage(getString(R.string.are_you_sure_to_unpack_the_selected_orders))
+            builder.setTitle(context.getString(R.string.repack_this_order))
+            builder.setMessage(getString(R.string.you_want_to_repack_this_order))
             builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
                 val data = Intent()
-                data.putExtra(ARG_REPACK_ORDER_ID, id)
+                data.putExtra(ARG_REPACK_ORDER_ID, order.id)
                 setResult(RESULT_OK, data)
                 dialogInterface.dismiss()
             }
@@ -571,6 +598,23 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             }
             builder.setOnDismissListener {
                 finish()
+            }
+            val dialog = builder.create()
+            dialog.show()
+        }
+    }
+
+    private fun askForUnpack(orders: ArrayList<OrderResponse>) {
+        runOnUiThread {
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(context.getString(R.string.confirm_unpacking))
+            builder.setMessage(getString(R.string.are_you_sure_to_unpack_the_selected_orders))
+            builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
+                unpack(orders)
+                dialogInterface.dismiss()
+            }
+            builder.setNegativeButton(getString(R.string.no)) { dialogInterface, _ ->
+                dialogInterface.dismiss()
             }
             val dialog = builder.create()
             dialog.show()

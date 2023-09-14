@@ -801,4 +801,6 @@
     <string name="retry">Reintentar</string>
     <string name="end_of_pagination">No hay más elementos</string>
     <string name="external_storage_unwritable">Almacenamiento externo no grabable</string>
+    <string name="you_want_to_repack_this_order">¿Quiere reempaquetar el pedido?</string>
+    <string name="repack_this_order">Reempaquetar el pedido</string>
 </resources>

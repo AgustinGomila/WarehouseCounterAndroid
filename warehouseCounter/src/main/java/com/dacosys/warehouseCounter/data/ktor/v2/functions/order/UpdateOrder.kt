@@ -43,17 +43,28 @@ class UpdateOrder(
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         var isDone = false
         for ((index, order) in payload.withIndex()) {
-            if (BuildConfig.DEBUG) println(json.encodeToString(OrderRequest.serializer(), order))
 
-            ktorApiServiceV2.updateOrder(payload = toUpdatePayload(order), callback = {
-                if (it.onEvent != null) sendEvent(it.onEvent)
+            val orderId = order.orderRequestId
+            if (orderId != null) {
 
-                var id: Long = 0
-                if (it.response != null) id = it.response.id
+                if (BuildConfig.DEBUG) println(json.encodeToString(OrderRequest.serializer(), order))
 
-                if (id > 0) successIdList.add(id)
-                isDone = index == payload.lastIndex
-            })
+                ktorApiServiceV2.updateOrder(
+                    id = orderId,
+                    payload = toUpdatePayload(order),
+                    callback = {
+                        if (it.onEvent != null) sendEvent(it.onEvent)
+
+                        var id: Long = 0
+                        if (it.response != null) id = it.response.id
+
+                        if (id > 0) successIdList.add(id)
+                        isDone = index == payload.lastIndex
+                    })
+            } else {
+                sendEvent(context.getString(R.string.unknown_error), SnackBarType.ERROR)
+                isDone = true
+            }
         }
 
         val startTime = System.currentTimeMillis()

@@ -901,9 +901,11 @@ class OrcAdapter private constructor(builder: Builder) :
                 Statics.roundToString(content.qtyRequested ?: 0.toDouble(), Statics.decimalPlaces)
 
             binding.itemIdCheckedTextView.text =
-                if (itemId < 0) context.getString(R.string.new_product)
-                else if (itemId == 0L) context.getString(R.string.without_id)
-                else itemId.toString()
+                when {
+                    (content.itemId ?: -1) < 0 -> context.getString(R.string.new_product)
+                    content.itemId == 0L -> context.getString(R.string.without_id)
+                    else -> content.itemId.toString()
+                }
             binding.extIdCheckedTextView.text = content.externalId ?: ""
             binding.lotIdCheckedTextView.text = content.lotId?.toString() ?: ""
 

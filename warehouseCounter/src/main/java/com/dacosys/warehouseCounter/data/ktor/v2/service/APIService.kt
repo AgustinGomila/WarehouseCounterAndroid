@@ -79,7 +79,7 @@ interface APIService {
         callback: (APIResponse<ListResponse<OrderResponse>>) -> Unit
     )
 
-    suspend fun updateOrder(payload: OrderUpdatePayload, callback: (APIResponse<OrderResponse>) -> Unit)
+    suspend fun updateOrder(id: Long, payload: OrderUpdatePayload, callback: (APIResponse<OrderResponse>) -> Unit)
 
     suspend fun getOrderBarcode(params: BarcodeParam, callback: (APIResponse<List<Barcode>>) -> Unit)
 

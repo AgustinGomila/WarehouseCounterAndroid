@@ -253,7 +253,9 @@ data class OrderRequest(
 
         fun toUpdatePayload(or: OrderRequest): OrderUpdatePayload {
             return OrderUpdatePayload(
-                externalId = or.externalId, description = or.description, statusId = outOfStock.id.toInt()
+                externalId = or.externalId,
+                description = or.description,
+                statusId = outOfStock.id.toInt()
             )
         }
 

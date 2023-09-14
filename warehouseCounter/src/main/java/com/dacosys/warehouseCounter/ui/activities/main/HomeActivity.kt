@@ -16,7 +16,6 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.text.InputType
-import android.text.format.DateFormat
 import android.view.*
 import android.view.animation.Animation
 import android.view.animation.Interpolator
@@ -47,12 +46,13 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.SendOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.ViewOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.sync.SyncViewModel
-import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.client.Client
+import com.dacosys.warehouseCounter.data.room.entity.orderRequest.AddOrder
+import com.dacosys.warehouseCounter.data.room.entity.orderRequest.AddOrderFromFile
+import com.dacosys.warehouseCounter.data.room.entity.orderRequest.RepackOrder
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.DATE_FORMAT
 import com.dacosys.warehouseCounter.misc.Statics.Companion.isDebuggable
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -85,8 +85,6 @@ import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
 import org.parceler.Parcels
 import kotlin.concurrent.thread
-import kotlin.io.path.Path
-import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequest as OrderRequestRoom
 
 class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFragment.ButtonClickedListener {
 
@@ -565,90 +563,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             }
         }
 
-    private fun addOrderRequest(client: Client?, description: String, orderRequestType: OrderRequestType) {
-        showSnackBar(
-            String.format(
-                getString(R.string.client_description),
-                client?.name ?: getString(R.string.no_client),
-                lineSeparator,
-                description
-            ), INFO
-        )
-
-        val orderRequest = OrderRequestRoom(
-            clientId = client?.clientId ?: 0,
-            creationDate = DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString(),
-            description = description,
-            orderTypeDescription = orderRequestType.description,
-            orderTypeId = orderRequestType.id.toInt(),
-            resultAllowDiff = 1,
-            resultAllowMod = 1,
-            resultDiffProduct = 1,
-            resultDiffQty = 1,
-            startDate = DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString(),
-            userId = Statics.currentUserId,
-        )
-
-        OrderRequestCoroutines.add(
-            orderRequest = orderRequest,
-            onResult = { newId ->
-                if (newId != null) {
-                    val intent = Intent(context, OrderRequestContentActivity::class.java)
-                    intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
-                    intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, true)
-                    startActivity(intent)
-                }
-            })
-    }
-
-    private fun repackOrder(order: OrderResponse) {
-        showSnackBar(
-            String.format(
-                getString(R.string.client_description),
-                order.clientId ?: getString(R.string.no_client),
-                lineSeparator,
-                order.description
-            ), INFO
-        )
-
-        val orderRequest = OrderRequestRoom(
-            clientId = order.clientId ?: 0,
-            creationDate = order.rowCreationDate,
-            description = order.description,
-            orderTypeDescription = OrderRequestType.packaging.description,
-            orderTypeId = OrderRequestType.packaging.id.toInt(),
-            resultAllowDiff = if (order.resultAllowDiff == true) 1 else 0,
-            resultAllowMod = if (order.resultAllowMod == true) 1 else 0,
-            resultDiffProduct = if (order.resultDiffProduct == true) 1 else 0,
-            resultDiffQty = if (order.resultDiffQty == true) 1 else 0,
-            startDate = order.startDate,
-            userId = Statics.currentUserId,
-        )
-
-        OrderRequestCoroutines.add(
-            orderRequest = orderRequest,
-            onResult = { newId ->
-                if (newId != null) {
-                    orderRequest.orderRequestId = newId
-                    OrderRequestCoroutines.update(
-                        orderRequest = orderRequest.toKtor,
-                        contents = order.contentToKtor(),
-                        onResult = {
-                            if (it) {
-                                val intent = Intent(context, OrderRequestContentActivity::class.java)
-                                intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
-                                intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
-                                startActivity(intent)
-                            } else {
-                                showSnackBar(getString(R.string.error_when_updating_the_order), ERROR)
-                            }
-                        })
-                } else {
-                    showSnackBar(getString(R.string.error_when_creating_the_order), ERROR)
-                }
-            })
-    }
-
     private val resultForPendingCount =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             val data = it?.data
@@ -670,49 +584,45 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             }
         }
 
-    private fun addOrderRequestFromJson(filename: String) {
-        val order = OrderRequest(Path(Statics.completePendingPath, filename).toString())
-        val completeList = ArrayList(order.contents)
-
-        val orderRequest = OrderRequestRoom(
-            clientId = order.clientId ?: 0,
-            creationDate = order.creationDate.toString(),
-            description = order.description,
-            orderTypeDescription = OrderRequestType.packaging.description,
-            orderTypeId = OrderRequestType.packaging.id.toInt(),
-            resultAllowDiff = if (order.resultAllowDiff == true) 1 else 0,
-            resultAllowMod = if (order.resultAllowMod == true) 1 else 0,
-            resultDiffProduct = if (order.resultDiffProduct == true) 1 else 0,
-            resultDiffQty = if (order.resultDiffQty == true) 1 else 0,
-            startDate = order.startDate.toString(),
-            userId = Statics.currentUserId,
+    private fun addOrderRequest(client: Client?, description: String, orderRequestType: OrderRequestType) {
+        AddOrder(
+            client = client,
+            description = description,
+            orderRequestType = orderRequestType,
+            onEvent = { showSnackBar(it.text, it.snackBarType) },
+            onNewId = {
+                val intent = Intent(context, OrderRequestContentActivity::class.java)
+                intent.putExtra(OrderRequestContentActivity.ARG_ID, it)
+                intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, true)
+                startActivity(intent)
+            }
         )
+    }
 
-        OrderRequestCoroutines.add(
-            orderRequest = orderRequest,
-            onResult = { newId ->
-                if (newId != null) {
-                    orderRequest.orderRequestId = newId
-                    OrderRequestCoroutines.update(
-                        orderRequest = orderRequest.toKtor,
-                        contents = completeList,
-                        onResult = {
-                            try {
-                                val intent = Intent(context, OrderRequestContentActivity::class.java)
-                                intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
-                                intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
-                                startActivity(intent)
-                            } catch (ex: Exception) {
-                                val res =
-                                    getString(R.string.an_error_occurred_while_trying_to_load_the_order)
-                                showSnackBar(res, ERROR)
-                                android.util.Log.e(this::class.java.simpleName, res)
-                            }
-                        })
-                } else {
-                    showSnackBar(getString(R.string.error_when_creating_the_order), ERROR)
-                }
-            })
+    private fun repackOrder(order: OrderResponse) {
+        RepackOrder(
+            order = order,
+            onEvent = { showSnackBar(it.text, it.snackBarType) },
+            onNewId = {
+                val intent = Intent(context, OrderRequestContentActivity::class.java)
+                intent.putExtra(OrderRequestContentActivity.ARG_ID, it)
+                intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
+                startActivity(intent)
+            }
+        )
+    }
+
+    private fun addOrderRequestFromJson(filename: String) {
+        AddOrderFromFile(
+            filename = filename,
+            onEvent = { showSnackBar(it.text, it.snackBarType) },
+            onNewId = {
+                val intent = Intent(context, OrderRequestContentActivity::class.java)
+                intent.putExtra(OrderRequestContentActivity.ARG_ID, it)
+                intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
+                startActivity(intent)
+            }
+        )
     }
 
     private fun configApp() {
@@ -935,7 +845,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
             ProgressStatus.success.id -> {
                 showImageProgressBar(false)
-                showSnackBar(getString(R.string.upload_images_success), SnackBarType.SUCCESS)
+                showSnackBar(getString(R.string.upload_images_success), SUCCESS)
             }
         }
     }
