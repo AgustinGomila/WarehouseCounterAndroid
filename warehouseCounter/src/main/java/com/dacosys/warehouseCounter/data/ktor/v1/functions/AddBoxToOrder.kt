@@ -26,18 +26,14 @@ class AddBoxToOrder(
     private lateinit var currentUser: User
 
     fun execute() {
-        // Función que prosigue al resultado de GetToken
-        fun onEvent(it: RequestResult) {
+        fun onGetTokenResult(it: RequestResult) {
             if (it.status == ResultStatus.SUCCESS) {
-
-                // Proseguimos con la búsqueda...
                 scope.launch {
                     coroutineScope {
                         withContext(Dispatchers.IO) { suspendFunction() }
                     }
                 }
             } else {
-                // Token inválido.
                 sendEvent(context.getString(R.string.invalid_or_expired_token), SnackBarType.ERROR)
             }
         }
@@ -50,11 +46,8 @@ class AddBoxToOrder(
         Statics.getCurrentUser { user ->
             if (user != null) {
                 currentUser = user
-
-                // Chequeamos que el Token sea válido
-                thread { GetToken { onEvent(it) }.execute(false) }
+                thread { GetToken { onGetTokenResult(it) }.execute(false) }
             } else {
-                // Token inválido.
                 sendEvent(context.getString(R.string.invalid_user), SnackBarType.ERROR)
             }
         }

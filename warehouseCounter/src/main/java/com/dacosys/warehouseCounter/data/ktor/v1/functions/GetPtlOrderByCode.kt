@@ -27,18 +27,14 @@ class GetPtlOrderByCode(
     private var r: ArrayList<PtlOrder> = ArrayList()
 
     fun execute() {
-        // Función que prosigue al resultado de GetToken
-        fun onEvent(it: RequestResult) {
+        fun onGetTokenResult(it: RequestResult) {
             if (it.status == ResultStatus.SUCCESS) {
-
-                // Proseguimos con la búsqueda...
                 scope.launch {
                     coroutineScope {
                         withContext(Dispatchers.IO) { suspendFunction() }
                     }
                 }
             } else {
-                // Token inválido.
                 sendEvent(context.getString(R.string.invalid_or_expired_token), SnackBarType.ERROR)
             }
         }
@@ -48,8 +44,7 @@ class GetPtlOrderByCode(
             return
         }
 
-        // Chequeamos que el Token sea válido
-        thread { GetToken { onEvent(it) }.execute(false) }
+        thread { GetToken { onGetTokenResult(it) }.execute(false) }
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {

@@ -35,13 +35,8 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
     private lateinit var currentUser: User
 
     fun execute(force: Boolean) {
-        // Función que prosigue al resultado de getCurrentUser
-        fun onEvent() {
-
-            // ¿Es necesario pedir un Token nuevo?
+        fun onGetUserResult() {
             if (force || !isTokenValid()) {
-
-                // Pedimos el nuevo Token
                 scope.launch {
                     coroutineScope {
                         withContext(Dispatchers.IO) { suspendFunction() }
@@ -60,11 +55,8 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
         Statics.getCurrentUser { user ->
             if (user != null) {
                 currentUser = user
-
-                // Continuamos con la ejecución...
-                onEvent()
+                onGetUserResult()
             } else {
-                // Usuario inválido.
                 onEvent.invoke(RequestResult(ResultStatus.ERROR, context.getString(R.string.invalid_user)))
             }
         }
