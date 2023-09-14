@@ -279,8 +279,8 @@ data class OrderRequest(
             return orArray
         }
 
-        fun removeCountFiles(path: File, successFiles: ArrayList<String>, sendEvent: (SnackBarEventData) -> Unit) {
-            sendEvent(removeOrders(path, successFiles))
+        fun removeCountFiles(path: File, filesToRemove: ArrayList<String>, sendEvent: (SnackBarEventData) -> Unit) {
+            sendEvent(removeOrders(path, filesToRemove))
         }
 
         private fun removeOrders(path: File, files: ArrayList<String>): SnackBarEventData {

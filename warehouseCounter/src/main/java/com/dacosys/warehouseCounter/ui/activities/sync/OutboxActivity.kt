@@ -35,8 +35,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.CreateOrder
-import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.SendOrder
 import com.dacosys.warehouseCounter.databinding.OutboxActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.completeCompletedPath
@@ -293,36 +292,14 @@ class OutboxActivity : AppCompatActivity() {
     }
 
     private fun sendSelected(orArray: ArrayList<OrderRequest>) {
-        try {
-            thread {
-                CreateOrder(
-                    payload = orArray,
-                    onEvent = { showSnackBar(it.text, it.snackBarType) },
-                    onFinish = { successFiles ->
-                        if (successFiles.isEmpty()) return@CreateOrder
-
-                        /** We delete the files of the orders sent */
-                        OrderRequest.removeCountFiles(
-                            path = Statics.getCompletedPath(),
-                            successFiles = successFiles,
-                            sendEvent = { eventData ->
-                                if (eventData.snackBarType == SUCCESS) {
-                                    /** We remove the reference to the order in room database,
-                                     * and we fill the list adapter at the end. */
-                                    OrderRequestCoroutines.removeById(
-                                        idList = orArray.mapNotNull { orderRequest -> orderRequest.orderRequestId },
-                                        onResult = {
-                                            fillAdapter(ArrayList())
-                                        })
-                                } else {
-                                    showSnackBar(eventData.text, eventData.snackBarType)
-                                }
-                            }
-                        )
-                    }).execute()
+        runOnUiThread {
+            SendOrder(orArray) {
+                if (it.snackBarType == SUCCESS) {
+                    fillAdapter(ArrayList())
+                } else {
+                    showSnackBar(it.text, it.snackBarType)
+                }
             }
-        } catch (ex: Exception) {
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
         }
     }
 

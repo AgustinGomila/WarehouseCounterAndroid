@@ -8,6 +8,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiService
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest.CREATOR.toUpdatePayload
+import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
@@ -20,7 +21,11 @@ class UpdateOrder(
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
     fun execute() {
-        onEvent(SnackBarEventData(context.getString(R.string.updating_order_), SnackBarType.RUNNING))
+        if (!Statics.isOnline()) {
+            sendEvent(context.getString(R.string.connection_error), SnackBarType.ERROR)
+            return
+        }
+        sendEvent(context.getString(R.string.updating_order_), SnackBarType.RUNNING)
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

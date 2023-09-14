@@ -118,8 +118,8 @@ class Sync private constructor(builder: Builder) {
         thread {
             try {
                 /** TODO: Hacer la función que traiga nuevos pedidos desde la API */
-                // GetNewOrder(onEvent = { }, onFinish = { onNewOrders.invoke(it) }).execute()
-                onNewOrders.invoke(arrayListOf())
+                // GetNewOrder(onEvent = { }, onFinish = { onNewOrders(it) }).execute()
+                onNewOrders(arrayListOf())
             } catch (ex: Exception) {
                 ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
             } finally {
@@ -136,7 +136,8 @@ class Sync private constructor(builder: Builder) {
 
         thread {
             try {
-                onCompletedOrders.invoke(getCompletedOrders())
+                val orders = getCompletedOrders()
+                onCompletedOrders(orders)
             } catch (ex: java.lang.Exception) {
                 ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
             } finally {

@@ -5,6 +5,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.*
@@ -17,7 +18,11 @@ class MoveOrder(
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
     fun execute() {
-        onEvent(SnackBarEventData(context.getString(R.string.moving_order_), SnackBarType.RUNNING))
+        if (!Statics.isOnline()) {
+            sendEvent(context.getString(R.string.connection_error), SnackBarType.ERROR)
+            return
+        }
+        sendEvent(context.getString(R.string.moving_order_), SnackBarType.RUNNING)
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }
@@ -36,5 +41,14 @@ class MoveOrder(
                 if (it.onEvent != null) onEvent(it.onEvent)
                 if (it.response != null) onFinish(it.response)
             })
+    }
+
+    private fun sendEvent(msg: String, type: SnackBarType) {
+        val event = SnackBarEventData(msg, type)
+        sendEvent(event)
+    }
+
+    private fun sendEvent(event: SnackBarEventData) {
+        onEvent.invoke(event)
     }
 }

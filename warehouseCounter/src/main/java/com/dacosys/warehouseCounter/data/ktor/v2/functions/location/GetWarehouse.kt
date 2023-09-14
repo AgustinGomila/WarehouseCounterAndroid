@@ -6,6 +6,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiService
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiActionParam
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
+import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
@@ -49,12 +50,11 @@ class GetWarehouse
     private var r: ArrayList<Warehouse> = ArrayList()
 
     fun execute() {
-        onEvent(
-            SnackBarEventData(
-                context.getString(R.string.searching_warehouses),
-                SnackBarType.RUNNING
-            )
-        )
+        if (!Statics.isOnline()) {
+            sendEvent(context.getString(R.string.connection_error), SnackBarType.ERROR)
+            return
+        }
+        sendEvent(context.getString(R.string.searching_warehouses), SnackBarType.RUNNING)
         scope.launch {
             coroutineScope {
                 withContext(Dispatchers.IO) { suspendFunction() }

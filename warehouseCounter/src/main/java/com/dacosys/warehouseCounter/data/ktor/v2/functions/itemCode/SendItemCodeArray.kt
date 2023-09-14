@@ -43,9 +43,6 @@ class SendItemCodeArray
                     if (it != null) {
                         allResp.add(it)
                         /** Update transferred: Actualizar los ItemCode enviados en la base de datos local */
-                        /** Update transferred: Actualizar los ItemCode enviados en la base de datos local */
-                        /** Update transferred: Actualizar los ItemCode enviados en la base de datos local */
-                        /** Update transferred: Actualizar los ItemCode enviados en la base de datos local */
                         ItemCodeCoroutines.updateTransferred(itemId = it.itemId, code = it.code)
                     }
                     isDone = index == icPayloadArray.lastIndex

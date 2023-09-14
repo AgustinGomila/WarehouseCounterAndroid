@@ -361,9 +361,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        //// INICIALIZAR CONTROLES
-        userSpinnerFragment =
-            supportFragmentManager.findFragmentById(R.id.userSpinnerFragment) as UserSpinnerFragment?
+        userSpinnerFragment = supportFragmentManager.findFragmentById(R.id.userSpinnerFragment) as UserSpinnerFragment?
 
         if (savedInstanceState != null) {
             user = savedInstanceState.getParcelable(ARG_USER)

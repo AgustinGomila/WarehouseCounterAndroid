@@ -41,9 +41,10 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeNewOrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.CreateOrder
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.SendOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.ViewOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.sync.SyncViewModel
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
@@ -77,6 +78,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -88,80 +90,79 @@ import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequest a
 
 class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFragment.ButtonClickedListener {
 
-    private fun onCompletedOrder(orders: ArrayList<OrderRequest>) {
-        android.util.Log.d(
-            this::class.java.simpleName,
-            getString(R.string.completed_orders_) + orders.count()
-        )
-
-        if (orders.isNotEmpty() && settingViewModel.autoSend) {
-            try {
-                thread {
-                    CreateOrder(
-                        payload = orders,
-                        onEvent = { showSnackBar(it.text, it.snackBarType) },
-                        onFinish = { successFiles ->
-                            if (successFiles.isEmpty()) return@CreateOrder
-
-                            /** We delete the files of the orders sent */
-                            OrderRequest.removeCountFiles(
-                                path = Statics.getCompletedPath(),
-                                successFiles = successFiles,
-                                sendEvent = { eventData ->
-                                    if (eventData.snackBarType == SnackBarType.CREATOR.SUCCESS) {
-                                        /** We remove the reference to the order in room database,
-                                         * and we fill the list adapter at the end. */
-                                        OrderRequestCoroutines.removeById(
-                                            idList = orders.mapNotNull { orderRequest -> orderRequest.orderRequestId },
-                                            onResult = { })
-                                    } else {
-                                        showSnackBar(eventData.text, eventData.snackBarType)
-                                    }
-                                })
-                        }
-                    ).execute()
-                }
-            } catch (ex: Exception) {
-                ErrorLog.writeLog(
-                    this, this::class.java.simpleName, ex.message.toString()
-                )
+    @get:Synchronized
+    private var isSending = false
+    private fun onCompletedOrder() {
+        sendCompletedOrders(
+            onFinish = {
+                setTextButton(MainButton.CompletedCounts, it)
             }
-        }
-
-        setTextButton(MainButton.CompletedCounts, orders.count())
+        )
     }
 
-    private fun onNewOrder(itemArray: ArrayList<OrderRequest>) {
-        if (itemArray.isNotEmpty()) {
-            android.util.Log.d(
-                this::class.java.simpleName,
-                "${getString(R.string.new_orders_received_)}${itemArray.count()}"
-            )
+    private fun sendCompletedOrders(onFinish: (Int) -> Unit) {
+        val orders = getCompletedOrders()
 
-            if (!Statics.isExternalStorageWritable) {
-                android.util.Log.e(
-                    this::class.java.simpleName,
-                    getString(R.string.error_external_storage_not_available_for_reading_or_writing)
-                )
-                return
+        if (!isSending && orders.isNotEmpty() && settingViewModel.autoSend) {
+            isSending = true
+
+            runOnUiThread {
+                SendOrder(orders) {
+                    isSending = it.snackBarType !in SnackBarType.getFinish()
+
+                    if (it.snackBarType == SUCCESS) {
+                        onFinish(0)
+                    } else {
+                        showSnackBar(it.text, it.snackBarType)
+                    }
+                }
             }
-
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R &&
-                PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
-            ) {
-                newOrArray = itemArray
-                requestPermissions(
-                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE
-                )
-                return
-            }
-
-            writeNewOrderRequest(itemArray) { showSnackBar(it.text, it.snackBarType) }
+        } else {
+            onFinish(orders.count())
         }
+    }
 
-        setTextButton(MainButton.PendingCounts, countPending())
+    @get:Synchronized
+    private var isReceiving = false
+    private fun onNewOrder(itemArray: ArrayList<OrderRequest>) {
+        android.util.Log.d(
+            this::class.java.simpleName,
+            "${getString(R.string.new_orders_received_)}${itemArray.count()}"
+        )
+
+        saveNewOrders(itemArray) {
+            setTextButton(MainButton.PendingCounts, countPending())
+        }
+    }
+
+    private fun saveNewOrders(itemArray: ArrayList<OrderRequest>, onFinish: () -> Unit) {
+        runOnUiThread {
+            if (!isReceiving && itemArray.isNotEmpty()) {
+                isReceiving = true
+
+                if (!Statics.isExternalStorageWritable) {
+                    isReceiving = false
+                    android.util.Log.e(
+                        this::class.java.simpleName,
+                        getString(R.string.error_external_storage_not_available_for_reading_or_writing)
+                    )
+                } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R &&
+                    PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(
+                        this, Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    )
+                ) {
+                    isReceiving = false
+                    newOrArray = itemArray
+                    requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE)
+                } else {
+                    writeNewOrderRequest(itemArray) {
+                        if (it.snackBarType in SnackBarType.getFinish()) isReceiving = false
+                        showSnackBar(it.text, it.snackBarType)
+                    }
+                }
+            }
+            onFinish()
+        }
     }
 
     private fun countPending(): Int {
@@ -206,7 +207,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         Screen.closeKeyboard(this)
 
         if (Statics.currentUserId > 0L) {
-            startSync()
+            runOnUiThread { sync.startSync() }
         }
     }
 
@@ -839,11 +840,13 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             runOnUiThread {
                 val rotationAnimator = ObjectAnimator.ofFloat(it, View.ROTATION, 0f, 360f)
                 rotationAnimator.duration = 1000
-                rotationAnimator.interpolator = Interpolator { input -> input * input * (3f - 2f * input) }
+                rotationAnimator.interpolator = Interpolator { it * it * (3f - 2f * it) }
                 rotationAnimator.start()
             }
             sync.forceSync()
         }
+
+        sync.resetSync()
     }
 
     override fun onStop() {
@@ -872,13 +875,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
         setHeader()
 
-        sync.resetSync()
-
         sync.onCompletedOrders { syncVm.setSyncCompleted(it) }
         sync.onNewOrders { syncVm.setSyncNew(it) }
         sync.onTimerTick { syncVm.setSyncTimer(it) }
 
-        syncVm.syncCompletedOrders.observe(this) { if (it != null) onCompletedOrder(it) }
+        syncVm.syncCompletedOrders.observe(this) { if (it != null) onCompletedOrder() }
         syncVm.syncNewOrders.observe(this) { if (it != null) onNewOrder(it) }
         syncVm.syncTimer.observe(this) { if (it != null) onTimerTick(it) }
         syncVm.uploadImagesProgress.observe(this) { if (it != null) onUploadImagesProgress(it) }
@@ -1116,10 +1117,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             r.play()
         } catch (ignore: Exception) {
         }
-    }
-
-    private fun startSync() {
-        Thread { sync.startSync() }.start()
     }
 
     override fun onRequestPermissionsResult(
