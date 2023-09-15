@@ -445,7 +445,7 @@ class ApiRequest {
      *
      * @param T el tipo de objeto que se espera recibir como respuesta.
      * @param objPath la ruta al recurso donde se actualizará el objeto.
-     * @param id el ID del objeto que se desea ver en detalle.
+     * @param id el ID del objeto que se desea actualizar.
      * @param payload un objeto que contiene los datos necesarios para actualizar el objeto en el recurso.
      * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de actualización.
      *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación.
@@ -456,7 +456,7 @@ class ApiRequest {
         val url = URL(apiUrl)
         val columnName = "id"
 
-        /** We build the parameters */
+        /** We build the parameters (query actions) */
         val params = Parameters.build {
             append(columnName, id.toString())
         }
@@ -464,7 +464,7 @@ class ApiRequest {
         val urlComplete = "${url.path}/$VERSION_PATH/$objPath/$UPDATE_PATH"
         if (BuildConfig.DEBUG) {
             println("URL: $urlComplete")
-            println("PARAMS: $params")
+            println("PARAM: $columnName $id")
         }
 
         /** HTTP Post function */

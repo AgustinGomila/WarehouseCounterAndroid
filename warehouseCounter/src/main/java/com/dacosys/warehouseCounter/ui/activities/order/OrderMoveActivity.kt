@@ -13,9 +13,13 @@ import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.util.Log
-import android.view.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
+import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -35,10 +39,11 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.*
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.*
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.MoveOrder
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
@@ -819,7 +824,11 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
             searchRackId = true,
             searchWarehouseAreaId = true,
             onFinish = {
-                val res = it.typedObject ?: return@CheckScannedCode
+                val tList = it.typedObject ?: return@CheckScannedCode
+                val res = if (tList is ArrayList<*>) {
+                    tList.firstOrNull()
+                } else return@CheckScannedCode
+
                 when (res) {
                     is OrderResponse -> fillAdapter(arrayListOf(res))
 
@@ -847,7 +856,10 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         makeText(binding.root, text, snackBarType)
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        super.onBackPressed()
         closeKeyboard(this)
 
         isFinishingByUser = true

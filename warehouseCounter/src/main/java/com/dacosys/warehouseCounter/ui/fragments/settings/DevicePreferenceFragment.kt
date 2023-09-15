@@ -16,7 +16,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.preference.*
+import androidx.preference.EditTextPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceScreen
+import androidx.preference.SeekBarPreference
+import androidx.preference.SwitchPreference
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository

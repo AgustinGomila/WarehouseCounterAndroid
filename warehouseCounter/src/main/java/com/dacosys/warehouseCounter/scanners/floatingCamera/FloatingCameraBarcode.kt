@@ -30,7 +30,9 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.client.android.BeepManager
 import com.journeyapps.barcodescanner.BarcodeCallback
 import com.journeyapps.barcodescanner.BarcodeResult
-import com.journeyapps.barcodescanner.BarcodeView.DecodeMode.*
+import com.journeyapps.barcodescanner.BarcodeView.DecodeMode.CONTINUOUS
+import com.journeyapps.barcodescanner.BarcodeView.DecodeMode.NONE
+import com.journeyapps.barcodescanner.BarcodeView.DecodeMode.SINGLE
 import com.journeyapps.barcodescanner.DecoratedBarcodeView
 import com.journeyapps.barcodescanner.DefaultDecoderFactory
 import com.lzf.easyfloat.EasyFloat

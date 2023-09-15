@@ -34,7 +34,15 @@ import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.Label
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PickItem
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlContent
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlOrder
-import com.dacosys.warehouseCounter.data.ktor.v1.functions.*
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.AddBoxToOrder
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.AttachOrderToLocation
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.BlinkAllOrder
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.BlinkOneItem
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.DetachOrderToLocation
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetPtlOrderByCode
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetPtlOrderContent
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.PickManual
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.PrintBox
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea

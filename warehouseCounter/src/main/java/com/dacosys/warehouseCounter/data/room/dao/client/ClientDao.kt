@@ -1,6 +1,11 @@
 package com.dacosys.warehouseCounter.data.room.dao.client
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
 import com.dacosys.warehouseCounter.data.room.entity.client.Client
 import com.dacosys.warehouseCounter.data.room.entity.client.ClientEntry as Entry
 

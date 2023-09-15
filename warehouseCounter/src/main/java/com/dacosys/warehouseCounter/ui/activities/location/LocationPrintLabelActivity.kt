@@ -13,8 +13,12 @@ import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.util.Log
-import android.view.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.view.View.GONE
+import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -49,9 +53,16 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplat
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.*
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.*
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.*
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Location
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.LocationType
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRackBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseAreaBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewRack
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouse
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouseArea
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
@@ -805,6 +816,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         )
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun scannerCompleted(scanCode: String) {
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
@@ -823,8 +835,10 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             searchWarehouseAreaId = true,
             searchRackId = true,
             onFinish = {
-                val location = it.typedObject as Location? ?: return@CheckScannedCode
-                fillAdapter(arrayListOf(location))
+                val tList = it.typedObject ?: return@CheckScannedCode
+                if (tList is ArrayList<*> && tList.firstOrNull() is Location) {
+                    fillAdapter(tList as ArrayList<Location>)
+                } else return@CheckScannedCode
             }
         )
     }
@@ -833,7 +847,10 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         makeText(binding.root, text, snackBarType)
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        super.onBackPressed()
         closeKeyboard(this)
 
         isFinishingByUser = true

@@ -101,7 +101,10 @@ class MultiplierSelectActivity : AppCompatActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        super.onBackPressed()
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)

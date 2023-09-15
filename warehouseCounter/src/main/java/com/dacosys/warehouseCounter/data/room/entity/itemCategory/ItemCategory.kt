@@ -2,7 +2,11 @@ package com.dacosys.warehouseCounter.data.room.entity.itemCategory
 
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.room.*
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.Ignore
+import androidx.room.Index
+import androidx.room.PrimaryKey
 import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategoryEntry as Entry
 
 @Entity(

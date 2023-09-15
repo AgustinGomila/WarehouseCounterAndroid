@@ -13,15 +13,22 @@ import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.util.Log
-import android.view.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.view.View.GONE
+import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
-import androidx.core.view.*
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsAnimationCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -697,7 +704,10 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         makeText(binding.root, text, snackBarType)
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        super.onBackPressed()
         closeKeyboard(this)
 
         isFinishingByUser = true

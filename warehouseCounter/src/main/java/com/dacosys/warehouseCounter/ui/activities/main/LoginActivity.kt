@@ -61,7 +61,11 @@ import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment
-import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.*
+import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.CANCELED
+import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.CRASHED
+import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.FINISHED
+import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.RUNNING
+import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.STARTING
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
@@ -328,8 +332,10 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         setEditTextFocus()
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        // Esto sirve para salir del programa desde la pantalla de Login
+        super.onBackPressed()
         moveTaskToBack(true)
     }
 

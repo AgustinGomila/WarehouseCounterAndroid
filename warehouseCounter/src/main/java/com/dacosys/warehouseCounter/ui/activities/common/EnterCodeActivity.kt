@@ -135,7 +135,10 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         finish()
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        super.onBackPressed()
         closeKeyboard(this)
 
         setResult(RESULT_CANCELED)

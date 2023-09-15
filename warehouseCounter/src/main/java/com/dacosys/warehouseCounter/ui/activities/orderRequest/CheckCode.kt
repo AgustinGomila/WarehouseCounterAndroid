@@ -12,7 +12,13 @@ import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class CheckCode(
     private var callback: (CheckCodeEnded) -> Unit = {},

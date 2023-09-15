@@ -16,7 +16,11 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.text.InputType
-import android.view.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.Interpolator
 import android.view.animation.TranslateAnimation
@@ -209,6 +213,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         }
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         super.onBackPressed()
         Statics.cleanCurrentUser()

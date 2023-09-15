@@ -129,7 +129,7 @@ class CheckScannedCode(
         return ""
     }
 
-    private val prefixRack = "#RACK#"
+    private val prefixRack = "#RK#"
     private val prefixWa = "#WA#"
     private val prefixItem = "#IT#"
     private val prefixOrder = "#ORD#"

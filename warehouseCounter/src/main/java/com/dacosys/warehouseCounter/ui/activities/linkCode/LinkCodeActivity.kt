@@ -15,9 +15,13 @@ import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.util.Log
-import android.view.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
+import android.view.WindowManager
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog

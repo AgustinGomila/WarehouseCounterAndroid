@@ -13,9 +13,13 @@ import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.util.Log
-import android.view.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
+import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -39,9 +43,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplat
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.*
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.*
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrderBarcode
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
@@ -748,6 +750,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         )
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun scannerCompleted(scanCode: String) {
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
@@ -765,8 +768,10 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             code = scanCode,
             searchOrder = true,
             onFinish = {
-                val location = it.typedObject as OrderResponse? ?: return@CheckScannedCode
-                fillAdapter(arrayListOf(location))
+                val tList = it.typedObject ?: return@CheckScannedCode
+                if (tList is ArrayList<*> && tList.firstOrNull() is OrderResponse) {
+                    fillAdapter(tList as ArrayList<OrderResponse>)
+                } else return@CheckScannedCode
             }
         )
     }
@@ -775,7 +780,10 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         makeText(binding.root, text, snackBarType)
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        super.onBackPressed()
         closeKeyboard(this)
 
         isFinishingByUser = true

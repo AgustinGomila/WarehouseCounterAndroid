@@ -1,6 +1,12 @@
 package com.dacosys.warehouseCounter.data.room.dao.orderRequest
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.RewriteQueriesToDropUnusedColumns
+import androidx.room.Update
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequestContent
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequestContentEntry as Entry
 

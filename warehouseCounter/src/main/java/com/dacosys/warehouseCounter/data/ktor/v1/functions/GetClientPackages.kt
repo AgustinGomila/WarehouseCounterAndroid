@@ -7,7 +7,13 @@ import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.misc.Statics.Companion.APP_VERSION_ID
 import com.dacosys.warehouseCounter.misc.Statics.Companion.APP_VERSION_ID_IMAGECONTROL
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.concurrent.thread
 
 class GetClientPackages private constructor(builder: Builder) {

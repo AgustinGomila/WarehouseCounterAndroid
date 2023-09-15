@@ -21,7 +21,11 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView.GONE
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
+import androidx.recyclerview.widget.RecyclerView.OnScrollListener
+import androidx.recyclerview.widget.RecyclerView.VISIBLE
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest

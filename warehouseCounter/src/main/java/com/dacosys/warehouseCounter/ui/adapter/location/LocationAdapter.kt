@@ -26,7 +26,12 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView.GONE
+import androidx.recyclerview.widget.RecyclerView.INVISIBLE
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
+import androidx.recyclerview.widget.RecyclerView.OnScrollListener
+import androidx.recyclerview.widget.RecyclerView.VISIBLE
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.dacosys.imageControl.network.common.ProgramData
 import com.dacosys.imageControl.ui.adapter.ImageAdapter
 import com.dacosys.imageControl.ui.adapter.ImageAdapter.Companion.GetImageStatus

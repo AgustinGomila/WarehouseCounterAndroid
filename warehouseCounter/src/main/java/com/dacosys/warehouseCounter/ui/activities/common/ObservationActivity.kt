@@ -171,7 +171,10 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
         Nfc.nfcHandleIntent(intent, this)
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        super.onBackPressed()
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)

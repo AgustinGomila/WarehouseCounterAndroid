@@ -16,7 +16,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.*
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
@@ -693,7 +695,10 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         isRFilling = false
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        super.onBackPressed()
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)

@@ -8,7 +8,14 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.scanners.Scanner
-import com.honeywell.aidc.*
+import com.honeywell.aidc.AidcManager
+import com.honeywell.aidc.BarcodeFailureEvent
+import com.honeywell.aidc.BarcodeReadEvent
+import com.honeywell.aidc.BarcodeReader
+import com.honeywell.aidc.ScannerNotClaimedException
+import com.honeywell.aidc.ScannerUnavailableException
+import com.honeywell.aidc.TriggerStateChangeEvent
+import com.honeywell.aidc.UnsupportedPropertyException
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 

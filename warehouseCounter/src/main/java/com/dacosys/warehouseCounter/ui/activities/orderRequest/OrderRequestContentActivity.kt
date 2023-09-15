@@ -1190,7 +1190,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        super.onBackPressed()
         cancelCount()
     }
 

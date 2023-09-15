@@ -12,7 +12,11 @@ import android.graphics.Insets
 import android.os.Build
 import android.util.DisplayMetrics
 import android.util.Size
-import android.view.*
+import android.view.MotionEvent
+import android.view.Surface
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowInsets
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.CheckBox

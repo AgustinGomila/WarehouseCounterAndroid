@@ -10,7 +10,10 @@ import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView.GONE
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
+import androidx.recyclerview.widget.RecyclerView.VISIBLE
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse

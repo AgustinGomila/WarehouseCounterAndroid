@@ -103,10 +103,9 @@ android {
         minSdk = androidMinSdk
         multiDexEnabled true
 
-        javaCompileOptions {
-            // Necesario para Room si se define exportSchema en [true] en la clase @Database
-            annotationProcessorOptions {
-                arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
+        kapt {
+            arguments {
+                arg("room.schemaLocation", "$projectDir/schemas")
             }
         }
     }
@@ -198,7 +197,7 @@ dependencies {
     implementation files('libs/honeywell/DataCollection.aar')
 
     // Koin
-    implementation "io.insert-koin:koin-android:3.3.3"
+    implementation "io.insert-koin:koin-android:3.4.2"
 
     // Room
     api("androidx.room:room-runtime:$roomVersion")
@@ -226,9 +225,9 @@ dependencies {
     runtimeOnly 'org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.5.1'
 
     // Arrows
-    implementation "io.arrow-kt:arrow-core:0.13.2"
+    implementation "io.arrow-kt:arrow-core:1.1.3"
 
-    //paging
+    // Paging3
     implementation 'androidx.paging:paging-common-ktx:3.2.1'
     implementation 'androidx.paging:paging-runtime-ktx:3.2.1'
 }

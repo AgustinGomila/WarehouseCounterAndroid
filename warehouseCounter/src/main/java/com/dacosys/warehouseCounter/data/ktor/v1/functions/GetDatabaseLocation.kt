@@ -7,7 +7,13 @@ import com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl.Companion.v
 import com.dacosys.warehouseCounter.data.ktor.v1.service.DbLocationResult
 import com.dacosys.warehouseCounter.data.room.database.WcDatabase.Companion.DATABASE_VERSION
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
     private val scope = CoroutineScope(Job() + Dispatchers.IO)

@@ -8,7 +8,12 @@ import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.ArrayAdapter
+import android.widget.CheckBox
+import android.widget.CheckedTextView
+import android.widget.CompoundButton
+import android.widget.Filter
+import android.widget.Filterable
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat.getColor
 import com.dacosys.warehouseCounter.BuildConfig

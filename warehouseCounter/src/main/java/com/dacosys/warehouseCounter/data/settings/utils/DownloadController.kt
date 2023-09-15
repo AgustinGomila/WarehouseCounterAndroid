@@ -1,7 +1,11 @@
 package com.dacosys.warehouseCounter.data.settings.utils
 
 import android.app.DownloadManager
-import android.content.*
+import android.content.ActivityNotFoundException
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
 import android.os.Build
 import android.os.Environment

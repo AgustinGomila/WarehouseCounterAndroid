@@ -122,10 +122,10 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         rejectNewInstances = false
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        // Esto sirve para salir del programa desde la pantalla de Login
-        // moveTaskToBack(true)
-
+        super.onBackPressed()
         val i = baseContext.packageManager.getLaunchIntentForPackage(baseContext.packageName)
         if (i != null) {
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
