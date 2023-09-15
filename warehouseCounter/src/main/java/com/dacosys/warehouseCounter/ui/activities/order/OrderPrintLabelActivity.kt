@@ -46,6 +46,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrderBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
@@ -55,7 +56,7 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.CheckScannedCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -113,6 +114,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
     private var completeList: ArrayList<OrderResponse> = ArrayList()
     private var checkedHashArray: ArrayList<Int> = ArrayList()
+    private var ids: ArrayList<Long> = ArrayList()
 
     // Se usa para saber si estamos en onStart luego de onCreate
     private var fillRequired = false
@@ -226,6 +228,8 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
         showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, true)
+
+        ids = (b.getLongArray(ARG_IDS) ?: longArrayOf()).toCollection(ArrayList())
     }
 
     private lateinit var binding: ItemPrintLabelActivityTopPanelCollapsedBinding
@@ -283,20 +287,16 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
         binding.okButton.setOnClickListener { itemSelect() }
 
-        // OCULTAR PANEL DE CONTROLES DE FILTRADO
-        if (hideFilterPanel) {
-            if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-                if (panelBottomIsExpanded) {
-                    binding.expandBottomPanelButton?.performClick()
-                }
-
-                runOnUiThread {
-                    binding.expandBottomPanelButton!!.visibility = GONE
-                }
-            }
-        }
+        setFilterPanelVisibility()
 
         Screen.setupUI(binding.root, this)
+    }
+
+    private fun setFilterPanelVisibility() {
+        runOnUiThread {
+            binding.expandBottomPanelButton?.visibility = if (hideFilterPanel) GONE else VISIBLE
+            binding.panelButton.visibility = if (hideFilterPanel) GONE else VISIBLE
+        }
     }
 
     private fun setupPrintLabelFragment() {
@@ -611,7 +611,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
 
         val data = Intent()
-        data.putParcelableArrayListExtra(ARG_ORDERS, selectedOrders)
+        data.putParcelableArrayListExtra(ARG_SELECTED_ORDERS, selectedOrders)
         setResult(RESULT_OK, data)
         isFinishingByUser = true
         finish()
@@ -620,10 +620,23 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     private fun getOrders() {
         checkedHashArray.clear()
 
-        val filter = filterFragment.getFilters()
-        if (!filter.any()) {
-            fillAdapter(arrayListOf())
-            return
+        var filter: ArrayList<ApiFilterParam> = arrayListOf()
+        if (ids.isEmpty()) {
+            filter = filterFragment.getFilters()
+            if (!filter.any()) {
+                fillAdapter(arrayListOf())
+                return
+            }
+        } else {
+            for (id in ids) {
+                filter.add(
+                    ApiFilterParam(
+                        columnName = ApiFilterParam.EXTENSION_ID,
+                        value = id.toString(),
+                        conditional = ApiFilterParam.ACTION_CONDITIONAL_IN
+                    )
+                )
+            }
         }
 
         /** Usar pageNum y pageTotal
@@ -706,7 +719,8 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
         if (fillRequired) {
             fillRequired = false
-            fillAdapter(completeList)
+
+            getOrders()
         }
     }
 
@@ -758,14 +772,14 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         JotterListener.lockScanner(this, true)
 
         // Buscar por ubicación
-        CheckScannedCode(
+        GetResultFromCode(
             code = scanCode,
             searchOrder = true,
             onFinish = {
-                val tList = it.typedObject ?: return@CheckScannedCode
+                val tList = it.typedObject ?: return@GetResultFromCode
                 if (tList is ArrayList<*> && tList.firstOrNull() is OrderResponse) {
                     fillAdapter(tList as ArrayList<OrderResponse>)
-                } else return@CheckScannedCode
+                } else return@GetResultFromCode
             }
         )
     }
@@ -1064,6 +1078,8 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         const val ARG_MULTI_SELECT = "multiSelect"
         const val ARG_SHOW_SELECT_BUTTON = "showSelectButton"
         const val ARG_HIDE_FILTER_PANEL = "hideFilterPanel"
-        const val ARG_ORDERS = "orders"
+        const val ARG_IDS = "ids"
+
+        const val ARG_SELECTED_ORDERS = "orders"
     }
 }

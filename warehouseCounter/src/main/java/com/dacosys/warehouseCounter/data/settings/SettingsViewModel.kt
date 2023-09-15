@@ -338,6 +338,12 @@ class SettingsViewModel : ViewModel() {
             settingRepository.autoSend.value = value
         }
 
+    var autoPrint: Boolean
+        get() = settingRepository.autoPrint.value as Boolean
+        set(value) {
+            settingRepository.autoPrint.value = value
+        }
+
     var registryError: Boolean
         get() = settingRepository.registryError.value as Boolean
         set(value) {

@@ -1,6 +1,9 @@
 package com.dacosys.warehouseCounter.scanners.scanCode
 
+import android.media.MediaPlayer
 import android.util.Log
+import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
@@ -11,7 +14,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehous
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.ViewOrder
 import kotlin.concurrent.thread
 
-class CheckScannedCode(
+class GetResultFromCode(
     code: String,
     private var searchItemId: Boolean = false,
     private var searchItemCode: Boolean = false,
@@ -19,9 +22,9 @@ class CheckScannedCode(
     private var searchWarehouseAreaId: Boolean = false,
     private var searchRackId: Boolean = false,
     private var searchOrder: Boolean = false,
-    private var onFinish: (ScannedCodeResult) -> Unit
+    private var onFinish: (GetFromCodeResult) -> Unit
 ) {
-    data class ScannedCodeResult(var typedObject: Any?)
+    data class GetFromCodeResult(var typedObject: Any?)
 
     private fun onItemIdResult(r: Item?) {
         searchItemId = false
@@ -36,7 +39,7 @@ class CheckScannedCode(
             } else {
                 playSoundNotification(false)
             }
-            onFinish(ScannedCodeResult(r?.let { arrayListOf(it) }))
+            onFinish(GetFromCodeResult(r?.let { arrayListOf(it) }))
         }
     }
 
@@ -53,7 +56,7 @@ class CheckScannedCode(
             } else {
                 playSoundNotification(false)
             }
-            onFinish(ScannedCodeResult(r?.let { arrayListOf(it) }))
+            onFinish(GetFromCodeResult(r?.let { arrayListOf(it) }))
         }
     }
 
@@ -70,7 +73,7 @@ class CheckScannedCode(
             } else {
                 playSoundNotification(false)
             }
-            onFinish(ScannedCodeResult(r?.let { arrayListOf(it) }))
+            onFinish(GetFromCodeResult(r?.let { arrayListOf(it) }))
         }
     }
 
@@ -87,16 +90,16 @@ class CheckScannedCode(
             } else {
                 playSoundNotification(false)
             }
-            onFinish(ScannedCodeResult(r?.let { arrayListOf(it) }))
+            onFinish(GetFromCodeResult(r?.let { arrayListOf(it) }))
         }
     }
 
     private fun playSoundNotification(success: Boolean) {
-        /*
         try {
             val mp = MediaPlayer.create(
+                context,
                 when {
-                    success -> R.raw.scan_success_1
+                    success -> R.raw.scan_success
                     else -> R.raw.scan_fail
                 }
             )
@@ -104,7 +107,6 @@ class CheckScannedCode(
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
-        */
     }
 
     private fun searchString(origin: String, formula: String, position: Int): String {
@@ -204,13 +206,13 @@ class CheckScannedCode(
                 getItem(code)
             }
 
-            // TODO: Search by item code
-            if (c.codeType == CodeType.itemCode && searchItemCode) {
-            }
+            /* TODO: Search by item code */
+            //  if (c.codeType == CodeType.itemCode && searchItemCode) {
+            //  }
 
-            // TODO: Search by item ean
-            if (c.codeType == CodeType.ean && searchItemEan) {
-            }
+            /* TODO: Search by item ean */
+            //  if (c.codeType == CodeType.ean && searchItemEan) {
+            //  }
         }
 
         if (searchOrder && code.startsWith(prefixOrder, true)) {

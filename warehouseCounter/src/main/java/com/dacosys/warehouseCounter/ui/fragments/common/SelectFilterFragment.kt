@@ -18,6 +18,8 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_CONDITIONAL_IN
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_CONDITIONAL_LIKE
 import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.data.settings.Preference
 import com.dacosys.warehouseCounter.databinding.SelectFilterFragmentBinding
@@ -104,7 +106,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
     interface OnFilterOrderLocationChangedListener {
         fun onFilterChanged(
-            code: String,
+            externalId: String,
             description: String,
             ean: String,
             itemCategory: ItemCategory?,
@@ -519,7 +521,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
     private fun onFilterOrderLocationChanged() {
         filterOrderLocationChangedListener?.onFilterChanged(
-            code = itemCode,
+            externalId = itemCode,
             description = description,
             ean = itemEan,
             itemCategory = itemCategory,
@@ -565,7 +567,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     }
 
     private fun setOrderLocationTexts() {
-        setCodeText()
+        setExternalIdText()
         setEanText()
         setCategoryText()
         setDescriptionText()
@@ -582,6 +584,18 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             if (itemCode.isEmpty()) {
                 binding.codeTextView.typeface = Typeface.DEFAULT
                 binding.codeTextView.text = getString(R.string.search_by_item_code)
+            } else {
+                binding.codeTextView.typeface = Typeface.DEFAULT_BOLD
+                binding.codeTextView.text = itemCode
+            }
+        }
+    }
+
+    private fun setExternalIdText() {
+        activity?.runOnUiThread {
+            if (itemCode.isEmpty()) {
+                binding.codeTextView.typeface = Typeface.DEFAULT
+                binding.codeTextView.text = getString(R.string.search_by_external_id)
             } else {
                 binding.codeTextView.typeface = Typeface.DEFAULT_BOLD
                 binding.codeTextView.text = itemCode
@@ -864,12 +878,21 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     }
 
     @Suppress("MemberVisibilityCanBePrivate")
+    fun filterIdIn(id: Long): ApiFilterParam {
+        return ApiFilterParam(
+            columnName = ApiFilterParam.EXTENSION_ID,
+            value = id.toString(),
+            conditional = ACTION_CONDITIONAL_IN
+        )
+    }
+
+    @Suppress("MemberVisibilityCanBePrivate")
     val filterItemExternalId: ApiFilterParam
         get() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ITEM_EXTERNAL_ID,
                 value = itemCode,
-                like = true
+                conditional = ACTION_CONDITIONAL_LIKE
             )
         }
 
@@ -879,7 +902,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ITEM_DESCRIPTION,
                 value = description,
-                like = true
+                conditional = ACTION_CONDITIONAL_LIKE
             )
         }
 
@@ -889,7 +912,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
                 value = itemEan,
-                like = true
+                conditional = ACTION_CONDITIONAL_LIKE
             )
         }
 
@@ -926,7 +949,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ORDER_EXTERNAL_ID,
                 value = orderExternalId,
-                like = true
+                conditional = ACTION_CONDITIONAL_LIKE
             )
         }
 
@@ -936,7 +959,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ORDER_DESCRIPTION,
                 value = description,
-                like = true
+                conditional = ACTION_CONDITIONAL_LIKE
             )
         }
 

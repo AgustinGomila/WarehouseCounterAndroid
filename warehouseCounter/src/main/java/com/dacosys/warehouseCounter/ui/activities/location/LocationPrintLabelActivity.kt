@@ -72,7 +72,7 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.CheckScannedCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.location.LocationAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -824,15 +824,15 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         JotterListener.lockScanner(this, true)
 
         // Buscar por ubicación
-        CheckScannedCode(
+        GetResultFromCode(
             code = scanCode,
             searchWarehouseAreaId = true,
             searchRackId = true,
             onFinish = {
-                val tList = it.typedObject ?: return@CheckScannedCode
+                val tList = it.typedObject ?: return@GetResultFromCode
                 if (tList is ArrayList<*> && tList.firstOrNull() is Location) {
                     fillAdapter(tList as ArrayList<Location>)
-                } else return@CheckScannedCode
+                } else return@GetResultFromCode
             }
         )
     }

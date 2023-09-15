@@ -146,8 +146,6 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
                 if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos") else -1
             currentScrollPosition = savedInstanceState.getInt("currentScrollPosition")
         } else {
-            // Inicializar la actividad
-            // Traer los parámetros que recibe la actividad
             val extras = intent.extras
             if (extras != null) {
                 val t1 = extras.getString(ARG_TITLE)

@@ -42,11 +42,14 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewMod
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sync
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeNewOrderRequest
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrderBarcode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.SendOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.ViewOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.sync.SyncViewModel
@@ -109,19 +112,43 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             isSending = true
 
             runOnUiThread {
-                SendOrder(orders) {
-                    isSending = it.snackBarType !in SnackBarType.getFinish()
-
-                    if (it.snackBarType == SUCCESS) {
-                        onFinish(0)
-                    } else {
-                        showSnackBar(it.text, it.snackBarType)
+                SendOrder(
+                    orders = orders,
+                    onEvent = {
+                        isSending = it.snackBarType !in SnackBarType.getFinish()
+                        if (it.snackBarType == SUCCESS) {
+                            onFinish(0)
+                        } else {
+                            showSnackBar(it.text, it.snackBarType)
+                        }
+                    },
+                    onFinish = {
+                        if (settingViewModel.autoPrint) {
+                            printOrderLabels(it)
+                        }
                     }
-                }
+                )
             }
         } else {
             onFinish(orders.count())
         }
+    }
+
+    private fun printOrderLabels(ids: ArrayList<Long>) {
+        val templateId = settingViewModel.defaultOrderTemplateId
+        if (templateId == 0L) return
+
+        GetOrderBarcode(
+            param = BarcodeParam(
+                idList = ids,
+                templateId = templateId,
+                printOps = PrintOps.getPrintOps()
+            ),
+            onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) },
+            onFinish = {
+                // TODO: printLabelFragment.printBarcodes(it)
+            }
+        )
     }
 
     @get:Synchronized

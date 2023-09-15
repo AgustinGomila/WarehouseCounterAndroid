@@ -88,6 +88,14 @@
                 android:summary="@string/automatic_sending_of_completed_counts"
                 android:title="@string/automatic_sending"/>
         <SwitchPreference
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:defaultValue="false"
+                android:icon="@drawable/ic_printer"
+                android:key="auto_print"
+                android:summary="@string/automatic_print_label_of_completed_counts"
+                android:title="@string/automatic_printing"/>
+        <SwitchPreference
                 android:defaultValue="true"
                 android:icon="@drawable/ic_alert"
                 android:key="conf_sound_on_pending_orders"

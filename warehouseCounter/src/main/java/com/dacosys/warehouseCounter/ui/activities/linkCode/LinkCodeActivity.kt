@@ -70,7 +70,7 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.ui.activities.item.CheckItemCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetItemFromCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemRecyclerAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -159,7 +159,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }
 
         try {
-            CheckItemCode(
+            GetItemFromCode(
                 scannedCode = scanCode,
                 list = adapter?.fullList ?: ArrayList(),
                 onEvent = { showSnackBar(it.text, it.snackBarType) },
@@ -1270,7 +1270,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         Handler(Looper.getMainLooper()).postDelayed({ getItems() }, 200)
     }
 
-    private fun onCheckCodeEnded(it: CheckItemCode.CheckCodeEnded) {
+    private fun onCheckCodeEnded(it: GetItemFromCode.GetFromCodeResult) {
         val item: Item? = it.item
         val scannedCode: String = it.scannedCode
 

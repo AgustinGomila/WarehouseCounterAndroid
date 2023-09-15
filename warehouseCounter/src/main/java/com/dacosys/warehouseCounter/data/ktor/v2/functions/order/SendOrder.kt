@@ -10,14 +10,15 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 
 class SendOrder(
     private val orders: ArrayList<OrderRequest>,
-    private val onEvent: (SnackBarEventData) -> Unit
+    private val onEvent: (SnackBarEventData) -> Unit,
+    private val onFinish: (ArrayList<Long>) -> Unit
 ) {
     init {
 
         CreateOrder(
             payload = orders,
             onEvent = { sendEvent(it.text, it.snackBarType) },
-            onFinish = { successFiles ->
+            onFinish = { ids, successFiles ->
                 if (successFiles.isNotEmpty()) {
 
                     /** We delete the files of the orders sent */
@@ -32,7 +33,10 @@ class SendOrder(
                                  * and we fill the list adapter at the end. */
                                 OrderRequestCoroutines.removeById(
                                     idList = orders.mapNotNull { orderRequest -> orderRequest.orderRequestId },
-                                    onResult = { sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS) })
+                                    onResult = {
+                                        onFinish(ids)
+                                        sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
+                                    })
                             } else {
                                 sendEvent(eventData)
                             }

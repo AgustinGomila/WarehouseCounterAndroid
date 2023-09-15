@@ -64,6 +64,7 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.scanners.scanCode.GetItemFromCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemRecyclerAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -806,7 +807,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         JotterListener.lockScanner(this, true)
 
-        CheckItemCode(
+        GetItemFromCode(
             scannedCode = scanCode,
             list = adapter?.fullList ?: ArrayList(),
             onEvent = { showSnackBar(it.text, it.snackBarType) },
@@ -1032,7 +1033,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    private fun onCheckCodeEnded(it: CheckItemCode.CheckCodeEnded) {
+    private fun onCheckCodeEnded(it: GetItemFromCode.GetFromCodeResult) {
         JotterListener.lockScanner(this, false)
 
         val item: Item = it.item ?: return

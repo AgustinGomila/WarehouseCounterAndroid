@@ -55,7 +55,7 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.CheckScannedCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -812,16 +812,16 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         JotterListener.lockScanner(this, true)
 
         // Buscar por ubicación de destino o pedido
-        CheckScannedCode(
+        GetResultFromCode(
             code = scanCode,
             searchOrder = true,
             searchRackId = true,
             searchWarehouseAreaId = true,
             onFinish = {
-                val tList = it.typedObject ?: return@CheckScannedCode
+                val tList = it.typedObject ?: return@GetResultFromCode
                 val res = if (tList is ArrayList<*>) {
                     tList.firstOrNull()
-                } else return@CheckScannedCode
+                } else return@GetResultFromCode
 
                 when (res) {
                     is OrderResponse -> fillAdapter(arrayListOf(res))

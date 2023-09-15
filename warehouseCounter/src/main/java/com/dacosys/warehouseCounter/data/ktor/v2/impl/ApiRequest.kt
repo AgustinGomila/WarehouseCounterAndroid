@@ -21,7 +21,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderLocation
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_FILTER
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_FILTER_LIKE
 import com.dacosys.warehouseCounter.data.ktor.v2.service.APIResponse
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
@@ -345,9 +344,9 @@ class ApiRequest {
             }
             filter.forEach {
                 val col = it.columnName
-                val like = if (it.like) "[$ACTION_FILTER_LIKE]" else ""
+                val cond = if (it.conditional.isNotEmpty()) "[${it.conditional}]" else ""
                 val value = it.value
-                if (col.isNotEmpty()) this.append("$ACTION_FILTER[${col}]${like}", value)
+                if (col.isNotEmpty()) this.append("$ACTION_FILTER[${col}]${cond}", value)
             }
         }
 
@@ -730,9 +729,9 @@ class ApiRequest {
         val params = Parameters.build {
             filter.forEach {
                 val col = it.columnName
-                val like = if (it.like) "[$ACTION_FILTER_LIKE]" else ""
+                val cond = if (it.conditional.isNotEmpty()) "[${it.conditional}]" else ""
                 val value = it.value
-                if (col.isNotEmpty()) this.append("$ACTION_FILTER[${col}]${like}", value)
+                if (col.isNotEmpty()) this.append("$ACTION_FILTER[${col}]${cond}", value)
             }
         }
 

@@ -54,9 +54,9 @@ class PrintLabelActivity : AppCompatActivity() {
                 rejectNewInstances = true
 
                 val intent = Intent(baseContext, LocationPrintLabelActivity::class.java)
-                intent.putExtra(ItemSelectActivity.ARG_TITLE, getString(R.string.print_location_labels))
+                intent.putExtra(LocationPrintLabelActivity.ARG_TITLE, getString(R.string.print_location_labels))
                 intent.putExtra(LocationPrintLabelActivity.ARG_MULTI_SELECT, true)
-                intent.putExtra(ItemSelectActivity.ARG_SHOW_SELECT_BUTTON, false)
+                intent.putExtra(LocationPrintLabelActivity.ARG_SHOW_SELECT_BUTTON, false)
                 startActivity(intent)
             }
         }
@@ -66,9 +66,9 @@ class PrintLabelActivity : AppCompatActivity() {
                 rejectNewInstances = true
 
                 val intent = Intent(baseContext, OrderPrintLabelActivity::class.java)
-                intent.putExtra(ItemSelectActivity.ARG_TITLE, getString(R.string.print_order_labels))
-                intent.putExtra(LocationPrintLabelActivity.ARG_MULTI_SELECT, true)
-                intent.putExtra(ItemSelectActivity.ARG_SHOW_SELECT_BUTTON, false)
+                intent.putExtra(OrderPrintLabelActivity.ARG_TITLE, getString(R.string.print_order_labels))
+                intent.putExtra(OrderPrintLabelActivity.ARG_MULTI_SELECT, true)
+                intent.putExtra(OrderPrintLabelActivity.ARG_SHOW_SELECT_BUTTON, false)
                 startActivity(intent)
             }
         }

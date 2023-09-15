@@ -144,7 +144,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
-    private var filterCode: String = ""
+    private var filterExternalId: String = ""
     private var filterDescription: String = ""
     private var filterEan: String = ""
     private var filterItemCategory: ItemCategory? = null
@@ -178,7 +178,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
-        b.putString("filterCode", filterCode)
+        b.putString("filterCode", filterExternalId)
         b.putString("filterDescription", filterDescription)
         b.putString("filterEan", filterEan)
         b.putParcelable("filterItemCategory", filterItemCategory)
@@ -209,7 +209,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
 
-        filterCode = b.getString("filterCode") ?: ""
+        filterExternalId = b.getString("filterCode") ?: ""
         filterDescription = b.getString("filterDescription") ?: ""
         filterEan = b.getString("filterEan") ?: ""
         filterItemCategory = b.parcelable("filterItemCategory")
@@ -325,7 +325,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 .searchByWarehouse(sv.orderLocationSearchByWarehouse, sr.orderLocationSearchByWarehouse)
                 .searchByArea(sv.orderLocationSearchByArea, sr.orderLocationSearchByArea)
                 .searchByRack(sv.orderLocationSearchByRack, sr.orderLocationSearchByRack)
-                .itemCode(filterCode)
+                .itemCode(filterExternalId)
                 .itemDescription(filterDescription)
                 .itemEan(filterEan)
                 .itemCategory(filterItemCategory)
@@ -868,7 +868,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     override fun onFilterChanged(
-        code: String,
+        externalId: String,
         description: String,
         ean: String,
         itemCategory: ItemCategory?,
@@ -879,7 +879,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         rack: Rack?,
         onlyActive: Boolean
     ) {
-        filterCode = code
+        filterExternalId = externalId
         filterDescription = description
         filterEan = ean
         filterItemCategory = itemCategory

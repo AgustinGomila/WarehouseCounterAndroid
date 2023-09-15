@@ -143,6 +143,11 @@ class SettingsRepository {
         description = context.getString(R.string.auto_send),
         default = true
     )
+    var autoPrint = Preference(
+        key = "auto_print",
+        description = context.getString(R.string.automatic_printing),
+        default = false
+    )
     var registryError = Preference(
         key = "conf_general_registry_error",
         description = context.getString(R.string.conf_general_registry_error),
@@ -751,6 +756,7 @@ class SettingsRepository {
             Collections.addAll(
                 allSections,
                 sr.autoSend,
+                sr.autoPrint,
                 sr.registryError,
                 sr.clientEmail,
                 sr.clientPassword,
@@ -952,6 +958,7 @@ class SettingsRepository {
                 sr.allowScreenRotation,
                 sr.showScannedCode,
                 sr.autoSend,
+                sr.autoPrint,
                 sr.sendBarcodeCheckDigit,
                 sr.collectorType,
                 sr.confPassword,

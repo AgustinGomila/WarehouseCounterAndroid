@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.ui.activities.orderRequest
+package com.dacosys.warehouseCounter.scanners.scanCode
 
 import android.util.Log
 import com.dacosys.warehouseCounter.R
@@ -20,13 +20,13 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class CheckCode(
-    private var callback: (CheckCodeEnded) -> Unit = {},
+class GetOrderRequestContentFromCode(
     private var scannedCode: String,
     private var list: ArrayList<OrderRequestContent>,
     private var onEvent: (SnackBarEventData) -> Unit = {},
+    private var onFinish: (GetFromCodeResult) -> Unit = {},
 ) {
-    data class CheckCodeEnded(var orc: OrderRequestContent?, var itemCode: ItemCode?)
+    data class GetFromCodeResult(var orc: OrderRequestContent? = null, var itemCode: ItemCode? = null)
 
     private var itemCode: ItemCode? = null
 
@@ -51,7 +51,7 @@ class CheckCode(
                 if (count >= 5) {
                     val res = context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     sendEvent(res, SnackBarType.ERROR)
-                    callback.invoke(CheckCodeEnded(null, itemCode))
+                    onFinish(GetFromCodeResult())
                     Log.e(this::class.java.simpleName, res)
                     return@withContext
                 }
@@ -63,7 +63,7 @@ class CheckCode(
             if (code.isEmpty()) {
                 val res = context.getString(R.string.invalid_code)
                 sendEvent(res, SnackBarType.ERROR)
-                callback.invoke(CheckCodeEnded(null, itemCode))
+                onFinish(GetFromCodeResult())
                 Log.e(this::class.java.simpleName, res)
                 return@withContext
             }
@@ -72,34 +72,16 @@ class CheckCode(
                 // Buscar primero en el adaptador de la lista
                 (0 until count).map { list[it] }
                     .filter { it.ean == scannedCode }.forEach { it2 ->
-                        callback.invoke(CheckCodeEnded(it2, itemCode))
+                        onFinish(GetFromCodeResult(it2, itemCode))
                         return@withContext
                     }
             }
 
-            // Si no está en el adaptador del control, buscar en la base de datos
             ItemCoroutines.getByQuery(code) {
                 val itemObj = it.firstOrNull()
 
                 if (itemObj != null) {
-                    callback.invoke(
-                        CheckCodeEnded(
-                            orc = OrderRequestContent().apply {
-                                codeRead = code
-                                itemId = itemObj.itemId
-                                itemDescription = itemObj.description
-                                ean = itemObj.ean
-                                price = itemObj.price?.toDouble()
-                                itemActive = itemObj.active == 1
-                                externalId = itemObj.externalId
-                                itemCategoryId = itemObj.itemCategoryId
-                                lotEnabled = itemObj.lotEnabled == 1
-                                qtyCollected = 0.toDouble()
-                                qtyRequested = 0.toDouble()
-                            },
-                            itemCode = itemCode
-                        )
-                    )
+                    onFinish(getCheckCodeResult(item = itemObj, id = itemObj.itemId, code = code))
                     return@getByQuery
                 }
 
@@ -112,7 +94,7 @@ class CheckCode(
                         for (x in 0 until count) {
                             val item = list[x]
                             if (item.itemId == tempItemId) {
-                                callback.invoke(CheckCodeEnded(item, itemCode))
+                                onFinish(GetFromCodeResult(item, itemCode))
                                 return@getByCode
                             }
                         }
@@ -126,25 +108,9 @@ class CheckCode(
 
                         ItemCoroutines.add(item) { id ->
                             if (id != null) {
-                                callback.invoke(
-                                    CheckCodeEnded(
-                                        OrderRequestContent().apply {
-                                            codeRead = code
-                                            itemId = id
-                                            itemDescription = item.description
-                                            ean = item.ean
-                                            price = item.price?.toDouble()
-                                            itemActive = item.active == 1
-                                            externalId = item.externalId
-                                            itemCategoryId = item.itemCategoryId
-                                            lotEnabled = item.lotEnabled == 1
-                                            qtyCollected = 0.toDouble()
-                                            qtyRequested = 0.toDouble()
-                                        }, itemCode
-                                    )
-                                )
+                                onFinish(getCheckCodeResult(item = item, id = id, code = code))
                             } else {
-                                callback.invoke(CheckCodeEnded(null, null))
+                                onFinish(GetFromCodeResult())
                                 sendEvent(
                                     context.getString(R.string.error_attempting_to_add_item_to_database),
                                     SnackBarType.ERROR
@@ -153,7 +119,7 @@ class CheckCode(
                             }
                         }
                     } else {
-                        callback.invoke(CheckCodeEnded(null, null))
+                        onFinish(GetFromCodeResult())
                         sendEvent(
                             SnackBarEventData(
                                 "${context.getString(R.string.unknown_item)}: $code",
@@ -164,10 +130,29 @@ class CheckCode(
                 }
             }
         } catch (ex: Exception) {
-            callback.invoke(CheckCodeEnded(null, null))
+            onFinish(GetFromCodeResult())
             sendEvent(ex.message.toString(), SnackBarType.ERROR)
             Log.e(this::class.java.simpleName, ex.message ?: "")
         }
+    }
+
+    private fun getCheckCodeResult(item: Item, id: Long, code: String): GetFromCodeResult {
+        return GetFromCodeResult(
+            orc = OrderRequestContent().apply {
+                codeRead = code
+                itemId = id
+                itemDescription = item.description
+                ean = item.ean
+                price = item.price?.toDouble()
+                itemActive = item.active == 1
+                externalId = item.externalId
+                itemCategoryId = item.itemCategoryId
+                lotEnabled = item.lotEnabled == 1
+                qtyCollected = 0.toDouble()
+                qtyRequested = 0.toDouble()
+            },
+            itemCode = itemCode
+        )
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {
@@ -176,6 +161,6 @@ class CheckCode(
     }
 
     private fun sendEvent(event: SnackBarEventData) {
-        onEvent.invoke(event)
+        onEvent(event)
     }
 }

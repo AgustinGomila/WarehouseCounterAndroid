@@ -120,7 +120,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
     }
 
     private fun saveSharedPreferences() {
-        // TODO: Guardar configuración de impresora generales
+        settingViewModel.printerQty = qty
     }
 
     override fun onDetach() {
@@ -144,7 +144,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
     }
 
     private fun loadPrinterPreferences() {
-        if (qty <= 0) qty = 1
+        qty = settingViewModel.printerQty
 
         // Impresora guardada en preferencias
         val useBtPrinter = settingViewModel.useBtPrinter
@@ -297,14 +297,12 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
         if (temp.first() is Long) {
             templateTypeIdList = temp as ArrayList<Long>
         }
-        qty = b.getInt(ARG_QTY)
     }
 
     private fun saveBundleValues(b: Bundle) {
         b.putString(ARG_PRINTER, printer)
         b.putParcelable(ARG_TEMPLATE, template)
         b.putSerializable(ARG_TEMPLATE_TYPE_ID_LIST, templateTypeIdList)
-        b.putInt(ARG_QTY, Integer.parseInt(binding.qtyEditText.text.toString()))
     }
 
     private var _binding: PrintLabelFragmentBinding? = null
@@ -419,9 +417,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
                 return@setOnClickListener
             }
             if (qty <= 0) {
-                showSnackBar(
-                    getString(R.string.you_must_select_the_amount_of_labels_to_print), SnackBarType.ERROR
-                )
+                showSnackBar(getString(R.string.you_must_select_the_amount_of_labels_to_print), SnackBarType.ERROR)
                 return@setOnClickListener
             }
 

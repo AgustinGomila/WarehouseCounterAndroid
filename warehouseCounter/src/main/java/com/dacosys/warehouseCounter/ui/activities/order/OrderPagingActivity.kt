@@ -57,7 +57,7 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.CheckScannedCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.ui.adapter.order.LoadMoreAdapter
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderPagingAdapter
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderViewModel
@@ -643,16 +643,16 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
         JotterListener.lockScanner(this, true)
 
         // Buscar por ubicación
-        CheckScannedCode(
+        GetResultFromCode(
             code = scanCode,
             searchOrder = true,
             onFinish = {
-                val tList = it.typedObject ?: return@CheckScannedCode
+                val tList = it.typedObject ?: return@GetResultFromCode
                 if (tList is ArrayList<*> && tList.firstOrNull() is OrderResponse) {
                     lifecycleScope.launch {
                         pagingAdapter.submitData(PagingData.from(tList as ArrayList<OrderResponse>))
                     }
-                } else return@CheckScannedCode
+                } else return@GetResultFromCode
             })
     }
 

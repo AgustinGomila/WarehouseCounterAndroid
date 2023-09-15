@@ -22,7 +22,7 @@ import kotlinx.coroutines.withContext
 class CreateOrder(
     private val payload: ArrayList<OrderRequest>,
     private val onEvent: (SnackBarEventData) -> Unit = { },
-    private val onFinish: (successFiles: ArrayList<String>) -> Unit = { },
+    private val onFinish: (ids: ArrayList<Long>, successFiles: ArrayList<String>) -> Unit,
 ) {
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
@@ -45,6 +45,7 @@ class CreateOrder(
 
     /** Save the file names of the orders sent correctly */
     private val successFiles: ArrayList<String> = ArrayList()
+    private val ids: ArrayList<Long> = ArrayList()
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         var isDone = false
@@ -57,7 +58,10 @@ class CreateOrder(
                 var id: Long = 0
                 if (it.response != null) id = it.response.id
 
-                if (id > 0) successFiles.add(order.filename)
+                if (id > 0) {
+                    ids.add(id)
+                    successFiles.add(order.filename)
+                }
                 isDone = index == payload.lastIndex
             })
         }
@@ -70,7 +74,7 @@ class CreateOrder(
             }
         }
 
-        onFinish(successFiles)
+        onFinish(ids, successFiles)
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {

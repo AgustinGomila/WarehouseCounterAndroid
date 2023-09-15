@@ -58,6 +58,7 @@ import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.scanners.scanCode.GetOrderRequestContentFromCode
 import com.dacosys.warehouseCounter.ui.activities.common.EnterCodeActivity
 import com.dacosys.warehouseCounter.ui.activities.common.MultiplierSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.common.QtySelectorActivity
@@ -1478,10 +1479,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
                 // Si la cantidad no es NULL proseguimos con el Regex
                 if (regexRes.qty != null) {
-                    CheckCode(callback = { onCheckCodeEnded(it) },
+                    GetOrderRequestContentFromCode(
                         scannedCode = regexRes.ean,
                         list = fullList,
-                        onEvent = { showSnackBar(it.text, it.snackBarType) }).execute()
+                        onEvent = { showSnackBar(it.text, it.snackBarType) },
+                        onFinish = { onCheckCodeEnded(it) },
+                    ).execute()
 
                     return@tryToRegex
                 }
@@ -1505,10 +1508,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             }
 
-            CheckCode(callback = { onCheckCodeEnded(it) },
+            GetOrderRequestContentFromCode(
                 scannedCode = code,
                 list = fullList,
-                onEvent = { it2 -> showSnackBar(it2.text, it2.snackBarType) }).execute()
+                onEvent = { it2 -> showSnackBar(it2.text, it2.snackBarType) },
+                onFinish = { onCheckCodeEnded(it) },
+            ).execute()
 
             gentlyReturn()
         }
@@ -1536,7 +1541,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         showDialogForItemDescription(orc)
     }
 
-    private fun onCheckCodeEnded(it: CheckCode.CheckCodeEnded) {
+    private fun onCheckCodeEnded(it: GetOrderRequestContentFromCode.GetFromCodeResult) {
         val orc = it.orc ?: return
         itemCode = it.itemCode
 

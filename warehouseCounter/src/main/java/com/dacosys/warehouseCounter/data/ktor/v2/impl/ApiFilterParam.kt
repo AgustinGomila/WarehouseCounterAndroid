@@ -3,11 +3,15 @@ package com.dacosys.warehouseCounter.data.ktor.v2.impl
 data class ApiFilterParam(
     var columnName: String = "",
     var value: String = "",
-    var like: Boolean = false,
+    var conditional: String = "",
 ) {
     companion object {
         const val ACTION_FILTER = "filter"
-        const val ACTION_FILTER_LIKE = "like"
+
+        const val ACTION_CONDITIONAL_LIKE = "like"
+        const val ACTION_CONDITIONAL_IN = "in"
+
+        const val EXTENSION_ID = "id"
 
         const val EXTENSION_ITEM_CATEGORY_ID = "item.item_category_id"
         const val EXTENSION_ITEM_CODE = "item.code"

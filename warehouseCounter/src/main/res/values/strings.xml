@@ -803,4 +803,7 @@
     <string name="external_storage_unwritable">Almacenamiento externo no grabable</string>
     <string name="you_want_to_repack_this_order">¿Quiere reempaquetar el pedido?</string>
     <string name="repack_this_order">Reempaquetar el pedido</string>
+    <string name="search_by_external_id">Buscar por ID externo…</string>
+    <string name="automatic_print_label_of_completed_counts">Impresión automática de pedidos completados</string>
+    <string name="automatic_printing">Impresión automática</string>
 </resources>

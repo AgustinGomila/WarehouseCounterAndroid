@@ -40,6 +40,7 @@ import com.dacosys.warehouseCounter.databinding.OutboxActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.completeCompletedPath
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.ui.activities.order.OrderPrintLabelActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -154,9 +155,6 @@ class OutboxActivity : AppCompatActivity() {
                 if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos") else -1
             currentScrollPosition = savedInstanceState.getInt("currentScrollPosition")
         } else {
-            // Inicializar la actividad
-
-            // Traer los parámetros que recibe la actividad
             val extras = intent.extras
             if (extras != null) {
                 val t1 = extras.getString(ARG_TITLE)
@@ -295,14 +293,31 @@ class OutboxActivity : AppCompatActivity() {
 
     private fun sendSelected(orArray: ArrayList<OrderRequest>) {
         runOnUiThread {
-            SendOrder(orArray) {
-                if (it.snackBarType == SUCCESS) {
-                    fillAdapter(ArrayList())
-                } else {
-                    showSnackBar(it.text, it.snackBarType)
+            SendOrder(
+                orders = orArray,
+                onEvent = {
+                    if (it.snackBarType != SUCCESS) {
+                        showSnackBar(it.text, it.snackBarType)
+                    }
+                },
+                onFinish = {
+                    fillAdapter()
+                    if (settingViewModel.autoPrint) {
+                        launchOrderPrintLabelsActivity(it)
+                    }
                 }
-            }
+            )
         }
+    }
+
+    private fun launchOrderPrintLabelsActivity(ids: ArrayList<Long>) {
+        val intent = Intent(baseContext, OrderPrintLabelActivity::class.java)
+        intent.putExtra(OrderPrintLabelActivity.ARG_TITLE, getString(R.string.print_order_labels))
+        intent.putExtra(OrderPrintLabelActivity.ARG_IDS, ids)
+        intent.putExtra(OrderPrintLabelActivity.ARG_MULTI_SELECT, true)
+        intent.putExtra(OrderPrintLabelActivity.ARG_HIDE_FILTER_PANEL, true)
+        intent.putExtra(OrderPrintLabelActivity.ARG_SHOW_SELECT_BUTTON, false)
+        startActivity(intent)
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -369,7 +384,7 @@ class OutboxActivity : AppCompatActivity() {
             showSnackBar(getString(R.string.an_error_occurred_while_trying_to_delete_the_count), ERROR)
         }
 
-        thread { fillAdapter(ArrayList()) }
+        thread { fillAdapter() }
     }
 
     private fun resetSelected(toReset: ArrayList<OrderRequest>) {
@@ -447,7 +462,7 @@ class OutboxActivity : AppCompatActivity() {
         }, 20)
     }
 
-    private fun fillAdapter(t: ArrayList<OrderRequest>) {
+    private fun fillAdapter(t: ArrayList<OrderRequest> = ArrayList()) {
         if (isListViewFilling) return
         isListViewFilling = true
 
