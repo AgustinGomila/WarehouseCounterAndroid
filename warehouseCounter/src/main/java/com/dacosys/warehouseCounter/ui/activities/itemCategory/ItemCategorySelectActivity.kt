@@ -22,6 +22,7 @@ import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.adapter.itemCategory.ItemCategoryAdapter
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
@@ -72,14 +73,14 @@ class ItemCategorySelectActivity : AppCompatActivity(),
             binding.autoCompleteTextView.onFocusChangeListener = null
             binding.autoCompleteTextView.setOnDismissListener(null)
 
-            itemCategory = savedInstanceState.getParcelable(ARG_ITEM_CATEGORY)
+            itemCategory = savedInstanceState.parcelable(ARG_ITEM_CATEGORY)
         } else {
             val extras = intent.extras
             if (extras != null) {
                 val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                itemCategory = extras.getParcelable(ARG_ITEM_CATEGORY)
+                itemCategory = extras.parcelable(ARG_ITEM_CATEGORY)
             }
         }
 
@@ -88,7 +89,9 @@ class ItemCategorySelectActivity : AppCompatActivity(),
 
         title = tempTitle
 
-        binding.codeSelect.setOnClickListener { onBackPressed() }
+        binding.codeSelect.setOnClickListener {
+            @Suppress("DEPRECATION") onBackPressed()
+        }
 
         binding.codeClearImageView.setOnClickListener {
             itemCategory = null
@@ -191,6 +194,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun showProgressBar(visibility: Int) {
         Handler(Looper.getMainLooper()).postDelayed({
             binding.progressBar.visibility = visibility

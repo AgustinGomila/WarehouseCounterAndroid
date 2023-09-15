@@ -17,10 +17,10 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
-import org.parceler.Parcels
 
 
 class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
@@ -61,7 +61,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             val t2 = savedInstanceState.getString(ARG_HINT)
             if (!t2.isNullOrEmpty()) tempHint = t2
 
-            orc = savedInstanceState.getParcelable(ARG_ORC)
+            orc = savedInstanceState.parcelable(ARG_ORC)
 
             capSentences = savedInstanceState.getBoolean(ARG_CAP_SENTENCES)
 
@@ -75,7 +75,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                 val t2 = extras.getString(ARG_HINT)
                 if (!t2.isNullOrEmpty()) tempHint = t2
 
-                val t3 = extras.getParcelable(ARG_ORC) as OrderRequestContent?
+                val t3 = extras.parcelable(ARG_ORC) as OrderRequestContent?
                 if (t3 != null) orc = t3
 
                 capSentences = extras.getBoolean(ARG_CAP_SENTENCES)
@@ -111,7 +111,9 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             }
         }
 
-        binding.enterCode.setOnClickListener { onBackPressed() }
+        binding.enterCode.setOnClickListener {
+            @Suppress("DEPRECATION") onBackPressed()
+        }
 
         binding.codeEditText.isCursorVisible = true
         binding.codeEditText.isFocusable = true
@@ -130,7 +132,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         }
 
         data.putExtra(ARG_CODE, binding.codeEditText.editableText.toString().trim())
-        data.putExtra(ARG_ORC, Parcels.wrap(orc))
+        data.putExtra(ARG_ORC, orc)
         setResult(result, data)
         finish()
     }

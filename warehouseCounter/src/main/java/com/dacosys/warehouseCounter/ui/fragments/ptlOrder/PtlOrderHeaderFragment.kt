@@ -15,6 +15,8 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.databinding.PtlOrderHeaderBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderSelectActivity
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 
 /**
  * Ptl order header fragment
@@ -42,8 +44,8 @@ class PtlOrderHeaderFragment private constructor(builder: Builder) : Fragment() 
         super.onCreate(savedInstanceState)
 
         if (arguments != null) {
-            ptlOrder = requireArguments().getParcelable(ARG_PTL_ORDER)
-            warehouseArea = requireArguments().getParcelable(ARG_WAREHOUSE_AREA)
+            ptlOrder = requireArguments().parcelable(ARG_PTL_ORDER)
+            warehouseArea = requireArguments().parcelable(ARG_WAREHOUSE_AREA)
         }
     }
 
@@ -58,6 +60,7 @@ class PtlOrderHeaderFragment private constructor(builder: Builder) : Fragment() 
         savedInstanceState.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
     }
 
+    @Suppress("unused")
     fun setChangeOrderListener(listener: OrderChangedListener) {
         orderChangedListener = listener
     }
@@ -85,7 +88,6 @@ class PtlOrderHeaderFragment private constructor(builder: Builder) : Fragment() 
      *
      * @param order PTL Order.
      * @param location Warehouse area location.
-     * @param sendEvent Send the order change event on completion.
      */
     fun setOrder(order: PtlOrder?, location: WarehouseArea?) {
         ptlOrder = order
@@ -162,8 +164,8 @@ class PtlOrderHeaderFragment private constructor(builder: Builder) : Fragment() 
         val view = binding.root
 
         if (savedInstanceState != null) {
-            ptlOrder = savedInstanceState.getParcelable(ARG_PTL_ORDER)
-            warehouseArea = savedInstanceState.getParcelable(ARG_WAREHOUSE_AREA)
+            ptlOrder = savedInstanceState.parcelable(ARG_PTL_ORDER)
+            warehouseArea = savedInstanceState.parcelable(ARG_WAREHOUSE_AREA)
 
             showChangeOrderButton = savedInstanceState.getBoolean("showChangeOrderButton")
             showOrderPanel = savedInstanceState.getBoolean("showOrderPanel")
@@ -213,7 +215,7 @@ class PtlOrderHeaderFragment private constructor(builder: Builder) : Fragment() 
             try {
                 if (it?.resultCode == AppCompatActivity.RESULT_OK && data != null) {
                     val p =
-                        data.getParcelableArrayListExtra<PtlOrder>(PtlOrderSelectActivity.ARG_PTL_ORDER)?.firstOrNull()
+                        data.parcelableArrayList<PtlOrder>(PtlOrderSelectActivity.ARG_PTL_ORDER)?.firstOrNull()
                     if (p != null) {
                         setOrder(order = p, location = warehouseArea)
                     }

@@ -32,10 +32,10 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.CounterHandler
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
-import org.parceler.Parcels
 
 /**
  * Esta actividad simula el aspecto de un Dialog
@@ -71,7 +71,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
     }
 
     private fun loadBundleValues(b: Bundle) {
-        orc = b.getParcelable(ARG_ORDER_REQUEST_CONTENT) ?: OrderRequestContent()
+        orc = b.parcelable(ARG_ORDER_REQUEST_CONTENT) ?: OrderRequestContent()
         partial = b.getBoolean(ARG_PARTIAL)
 
         currentValue = b.getDouble(ARG_CURRENT_VALUE)
@@ -81,7 +81,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
-        orc = Parcels.unwrap(b.getParcelable(ARG_ORDER_REQUEST_CONTENT))
+        orc = b.parcelable(ARG_ORDER_REQUEST_CONTENT) ?: OrderRequestContent()
         partial = b.getBoolean(ARG_PARTIAL)
 
         currentValue = b.getDouble(ARG_INITIAL_VALUE)
@@ -135,7 +135,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
             .isCycle(true) // 49,50,-50,-49 and so on
             .counterDelay(50) // speed of counter
             .startNumber(currentValue).counterStep(1)  // steps e.g. 0,2,4,6...
-            .listener(this) // to listen counter results and show them in app
+            .listener(this) // to listen to counter-results and show them in app
             .build()
 
         binding.okButton.setOnClickListener { selectQty() }
@@ -216,7 +216,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
 
         val resultData = Intent()
         resultData.putExtra(ARG_QTY, round(qty * multiplier, decimalPlaces))
-        resultData.putExtra(ARG_ORDER_REQUEST_CONTENT, Parcels.wrap(orc))
+        resultData.putExtra(ARG_ORDER_REQUEST_CONTENT, orc)
         setResult(RESULT_OK, resultData)
         finish()
     }
@@ -239,8 +239,10 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val description = data.getStringExtra(EnterCodeActivity.ARG_CODE) ?: ""
-                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(EnterCodeActivity.ARG_ORC))
-                    setDescription(orc, description)
+                    val orc = data.parcelable<OrderRequestContent>(EnterCodeActivity.ARG_ORC)
+                    if (orc != null) {
+                        setDescription(orc, description)
+                    }
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()

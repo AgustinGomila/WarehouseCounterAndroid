@@ -46,6 +46,8 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.io.File
 import java.io.UnsupportedEncodingException
@@ -146,8 +148,8 @@ class OutboxActivity : AppCompatActivity() {
             checkedIdArray =
                 (savedInstanceState.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
             completeList =
-                savedInstanceState.getParcelableArrayList<OrderRequest>("completeList") as ArrayList<OrderRequest>
-            lastSelected = savedInstanceState.getParcelable("lastSelected")
+                savedInstanceState.parcelableArrayList<OrderRequest>("completeList") as ArrayList<OrderRequest>
+            lastSelected = savedInstanceState.parcelable("lastSelected")
             firstVisiblePos =
                 if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos") else -1
             currentScrollPosition = savedInstanceState.getInt("currentScrollPosition")
@@ -581,7 +583,7 @@ class OutboxActivity : AppCompatActivity() {
 
         val id = item.itemId
         if (id == R.id.home || id == android.R.id.home) {
-            onBackPressed()
+            @Suppress("DEPRECATION") onBackPressed()
             return true
         }
 

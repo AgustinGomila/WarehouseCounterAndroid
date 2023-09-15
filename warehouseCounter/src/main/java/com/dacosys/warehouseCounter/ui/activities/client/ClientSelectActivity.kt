@@ -22,6 +22,7 @@ import com.dacosys.warehouseCounter.data.room.entity.client.Client
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.adapter.client.ClientAdapter
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
@@ -71,20 +72,22 @@ class ClientSelectActivity : AppCompatActivity(),
             binding.autoCompleteTextView.onFocusChangeListener = null
             binding.autoCompleteTextView.setOnDismissListener(null)
 
-            client = savedInstanceState.getParcelable(ARG_CLIENT)
+            client = savedInstanceState.parcelable(ARG_CLIENT)
         } else {
             val extras = intent.extras
             if (extras != null) {
                 val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                client = extras.getParcelable(ARG_CLIENT)
+                client = extras.parcelable(ARG_CLIENT)
             }
         }
 
         title = tempTitle
 
-        binding.codeSelect.setOnClickListener { onBackPressed() }
+        binding.codeSelect.setOnClickListener {
+            @Suppress("DEPRECATION") onBackPressed()
+        }
 
         binding.codeClearImageView.setOnClickListener {
             client = null
@@ -181,6 +184,7 @@ class ClientSelectActivity : AppCompatActivity(),
         thread { fillAdapter() }
     }
 
+    @Suppress("SameParameterValue")
     private fun showProgressBar(visibility: Int) {
         Handler(Looper.getMainLooper()).postDelayed({
             binding.progressBar.visibility = visibility

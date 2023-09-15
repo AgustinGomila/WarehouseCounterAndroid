@@ -22,6 +22,8 @@ import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.adapter.barcodeLabel.BarcodeLabelTemplateAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.serializable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
@@ -59,8 +61,8 @@ class TemplateSelectActivity : AppCompatActivity(),
         title = if (!t1.isNullOrEmpty()) t1
         else getString(R.string.search_by_template)
 
-        template = b.getParcelable(ARG_TEMPLATE)
-        val temp = b.getSerializable(ARG_TEMPLATE_TYPE_ID_LIST) as ArrayList<*>
+        template = b.parcelable(ARG_TEMPLATE)
+        val temp = b.serializable<ArrayList<Long>>(ARG_TEMPLATE_TYPE_ID_LIST) as ArrayList<*>
         if (temp.first() is Long) {
             templateTypeIdList = temp as ArrayList<Long>
         }
@@ -99,7 +101,9 @@ class TemplateSelectActivity : AppCompatActivity(),
         // Para el llenado en el onStart siguiente de onCreate
         fillRequired = true
 
-        binding.codeSelect.setOnClickListener { onBackPressed() }
+        binding.codeSelect.setOnClickListener {
+            @Suppress("DEPRECATION") onBackPressed()
+        }
 
         binding.codeClearImageView.setOnClickListener {
             template = null
@@ -203,6 +207,7 @@ class TemplateSelectActivity : AppCompatActivity(),
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun showProgressBar(visibility: Int) {
         Handler(Looper.getMainLooper()).postDelayed({
             binding.progressBar.visibility = visibility

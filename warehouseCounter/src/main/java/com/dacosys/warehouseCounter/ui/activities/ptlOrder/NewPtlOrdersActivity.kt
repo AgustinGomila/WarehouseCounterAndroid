@@ -26,8 +26,8 @@ import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.ui.activities.location.LocationSelectActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import org.parceler.Parcels
 import kotlin.concurrent.thread
 
 class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
@@ -61,7 +61,7 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
         tempTitle = if (!t1.isNullOrEmpty()) t1
         else context.getString(R.string.setup_new_ptl)
 
-        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
+        warehouseArea = b.parcelable(ARG_WAREHOUSE_AREA)
     }
 
     private fun loadExtraBundleValues(b: Bundle) {
@@ -116,9 +116,8 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
         val data = it?.data
         try {
             if (it?.resultCode == RESULT_OK && data != null) {
-                warehouseArea =
-                    Parcels.unwrap<WarehouseArea>(data.getParcelableExtra(LocationSelectActivity.ARG_WAREHOUSE_AREA))
-                        ?: return@registerForActivityResult
+                warehouseArea = data.parcelable<WarehouseArea>(LocationSelectActivity.ARG_WAREHOUSE_AREA)
+                    ?: return@registerForActivityResult
                 setAreaText()
             }
         } catch (ex: Exception) {
@@ -172,9 +171,7 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
         Screen.closeKeyboard(this)
 
         val data = Intent()
-        if (warehouseArea != null) data.putExtra(
-            ARG_WAREHOUSE_AREA, Parcels.wrap<WarehouseArea>(warehouseArea)
-        )
+        if (warehouseArea != null) data.putExtra(ARG_WAREHOUSE_AREA, warehouseArea)
 
         setResult(RESULT_OK, data)
         finish()
@@ -230,7 +227,7 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
 
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                @Suppress("DEPRECATION") onBackPressed()
                 return true
             }
 

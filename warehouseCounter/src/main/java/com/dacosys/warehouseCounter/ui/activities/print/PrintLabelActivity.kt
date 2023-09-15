@@ -83,7 +83,7 @@ class PrintLabelActivity : AppCompatActivity() {
 
         return when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                @Suppress("DEPRECATION") onBackPressed()
                 true
             }
 

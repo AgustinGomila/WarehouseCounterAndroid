@@ -17,6 +17,7 @@ import com.dacosys.warehouseCounter.databinding.ItemDetailBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import kotlin.concurrent.thread
 
 /**
@@ -32,8 +33,8 @@ class ItemDetailFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         if (arguments != null) {
-            item = requireArguments().getParcelable(ARG_ITEM)
-            itemCode = requireArguments().getParcelable(ARG_ITEM_CODE)
+            item = requireArguments().parcelable(ARG_ITEM)
+            itemCode = requireArguments().parcelable(ARG_ITEM_CODE)
 
             val ic = itemCode ?: return
             ItemCoroutines.getById(ic.itemId ?: 0L) {
@@ -69,8 +70,8 @@ class ItemDetailFragment : Fragment() {
         val view = binding.root
 
         if (savedInstanceState != null) {
-            item = savedInstanceState.getParcelable(ARG_ITEM)
-            itemCode = savedInstanceState.getParcelable(ARG_ITEM_CODE)
+            item = savedInstanceState.parcelable(ARG_ITEM)
+            itemCode = savedInstanceState.parcelable(ARG_ITEM_CODE)
         }
 
         fillControls()

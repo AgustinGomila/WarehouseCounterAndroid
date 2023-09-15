@@ -13,7 +13,7 @@ import com.dacosys.warehouseCounter.data.room.entity.user.User
 import com.dacosys.warehouseCounter.databinding.FragmentSpinnerBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.adapter.user.UserAdapter
-import org.parceler.Parcels
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 
 /**
  * A simple [Fragment] subclass.
@@ -164,7 +164,7 @@ class UserSpinnerFragment : Fragment() {
         }
 
         if (arguments != null) {
-            allUser = requireArguments().getParcelableArrayList(ARG_ALL_USER)
+            allUser = requireArguments().parcelableArrayList(ARG_ALL_USER)
             showGeneralLevel = requireArguments().getBoolean(ARG_SHOW_GENERAL_LEVEL)
         }
     }
@@ -326,7 +326,7 @@ class UserSpinnerFragment : Fragment() {
             val fragment = UserSpinnerFragment()
 
             val args = Bundle()
-            args.putParcelable(ARG_ALL_USER, Parcels.wrap(allUser))
+            args.putParcelableArrayList(ARG_ALL_USER, allUser)
             args.putBoolean(ARG_SHOW_GENERAL_LEVEL, showGeneralLevel)
 
             fragment.arguments = args

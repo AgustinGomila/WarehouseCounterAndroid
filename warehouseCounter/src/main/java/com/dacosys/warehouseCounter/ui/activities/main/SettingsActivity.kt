@@ -117,7 +117,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
                 // Handle the menu selection
                 return when (menuItem.itemId) {
                     R.id.home, android.R.id.home -> {
-                        onBackPressed()
+                        @Suppress("DEPRECATION") onBackPressed()
                         true
                     }
 
@@ -156,7 +156,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         if (status == ProgressStatus.finished) {
             showSnackBar(getString(R.string.configuration_applied), INFO)
             removeDataBases()
-            onBackPressed()
+            @Suppress("DEPRECATION") onBackPressed()
         } else if (status == ProgressStatus.crashed) {
             showSnackBar(getString(R.string.error_setting_user_panel), ERROR)
         }

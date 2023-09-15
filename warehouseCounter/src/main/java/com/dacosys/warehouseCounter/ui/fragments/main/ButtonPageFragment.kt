@@ -29,6 +29,7 @@ import com.dacosys.warehouseCounter.ui.activities.main.HomeActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Colors
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 
 
 /**
@@ -239,7 +240,7 @@ class ButtonPageFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         if (arguments != null) {
-            allButton = requireArguments().getParcelableArrayList(ARG_ALL_BUTTONS)
+            allButton = requireArguments().parcelableArrayList(ARG_ALL_BUTTONS)
             pageIndex = requireArguments().getInt(ARG_PAGE_INDEX)
         }
     }

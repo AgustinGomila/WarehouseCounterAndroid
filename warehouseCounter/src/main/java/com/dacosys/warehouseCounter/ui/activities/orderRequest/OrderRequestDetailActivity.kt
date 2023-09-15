@@ -31,8 +31,8 @@ import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderRequestHeader
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import org.parceler.Parcels
 
 class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     OrcAdapter.DataSetChangedListener, OrcAdapter.CheckedChangedListener {
@@ -109,7 +109,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = getString(R.string.detail_count)
 
-        client = Parcels.unwrap<Client>(b.getParcelable(ARG_CLIENT))
+        client = b.parcelable(ARG_CLIENT)
 
         if (b.containsKey(ARG_FILENAME)) {
             filename = b.getString(ARG_FILENAME) ?: ""
@@ -125,9 +125,9 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         orderRequestId = b.getLong(ARG_ID)
         filename = b.getString(ARG_FILENAME) ?: ""
 
-        client = b.getParcelable(ARG_CLIENT)
+        client = b.parcelable(ARG_CLIENT)
         checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
-        lastSelected = b.getParcelable("lastSelected")
+        lastSelected = b.parcelable("lastSelected")
         firstVisiblePos =
             if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos")
             else -1
@@ -448,7 +448,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
         return if (id == R.id.home || id == android.R.id.home) {
-            onBackPressed()
+            @Suppress("DEPRECATION") onBackPressed()
             true
         } else super.onOptionsItemSelected(item)
     }

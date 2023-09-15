@@ -102,7 +102,9 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         // Para el llenado en el onStart siguiente de onCreate
         fillRequired = true
 
-        binding.codeSelect.setOnClickListener { onBackPressed() }
+        binding.codeSelect.setOnClickListener {
+            @Suppress("DEPRECATION") onBackPressed()
+        }
 
         binding.codeClearImageView.setOnClickListener {
             code = ""
@@ -241,6 +243,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun showProgressBar(visibility: Int) {
         Handler(Looper.getMainLooper()).postDelayed({
             binding.progressBar.visibility = visibility

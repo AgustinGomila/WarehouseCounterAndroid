@@ -220,7 +220,7 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
                 getString(R.string.configuration_applied), SnackBarType.INFO
             )
             FileHelper.removeDataBases()
-            requireActivity().onBackPressed()
+            @Suppress("DEPRECATION") requireActivity().onBackPressed()
         } else if (status == ProgressStatus.crashed) {
             if (view != null) showSnackBar(getString(R.string.error_setting_user_panel), SnackBarType.ERROR)
         }

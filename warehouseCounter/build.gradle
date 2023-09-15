@@ -150,9 +150,6 @@ dependencies {
     // Apache Commons Net
     implementation 'commons-net:commons-net:3.8.0'
 
-    // Parceler
-    implementation 'org.parceler:parceler-api:1.1.13'
-
     // Android Asynchronous Http Client
     implementation 'com.loopj.android:android-async-http:1.4.11'
 

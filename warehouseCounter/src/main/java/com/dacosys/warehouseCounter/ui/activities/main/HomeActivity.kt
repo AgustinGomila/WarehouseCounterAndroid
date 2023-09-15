@@ -83,11 +83,11 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
-import org.parceler.Parcels
 import kotlin.concurrent.thread
 
 class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFragment.ButtonClickedListener {
@@ -242,7 +242,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                @Suppress("DEPRECATION") onBackPressed()
                 return true
             }
 
@@ -510,7 +510,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val warehouseArea =
-                        Parcels.unwrap<WarehouseArea>(data.getParcelableExtra(NewPtlOrdersActivity.ARG_WAREHOUSE_AREA))
+                        data.parcelable<WarehouseArea>(NewPtlOrdersActivity.ARG_WAREHOUSE_AREA)
                     if (warehouseArea == null) {
                         rejectNewInstances = false
                         return@registerForActivityResult
@@ -526,7 +526,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                     )
 
                     val intent = Intent(context, PtlOrderActivity::class.java)
-                    intent.putExtra(PtlOrderActivity.ARG_WAREHOUSE_AREA, Parcels.wrap(warehouseArea))
+                    intent.putExtra(PtlOrderActivity.ARG_WAREHOUSE_AREA, warehouseArea)
                     resultForPtlFinish.launch(intent)
                 }
             } catch (ex: Exception) {
@@ -554,12 +554,13 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val client = Parcels.unwrap<Client>(data.getParcelableExtra(NewCountActivity.ARG_CLIENT))
+                    val client = data.parcelable<Client>(NewCountActivity.ARG_CLIENT)
                     val description = data.getStringExtra(NewCountActivity.ARG_DESCRIPTION) ?: ""
-                    val orderRequestType =
-                        Parcels.unwrap<OrderRequestType>(data.getParcelableExtra<OrderRequestType>(NewCountActivity.ARG_ORDER_REQUEST_TYPE))
+                    val orderRequestType = data.parcelable<OrderRequestType>(NewCountActivity.ARG_ORDER_REQUEST_TYPE)
 
-                    addOrderRequest(client, description, orderRequestType)
+                    if (orderRequestType != null) {
+                        addOrderRequest(client, description, orderRequestType)
+                    }
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()

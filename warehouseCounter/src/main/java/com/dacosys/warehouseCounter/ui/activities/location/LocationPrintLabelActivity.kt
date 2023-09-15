@@ -83,6 +83,8 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import com.google.android.material.textfield.TextInputEditText
@@ -101,14 +103,6 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     }
 
     private fun destroyLocals() {
-        /**
-        Usar tabla temporal para guardar listas largas con Room en el futuro
-         */
-        if (isFinishingByUser) {
-            // Borramos los Ids temporales que se usaron en la actividad.
-            // ItemDbHelper().deleteTemp()
-        }
-
         adapter?.refreshListeners()
         adapter?.refreshImageControlListeners()
     }
@@ -238,14 +232,14 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
         // Adapter
         checkedHashArray = (b.getIntArray("checkedHashArray") ?: intArrayOf()).toCollection(ArrayList())
-        completeList = b.getParcelableArrayList("completeList") ?: ArrayList()
-        lastSelected = b.getParcelable("lastSelected")
+        completeList = b.parcelableArrayList("completeList") ?: ArrayList()
+        lastSelected = b.parcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
 
-        filterWarehouse = b.getParcelable("filterWarehouse")
-        filterWarehouseArea = b.getParcelable("filterWarehouseArea")
-        filterRack = b.getParcelable("filterRack")
+        filterWarehouse = b.parcelable("filterWarehouse")
+        filterWarehouseArea = b.parcelable("filterWarehouseArea")
+        filterRack = b.parcelable("filterRack")
         filterOnlyActive = b.getBoolean("filterOnlyActive")
 
         searchedText = b.getString("searchedText") ?: ""
@@ -944,7 +938,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         val id = item.itemId
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                @Suppress("DEPRECATION") onBackPressed()
                 return true
             }
 

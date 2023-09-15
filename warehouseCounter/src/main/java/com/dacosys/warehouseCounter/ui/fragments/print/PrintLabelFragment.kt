@@ -50,6 +50,8 @@ import com.dacosys.warehouseCounter.ui.activities.barcodeLabel.TemplateSelectAct
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.serializable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.CounterHandler
 import com.google.android.gms.common.api.CommonStatusCodes
@@ -290,8 +292,8 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
     @Suppress("UNCHECKED_CAST")
     private fun loadBundleValues(b: Bundle) {
         printer = b.getString(ARG_PRINTER) ?: ""
-        template = b.getParcelable(ARG_TEMPLATE)
-        val temp = b.getSerializable(TemplateSelectActivity.ARG_TEMPLATE_TYPE_ID_LIST) as ArrayList<*>
+        template = b.parcelable(ARG_TEMPLATE)
+        val temp = b.serializable<ArrayList<Long>>(TemplateSelectActivity.ARG_TEMPLATE_TYPE_ID_LIST) as ArrayList<*>
         if (temp.first() is Long) {
             templateTypeIdList = temp as ArrayList<Long>
         }
@@ -434,7 +436,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
             val data = it?.data
             try {
                 if (it?.resultCode == AppCompatActivity.RESULT_OK && data != null) {
-                    template = data.getParcelableExtra(TemplateSelectActivity.ARG_TEMPLATE)
+                    template = data.parcelable(TemplateSelectActivity.ARG_TEMPLATE)
                     setTemplateText()
                     sendMessage()
                 }

@@ -30,9 +30,9 @@ import com.dacosys.warehouseCounter.ui.activities.client.ClientSelectActivity
 import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderRequestTypeSpinnerFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
-import org.parceler.Parcels
 import kotlin.concurrent.thread
 
 class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener,
@@ -83,8 +83,8 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         else context.getString(R.string.setup_new_count)
 
         tempDescription = b.getString(ARG_DESCRIPTION) ?: ""
-        client = b.getParcelable(ARG_CLIENT)
-        orderRequestType = b.getParcelable(ARG_ORDER_REQUEST_TYPE) ?: OrderRequestType.stockAuditFromDevice
+        client = b.parcelable(ARG_CLIENT)
+        orderRequestType = b.parcelable(ARG_ORDER_REQUEST_TYPE) ?: OrderRequestType.stockAuditFromDevice
     }
 
     private fun loadExtraBundleValues(b: Bundle) {
@@ -180,7 +180,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         val data = it?.data
         try {
             if (it?.resultCode == RESULT_OK && data != null) {
-                client = data.getParcelableExtra(ClientSelectActivity.ARG_CLIENT) ?: return@registerForActivityResult
+                client = data.parcelable(ClientSelectActivity.ARG_CLIENT) ?: return@registerForActivityResult
                 setClientText()
             }
         } catch (ex: Exception) {
@@ -235,8 +235,8 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
             val data = Intent()
             data.putExtra(ARG_DESCRIPTION, description.trim())
-            data.putExtra(ARG_ORDER_REQUEST_TYPE, Parcels.wrap(orderRequestType))
-            if (client != null) data.putExtra(ARG_CLIENT, Parcels.wrap<Client>(client))
+            data.putExtra(ARG_ORDER_REQUEST_TYPE, orderRequestType)
+            if (client != null) data.putExtra(ARG_CLIENT, client)
 
             setResult(RESULT_OK, data)
             finish()
@@ -303,7 +303,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                @Suppress("DEPRECATION") onBackPressed()
                 return true
             }
 

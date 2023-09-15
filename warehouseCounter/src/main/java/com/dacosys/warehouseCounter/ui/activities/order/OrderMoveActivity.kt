@@ -67,6 +67,8 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import com.google.android.material.textfield.TextInputEditText
@@ -84,14 +86,6 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
     }
 
     private fun destroyLocals() {
-        /**
-        Usar tabla temporal para guardar listas largas con Room en el futuro
-         */
-        if (isFinishingByUser) {
-            // Borramos los Ids temporales que se usaron en la actividad.
-            // ItemDbHelper().deleteTemp()
-        }
-
         adapter?.refreshListeners()
     }
 
@@ -206,16 +200,16 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, multiSelect)
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
 
-        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
-        rack = b.getParcelable(ARG_RACK)
+        warehouseArea = b.parcelable(ARG_WAREHOUSE_AREA)
+        rack = b.parcelable(ARG_RACK)
 
         panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
         panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
 
         // Adapter
         checkedHashArray = (b.getIntArray("checkedHashArray") ?: intArrayOf()).toCollection(ArrayList())
-        completeList = b.getParcelableArrayList("completeList") ?: ArrayList()
-        lastSelected = b.getParcelable("lastSelected")
+        completeList = b.parcelableArrayList("completeList") ?: ArrayList()
+        lastSelected = b.parcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
 
@@ -234,8 +228,8 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
         showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, true)
 
-        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
-        rack = b.getParcelable(ARG_RACK)
+        warehouseArea = b.parcelable(ARG_WAREHOUSE_AREA)
+        rack = b.parcelable(ARG_RACK)
     }
 
     private lateinit var binding: ItemPrintLabelActivityTopPanelCollapsedBinding
@@ -938,7 +932,7 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         val id = item.itemId
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                @Suppress("DEPRECATION") onBackPressed()
                 return true
             }
 

@@ -15,6 +15,7 @@ import com.dacosys.warehouseCounter.data.room.dao.orderRequest.LogCoroutines
 import com.dacosys.warehouseCounter.databinding.LogContentActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.adapter.log.LogAdapter
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 
 class LogContentActivity :
@@ -81,7 +82,7 @@ class LogContentActivity :
             // endregion
 
             orderRequestId = savedInstanceState.getLong(ARG_ID)
-            lastSelected = savedInstanceState.getParcelable("lastSelected")
+            lastSelected = savedInstanceState.parcelable("lastSelected")
             firstVisiblePos =
                 if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos")
                 else -1
@@ -180,7 +181,7 @@ class LogContentActivity :
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
         return if (id == R.id.home || id == android.R.id.home) {
-            onBackPressed()
+            @Suppress("DEPRECATION") onBackPressed()
             true
         } else super.onOptionsItemSelected(item)
     }

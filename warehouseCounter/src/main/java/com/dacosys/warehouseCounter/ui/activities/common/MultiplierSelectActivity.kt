@@ -10,7 +10,6 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.databinding.ScanMultiplierSelectBinding
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import org.parceler.Parcels
 
 class MultiplierSelectActivity : AppCompatActivity() {
     private var tempMultiplier: Int? = null
@@ -80,7 +79,9 @@ class MultiplierSelectActivity : AppCompatActivity() {
 
         binding.multiplierTextView.text = String.format("%sX", tempMultiplier)
 
-        binding.multiplierSelect.setOnClickListener { onBackPressed() }
+        binding.multiplierSelect.setOnClickListener {
+            @Suppress("DEPRECATION") onBackPressed()
+        }
 
         Screen.setupUI(binding.root, this)
     }
@@ -95,7 +96,7 @@ class MultiplierSelectActivity : AppCompatActivity() {
         } else {
             settingViewModel.scanMultiplier = tempMultiplier!!
 
-            data.putExtra(ARG_MULTIPLIER, Parcels.wrap(tempMultiplier))
+            data.putExtra(ARG_MULTIPLIER, tempMultiplier)
             setResult(RESULT_OK, data)
             finish()
         }

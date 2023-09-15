@@ -86,14 +86,6 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
     }
 
     private fun destroyLocals() {
-        /**
-        Usar tabla temporal para guardar listas largas con Room en el futuro
-         */
-        if (isFinishingByUser) {
-            // Borramos los Ids temporales que se usaron en la actividad.
-            // ItemDbHelper().deleteTemp()
-        }
-
         pagingAdapter.destroyListeners()
     }
 
@@ -750,7 +742,7 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
         val id = item.itemId
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                @Suppress("DEPRECATION") onBackPressed()
                 return true
             }
 

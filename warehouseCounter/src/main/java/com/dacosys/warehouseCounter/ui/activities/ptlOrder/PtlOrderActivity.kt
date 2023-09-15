@@ -60,8 +60,9 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import org.parceler.Parcels
 import java.util.*
 import kotlin.concurrent.thread
 
@@ -361,15 +362,15 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.ptl_order)
 
-        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
-        currentPtlOrder = b.getParcelable(ARG_PTL_ORDER)
+        warehouseArea = b.parcelable(ARG_WAREHOUSE_AREA)
+        currentPtlOrder = b.parcelable(ARG_PTL_ORDER)
 
         currentInventory = b.getStringArrayList("currentInventory")
 
-        tempContArray = b.getParcelableArrayList("tempWacArray") ?: ArrayList()
-        completeList = b.getParcelableArrayList("completeList") ?: ArrayList()
+        tempContArray = b.parcelableArrayList("tempWacArray") ?: ArrayList()
+        completeList = b.parcelableArrayList("completeList") ?: ArrayList()
         checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
-        lastSelected = b.getParcelable("lastSelected")
+        lastSelected = b.parcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
 
@@ -384,8 +385,8 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.ptl_order)
 
-        warehouseArea = Parcels.unwrap<WarehouseArea>(b.getParcelable(ARG_WAREHOUSE_AREA))
-        currentPtlOrder = Parcels.unwrap<PtlOrder>(b.getParcelable(ARG_PTL_ORDER))
+        warehouseArea = b.parcelable(ARG_WAREHOUSE_AREA)
+        currentPtlOrder = b.parcelable(ARG_PTL_ORDER)
 
         initialScannedCode = b.getString("initial_scanned_code") ?: ""
     }
@@ -934,7 +935,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                @Suppress("DEPRECATION") onBackPressed()
                 return true
             }
 

@@ -29,11 +29,11 @@ import com.dacosys.warehouseCounter.ui.adapter.location.WarehouseAdapter
 import com.dacosys.warehouseCounter.ui.adapter.location.WarehouseAreaAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
-import org.parceler.Parcels
 import kotlin.concurrent.thread
 
 class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextView.OnContractsAvailability,
@@ -83,9 +83,9 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         title = if (!t1.isNullOrEmpty()) t1
         else getString(R.string.select_area)
 
-        warehouse = b.getParcelable(ARG_WAREHOUSE)
-        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
-        rack = b.getParcelable(ARG_RACK)
+        warehouse = b.parcelable(ARG_WAREHOUSE)
+        warehouseArea = b.parcelable(ARG_WAREHOUSE_AREA)
+        rack = b.parcelable(ARG_RACK)
 
         warehouseAreaVisible =
             if (b.containsKey(ARG_WAREHOUSE_AREA_VISIBLE)) b.getBoolean(ARG_WAREHOUSE_AREA_VISIBLE)
@@ -140,7 +140,9 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         // To fill the control in the onStart after this onCreate.
         fillRequired = true
 
-        binding.root.setOnClickListener { onBackPressed() }
+        binding.root.setOnClickListener {
+            @Suppress("DEPRECATION") onBackPressed()
+        }
 
         binding.warehouseClearImageView.setOnClickListener { setWarehouse(null) }
         binding.warehouseAreaClearImageView.setOnClickListener { setWarehouseArea(null) }
@@ -453,9 +455,9 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         Screen.closeKeyboard(this)
 
         val data = Intent()
-        data.putExtra(ARG_RACK, Parcels.wrap(rack))
-        data.putExtra(ARG_WAREHOUSE_AREA, Parcels.wrap(warehouseArea))
-        data.putExtra(ARG_WAREHOUSE, Parcels.wrap(warehouse))
+        data.putExtra(ARG_RACK, rack)
+        data.putExtra(ARG_WAREHOUSE_AREA, warehouseArea)
+        data.putExtra(ARG_WAREHOUSE, warehouse)
         setResult(RESULT_OK, data)
         finish()
     }

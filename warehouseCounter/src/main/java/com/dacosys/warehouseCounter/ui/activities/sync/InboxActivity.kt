@@ -35,6 +35,8 @@ import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetai
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.io.File
 import kotlin.concurrent.thread
@@ -138,8 +140,8 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
             checkedIdArray =
                 (savedInstanceState.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
             completeList =
-                savedInstanceState.getParcelableArrayList<OrderRequest>("completeList") as ArrayList<OrderRequest>
-            lastSelected = savedInstanceState.getParcelable("lastSelected")
+                savedInstanceState.parcelableArrayList<OrderRequest>("completeList") as ArrayList<OrderRequest>
+            lastSelected = savedInstanceState.parcelable("lastSelected")
             firstVisiblePos =
                 if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos") else -1
             currentScrollPosition = savedInstanceState.getInt("currentScrollPosition")
@@ -471,7 +473,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
 
         val id = item.itemId
         if (id == R.id.home || id == android.R.id.home) {
-            onBackPressed()
+            @Suppress("DEPRECATION") onBackPressed()
             return true
         }
 

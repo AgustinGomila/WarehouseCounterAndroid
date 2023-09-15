@@ -19,6 +19,7 @@ import com.dacosys.warehouseCounter.ui.activities.common.ObservationActivity
 import com.dacosys.warehouseCounter.ui.activities.common.QtySelectorActivity
 import com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import kotlin.experimental.or
 
 /**
@@ -56,7 +57,7 @@ object Nfc {
 
         val action = intent.action
         if (NfcAdapter.ACTION_TECH_DISCOVERED == action) {
-            var tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+            var tag: Tag? = intent.parcelable(NfcAdapter.EXTRA_TAG)
             tag = patchTag(tag)
 
             val id = byte2HexString(tag!!.id)
@@ -109,21 +110,21 @@ object Nfc {
      *
      *
      * HTC One: "It seems, the reason of this bug is TechExtras of NfcA is null.
-     * However, TechList contains MifareClassic." -- bildin.
-     * This method will fix this. For more information please refer to
+     * However, TechList contains MifareClassic." -- Bildin.
+     * This method will fix this. For more information, please refer to
      * https://github.com/ikarus23/MifareClassicTool/issues/52
      * This patch was provided by bildin (https://github.com/bildin).
      *
      *
-     * Sony Xperia Z3 (+ emmulated MIFARE Classic tag): The buggy tag has
+     * Sony Xperia Z3 (+ emulated MIFARE Classic tag): The buggy tag has
      * two NfcA in the TechList with different SAK values and a MifareClassic
-     * (with the Extra of the second NfcA). Both, the second NfcA and the
-     * MifareClassic technique, have a SAK of 0x20. According to NXP's
-     * guidelines on identifying MIFARE tags (Page 11), this a MIFARE Plus or
+     * (with the Extra of the second NfcA). Both the second NfcA and the
+     * MifareClassic technique have a SAK of 0x20. According to NXP's
+     * guidelines on identifying MIFARE tags (Page 11), this is a MIFARE Plus or
      * MIFARE DESFire tag. This method creates a new Extra with the SAK
      * values of both NfcA occurrences ORed (as mentioned in NXP's
-     * MIFARE type identification procedure guide) and replace the Extra of
-     * the first NfcA with the new one. For more information please refer to
+     * MIFARE type identification procedure guide) and replaces the Extra of
+     * the first NfcA with the new one. For more information, please refer to
      * https://github.com/ikarus23/MifareClassicTool/issues/64
      * This patch was provided by bildin (https://github.com/bildin).
      *
@@ -201,11 +202,11 @@ object Nfc {
         }
 
         if (!modified) {
-            // Old tag was not modivied. Return the old one.
+            // The Old tag was not modified. Return the old one.
             return tag
         }
 
-        // Old tag was modified. Create a new tag with the new data.
+        // The Old tag was modified. Create a new tag with the new data.
         val newParcel = Parcel.obtain()
         newParcel.writeInt(id.size)
         newParcel.writeByteArray(id)

@@ -38,8 +38,8 @@ import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderRequestHeader
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import org.parceler.Parcels
 
 class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     OrcAdapter.DataSetChangedListener, OrcAdapter.CheckedChangedListener {
@@ -134,7 +134,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
         orderRequestId = b.getLong(ARG_ID)
 
-        lastSelected = b.getParcelable("lastSelected")
+        lastSelected = b.parcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
 
@@ -449,7 +449,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         ///////////////////////////////////////////
 
         val data = Intent()
-        data.putExtra(ARG_CONFIRM_STATUS, Parcels.wrap(ConfirmStatus.modify))
+        data.putExtra(ARG_CONFIRM_STATUS, ConfirmStatus.modify)
         setResult(RESULT_CANCELED, data)
 
         super.onBackPressed()
@@ -546,8 +546,8 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             val data = Intent()
             data.putExtra(
                 ARG_CONFIRM_STATUS,
-                if (binding.finishCheckBox.isChecked) Parcels.wrap(ConfirmStatus.confirm)
-                else Parcels.wrap(ConfirmStatus.modify)
+                if (binding.finishCheckBox.isChecked) ConfirmStatus.confirm
+                else ConfirmStatus.modify
             )
             data.putExtra(ARG_IS_SIGNED, imageControlFragment?.isSigned)
             setResult(RESULT_OK, data)
@@ -558,7 +558,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
         return if (id == R.id.home || id == android.R.id.home) {
-            onBackPressed()
+            @Suppress("DEPRECATION") onBackPressed()
             true
         } else super.onOptionsItemSelected(item)
     }

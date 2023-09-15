@@ -407,7 +407,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
 
         return when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                @Suppress("DEPRECATION") onBackPressed()
                 return true
             }
 

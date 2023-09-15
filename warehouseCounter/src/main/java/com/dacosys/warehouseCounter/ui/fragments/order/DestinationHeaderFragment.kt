@@ -16,7 +16,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.databinding.DestinationHeaderBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.location.LocationSelectActivity
-import org.parceler.Parcels
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 
 /**
  * Destination header fragment
@@ -50,9 +50,8 @@ class DestinationHeaderFragment private constructor(builder: Builder) : Fragment
             val data = it?.data
             try {
                 if (it?.resultCode == AppCompatActivity.RESULT_OK && data != null) {
-                    val wa =
-                        Parcels.unwrap<WarehouseArea>(data.getParcelableExtra(LocationSelectActivity.ARG_WAREHOUSE_AREA))
-                    val r = Parcels.unwrap<Rack>(data.getParcelableExtra(LocationSelectActivity.ARG_RACK))
+                    val wa = data.parcelable<WarehouseArea>(LocationSelectActivity.ARG_WAREHOUSE_AREA)
+                    val r = data.parcelable<Rack>(LocationSelectActivity.ARG_RACK)
                     setDestination(wa, r)
                 }
             } catch (ex: Exception) {
@@ -139,8 +138,8 @@ class DestinationHeaderFragment private constructor(builder: Builder) : Fragment
 
     private fun loadBundleValues(b: Bundle) {
         showChangePosButton = b.getBoolean(ARG_SHOW_CHANGE_POSITION_BUTTON)
-        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
-        rack = b.getParcelable(ARG_RACK)
+        warehouseArea = b.parcelable(ARG_WAREHOUSE_AREA)
+        rack = b.parcelable(ARG_RACK)
         title = b.getString(ARG_TITLE) ?: ""
     }
 

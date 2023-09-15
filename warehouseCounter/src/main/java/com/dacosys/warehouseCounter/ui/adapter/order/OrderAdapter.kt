@@ -440,9 +440,8 @@ class OrderAdapter private constructor(builder: Builder) :
      * Se utiliza cuando se edita un ítem y necesita actualizarse
      */
     fun updateItem(item: OrderResponse, scrollToPos: Boolean = false) {
-        val t = fullList.firstOrNull { it == item } ?: return
-
         // TODO: Update ítem here
+        //  val t = fullList.firstOrNull { it == item } ?: return
 
         submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()

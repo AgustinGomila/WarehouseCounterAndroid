@@ -70,13 +70,13 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import org.json.JSONObject
-import org.parceler.Parcels
 import java.lang.ref.WeakReference
 import kotlin.concurrent.thread
 
@@ -88,7 +88,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
             showSnackBar(
-                getString(R.string.configuration_applied), SnackBarType.SUCCESS
+                getString(R.string.configuration_applied), SUCCESS
             )
             initialSetup()
         } else if (status == ProgressStatus.crashed) {
@@ -127,7 +127,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 showSnackBar(msg, SnackBarType.INFO)
             }
         } else if (status == ProgressStatus.success) {
-            showSnackBar(msg, SnackBarType.SUCCESS)
+            showSnackBar(msg, SUCCESS)
         } else if (status == ProgressStatus.crashed) {
             showSnackBar(msg, ERROR)
         }
@@ -370,12 +370,12 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         userSpinnerFragment = supportFragmentManager.findFragmentById(R.id.userSpinnerFragment) as UserSpinnerFragment?
 
         if (savedInstanceState != null) {
-            user = savedInstanceState.getParcelable(ARG_USER)
+            user = savedInstanceState.parcelable(ARG_USER)
             password = savedInstanceState.getString(ARG_PASSWORD) ?: ""
         } else {
             val extras = intent.extras
             if (extras != null) {
-                user = Parcels.unwrap<User>(extras.getParcelable<User>(ARG_USER))
+                user = extras.parcelable<User>(ARG_USER)
                 password = extras.getString(ARG_PASSWORD) ?: ""
             }
         }
@@ -770,7 +770,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
         return when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                @Suppress("DEPRECATION") onBackPressed()
                 return true
             }
 

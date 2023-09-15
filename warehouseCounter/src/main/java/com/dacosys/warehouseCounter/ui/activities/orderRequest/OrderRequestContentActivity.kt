@@ -69,10 +69,11 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import org.parceler.Parcels
 import java.io.UnsupportedEncodingException
 import java.text.SimpleDateFormat
 import java.util.*
@@ -205,9 +206,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         if (!t1.isNullOrEmpty()) tempTitle = t1
         // endregion
 
-        itemCode = b.getParcelable("itemCode")
+        itemCode = b.parcelable("itemCode")
         checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
-        lastSelected = b.getParcelable("lastSelected")
+        lastSelected = b.parcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
 
@@ -223,7 +224,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
         panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
 
-        lastRegexResult = b.getParcelable("lastRegexResult")
+        lastRegexResult = b.parcelable("lastRegexResult")
 
         tempCompleted = b.getBoolean("tempCompleted")
     }
@@ -772,7 +773,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val items: ArrayList<ParcelLong> =
-                        data.getParcelableArrayListExtra(ItemSelectActivity.ARG_IDS) ?: arrayListOf()
+                        data.parcelableArrayList(ItemSelectActivity.ARG_IDS) ?: arrayListOf()
 
                     if (items.isNotEmpty()) {
                         ItemCoroutines.getById(items.first().value) { it2 ->
@@ -829,7 +830,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    when (Parcels.unwrap<ConfirmStatus>(data.getParcelableExtra(OrderRequestConfirmActivity.ARG_CONFIRM_STATUS))) {
+                    when (data.parcelable<ConfirmStatus>(OrderRequestConfirmActivity.ARG_CONFIRM_STATUS)) {
                         modify -> processCount(completed = false)
                         confirm -> processCount(completed = true)
                     }
@@ -1033,7 +1034,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             try {
                 if (data != null) {
                     val description = data.getStringExtra(EnterCodeActivity.ARG_CODE) ?: ""
-                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(EnterCodeActivity.ARG_ORC))
+                    val orc = data.parcelable<OrderRequestContent>(EnterCodeActivity.ARG_ORC)
 
                     val item = orc ?: return@registerForActivityResult
 
@@ -1082,7 +1083,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             try {
                 if (data != null) {
                     val description = data.getStringExtra(EnterCodeActivity.ARG_CODE) ?: ""
-                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(EnterCodeActivity.ARG_ORC))
+                    val orc = data.parcelable<OrderRequestContent>(EnterCodeActivity.ARG_ORC)
 
                     val item = orc ?: return@registerForActivityResult
 
@@ -1130,8 +1131,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val code = data.getStringExtra(EnterCodeActivity.ARG_CODE) ?: ""
-                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(EnterCodeActivity.ARG_ORC))
-                    setLotCode(orc = orc, lotCode = code)
+                    val orc = data.parcelable<OrderRequestContent>(EnterCodeActivity.ARG_ORC)
+
+                    if (orc != null) {
+                        setLotCode(orc = orc, lotCode = code)
+                    }
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -1210,7 +1214,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         JotterListener.lockScanner(this, true)
 
         val intent = Intent(this, QtySelectorActivity::class.java)
-        intent.putExtra(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT, Parcels.wrap(orc))
+        intent.putExtra(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT, orc)
         intent.putExtra(QtySelectorActivity.ARG_PARTIAL, (partial || partialBlock))
         intent.putExtra(QtySelectorActivity.ARG_INITIAL_VALUE, initialQty)
         intent.putExtra(QtySelectorActivity.ARG_MULTIPLIER, multiplier.toLong())
@@ -1227,19 +1231,21 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val qty = data.getDoubleExtra(QtySelectorActivity.ARG_QTY, 0.toDouble())
                     val orc =
-                        Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT))
+                        data.parcelable<OrderRequestContent>(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT)
 
-                    /**
-                     * En este momento no nos preocupamos por la descripción, ya que puede modificarse
-                     * desde el selector de cantidades que se ejecuta a continuación
-                     */
-                    setDescription(
-                        orc = orc,
-                        description = orc.itemDescription,
-                        updateDb = false
-                    )
+                    if (orc != null) {
+                        /**
+                         * En este momento no nos preocupamos por la descripción, ya que puede modificarse
+                         * desde el selector de cantidades que se ejecuta a continuación
+                         */
+                        setDescription(
+                            orc = orc,
+                            description = orc.itemDescription,
+                            updateDb = false
+                        )
 
-                    setQtyCollected(orc = orc, qty = qty, manualAdd = true, total = true)
+                        setQtyCollected(orc = orc, qty = qty, manualAdd = true, total = true)
+                    }
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -1255,20 +1261,21 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val qty = data.getDoubleExtra(QtySelectorActivity.ARG_QTY, 0.toDouble())
-                    val orc =
-                        Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT))
+                    val orc = data.parcelable<OrderRequestContent>(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT)
 
-                    /**
-                     * En este momento no nos preocupamos por la descripción, ya que puede modificarse
-                     * desde el selector de cantidades que se ejecuta a continuación
-                     */
-                    setDescription(
-                        orc = orc,
-                        description = orc.itemDescription,
-                        updateDb = false
-                    )
+                    if (orc != null) {
+                        /**
+                         * En este momento no nos preocupamos por la descripción, ya que puede modificarse
+                         * desde el selector de cantidades que se ejecuta a continuación
+                         */
+                        setDescription(
+                            orc = orc,
+                            description = orc.itemDescription,
+                            updateDb = false
+                        )
 
-                    setQtyCollected(orc = orc, qty = qty, manualAdd = true, total = false)
+                        setQtyCollected(orc = orc, qty = qty, manualAdd = true, total = false)
+                    }
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -1590,7 +1597,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                @Suppress("DEPRECATION") onBackPressed()
                 return true
             }
 

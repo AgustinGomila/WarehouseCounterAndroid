@@ -24,7 +24,7 @@ import com.dacosys.warehouseCounter.databinding.SelectFilterFragmentBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.itemCategory.ItemCategorySelectActivity
 import com.dacosys.warehouseCounter.ui.activities.location.LocationSelectActivity
-import org.parceler.Parcels
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 
 
 /**
@@ -167,14 +167,14 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
         itemCode = b.getString(ARG_ITEM_CODE) ?: ""
         itemEan = b.getString(ARG_ITEM_EAN) ?: ""
-        itemCategory = b.getParcelable(ARG_ITEM_CATEGORY)
+        itemCategory = b.parcelable(ARG_ITEM_CATEGORY)
 
         orderId = b.getString(ARG_ORDER_ID) ?: ""
         orderExternalId = b.getString(ARG_ORDER_EXTERNAL_ID) ?: ""
 
-        warehouse = b.getParcelable(ARG_WAREHOUSE)
-        warehouseArea = b.getParcelable(ARG_WAREHOUSE_AREA)
-        rack = b.getParcelable(ARG_RACK)
+        warehouse = b.parcelable(ARG_WAREHOUSE)
+        warehouseArea = b.parcelable(ARG_WAREHOUSE_AREA)
+        rack = b.parcelable(ARG_RACK)
         onlyActive = b.getBoolean(ARG_ONLY_ACTIVE)
     }
 
@@ -358,8 +358,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         val data = it?.data
         try {
             if (it?.resultCode == RESULT_OK && data != null) {
-                warehouseArea =
-                    Parcels.unwrap<WarehouseArea>(data.getParcelableExtra(LocationSelectActivity.ARG_WAREHOUSE_AREA))
+                warehouseArea = data.parcelable<WarehouseArea>(LocationSelectActivity.ARG_WAREHOUSE_AREA)
                 setAreaText()
                 onFilterChanged()
             }
@@ -373,7 +372,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         val data = it?.data
         try {
             if (it?.resultCode == RESULT_OK && data != null) {
-                rack = Parcels.unwrap<Rack>(data.getParcelableExtra(LocationSelectActivity.ARG_RACK))
+                rack = data.parcelable<Rack>(LocationSelectActivity.ARG_RACK)
                 setRackText()
                 onFilterChanged()
             }
@@ -387,7 +386,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         val data = it?.data
         try {
             if (it?.resultCode == RESULT_OK && data != null) {
-                itemCategory = data.getParcelableExtra(ItemCategorySelectActivity.ARG_ITEM_CATEGORY)
+                itemCategory = data.parcelable(ItemCategorySelectActivity.ARG_ITEM_CATEGORY)
                 setCategoryText()
                 onFilterChanged()
             }
@@ -401,7 +400,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         val data = it?.data
         try {
             if (it?.resultCode == RESULT_OK && data != null) {
-                warehouse = Parcels.unwrap<Warehouse>(data.getParcelableExtra(LocationSelectActivity.ARG_WAREHOUSE))
+                warehouse = data.parcelable<Warehouse>(LocationSelectActivity.ARG_WAREHOUSE)
                 setWarehouseText()
                 onFilterChanged()
             }
