@@ -680,7 +680,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                 }
 
                 // Variables locales para evitar cambios posteriores de estado.
-                val ls = lastSelected
+                val ls = lastSelected ?: t.firstOrNull()
                 val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
                     adapter?.selectItem(ls, false)

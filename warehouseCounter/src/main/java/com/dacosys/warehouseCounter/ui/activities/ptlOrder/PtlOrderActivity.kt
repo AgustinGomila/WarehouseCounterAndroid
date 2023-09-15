@@ -770,7 +770,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         }, 20)
     }
 
-    private fun fillAdapter(ptlContArray: ArrayList<PtlContent>) {
+    private fun fillAdapter(t: ArrayList<PtlContent>) {
         showProgressBar(true)
 
         runOnUiThread {
@@ -784,7 +784,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
                 adapter = PtlContentAdapter.Builder()
                     .recyclerView(binding.recyclerView)
-                    .fullList(ptlContArray)
+                    .fullList(t)
                     .checkedIdArray(checkedIdArray)
                     .showQtyPanel(true)
                     .dataSetChangedListener(this)
@@ -800,7 +800,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
                 }
 
                 // Variables locales para evitar cambios posteriores de estado.
-                val ls = lastSelected
+                val ls = lastSelected ?: t.firstOrNull()
                 val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
                     adapter?.selectItem(ls, false)
