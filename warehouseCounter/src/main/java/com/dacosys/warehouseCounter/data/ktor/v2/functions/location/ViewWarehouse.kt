@@ -1,8 +1,8 @@
 package com.dacosys.warehouseCounter.data.ktor.v2.functions.location
 
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV2
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiActionParam
 import com.dacosys.warehouseCounter.misc.Statics
@@ -73,7 +73,7 @@ class ViewWarehouse
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiServiceV2.viewWarehouse(
+        apiServiceV2.viewWarehouse(
             id = id,
             action = action,
             callback = {

@@ -2,7 +2,7 @@ package com.dacosys.warehouseCounter.data.ktor.v1.functions
 
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorDacoService
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.dacoService
 import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.misc.Statics.Companion.APP_VERSION_ID
 import com.dacosys.warehouseCounter.misc.Statics.Companion.APP_VERSION_ID_IMAGECONTROL
@@ -32,7 +32,7 @@ class GetClientPackages private constructor(builder: Builder) {
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorDacoService.getClientPackage(body, callback = {
+        dacoService.getClientPackage(body, callback = {
             val packageList = ArrayList(it.packages.values)
 
             for (p in packageList) {

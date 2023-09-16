@@ -815,4 +815,6 @@
     </string>
     <string name="do_you_want_to_print_the_label_for_this_order">¿Desea dar por impresa la etiqueta de este pedido?
     </string>
+    <string name="decimal_places">Decimales</string>
+    <string name="decimal_separator">Separador decimal</string>
 </resources>

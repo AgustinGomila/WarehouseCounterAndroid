@@ -1,6 +1,6 @@
 package com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode
 
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -58,7 +58,7 @@ data class PrintOps(
          */
         fun getPrintOps(): PrintOps {
             val printOps = PrintOps()
-            val sv = settingViewModel
+            val sv = settingsVm
 
             printOps.printerSpeed = sv.printerSpeed
             printOps.printerPower = sv.printerPower

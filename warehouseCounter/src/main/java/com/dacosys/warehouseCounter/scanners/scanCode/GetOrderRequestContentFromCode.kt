@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.scanners.scanCode
 import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
@@ -100,7 +100,7 @@ class GetOrderRequestContentFromCode(
                         }
                     }
 
-                    if (settingViewModel.allowUnknownCodes) {
+                    if (settingsVm.allowUnknownCodes) {
                         // Item desconocido, agregar al base de datos
                         val item = Item(
                             description = context.getString(R.string.unknown_item), ean = code

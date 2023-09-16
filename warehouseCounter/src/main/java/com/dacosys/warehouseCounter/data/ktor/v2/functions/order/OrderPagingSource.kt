@@ -3,8 +3,8 @@ package com.dacosys.warehouseCounter.data.ktor.v2.functions.order
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV2
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiActionParam
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
@@ -18,7 +18,7 @@ class OrderPagingSource private constructor(builder: Builder) : PagingSource<Int
         return try {
             val currentPage = params.key ?: 1
             val response =
-                ktorApiServiceV2.getOrderResponse(
+                apiServiceV2.getOrderResponse(
                     page = currentPage,
                     filter = ArrayList(filter),
                     action = ArrayList(action)

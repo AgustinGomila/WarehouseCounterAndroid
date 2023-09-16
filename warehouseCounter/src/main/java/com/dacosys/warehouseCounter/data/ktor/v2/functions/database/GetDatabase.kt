@@ -1,8 +1,8 @@
 package com.dacosys.warehouseCounter.data.ktor.v2.functions.database
 
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV2
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.database.DatabaseData
 import com.dacosys.warehouseCounter.data.room.database.WcDatabase
 import com.dacosys.warehouseCounter.misc.Statics
@@ -56,7 +56,7 @@ class GetDatabase
             version = "-v${WcDatabase.DATABASE_VERSION}"
         }
 
-        ktorApiServiceV2.getDatabase(
+        apiServiceV2.getDatabase(
             version = version,
             callback = {
                 if (it.onEvent != null) sendEvent(it.onEvent)

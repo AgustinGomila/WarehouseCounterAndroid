@@ -1,9 +1,9 @@
 package com.dacosys.warehouseCounter.data.ktor.v1.functions
 
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV1
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV1
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.user.AuthData
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.user.UserAuthData.Companion.USER_AUTH_KEY
 import com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl.Companion.validUrl
@@ -62,7 +62,7 @@ class SendItemCode(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiServiceV1.sendItemCode(body = getBody(), callback = {
+        apiServiceV1.sendItemCode(body = getBody(), callback = {
             updateTransferred()
         })
     }

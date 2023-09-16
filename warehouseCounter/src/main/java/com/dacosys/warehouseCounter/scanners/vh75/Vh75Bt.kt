@@ -11,7 +11,7 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import java.io.IOException
 import java.io.InputStream
@@ -58,7 +58,7 @@ class Vh75Bt(private var listener: RfidDeviceListener?) : Rfid() {
     }
 
     private fun pairDevice() {
-        val sv = settingViewModel
+        val sv = settingsVm
         val btAddress = sv.rfidBtAddress
         if (btAddress.isEmpty()) {
             return
@@ -888,7 +888,7 @@ class Vh75Bt(private var listener: RfidDeviceListener?) : Rfid() {
     }
 
     fun setConfigParameters(ret2: ByteArray) {
-        val sv = settingViewModel
+        val sv = settingsVm
         val param = parseReadParamResult(ret2)
         Log.v(
             TAG,

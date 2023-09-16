@@ -19,7 +19,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.databinding.FloatingCameraActivityBinding
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -330,22 +330,22 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
 
     private fun getDefaultHeight(): Int {
         return if (getOrientation == Configuration.ORIENTATION_PORTRAIT) {
-            settingViewModel.flCameraPortraitHeight
+            settingsVm.flCameraPortraitHeight
         } else {
-            settingViewModel.flCameraLandscapeHeight
+            settingsVm.flCameraLandscapeHeight
         }
     }
 
     private fun getDefaultWidth(): Int {
         return if (getOrientation == Configuration.ORIENTATION_PORTRAIT) {
-            settingViewModel.flCameraPortraitWidth
+            settingsVm.flCameraPortraitWidth
         } else {
-            settingViewModel.flCameraLandscapeHeight
+            settingsVm.flCameraLandscapeHeight
         }
     }
 
     private fun loadValues() {
-        val sv = settingViewModel
+        val sv = settingsVm
         allBarHeight = Screen.getSystemBarsHeight(activity)
         screenHeight = Screen.getScreenHeight(activity)
         screenWidth = Screen.getScreenWidth(activity)
@@ -369,16 +369,16 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
         if (!floatWindowCreated) return
 
         // Guardar datos de la ventana flotante
-        settingViewModel.flCameraPortraitLocX = flCameraPortraitLoc[0]
-        settingViewModel.flCameraPortraitLocY = flCameraPortraitLoc[1]
-        settingViewModel.flCameraPortraitWidth = flCameraPortraitWidth
-        settingViewModel.flCameraPortraitHeight = flCameraPortraitHeight
-        settingViewModel.flCameraLandscapeLocX = flCameraLandscapeLoc[0]
-        settingViewModel.flCameraLandscapeLocY = flCameraLandscapeLoc[1]
-        settingViewModel.flCameraLandscapeWidth = flCameraLandscapeWidth
-        settingViewModel.flCameraLandscapeHeight = flCameraLandscapeHeight
-        settingViewModel.flCameraContinuousMode = continuousOn
-        settingViewModel.flCameraFilterRepeatedReads = filterRepeatedReads
+        settingsVm.flCameraPortraitLocX = flCameraPortraitLoc[0]
+        settingsVm.flCameraPortraitLocY = flCameraPortraitLoc[1]
+        settingsVm.flCameraPortraitWidth = flCameraPortraitWidth
+        settingsVm.flCameraPortraitHeight = flCameraPortraitHeight
+        settingsVm.flCameraLandscapeLocX = flCameraLandscapeLoc[0]
+        settingsVm.flCameraLandscapeLocY = flCameraLandscapeLoc[1]
+        settingsVm.flCameraLandscapeWidth = flCameraLandscapeWidth
+        settingsVm.flCameraLandscapeHeight = flCameraLandscapeHeight
+        settingsVm.flCameraContinuousMode = continuousOn
+        settingsVm.flCameraFilterRepeatedReads = filterRepeatedReads
     }
 
     private fun checkCameraFloatingPermission() {
@@ -460,7 +460,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
         val lastCodeScannedTv: TextView = binding.lastCodeScanned
 
         // Barcode camera scanner view
-        val sv = settingViewModel
+        val sv = settingsVm
         val formats: ArrayList<BarcodeFormat> = ArrayList()
         if (sv.symbologyPDF417) formats.add(BarcodeFormat.PDF_417)
         if (sv.symbologyAztec) formats.add(BarcodeFormat.AZTEC)

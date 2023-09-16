@@ -14,8 +14,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages
 import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.data.settings.Preference
@@ -261,7 +262,7 @@ class ClientPackage {
                     }
                 }
 
-                val sv = WarehouseCounterApp.settingViewModel
+                val sv = settingsVm
                 if (productId == Statics.APP_VERSION_ID) {
                     sv.urlPanel = appUrl
                     sv.installationCode = installationCode
@@ -309,7 +310,7 @@ class ClientPackage {
             }
 
             val confJson = mainJson.getJSONObject(mainTag)
-            val sp = WarehouseCounterApp.settingRepository
+            val sp = settingsRepository
 
             when (mode) {
                 QRConfigType.QRConfigClientAccount -> {

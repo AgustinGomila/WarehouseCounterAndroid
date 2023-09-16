@@ -1,7 +1,7 @@
 package com.dacosys.warehouseCounter.scanners.rfid
 
 import android.util.Log
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.scanners.vh75.Utility
 import com.dacosys.warehouseCounter.scanners.vh75.Vh75Bt
 
@@ -111,7 +111,7 @@ open class Rfid {
         }
 
         private fun initRequired(): Boolean {
-            val sv = settingViewModel
+            val sv = settingsVm
             return if (sv.useBtRfid) {
                 if (rfidDevice == null) {
                     true

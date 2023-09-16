@@ -29,7 +29,7 @@ import androidx.recyclerview.widget.RecyclerView.VISIBLE
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.ContentStatus
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
@@ -369,7 +369,7 @@ class OrcAdapter private constructor(builder: Builder) :
                 initialQty = content.qtyCollected ?: 0.toDouble(),
                 minValue = 0.toDouble(),
                 maxValue = 999999.toDouble(),
-                multiplier = settingViewModel.scanMultiplier
+                multiplier = settingsVm.scanMultiplier
             )
             true
         }
@@ -546,7 +546,6 @@ class OrcAdapter private constructor(builder: Builder) :
     }
 
     private fun sortItems(originalList: MutableList<OrderRequestContent>): ArrayList<OrderRequestContent> {
-        // Run the follow method on each of the roots
         return ArrayList(
             originalList.sortedWith(
                 compareBy(
@@ -900,9 +899,9 @@ class OrcAdapter private constructor(builder: Builder) :
             binding.eanTextView.text = content.ean
 
             binding.qtyCollectedTextView.text =
-                Statics.roundToString(content.qtyCollected ?: 0.toDouble(), Statics.decimalPlaces)
+                Statics.roundToString(content.qtyCollected ?: 0.toDouble(), settingsVm.decimalPlaces)
             binding.qtyRequestedTextView.text =
-                Statics.roundToString(content.qtyRequested ?: 0.toDouble(), Statics.decimalPlaces)
+                Statics.roundToString(content.qtyRequested ?: 0.toDouble(), settingsVm.decimalPlaces)
 
             binding.itemIdCheckedTextView.text =
                 when {
@@ -999,9 +998,9 @@ class OrcAdapter private constructor(builder: Builder) :
             binding.eanTextView.text = content.ean
 
             binding.qtyCollectedTextView.text =
-                Statics.roundToString(content.qtyCollected ?: 0.toDouble(), Statics.decimalPlaces)
+                Statics.roundToString(content.qtyCollected ?: 0.toDouble(), settingsVm.decimalPlaces)
             binding.qtyRequestedTextView.text =
-                Statics.roundToString(content.qtyRequested ?: 0.toDouble(), Statics.decimalPlaces)
+                Statics.roundToString(content.qtyRequested ?: 0.toDouble(), settingsVm.decimalPlaces)
 
             setStyle(content)
         }

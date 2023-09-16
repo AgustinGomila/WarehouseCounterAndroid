@@ -17,7 +17,7 @@ import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import java.util.*
@@ -185,7 +185,7 @@ class RackAdapter(
         fillSimpleView(position, v!!, alreadyExists)
 
         val h = if (v.height > 0) v.height else v.minimumHeight
-        settingViewModel.locationViewHeight = h
+        settingsVm.locationViewHeight = h
         if (BuildConfig.DEBUG) Log.d(this::class.java.simpleName, "-------{RES: $resource Height:${h}}-------")
 
         return v

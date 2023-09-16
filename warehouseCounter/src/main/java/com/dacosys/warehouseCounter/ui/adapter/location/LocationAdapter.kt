@@ -38,7 +38,7 @@ import com.dacosys.imageControl.ui.adapter.ImageAdapter.Companion.GetImageStatus
 import com.dacosys.imageControl.ui.adapter.ImageAdapter.Companion.ImageControlHolder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Location
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.LocationType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Status
@@ -125,7 +125,7 @@ class LocationAdapter private constructor(builder: Builder) :
     }
 
     // Permiso de edición de ítems
-    private val userHasPermissionToEdit: Boolean by lazy { settingViewModel.editItems }
+    private val userHasPermissionToEdit: Boolean by lazy { settingsVm.editItems }
 
     fun clear() {
         checkedHashArray.clear()
@@ -244,9 +244,9 @@ class LocationAdapter private constructor(builder: Builder) :
 
                 PAYLOADS.IMAGE_CONTROL_VISIBILITY -> {
                     if (position == currentIndex) {
-                        (holder as SelectedViewHolder).bindImageControlVisibility(if (settingViewModel.useImageControl) VISIBLE else GONE)
+                        (holder as SelectedViewHolder).bindImageControlVisibility(if (settingsVm.useImageControl) VISIBLE else GONE)
                     }
-                    if (!settingViewModel.useImageControl) showImages(false)
+                    if (!settingsVm.useImageControl) showImages(false)
                 }
 
                 PAYLOADS.ITEM_SELECTED -> {
@@ -567,7 +567,6 @@ class LocationAdapter private constructor(builder: Builder) :
     }
 
     private fun sortItems(originalList: MutableList<Location>): ArrayList<Location> {
-        // Run the follow method on each of the roots
         return ArrayList(
             originalList.sortedWith(
                 compareBy({ it.locationType },
@@ -807,7 +806,7 @@ class LocationAdapter private constructor(builder: Builder) :
          * @param changingState Only if we are changing the visibility state, we expand the panel
          */
         fun bindImageVisibility(imageVisibility: Int, changingState: Boolean) {
-            if (!settingViewModel.useImageControl || imageVisibility == GONE) collapseImagePanel(icHolder)
+            if (!settingsVm.useImageControl || imageVisibility == GONE) collapseImagePanel(icHolder)
             else if (changingState) expandImagePanel(icHolder)
         }
 
@@ -822,7 +821,7 @@ class LocationAdapter private constructor(builder: Builder) :
 
         fun bind(item: Location, checkBoxVisibility: Int = GONE, imageVisibility: Int = GONE) {
             bindCheckBoxVisibility(checkBoxVisibility)
-            bindImageControlVisibility(visibility = if (settingViewModel.useImageControl) VISIBLE else GONE)
+            bindImageControlVisibility(visibility = if (settingsVm.useImageControl) VISIBLE else GONE)
             bindImageVisibility(imageVisibility = imageVisibility, changingState = false)
 
             binding.locationTextView.text = item.locationDescription
@@ -954,7 +953,7 @@ class LocationAdapter private constructor(builder: Builder) :
          * @param changingState Only if we are changing the visibility state, we expand the panel
          */
         fun bindImageVisibility(imageVisibility: Int, changingState: Boolean) {
-            if (!settingViewModel.useImageControl || imageVisibility == GONE) collapseImagePanel(icHolder)
+            if (!settingsVm.useImageControl || imageVisibility == GONE) collapseImagePanel(icHolder)
             else if (changingState) expandImagePanel(icHolder)
         }
 
@@ -1262,7 +1261,7 @@ class LocationAdapter private constructor(builder: Builder) :
         refreshFilter(filterOptions)
 
         // Cambiamos la visibilidad del panel de imágenes.
-        if (!settingViewModel.useImageControl) showImages = false
+        if (!settingsVm.useImageControl) showImages = false
         showImages(showImages)
     }
 

@@ -21,7 +21,7 @@ import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import java.util.*
@@ -189,7 +189,7 @@ class BarcodeLabelTemplateAdapter(
         fillSimpleView(position, v!!, alreadyExists)
 
         val h = if (v.height > 0) v.height else v.minimumHeight
-        settingViewModel.templateViewHeight = h
+        settingsVm.templateViewHeight = h
         if (BuildConfig.DEBUG) Log.d(this::class.java.simpleName, "-------{RES: $resource Height:${h}}-------")
 
         return v

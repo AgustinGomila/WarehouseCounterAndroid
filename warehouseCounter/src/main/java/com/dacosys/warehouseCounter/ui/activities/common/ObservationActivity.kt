@@ -7,7 +7,7 @@ import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.databinding.ObservationsActivityBinding
@@ -69,10 +69,7 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         fillControls()
 
-        // Conectar el lector NFC
-        if (WarehouseCounterApp.settingViewModel.useNfc) {
-            Nfc.setupNFCReader(this)
-        }
+        if (settingsVm.useNfc) Nfc.setupNFCReader(this)
 
         Screen.setupUI(binding.root, this)
     }

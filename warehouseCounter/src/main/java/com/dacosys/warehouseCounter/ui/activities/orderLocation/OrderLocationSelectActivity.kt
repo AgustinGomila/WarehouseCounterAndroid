@@ -36,8 +36,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
@@ -120,9 +120,9 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     private var showCheckBoxes
         get() =
             if (!multiSelect) false
-            else settingViewModel.itemSelectShowCheckBoxes
+            else settingsVm.itemSelectShowCheckBoxes
         set(value) {
-            settingViewModel.itemSelectShowCheckBoxes = value
+            settingsVm.itemSelectShowCheckBoxes = value
         }
 
     private val countChecked: Int
@@ -310,8 +310,8 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     private fun setupFilterFragment() {
-        val sv = settingViewModel
-        val sr = settingRepository
+        val sv = settingsVm
+        val sr = settingsRepository
         filterFragment =
             SelectFilterFragment.Builder()
                 .searchByItemCode(sv.orderLocationSearchByItemCode, sr.orderLocationSearchByItemCode)
@@ -680,7 +680,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
@@ -718,7 +718,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -820,44 +820,44 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         }
 
         item.isChecked = !item.isChecked
-        val sv = settingViewModel
+        val sv = settingsVm
         when (id) {
-            settingRepository.orderLocationSearchByItemDescription.key.hashCode() -> {
+            settingsRepository.orderLocationSearchByItemDescription.key.hashCode() -> {
                 filterFragment.setDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.orderLocationSearchByItemDescription = item.isChecked
             }
 
-            settingRepository.orderLocationSearchByItemEan.key.hashCode() -> {
+            settingsRepository.orderLocationSearchByItemEan.key.hashCode() -> {
                 filterFragment.setEanVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.orderLocationSearchByItemEan = item.isChecked
             }
 
-            settingRepository.orderLocationSearchByItemCode.key.hashCode() -> {
+            settingsRepository.orderLocationSearchByItemCode.key.hashCode() -> {
                 filterFragment.setCodeVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.orderLocationSearchByItemCode = item.isChecked
             }
 
-            settingRepository.orderLocationSearchByOrderId.key.hashCode() -> {
+            settingsRepository.orderLocationSearchByOrderId.key.hashCode() -> {
                 filterFragment.setOrderIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.orderLocationSearchByOrderId = item.isChecked
             }
 
-            settingRepository.orderLocationSearchByOrderExtId.key.hashCode() -> {
+            settingsRepository.orderLocationSearchByOrderExtId.key.hashCode() -> {
                 filterFragment.setOrderExtIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.orderLocationSearchByOrderExtId = item.isChecked
             }
 
-            settingRepository.orderLocationSearchByWarehouse.key.hashCode() -> {
+            settingsRepository.orderLocationSearchByWarehouse.key.hashCode() -> {
                 filterFragment.setWarehouseVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.orderLocationSearchByWarehouse = item.isChecked
             }
 
-            settingRepository.orderLocationSearchByArea.key.hashCode() -> {
+            settingsRepository.orderLocationSearchByArea.key.hashCode() -> {
                 filterFragment.setAreaVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.orderLocationSearchByArea = item.isChecked
             }
 
-            settingRepository.orderLocationSearchByRack.key.hashCode() -> {
+            settingsRepository.orderLocationSearchByRack.key.hashCode() -> {
                 filterFragment.setRackVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.orderLocationSearchByRack = item.isChecked
             }

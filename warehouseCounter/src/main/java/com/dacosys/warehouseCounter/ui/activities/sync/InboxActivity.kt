@@ -25,7 +25,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.databinding.InboxActivityBinding
@@ -59,9 +59,9 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
     private var showCheckBoxes
         get() =
             if (!multiSelect) false
-            else settingViewModel.inboxShowCheckBoxes
+            else settingsVm.inboxShowCheckBoxes
         set(value) {
-            settingViewModel.inboxShowCheckBoxes = value
+            settingsVm.inboxShowCheckBoxes = value
         }
 
     private val countChecked: Int
@@ -397,7 +397,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
     private fun getPrefVisibleStatus(): ArrayList<OrderRequestType> {
         val visibleStatusArray: ArrayList<OrderRequestType> = ArrayList()
         //Retrieve the values
-        val set = settingViewModel.orderRequestVisibleStatus
+        val set = settingsVm.orderRequestVisibleStatus
         for (i in set) {
             if (i.trim().isEmpty()) continue
             visibleStatusArray.add(OrderRequestType.getById(i.toLong()))
@@ -490,7 +490,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         visibleStatus = adapter?.visibleStatus ?: ArrayList()
         val set = HashSet<String>()
         visibleStatus.mapTo(set) { it.id.toString() }
-        settingViewModel.orderRequestVisibleStatus = set
+        settingsVm.orderRequestVisibleStatus = set
 
         return true
     }

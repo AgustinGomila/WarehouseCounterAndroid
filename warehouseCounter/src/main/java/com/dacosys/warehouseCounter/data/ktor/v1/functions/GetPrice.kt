@@ -1,8 +1,8 @@
 package com.dacosys.warehouseCounter.data.ktor.v1.functions
 
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV1
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV1
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.price.Price
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.search.SearchObject
 import com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl.Companion.validUrl
@@ -49,7 +49,7 @@ class GetPrice(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiServiceV1.getPrices(body = searchObject, callback = {
+        apiServiceV1.getPrices(body = searchObject, callback = {
             r = it
             if (it.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
             else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)

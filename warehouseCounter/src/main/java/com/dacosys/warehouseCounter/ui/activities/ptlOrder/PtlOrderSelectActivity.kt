@@ -30,7 +30,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlOrder
 import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetPtlOrder
 import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetPtlOrderByCode
@@ -93,9 +93,9 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     private var showCheckBoxes
         get() =
             if (!multiSelect) false
-            else settingViewModel.selectPtlOrderShowCheckBoxes
+            else settingsVm.selectPtlOrderShowCheckBoxes
         set(value) {
-            settingViewModel.selectPtlOrderShowCheckBoxes = value
+            settingsVm.selectPtlOrderShowCheckBoxes = value
         }
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
@@ -420,7 +420,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
@@ -462,7 +462,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             menu.setOptionalIconsVisible(true)
         }
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 

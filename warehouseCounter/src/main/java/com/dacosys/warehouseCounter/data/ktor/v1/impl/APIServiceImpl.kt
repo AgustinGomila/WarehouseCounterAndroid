@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.data.ktor.v1.impl
 import android.util.Log
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.httpClient
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.price.Price
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.ApiResponse
@@ -52,7 +52,7 @@ class APIServiceImpl : APIService {
         /api/p-t-l/warehouses
          */
 
-        private val apiUrl by lazy { settingViewModel.urlPanel }
+        private val apiUrl by lazy { settingsVm.urlPanel }
 
         fun validUrl(): Boolean {
             return try {

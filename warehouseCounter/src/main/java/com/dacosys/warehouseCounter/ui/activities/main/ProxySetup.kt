@@ -9,8 +9,8 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -40,7 +40,7 @@ class ProxySetup {
             if (activity.isFinishing) return
             if (avoidSetupProxyDialog) return
 
-            val sv = WarehouseCounterApp.settingViewModel
+            val sv = settingsVm
             avoidSetupProxyDialog = true
 
             val alert: AlertDialog.Builder = AlertDialog.Builder(activity)

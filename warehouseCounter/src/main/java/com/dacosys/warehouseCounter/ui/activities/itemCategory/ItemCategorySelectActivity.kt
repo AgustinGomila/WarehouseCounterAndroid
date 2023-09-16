@@ -16,7 +16,7 @@ import android.widget.AdapterView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.room.dao.itemCategory.ItemCategoryCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
@@ -298,7 +298,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         // TOP LAYOUT
         topLayout()
 
-        val viewHeight = settingViewModel.categoryViewHeight
+        val viewHeight = settingsVm.categoryViewHeight
         val maxNeeded = (binding.autoCompleteTextView.adapter?.count ?: 0) * viewHeight
         val availableHeight =
             calculateDropDownHeight() - (binding.autoCompleteTextView.y + binding.autoCompleteTextView.height).toInt()

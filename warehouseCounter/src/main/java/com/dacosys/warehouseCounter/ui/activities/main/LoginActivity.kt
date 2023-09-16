@@ -33,7 +33,7 @@ import com.dacosys.imageControl.room.database.IcDatabase
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages.Companion.getConfig
 import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.database.DatabaseData
@@ -429,7 +429,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     private fun setHeaderUserName() {
-        binding.clientTextView.text = settingViewModel.installationCode
+        binding.clientTextView.text = settingsVm.installationCode
     }
 
     private fun setHeaderVersion() {
@@ -485,7 +485,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
         setButton(ButtonStyle.BUSY)
 
-        if (settingViewModel.urlPanel.isEmpty()) {
+        if (settingsVm.urlPanel.isEmpty()) {
             showSnackBar(text = getString(R.string.server_is_not_configured), ERROR)
 
             setButton(ButtonStyle.REFRESH)
@@ -516,7 +516,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     private fun configApp() {
-        val realPass = settingViewModel.confPassword
+        val realPass = settingsVm.confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
@@ -565,7 +565,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = settingViewModel.confPassword
+        val realPass = settingsVm.confPassword
         if (password == realPass) {
             if (!rejectNewInstances) {
                 rejectNewInstances = true
@@ -664,7 +664,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode && BuildConfig.DEBUG) showSnackBar(
+        if (settingsVm.showScannedCode && BuildConfig.DEBUG) showSnackBar(
             scanCode, SnackBarType.INFO
         )
 
@@ -751,11 +751,11 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_login, menu)
 
-        if (!settingViewModel.showConfButton) {
+        if (!settingsVm.showConfButton) {
             menu.removeItem(menu.findItem(R.id.action_settings).itemId)
         }
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 

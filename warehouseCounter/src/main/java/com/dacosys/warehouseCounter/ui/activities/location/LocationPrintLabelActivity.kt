@@ -47,8 +47,8 @@ import com.dacosys.imageControl.ui.activities.ImageControlGridActivity
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
@@ -143,17 +143,17 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
     private val menuItemShowImages = 9999
     private var showImages
-        get() = settingViewModel.itemSelectShowImages
+        get() = settingsVm.itemSelectShowImages
         set(value) {
-            settingViewModel.itemSelectShowImages = value
+            settingsVm.itemSelectShowImages = value
         }
 
     private var showCheckBoxes
         get() =
             if (!multiSelect) false
-            else settingViewModel.itemSelectShowCheckBoxes
+            else settingsVm.itemSelectShowCheckBoxes
         set(value) {
-            settingViewModel.itemSelectShowCheckBoxes = value
+            settingsVm.itemSelectShowCheckBoxes = value
         }
 
     private val countChecked: Int
@@ -332,8 +332,8 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         binding.printFragment.visibility = View.VISIBLE
 
         if (currentTemplateId == 0L) {
-            currentTemplateId = settingViewModel.defaultWaTemplateId
-            if (currentTemplateId == 0L) currentTemplateId = settingViewModel.defaultRackTemplateId
+            currentTemplateId = settingsVm.defaultWaTemplateId
+            if (currentTemplateId == 0L) currentTemplateId = settingsVm.defaultRackTemplateId
         }
 
         printLabelFragment =
@@ -356,8 +356,8 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     }
 
     private fun setupFilterFragment() {
-        val sv = settingViewModel
-        val sr = settingRepository
+        val sv = settingsVm
+        val sr = settingsRepository
         filterFragment =
             SelectFilterFragment.Builder()
                 .searchByRack(sv.locationSearchByRack, sr.locationSearchByRack)
@@ -819,7 +819,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             return
         }
 
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
         JotterListener.lockScanner(this, true)
 
         // Buscar por ubicación
@@ -860,12 +860,12 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
         // Opción de visibilidad de Imágenes
-        if (settingViewModel.useImageControl) {
+        if (settingsVm.useImageControl) {
             menu.add(Menu.NONE, menuItemShowImages, Menu.NONE, context.getString(R.string.show_images))
                 .setChecked(showImages).isCheckable = true
             val item = menu.findItem(menuItemShowImages)
@@ -977,7 +977,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         }
 
         item.isChecked = !item.isChecked
-        val sv = settingViewModel
+        val sv = settingsVm
         when (id) {
             menuItemShowImages -> {
                 adapter?.showImages(item.isChecked)
@@ -991,17 +991,17 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                     )
             }
 
-            settingRepository.locationSearchByWarehouse.key.hashCode() -> {
+            settingsRepository.locationSearchByWarehouse.key.hashCode() -> {
                 filterFragment.setWarehouseVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.locationSearchByWarehouse = item.isChecked
             }
 
-            settingRepository.locationSearchByArea.key.hashCode() -> {
+            settingsRepository.locationSearchByArea.key.hashCode() -> {
                 filterFragment.setAreaVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.locationSearchByArea = item.isChecked
             }
 
-            settingRepository.locationSearchByRack.key.hashCode() -> {
+            settingsRepository.locationSearchByRack.key.hashCode() -> {
                 filterFragment.setRackVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.locationSearchByRack = item.isChecked
             }
@@ -1073,9 +1073,9 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         currentTemplateId = template?.templateId ?: return
 
         if (template.barcodeLabelType == BarcodeLabelType.rack)
-            settingViewModel.defaultRackTemplateId = currentTemplateId
+            settingsVm.defaultRackTemplateId = currentTemplateId
         else if (template.barcodeLabelType == BarcodeLabelType.warehouseArea)
-            settingViewModel.defaultWaTemplateId = currentTemplateId
+            settingsVm.defaultWaTemplateId = currentTemplateId
     }
 
     override fun onPrintRequested(printer: String, qty: Int) {
@@ -1181,7 +1181,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
     //region ImageControl
     override fun onAddPhotoRequired(tableId: Int, itemId: Long, description: String) {
-        if (!settingViewModel.useImageControl) {
+        if (!settingsVm.useImageControl) {
             return
         }
 
@@ -1193,7 +1193,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             intent.putExtra(ImageControlCameraActivity.ARG_PROGRAM_OBJECT_ID, tableId.toLong())
             intent.putExtra(ImageControlCameraActivity.ARG_OBJECT_ID_1, itemId.toString())
             intent.putExtra(ImageControlCameraActivity.ARG_DESCRIPTION, description)
-            intent.putExtra(ImageControlCameraActivity.ARG_ADD_PHOTO, settingViewModel.autoSend)
+            intent.putExtra(ImageControlCameraActivity.ARG_ADD_PHOTO, settingsVm.autoSend)
             resultForPhotoCapture.launch(intent)
         }
     }
@@ -1214,7 +1214,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         }
 
     override fun onAlbumViewRequired(tableId: Int, itemId: Long) {
-        if (!settingViewModel.useImageControl) {
+        if (!settingsVm.useImageControl) {
             return
         }
 

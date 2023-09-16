@@ -15,7 +15,7 @@ import android.widget.AdapterView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
@@ -724,7 +724,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         // TOP LAYOUT
         topLayout()
 
-        val viewHeight = settingViewModel.locationViewHeight
+        val viewHeight = settingsVm.locationViewHeight
         val maxNeeded = (binding.rackCode.adapter?.count ?: 0) * viewHeight
         val availableHeight = calculateDropDownHeight() - (binding.rackCode.y + binding.rackCode.height).toInt()
         var newHeight = availableHeight / viewHeight * viewHeight
@@ -739,7 +739,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         // TOP LAYOUT
         topLayout()
 
-        val viewHeight = settingViewModel.locationViewHeight
+        val viewHeight = settingsVm.locationViewHeight
         val maxNeeded = (binding.warehouseArea.adapter?.count ?: 0) * viewHeight
         val availableHeight =
             calculateDropDownHeight() - (binding.warehouseArea.y + binding.warehouseArea.height).toInt()
@@ -755,7 +755,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         // TOP LAYOUT
         topLayout()
 
-        val viewHeight = settingViewModel.locationViewHeight
+        val viewHeight = settingsVm.locationViewHeight
         val maxNeeded = (binding.warehouse.adapter?.count ?: 0) * viewHeight
         val availableHeight = calculateDropDownHeight() - (binding.warehouse.y + binding.warehouse.height).toInt()
         var newHeight = availableHeight / viewHeight * viewHeight

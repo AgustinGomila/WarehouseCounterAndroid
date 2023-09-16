@@ -10,15 +10,15 @@ import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.applicationName
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.user.UserCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.data.room.entity.user.User
-import com.journeyapps.barcodescanner.ScanOptions
 import org.json.JSONObject
 import java.io.File
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.net.NetworkInterface
 import java.util.*
 
@@ -28,18 +28,6 @@ class Statics {
 
         // Este flag es para reinicializar el colector después de cambiar en Settings.
         var collectorTypeChanged = false
-
-        fun getScanOptions(): ScanOptions {
-            val options = ScanOptions()
-            options.setDesiredBarcodeFormats(ScanOptions.ALL_CODE_TYPES)
-            options.setPrompt(context.getString(R.string.place_the_code_in_the_rectangle_of_the_viewer_to_capture_it))
-            options.setBeepEnabled(true)
-            options.setBarcodeImageEnabled(true)
-            options.setOrientationLocked(false)
-            //options.setTimeout(8000)
-
-            return options
-        }
 
         var downloadDbRequired = false
 
@@ -69,14 +57,14 @@ class Statics {
         private const val COMPLETED_COUNT_PATH = "/completed_counts"
 
         val completePendingPath: String =
-            "${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingViewModel.installationCode}$PENDING_COUNT_PATH/"
+            "${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingsVm.installationCode}$PENDING_COUNT_PATH/"
 
         fun getPendingPath(): File {
             return File(completePendingPath)
         }
 
         val completeCompletedPath: String =
-            "${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingViewModel.installationCode}$COMPLETED_COUNT_PATH/"
+            "${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingsVm.installationCode}$COMPLETED_COUNT_PATH/"
 
         fun getCompletedPath(): File {
             return File(completeCompletedPath)
@@ -108,11 +96,6 @@ class Statics {
             return false
         }
 
-        // region Variables con valores predefinidos para el selector de cantidades
-        var decimalSeparator: Char = '.'
-        var decimalPlaces: Int = 0
-        // endregion
-
         // region Colección temporal de ItemCode
         // Reinsertar cuando se haya descargado la base de datos
         private var tempItemCodes: ArrayList<ItemCode> = ArrayList()
@@ -134,12 +117,6 @@ class Statics {
             tempItemCodes.clear()
         }
         // endregion
-
-        fun generateTaskCode(): Int {
-            val min = 10000
-            val max = 99999
-            return Random().nextInt(max - min + 1) + min
-        }
 
         /* Checks if external storage is available to at least read */
         val isExternalStorageReadable: Boolean
@@ -198,13 +175,13 @@ class Statics {
 
         fun round(d: Double, decimalPlaces: Int): Double {
             var bd = BigDecimal(d.toString())
-            bd = bd.setScale(decimalPlaces, BigDecimal.ROUND_HALF_UP)
+            bd = bd.setScale(decimalPlaces, RoundingMode.HALF_UP)
             return bd.toDouble()
         }
 
         fun round(d: Float, decimalPlaces: Int): Float {
             var bd = BigDecimal(d.toString())
-            bd = bd.setScale(decimalPlaces, BigDecimal.ROUND_HALF_UP)
+            bd = bd.setScale(decimalPlaces, RoundingMode.HALF_UP)
             return bd.toFloat()
         }
 
@@ -285,23 +262,5 @@ class Statics {
             // for now eat exceptions
             return ""
         }
-
-        //private fun getMACAddress(interfaceName: String = "wlan0"): String {
-        //    try {
-        //        val interfaces = Collections.list(NetworkInterface.getNetworkInterfaces())
-        //        for (intF in interfaces) {
-        //            if (!intF.name.equals(interfaceName, true)) continue
-        //            val mac = intF.hardwareAddress ?: return ""
-        //            val buf = StringBuilder()
-        //            for (aMac in mac) buf.append(String.format("%02X:", aMac))
-        //            if (buf.isNotEmpty()) buf.deleteCharAt(buf.length - 1)
-        //            return buf.toString().replace(":", "")
-        //        }
-        //    } catch (ignored: Exception) {
-        //    }
-        //
-        //    // for now eat exceptions
-        //    return ""
-        //}
     }
 }

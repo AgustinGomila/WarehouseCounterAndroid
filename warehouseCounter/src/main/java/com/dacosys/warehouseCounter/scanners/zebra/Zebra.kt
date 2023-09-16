@@ -8,7 +8,7 @@ import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTION_DATAWEDGE
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTION_RESULT
@@ -64,7 +64,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
 
     private fun initializeScanner() {
         // Use SET_CONFIG: http://techdocs.zebra.com/datawedge/latest/guide/api/setconfig/
-        val sv = settingViewModel
+        val sv = settingsVm
 
         // Main bundle properties
         val profileConfig = Bundle()

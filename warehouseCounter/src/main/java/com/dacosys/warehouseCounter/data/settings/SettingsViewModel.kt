@@ -3,847 +3,859 @@
 package com.dacosys.warehouseCounter.data.settings
 
 import androidx.lifecycle.ViewModel
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
 
 @Suppress("unused")
 class SettingsViewModel : ViewModel() {
     var useBtPrinter: Boolean
-        get() = settingRepository.useBtPrinter.value as Boolean
+        get() = settingsRepository.useBtPrinter.value as Boolean
         set(value) {
-            settingRepository.useBtPrinter.value = value
+            settingsRepository.useBtPrinter.value = value
         }
 
     var confPassword: String
-        get() = settingRepository.confPassword.value as String
+        get() = settingsRepository.confPassword.value as String
         set(value) {
-            settingRepository.confPassword.value = value
+            settingsRepository.confPassword.value = value
         }
 
     var printerBtAddress: String
-        get() = settingRepository.printerBtAddress.value as String
+        get() = settingsRepository.printerBtAddress.value as String
         set(value) {
-            settingRepository.printerBtAddress.value = value
+            settingsRepository.printerBtAddress.value = value
         }
 
     var useNetPrinter: Boolean
-        get() = settingRepository.useNetPrinter.value as Boolean
+        get() = settingsRepository.useNetPrinter.value as Boolean
         set(value) {
-            settingRepository.useNetPrinter.value = value
+            settingsRepository.useNetPrinter.value = value
         }
 
     var ipNetPrinter: String
-        get() = settingRepository.ipNetPrinter.value as String
+        get() = settingsRepository.ipNetPrinter.value as String
         set(value) {
-            settingRepository.ipNetPrinter.value = value
+            settingsRepository.ipNetPrinter.value = value
         }
 
     // Printer Port
     var portNetPrinter: Int
-        get() = settingRepository.portNetPrinter.value as Int
+        get() = settingsRepository.portNetPrinter.value as Int
         set(value) {
-            settingRepository.portNetPrinter.value = value
+            settingsRepository.portNetPrinter.value = value
         }
 
     // Line Separator
     var lineSeparator: String
-        get() = settingRepository.lineSeparator.value as String
+        get() = settingsRepository.lineSeparator.value as String
         set(value) {
-            settingRepository.lineSeparator.value = value
+            settingsRepository.lineSeparator.value = value
         }
 
     // Printer Power
     var printerPower: Int
-        get() = settingRepository.printerPower.value as Int
+        get() = settingsRepository.printerPower.value as Int
         set(value) {
-            settingRepository.printerPower.value = value
+            settingsRepository.printerPower.value = value
         }
 
     // Printer Speed
     var printerSpeed: Int
-        get() = settingRepository.printerSpeed.value as Int
+        get() = settingsRepository.printerSpeed.value as Int
         set(value) {
-            settingRepository.printerSpeed.value = value
+            settingsRepository.printerSpeed.value = value
         }
 
     // Printer Column Offset
     var colOffset: Int
-        get() = settingRepository.colOffset.value as Int
+        get() = settingsRepository.colOffset.value as Int
         set(value) {
-            settingRepository.colOffset.value = value
+            settingsRepository.colOffset.value = value
         }
 
     // Printer Row Offset
     var rowOffset: Int
-        get() = settingRepository.rowOffset.value as Int
+        get() = settingsRepository.rowOffset.value as Int
         set(value) {
-            settingRepository.rowOffset.value = value
+            settingsRepository.rowOffset.value = value
         }
 
     // Printer Template ID
     var barcodeLabelTemplateId: Int
-        get() = settingRepository.barcodeLabelTemplateId.value as Int
+        get() = settingsRepository.barcodeLabelTemplateId.value as Int
         set(value) {
-            settingRepository.barcodeLabelTemplateId.value = value
+            settingsRepository.barcodeLabelTemplateId.value = value
         }
 
     // Printer Quantity
     var printerQty: Int
-        get() = settingRepository.printerQty.value as Int
+        get() = settingsRepository.printerQty.value as Int
         set(value) {
-            settingRepository.printerQty.value = value
+            settingsRepository.printerQty.value = value
         }
 
     // Connection Timeout
     var connectionTimeout: Int
-        get() = settingRepository.connectionTimeout.value as Int
+        get() = settingsRepository.connectionTimeout.value as Int
         set(value) {
-            settingRepository.connectionTimeout.value = value
+            settingsRepository.connectionTimeout.value = value
         }
 
     var installationCode: String
-        get() = settingRepository.installationCode.value as String
+        get() = settingsRepository.installationCode.value as String
         set(value) {
-            settingRepository.installationCode.value = value
+            settingsRepository.installationCode.value = value
         }
 
     // URL Server
     var urlPanel: String
-        get() = settingRepository.urlPanel.value as String
+        get() = settingsRepository.urlPanel.value as String
         set(value) {
-            settingRepository.urlPanel.value = value
+            settingsRepository.urlPanel.value = value
         }
 
     var clientEmail: String
-        get() = settingRepository.clientEmail.value as String
+        get() = settingsRepository.clientEmail.value as String
         set(value) {
-            settingRepository.clientEmail.value = value
+            settingsRepository.clientEmail.value = value
         }
 
     var clientPassword: String
-        get() = settingRepository.clientPassword.value as String
+        get() = settingsRepository.clientPassword.value as String
         set(value) {
-            settingRepository.clientPassword.value = value
+            settingsRepository.clientPassword.value = value
         }
 
     var clientPackage: String
-        get() = settingRepository.clientPackage.value as String
+        get() = settingsRepository.clientPackage.value as String
         set(value) {
-            settingRepository.clientPackage.value = value
+            settingsRepository.clientPackage.value = value
         }
 
     // MISC
     var allowScreenRotation: Boolean
-        get() = settingRepository.allowScreenRotation.value as Boolean
+        get() = settingsRepository.allowScreenRotation.value as Boolean
         set(value) {
-            settingRepository.allowScreenRotation.value = value
+            settingsRepository.allowScreenRotation.value = value
         }
 
     var collectorType: String
-        get() = settingRepository.collectorType.value as String
+        get() = settingsRepository.collectorType.value as String
         set(value) {
-            settingRepository.collectorType.value = value
+            settingsRepository.collectorType.value = value
         }
 
     var allowUnknownCodes: Boolean
-        get() = settingRepository.allowUnknownCodes.value as Boolean
+        get() = settingsRepository.allowUnknownCodes.value as Boolean
         set(value) {
-            settingRepository.allowUnknownCodes.value = value
+            settingsRepository.allowUnknownCodes.value = value
         }
 
     var rfidBtAddress: String
-        get() = settingRepository.rfidBtAddress.value as String
+        get() = settingsRepository.rfidBtAddress.value as String
         set(value) {
-            settingRepository.rfidBtAddress.value = value
+            settingsRepository.rfidBtAddress.value = value
         }
 
     var useBtRfid: Boolean
-        get() = settingRepository.useBtRfid.value as Boolean
+        get() = settingsRepository.useBtRfid.value as Boolean
         set(value) {
-            settingRepository.useBtRfid.value = value
+            settingsRepository.useBtRfid.value = value
         }
 
     // IMAGE CONTROL
     var useImageControl: Boolean
-        get() = settingRepository.useImageControl.value as Boolean
+        get() = settingsRepository.useImageControl.value as Boolean
         set(value) {
-            settingRepository.useImageControl.value = value
+            settingsRepository.useImageControl.value = value
         }
 
     var icUser: String
-        get() = settingRepository.icUser.value as String
+        get() = settingsRepository.icUser.value as String
         set(value) {
-            settingRepository.icUser.value = value
+            settingsRepository.icUser.value = value
         }
 
     var icPass: String
-        get() = settingRepository.icPass.value as String
+        get() = settingsRepository.icPass.value as String
         set(value) {
-            settingRepository.icPass.value = value
+            settingsRepository.icPass.value = value
         }
 
     var icWsServer: String
-        get() = settingRepository.icWsServer.value as String
+        get() = settingsRepository.icWsServer.value as String
         set(value) {
-            settingRepository.icWsServer.value = value
+            settingsRepository.icWsServer.value = value
         }
 
     var icWsNamespace: String
-        get() = settingRepository.icWsNamespace.value as String
+        get() = settingsRepository.icWsNamespace.value as String
         set(value) {
-            settingRepository.icWsNamespace.value = value
+            settingsRepository.icWsNamespace.value = value
         }
 
     var icWsProxy: String
-        get() = settingRepository.icWsProxy.value as String
+        get() = settingsRepository.icWsProxy.value as String
         set(value) {
-            settingRepository.icWsProxy.value = value
+            settingsRepository.icWsProxy.value = value
         }
 
     var icWsProxyPort: Int
-        get() = settingRepository.icWsProxyPort.value as Int
+        get() = settingsRepository.icWsProxyPort.value as Int
         set(value) {
-            settingRepository.icWsProxyPort.value = value
+            settingsRepository.icWsProxyPort.value = value
         }
 
     var icWsProxyUser: String
-        get() = settingRepository.icWsProxyUser.value as String
+        get() = settingsRepository.icWsProxyUser.value as String
         set(value) {
-            settingRepository.icWsProxyUser.value = value
+            settingsRepository.icWsProxyUser.value = value
         }
 
     var icWsProxyPass: String
-        get() = settingRepository.icWsProxyPass.value as String
+        get() = settingsRepository.icWsProxyPass.value as String
         set(value) {
-            settingRepository.icWsProxyPass.value = value
+            settingsRepository.icWsProxyPass.value = value
         }
 
     var icWsUseProxy: Boolean
-        get() = settingRepository.icWsUseProxy.value as Boolean
+        get() = settingsRepository.icWsUseProxy.value as Boolean
         set(value) {
-            settingRepository.icWsUseProxy.value = value
+            settingsRepository.icWsUseProxy.value = value
         }
 
     var icWsUser: String
-        get() = settingRepository.icWsUser.value as String
+        get() = settingsRepository.icWsUser.value as String
         set(value) {
-            settingRepository.icWsUser.value = value
+            settingsRepository.icWsUser.value = value
         }
 
     var icWsPass: String
-        get() = settingRepository.icWsPass.value as String
+        get() = settingsRepository.icWsPass.value as String
         set(value) {
-            settingRepository.icWsPass.value = value
+            settingsRepository.icWsPass.value = value
         }
 
     var icPhotoMaxHeightOrWidth: Int
-        get() = settingRepository.icPhotoMaxHeightOrWidth.value as Int
+        get() = settingsRepository.icPhotoMaxHeightOrWidth.value as Int
         set(value) {
-            settingRepository.icPhotoMaxHeightOrWidth.value = value
+            settingsRepository.icPhotoMaxHeightOrWidth.value = value
         }
 
     // PROXY
     var proxy: String
-        get() = settingRepository.proxy.value as String
+        get() = settingsRepository.proxy.value as String
         set(value) {
-            settingRepository.proxy.value = value
+            settingsRepository.proxy.value = value
         }
 
     var useProxy: Boolean
-        get() = settingRepository.useProxy.value as Boolean
+        get() = settingsRepository.useProxy.value as Boolean
         set(value) {
-            settingRepository.useProxy.value = value
+            settingsRepository.useProxy.value = value
         }
 
     var proxyPort: Int
-        get() = settingRepository.proxyPort.value as Int
+        get() = settingsRepository.proxyPort.value as Int
         set(value) {
-            settingRepository.proxyPort.value = value
+            settingsRepository.proxyPort.value = value
         }
 
     var proxyUser: String
-        get() = settingRepository.proxyUser.value as String
+        get() = settingsRepository.proxyUser.value as String
         set(value) {
-            settingRepository.proxyUser.value = value
+            settingsRepository.proxyUser.value = value
         }
 
     var proxyPass: String
-        get() = settingRepository.proxyPass.value as String
+        get() = settingsRepository.proxyPass.value as String
         set(value) {
-            settingRepository.proxyPass.value = value
+            settingsRepository.proxyPass.value = value
         }
 
     var shakeOnPendingOrders: Boolean
-        get() = settingRepository.shakeOnPendingOrders.value as Boolean
+        get() = settingsRepository.shakeOnPendingOrders.value as Boolean
         set(value) {
-            settingRepository.shakeOnPendingOrders.value = value
+            settingsRepository.shakeOnPendingOrders.value = value
         }
 
     var soundOnPendingOrders: Boolean
-        get() = settingRepository.soundOnPendingOrders.value as Boolean
+        get() = settingsRepository.soundOnPendingOrders.value as Boolean
         set(value) {
-            settingRepository.soundOnPendingOrders.value = value
+            settingsRepository.soundOnPendingOrders.value = value
         }
 
     var sendBarcodeCheckDigit: Boolean
-        get() = settingRepository.sendBarcodeCheckDigit.value as Boolean
+        get() = settingsRepository.sendBarcodeCheckDigit.value as Boolean
         set(value) {
-            settingRepository.sendBarcodeCheckDigit.value = value
+            settingsRepository.sendBarcodeCheckDigit.value = value
         }
 
     var scanModeMovement: Int
-        get() = settingRepository.scanModeMovement.value as Int
+        get() = settingsRepository.scanModeMovement.value as Int
         set(value) {
-            settingRepository.scanModeMovement.value = value
+            settingsRepository.scanModeMovement.value = value
         }
 
     var scanMultiplier: Int
-        get() = settingRepository.scanMultiplier.value as Int
+        get() = settingsRepository.scanMultiplier.value as Int
         set(value) {
-            settingRepository.scanMultiplier.value = value
+            settingsRepository.scanMultiplier.value = value
         }
 
     var divisionChar: String
-        get() = settingRepository.divisionChar.value as String
+        get() = settingsRepository.divisionChar.value as String
         set(value) {
-            settingRepository.divisionChar.value = value
+            settingsRepository.divisionChar.value = value
         }
 
     var showScannedCode: Boolean
-        get() = settingRepository.showScannedCode.value as Boolean
+        get() = settingsRepository.showScannedCode.value as Boolean
         set(value) {
-            settingRepository.showScannedCode.value = value
+            settingsRepository.showScannedCode.value = value
         }
 
     var scanModeCount: Int
-        get() = settingRepository.scanModeCount.value as Int
+        get() = settingsRepository.scanModeCount.value as Int
         set(value) {
-            settingRepository.scanModeCount.value = value
+            settingsRepository.scanModeCount.value = value
         }
 
     var showConfButton: Boolean
-        get() = settingRepository.showConfButton.value as Boolean
+        get() = settingsRepository.showConfButton.value as Boolean
         set(value) {
-            settingRepository.showConfButton.value = value
+            settingsRepository.showConfButton.value = value
         }
 
     var useNfc: Boolean
-        get() = settingRepository.useNfc.value as Boolean
+        get() = settingsRepository.useNfc.value as Boolean
         set(value) {
-            settingRepository.useNfc.value = value
+            settingsRepository.useNfc.value = value
         }
 
     var autoSend: Boolean
-        get() = settingRepository.autoSend.value as Boolean
+        get() = settingsRepository.autoSend.value as Boolean
         set(value) {
-            settingRepository.autoSend.value = value
+            settingsRepository.autoSend.value = value
         }
 
     var autoPrint: Boolean
-        get() = settingRepository.autoPrint.value as Boolean
+        get() = settingsRepository.autoPrint.value as Boolean
         set(value) {
-            settingRepository.autoPrint.value = value
+            settingsRepository.autoPrint.value = value
         }
 
     var registryError: Boolean
-        get() = settingRepository.registryError.value as Boolean
+        get() = settingsRepository.registryError.value as Boolean
         set(value) {
-            settingRepository.registryError.value = value
+            settingsRepository.registryError.value = value
         }
 
     var signMandatory: Boolean
-        get() = settingRepository.signMandatory.value as Boolean
+        get() = settingsRepository.signMandatory.value as Boolean
         set(value) {
-            settingRepository.signMandatory.value = value
+            settingsRepository.signMandatory.value = value
         }
 
     var requiredDescription: Boolean
-        get() = settingRepository.requiredDescription.value as Boolean
+        get() = settingsRepository.requiredDescription.value as Boolean
         set(value) {
-            settingRepository.requiredDescription.value = value
+            settingsRepository.requiredDescription.value = value
         }
 
     var rfidWritePower: Int
-        get() = settingRepository.rfidWritePower.value as Int
+        get() = settingsRepository.rfidWritePower.value as Int
         set(value) {
-            settingRepository.rfidWritePower.value = value
+            settingsRepository.rfidWritePower.value = value
         }
 
     var rfidReadPower: Int
-        get() = settingRepository.rfidReadPower.value as Int
+        get() = settingsRepository.rfidReadPower.value as Int
         set(value) {
-            settingRepository.rfidReadPower.value = value
+            settingsRepository.rfidReadPower.value = value
         }
 
     var rfidShockOnRead: Boolean
-        get() = settingRepository.rfidShockOnRead.value as Boolean
+        get() = settingsRepository.rfidShockOnRead.value as Boolean
         set(value) {
-            settingRepository.rfidShockOnRead.value = value
+            settingsRepository.rfidShockOnRead.value = value
         }
 
     var rfidPlaySoundOnRead: Boolean
-        get() = settingRepository.rfidPlaySoundOnRead.value as Boolean
+        get() = settingsRepository.rfidPlaySoundOnRead.value as Boolean
         set(value) {
-            settingRepository.rfidPlaySoundOnRead.value = value
+            settingsRepository.rfidPlaySoundOnRead.value = value
         }
 
     var wcSyncInterval: Int
-        get() = settingRepository.wcSyncInterval.value as Int
+        get() = settingsRepository.wcSyncInterval.value as Int
         set(value) {
-            settingRepository.wcSyncInterval.value = value
+            settingsRepository.wcSyncInterval.value = value
         }
 
     var wcSyncRefreshOrder: Int
-        get() = settingRepository.wcSyncRefreshOrder.value as Int
+        get() = settingsRepository.wcSyncRefreshOrder.value as Int
         set(value) {
-            settingRepository.wcSyncRefreshOrder.value = value
+            settingsRepository.wcSyncRefreshOrder.value = value
         }
 
     var symbologyAztec: Boolean
-        get() = settingRepository.symbologyAztec.value as Boolean
+        get() = settingsRepository.symbologyAztec.value as Boolean
         set(value) {
-            settingRepository.symbologyAztec.value = value
+            settingsRepository.symbologyAztec.value = value
         }
 
     var symbologyCODABAR: Boolean
-        get() = settingRepository.symbologyCODABAR.value as Boolean
+        get() = settingsRepository.symbologyCODABAR.value as Boolean
         set(value) {
-            settingRepository.symbologyCODABAR.value = value
+            settingsRepository.symbologyCODABAR.value = value
         }
 
     var symbologyCode128: Boolean
-        get() = settingRepository.symbologyCode128.value as Boolean
+        get() = settingsRepository.symbologyCode128.value as Boolean
         set(value) {
-            settingRepository.symbologyCode128.value = value
+            settingsRepository.symbologyCode128.value = value
         }
 
     var symbologyCode39: Boolean
-        get() = settingRepository.symbologyCode39.value as Boolean
+        get() = settingsRepository.symbologyCode39.value as Boolean
         set(value) {
-            settingRepository.symbologyCode39.value = value
+            settingsRepository.symbologyCode39.value = value
         }
 
     var symbologyCode93: Boolean
-        get() = settingRepository.symbologyCode93.value as Boolean
+        get() = settingsRepository.symbologyCode93.value as Boolean
         set(value) {
-            settingRepository.symbologyCode93.value = value
+            settingsRepository.symbologyCode93.value = value
         }
 
     var symbologyDataMatrix: Boolean
-        get() = settingRepository.symbologyDataMatrix.value as Boolean
+        get() = settingsRepository.symbologyDataMatrix.value as Boolean
         set(value) {
-            settingRepository.symbologyDataMatrix.value = value
+            settingsRepository.symbologyDataMatrix.value = value
         }
 
     var symbologyEAN13: Boolean
-        get() = settingRepository.symbologyEAN13.value as Boolean
+        get() = settingsRepository.symbologyEAN13.value as Boolean
         set(value) {
-            settingRepository.symbologyEAN13.value = value
+            settingsRepository.symbologyEAN13.value = value
         }
 
     var symbologyEAN8: Boolean
-        get() = settingRepository.symbologyEAN8.value as Boolean
+        get() = settingsRepository.symbologyEAN8.value as Boolean
         set(value) {
-            settingRepository.symbologyEAN8.value = value
+            settingsRepository.symbologyEAN8.value = value
         }
 
     var symbologyITF: Boolean
-        get() = settingRepository.symbologyITF.value as Boolean
+        get() = settingsRepository.symbologyITF.value as Boolean
         set(value) {
-            settingRepository.symbologyITF.value = value
+            settingsRepository.symbologyITF.value = value
         }
 
     var symbologyMaxiCode: Boolean
-        get() = settingRepository.symbologyMaxiCode.value as Boolean
+        get() = settingsRepository.symbologyMaxiCode.value as Boolean
         set(value) {
-            settingRepository.symbologyMaxiCode.value = value
+            settingsRepository.symbologyMaxiCode.value = value
         }
 
     var symbologyPDF417: Boolean
-        get() = settingRepository.symbologyPDF417.value as Boolean
+        get() = settingsRepository.symbologyPDF417.value as Boolean
         set(value) {
-            settingRepository.symbologyPDF417.value = value
+            settingsRepository.symbologyPDF417.value = value
         }
 
     var symbologyQRCode: Boolean
-        get() = settingRepository.symbologyQRCode.value as Boolean
+        get() = settingsRepository.symbologyQRCode.value as Boolean
         set(value) {
-            settingRepository.symbologyQRCode.value = value
+            settingsRepository.symbologyQRCode.value = value
         }
 
     var symbologyRSS14: Boolean
-        get() = settingRepository.symbologyRSS14.value as Boolean
+        get() = settingsRepository.symbologyRSS14.value as Boolean
         set(value) {
-            settingRepository.symbologyRSS14.value = value
+            settingsRepository.symbologyRSS14.value = value
         }
 
     var symbologyRSSExpanded: Boolean
-        get() = settingRepository.symbologyRSSExpanded.value as Boolean
+        get() = settingsRepository.symbologyRSSExpanded.value as Boolean
         set(value) {
-            settingRepository.symbologyRSSExpanded.value = value
+            settingsRepository.symbologyRSSExpanded.value = value
         }
 
     var symbologyUPCA: Boolean
-        get() = settingRepository.symbologyUPCA.value as Boolean
+        get() = settingsRepository.symbologyUPCA.value as Boolean
         set(value) {
-            settingRepository.symbologyUPCA.value = value
+            settingsRepository.symbologyUPCA.value = value
         }
 
     var symbologyUPCE: Boolean
-        get() = settingRepository.symbologyUPCE.value as Boolean
+        get() = settingsRepository.symbologyUPCE.value as Boolean
         set(value) {
-            settingRepository.symbologyUPCE.value = value
+            settingsRepository.symbologyUPCE.value = value
         }
 
     var symbologyUPCEANExt: Boolean
-        get() = settingRepository.symbologyUPCEANExt.value as Boolean
+        get() = settingsRepository.symbologyUPCEANExt.value as Boolean
         set(value) {
-            settingRepository.symbologyUPCEANExt.value = value
+            settingsRepository.symbologyUPCEANExt.value = value
         }
 
     var orderSearchByOrderId: Boolean
-        get() = settingRepository.orderSearchByOrderId.value as Boolean
+        get() = settingsRepository.orderSearchByOrderId.value as Boolean
         set(value) {
-            settingRepository.orderSearchByOrderId.value = value
+            settingsRepository.orderSearchByOrderId.value = value
         }
 
     var orderSearchByOrderExtId: Boolean
-        get() = settingRepository.orderSearchByOrderExtId.value as Boolean
+        get() = settingsRepository.orderSearchByOrderExtId.value as Boolean
         set(value) {
-            settingRepository.orderSearchByOrderExtId.value = value
+            settingsRepository.orderSearchByOrderExtId.value = value
         }
 
     var orderSearchByOrderDescription: Boolean
-        get() = settingRepository.orderSearchByOrderDescription.value as Boolean
+        get() = settingsRepository.orderSearchByOrderDescription.value as Boolean
         set(value) {
-            settingRepository.orderSearchByOrderDescription.value = value
+            settingsRepository.orderSearchByOrderDescription.value = value
         }
 
     var orderLocationSearchByOrderId: Boolean
-        get() = settingRepository.orderLocationSearchByOrderId.value as Boolean
+        get() = settingsRepository.orderLocationSearchByOrderId.value as Boolean
         set(value) {
-            settingRepository.orderLocationSearchByOrderId.value = value
+            settingsRepository.orderLocationSearchByOrderId.value = value
         }
 
     var orderLocationSearchByOrderExtId: Boolean
-        get() = settingRepository.orderLocationSearchByOrderExtId.value as Boolean
+        get() = settingsRepository.orderLocationSearchByOrderExtId.value as Boolean
         set(value) {
-            settingRepository.orderLocationSearchByOrderExtId.value = value
+            settingsRepository.orderLocationSearchByOrderExtId.value = value
         }
 
     var orderLocationSearchByWarehouse: Boolean
-        get() = settingRepository.orderLocationSearchByWarehouse.value as Boolean
+        get() = settingsRepository.orderLocationSearchByWarehouse.value as Boolean
         set(value) {
-            settingRepository.orderLocationSearchByWarehouse.value = value
+            settingsRepository.orderLocationSearchByWarehouse.value = value
         }
 
     var orderLocationSearchByArea: Boolean
-        get() = settingRepository.orderLocationSearchByArea.value as Boolean
+        get() = settingsRepository.orderLocationSearchByArea.value as Boolean
         set(value) {
-            settingRepository.orderLocationSearchByArea.value = value
+            settingsRepository.orderLocationSearchByArea.value = value
         }
 
     var orderLocationSearchByRack: Boolean
-        get() = settingRepository.orderLocationSearchByRack.value as Boolean
+        get() = settingsRepository.orderLocationSearchByRack.value as Boolean
         set(value) {
-            settingRepository.orderLocationSearchByRack.value = value
+            settingsRepository.orderLocationSearchByRack.value = value
         }
 
     var orderLocationSearchByItemCode: Boolean
-        get() = settingRepository.orderLocationSearchByItemCode.value as Boolean
+        get() = settingsRepository.orderLocationSearchByItemCode.value as Boolean
         set(value) {
-            settingRepository.orderLocationSearchByItemCode.value = value
+            settingsRepository.orderLocationSearchByItemCode.value = value
         }
 
     var orderLocationSearchByItemDescription: Boolean
-        get() = settingRepository.orderLocationSearchByItemDescription.value as Boolean
+        get() = settingsRepository.orderLocationSearchByItemDescription.value as Boolean
         set(value) {
-            settingRepository.orderLocationSearchByItemDescription.value = value
+            settingsRepository.orderLocationSearchByItemDescription.value = value
         }
 
     var orderLocationSearchByItemEan: Boolean
-        get() = settingRepository.orderLocationSearchByItemEan.value as Boolean
+        get() = settingsRepository.orderLocationSearchByItemEan.value as Boolean
         set(value) {
-            settingRepository.orderLocationSearchByItemEan.value = value
+            settingsRepository.orderLocationSearchByItemEan.value = value
         }
 
     var orderLocationSearchByOnlyActive: Boolean
-        get() = settingRepository.orderLocationSearchByOnlyActive.value as Boolean
+        get() = settingsRepository.orderLocationSearchByOnlyActive.value as Boolean
         set(value) {
-            settingRepository.orderLocationSearchByOnlyActive.value = value
+            settingsRepository.orderLocationSearchByOnlyActive.value = value
         }
 
     var orderLocationOnlyActive: Boolean
-        get() = settingRepository.orderLocationOnlyActive.value as Boolean
+        get() = settingsRepository.orderLocationOnlyActive.value as Boolean
         set(value) {
-            settingRepository.orderLocationOnlyActive.value = value
+            settingsRepository.orderLocationOnlyActive.value = value
         }
 
     var finishOrder: Boolean
-        get() = settingRepository.finishOrder.value as Boolean
+        get() = settingsRepository.finishOrder.value as Boolean
         set(value) {
-            settingRepository.finishOrder.value = value
+            settingsRepository.finishOrder.value = value
         }
 
     var itemSearchByOrderId: Boolean
-        get() = settingRepository.itemSearchByOrderId.value as Boolean
+        get() = settingsRepository.itemSearchByOrderId.value as Boolean
         set(value) {
-            settingRepository.itemSearchByOrderId.value = value
+            settingsRepository.itemSearchByOrderId.value = value
         }
 
     var itemSearchByCategory: Boolean
-        get() = settingRepository.itemSearchByCategory.value as Boolean
+        get() = settingsRepository.itemSearchByCategory.value as Boolean
         set(value) {
-            settingRepository.itemSearchByCategory.value = value
+            settingsRepository.itemSearchByCategory.value = value
         }
 
     var itemSearchByOrderExtId: Boolean
-        get() = settingRepository.itemSearchByOrderExtId.value as Boolean
+        get() = settingsRepository.itemSearchByOrderExtId.value as Boolean
         set(value) {
-            settingRepository.itemSearchByOrderExtId.value = value
+            settingsRepository.itemSearchByOrderExtId.value = value
         }
 
     var itemSearchByWarehouse: Boolean
-        get() = settingRepository.itemSearchByWarehouse.value as Boolean
+        get() = settingsRepository.itemSearchByWarehouse.value as Boolean
         set(value) {
-            settingRepository.itemSearchByWarehouse.value = value
+            settingsRepository.itemSearchByWarehouse.value = value
         }
 
     var itemSearchByArea: Boolean
-        get() = settingRepository.itemSearchByArea.value as Boolean
+        get() = settingsRepository.itemSearchByArea.value as Boolean
         set(value) {
-            settingRepository.itemSearchByArea.value = value
+            settingsRepository.itemSearchByArea.value = value
         }
 
     var itemSearchByRack: Boolean
-        get() = settingRepository.itemSearchByRack.value as Boolean
+        get() = settingsRepository.itemSearchByRack.value as Boolean
         set(value) {
-            settingRepository.itemSearchByRack.value = value
+            settingsRepository.itemSearchByRack.value = value
         }
 
     var itemSearchByItemCode: Boolean
-        get() = settingRepository.itemSearchByItemCode.value as Boolean
+        get() = settingsRepository.itemSearchByItemCode.value as Boolean
         set(value) {
-            settingRepository.itemSearchByItemCode.value = value
+            settingsRepository.itemSearchByItemCode.value = value
         }
 
     var itemSearchByItemDescription: Boolean
-        get() = settingRepository.itemSearchByItemDescription.value as Boolean
+        get() = settingsRepository.itemSearchByItemDescription.value as Boolean
         set(value) {
-            settingRepository.itemSearchByItemDescription.value = value
+            settingsRepository.itemSearchByItemDescription.value = value
         }
 
     var itemSearchByItemEan: Boolean
-        get() = settingRepository.itemSearchByItemEan.value as Boolean
+        get() = settingsRepository.itemSearchByItemEan.value as Boolean
         set(value) {
-            settingRepository.itemSearchByItemEan.value = value
+            settingsRepository.itemSearchByItemEan.value = value
         }
 
     var itemSearchByOnlyActive: Boolean
-        get() = settingRepository.itemSearchByOnlyActive.value as Boolean
+        get() = settingsRepository.itemSearchByOnlyActive.value as Boolean
         set(value) {
-            settingRepository.itemSearchByOnlyActive.value = value
+            settingsRepository.itemSearchByOnlyActive.value = value
         }
 
     var linkCodeSearchByCategory: Boolean
-        get() = settingRepository.linkCodeSearchByCategory.value as Boolean
+        get() = settingsRepository.linkCodeSearchByCategory.value as Boolean
         set(value) {
-            settingRepository.linkCodeSearchByCategory.value = value
+            settingsRepository.linkCodeSearchByCategory.value = value
         }
     var linkCodeSearchByItemEan: Boolean
-        get() = settingRepository.linkCodeSearchByItemEan.value as Boolean
+        get() = settingsRepository.linkCodeSearchByItemEan.value as Boolean
         set(value) {
-            settingRepository.linkCodeSearchByItemEan.value = value
+            settingsRepository.linkCodeSearchByItemEan.value = value
         }
 
     var linkCodeSearchByItemDescription: Boolean
-        get() = settingRepository.linkCodeSearchByItemDescription.value as Boolean
+        get() = settingsRepository.linkCodeSearchByItemDescription.value as Boolean
         set(value) {
-            settingRepository.linkCodeSearchByItemDescription.value = value
+            settingsRepository.linkCodeSearchByItemDescription.value = value
         }
 
     var locationSearchByWarehouse: Boolean
-        get() = settingRepository.locationSearchByWarehouse.value as Boolean
+        get() = settingsRepository.locationSearchByWarehouse.value as Boolean
         set(value) {
-            settingRepository.locationSearchByWarehouse.value = value
+            settingsRepository.locationSearchByWarehouse.value = value
         }
     var locationSearchByArea: Boolean
-        get() = settingRepository.locationSearchByArea.value as Boolean
+        get() = settingsRepository.locationSearchByArea.value as Boolean
         set(value) {
-            settingRepository.locationSearchByArea.value = value
+            settingsRepository.locationSearchByArea.value = value
         }
 
     var locationSearchByRack: Boolean
-        get() = settingRepository.locationSearchByRack.value as Boolean
+        get() = settingsRepository.locationSearchByRack.value as Boolean
         set(value) {
-            settingRepository.locationSearchByRack.value = value
+            settingsRepository.locationSearchByRack.value = value
         }
 
     @Suppress("UNCHECKED_CAST")
     var orderRequestVisibleStatus: Set<String>
-        get() = settingRepository.orderRequestVisibleStatus.value as Set<String>
+        get() = settingsRepository.orderRequestVisibleStatus.value as Set<String>
         set(value) {
-            settingRepository.orderRequestVisibleStatus.value = value
+            settingsRepository.orderRequestVisibleStatus.value = value
         }
 
     var flCameraPortraitLocX: Int
-        get() = settingRepository.flCameraPortraitLocX.value as Int
+        get() = settingsRepository.flCameraPortraitLocX.value as Int
         set(value) {
-            settingRepository.flCameraPortraitLocX.value = value
+            settingsRepository.flCameraPortraitLocX.value = value
         }
 
     var flCameraPortraitLocY: Int
-        get() = settingRepository.flCameraPortraitLocY.value as Int
+        get() = settingsRepository.flCameraPortraitLocY.value as Int
         set(value) {
-            settingRepository.flCameraPortraitLocY.value = value
+            settingsRepository.flCameraPortraitLocY.value = value
         }
 
     var flCameraPortraitWidth: Int
-        get() = settingRepository.flCameraPortraitWidth.value as Int
+        get() = settingsRepository.flCameraPortraitWidth.value as Int
         set(value) {
-            settingRepository.flCameraPortraitWidth.value = value
+            settingsRepository.flCameraPortraitWidth.value = value
         }
 
     var flCameraPortraitHeight: Int
-        get() = settingRepository.flCameraPortraitHeight.value as Int
+        get() = settingsRepository.flCameraPortraitHeight.value as Int
         set(value) {
-            settingRepository.flCameraPortraitHeight.value = value
+            settingsRepository.flCameraPortraitHeight.value = value
         }
 
     var flCameraLandscapeLocX: Int
-        get() = settingRepository.flCameraLandscapeLocX.value as Int
+        get() = settingsRepository.flCameraLandscapeLocX.value as Int
         set(value) {
-            settingRepository.flCameraLandscapeLocX.value = value
+            settingsRepository.flCameraLandscapeLocX.value = value
         }
 
     var flCameraLandscapeLocY: Int
-        get() = settingRepository.flCameraLandscapeLocY.value as Int
+        get() = settingsRepository.flCameraLandscapeLocY.value as Int
         set(value) {
-            settingRepository.flCameraLandscapeLocY.value = value
+            settingsRepository.flCameraLandscapeLocY.value = value
         }
 
     var flCameraLandscapeWidth: Int
-        get() = settingRepository.flCameraLandscapeWidth.value as Int
+        get() = settingsRepository.flCameraLandscapeWidth.value as Int
         set(value) {
-            settingRepository.flCameraLandscapeWidth.value = value
+            settingsRepository.flCameraLandscapeWidth.value = value
         }
 
     var flCameraLandscapeHeight: Int
-        get() = settingRepository.flCameraLandscapeHeight.value as Int
+        get() = settingsRepository.flCameraLandscapeHeight.value as Int
         set(value) {
-            settingRepository.flCameraLandscapeHeight.value = value
+            settingsRepository.flCameraLandscapeHeight.value = value
         }
 
     var flCameraContinuousMode: Boolean
-        get() = settingRepository.flCameraContinuousMode.value as Boolean
+        get() = settingsRepository.flCameraContinuousMode.value as Boolean
         set(value) {
-            settingRepository.flCameraContinuousMode.value = value
+            settingsRepository.flCameraContinuousMode.value = value
         }
 
     var flCameraFilterRepeatedReads: Boolean
-        get() = settingRepository.flCameraFilterRepeatedReads.value as Boolean
+        get() = settingsRepository.flCameraFilterRepeatedReads.value as Boolean
         set(value) {
-            settingRepository.flCameraFilterRepeatedReads.value = value
+            settingsRepository.flCameraFilterRepeatedReads.value = value
         }
 
     var selectPtlOrderShowCheckBoxes: Boolean
-        get() = settingRepository.selectPtlOrderShowCheckBoxes.value as Boolean
+        get() = settingsRepository.selectPtlOrderShowCheckBoxes.value as Boolean
         set(value) {
-            settingRepository.selectPtlOrderShowCheckBoxes.value = value
+            settingsRepository.selectPtlOrderShowCheckBoxes.value = value
         }
 
     var editItems: Boolean
-        get() = settingRepository.editItems.value as Boolean
+        get() = settingsRepository.editItems.value as Boolean
         set(value) {
-            settingRepository.editItems.value = value
+            settingsRepository.editItems.value = value
         }
 
     var linkCodeShowImages: Boolean
-        get() = settingRepository.linkCodeShowImages.value as Boolean
+        get() = settingsRepository.linkCodeShowImages.value as Boolean
         set(value) {
-            settingRepository.linkCodeShowImages.value = value
+            settingsRepository.linkCodeShowImages.value = value
         }
 
     var linkCodeShowCheckBoxes: Boolean
-        get() = settingRepository.linkCodeShowCheckBoxes.value as Boolean
+        get() = settingsRepository.linkCodeShowCheckBoxes.value as Boolean
         set(value) {
-            settingRepository.linkCodeShowCheckBoxes.value = value
+            settingsRepository.linkCodeShowCheckBoxes.value = value
         }
 
     var itemSelectShowImages: Boolean
-        get() = settingRepository.itemSelectShowImages.value as Boolean
+        get() = settingsRepository.itemSelectShowImages.value as Boolean
         set(value) {
-            settingRepository.itemSelectShowImages.value = value
+            settingsRepository.itemSelectShowImages.value = value
         }
 
     var itemSelectShowCheckBoxes: Boolean
-        get() = settingRepository.itemSelectShowCheckBoxes.value as Boolean
+        get() = settingsRepository.itemSelectShowCheckBoxes.value as Boolean
         set(value) {
-            settingRepository.itemSelectShowCheckBoxes.value = value
+            settingsRepository.itemSelectShowCheckBoxes.value = value
         }
 
     var inboxShowCheckBoxes: Boolean
-        get() = settingRepository.inboxShowCheckBoxes.value as Boolean
+        get() = settingsRepository.inboxShowCheckBoxes.value as Boolean
         set(value) {
-            settingRepository.inboxShowCheckBoxes.value = value
+            settingsRepository.inboxShowCheckBoxes.value = value
         }
 
     var outboxShowCheckBoxes: Boolean
-        get() = settingRepository.outboxShowCheckBoxes.value as Boolean
+        get() = settingsRepository.outboxShowCheckBoxes.value as Boolean
         set(value) {
-            settingRepository.outboxShowCheckBoxes.value = value
+            settingsRepository.outboxShowCheckBoxes.value = value
         }
 
     var defaultItemTemplateId: Long
-        get() = settingRepository.defaultItemTemplateId.value as Long
+        get() = settingsRepository.defaultItemTemplateId.value as Long
         set(value) {
-            settingRepository.defaultItemTemplateId.value = value
+            settingsRepository.defaultItemTemplateId.value = value
         }
 
     var defaultOrderTemplateId: Long
-        get() = settingRepository.defaultOrderTemplateId.value as Long
+        get() = settingsRepository.defaultOrderTemplateId.value as Long
         set(value) {
-            settingRepository.defaultOrderTemplateId.value = value
+            settingsRepository.defaultOrderTemplateId.value = value
         }
 
     var defaultWaTemplateId: Long
-        get() = settingRepository.defaultWaTemplateId.value as Long
+        get() = settingsRepository.defaultWaTemplateId.value as Long
         set(value) {
-            settingRepository.defaultWaTemplateId.value = value
+            settingsRepository.defaultWaTemplateId.value = value
         }
 
     var defaultRackTemplateId: Long
-        get() = settingRepository.defaultRackTemplateId.value as Long
+        get() = settingsRepository.defaultRackTemplateId.value as Long
         set(value) {
-            settingRepository.defaultRackTemplateId.value = value
+            settingsRepository.defaultRackTemplateId.value = value
         }
 
     var categoryViewHeight: Int
-        get() = settingRepository.categoryViewHeight.value as Int
+        get() = settingsRepository.categoryViewHeight.value as Int
         set(value) {
-            settingRepository.categoryViewHeight.value = value
+            settingsRepository.categoryViewHeight.value = value
         }
 
     var itemViewHeight: Int
-        get() = settingRepository.itemViewHeight.value as Int
+        get() = settingsRepository.itemViewHeight.value as Int
         set(value) {
-            settingRepository.itemViewHeight.value = value
+            settingsRepository.itemViewHeight.value = value
         }
 
     var locationViewHeight: Int
-        get() = settingRepository.locationViewHeight.value as Int
+        get() = settingsRepository.locationViewHeight.value as Int
         set(value) {
-            settingRepository.locationViewHeight.value = value
+            settingsRepository.locationViewHeight.value = value
         }
 
     var templateViewHeight: Int
-        get() = settingRepository.templateViewHeight.value as Int
+        get() = settingsRepository.templateViewHeight.value as Int
         set(value) {
-            settingRepository.templateViewHeight.value = value
+            settingsRepository.templateViewHeight.value = value
         }
 
     var clientViewHeight: Int
-        get() = settingRepository.clientViewHeight.value as Int
+        get() = settingsRepository.clientViewHeight.value as Int
         set(value) {
-            settingRepository.clientViewHeight.value = value
+            settingsRepository.clientViewHeight.value = value
+        }
+
+    var decimalSeparator: Char
+        get() = settingsRepository.decimalSeparator.value as Char
+        set(value) {
+            settingsRepository.decimalSeparator.value = value
+        }
+
+    var decimalPlaces: Int
+        get() = settingsRepository.decimalPlaces.value as Int
+        set(value) {
+            settingsRepository.decimalPlaces.value = value
         }
 }

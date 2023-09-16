@@ -29,7 +29,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeToFile
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
@@ -73,9 +73,9 @@ class OutboxActivity : AppCompatActivity() {
     private var showCheckBoxes
         get() =
             if (!multiSelect) false
-            else settingViewModel.outboxShowCheckBoxes
+            else settingsVm.outboxShowCheckBoxes
         set(value) {
-            settingViewModel.outboxShowCheckBoxes = value
+            settingsVm.outboxShowCheckBoxes = value
         }
 
     private val countChecked: Int
@@ -305,7 +305,7 @@ class OutboxActivity : AppCompatActivity() {
                     PendingLabelCoroutines.add(it)
 
                     fillAdapter()
-                    if (settingViewModel.autoPrint) {
+                    if (settingsVm.autoPrint) {
                         launchOrderPrintLabelsActivity(it)
                     }
                 }
@@ -528,7 +528,7 @@ class OutboxActivity : AppCompatActivity() {
     private fun getPrefVisibleStatus(): ArrayList<OrderRequestType> {
         val visibleStatusArray: ArrayList<OrderRequestType> = ArrayList()
         //Retrieve the values
-        val set = settingViewModel.orderRequestVisibleStatus
+        val set = settingsVm.orderRequestVisibleStatus
         for (i in set) {
             if (i.trim().isEmpty()) continue
             visibleStatusArray.add(OrderRequestType.getById(i.toLong()))
@@ -620,7 +620,7 @@ class OutboxActivity : AppCompatActivity() {
         visibleStatus = adapter?.visibleStatus ?: ArrayList()
         val set = HashSet<String>()
         visibleStatus.mapTo(set) { it.id.toString() }
-        settingViewModel.orderRequestVisibleStatus = set
+        settingsVm.orderRequestVisibleStatus = set
 
         return true
     }

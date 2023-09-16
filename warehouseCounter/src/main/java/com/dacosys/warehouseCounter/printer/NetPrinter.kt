@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.printer
 import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import java.io.IOException
@@ -16,8 +16,8 @@ open class NetPrinter(private val onEvent: (SnackBarEventData) -> Unit) :
 
     private val tag: String = this::class.java.simpleName
     fun print(printThis: String, qty: Int, onFinish: (Boolean) -> Unit) {
-        val ipPrinter = settingViewModel.ipNetPrinter
-        val portPrinter = settingViewModel.portNetPrinter
+        val ipPrinter = settingsVm.ipNetPrinter
+        val portPrinter = settingsVm.portNetPrinter
 
         Log.v(tag, "Printer IP: $ipPrinter ($portPrinter)")
         Log.v(tag, printThis)

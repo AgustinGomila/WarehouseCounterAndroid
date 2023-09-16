@@ -2,8 +2,8 @@ package com.dacosys.warehouseCounter.data.ktor.v1.functions
 
 import android.util.Log
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV1
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV1
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.token.TokenObject
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.user.AuthData
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.user.UserAuthData
@@ -81,7 +81,7 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
         /** Limpiamos el token actual antes de solicitar uno nuevo. **/
         cleanToken()
 
-        ktorApiServiceV1.getToken(body = body, callback = {
+        apiServiceV1.getToken(body = body, callback = {
             if (it == null) {
                 Log.e(this.javaClass.simpleName, "error")
                 onEvent.invoke(RequestResult(ResultStatus.ERROR, "error"))

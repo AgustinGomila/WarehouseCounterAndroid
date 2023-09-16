@@ -10,7 +10,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.honeywell.Honeywell.Constants.PROPERTY_DATA_PROCESSOR_DATA_INTENT
 import java.util.concurrent.atomic.AtomicBoolean
@@ -177,7 +177,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
     }
 
     private fun loadProperties() {
-        val sv = settingViewModel
+        val sv = settingsVm
         properties = Bundle()
 
         // Barcode camera scanner view

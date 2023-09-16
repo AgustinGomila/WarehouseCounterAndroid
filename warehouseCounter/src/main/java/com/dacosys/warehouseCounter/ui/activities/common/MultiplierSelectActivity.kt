@@ -7,7 +7,7 @@ import android.os.Bundle
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.databinding.ScanMultiplierSelectBinding
 import com.dacosys.warehouseCounter.ui.utils.Screen
 
@@ -94,7 +94,7 @@ class MultiplierSelectActivity : AppCompatActivity() {
             setResult(RESULT_CANCELED, null)
             finish()
         } else {
-            settingViewModel.scanMultiplier = tempMultiplier!!
+            settingsVm.scanMultiplier = tempMultiplier!!
 
             data.putExtra(ARG_MULTIPLIER, tempMultiplier)
             setResult(RESULT_OK, data)

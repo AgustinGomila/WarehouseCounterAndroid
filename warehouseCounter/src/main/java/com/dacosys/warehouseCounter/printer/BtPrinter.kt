@@ -17,7 +17,7 @@ import androidx.core.app.ActivityCompat
 import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -153,7 +153,7 @@ open class BtPrinter(private val activity: FragmentActivity, private val onEvent
                 } catch (e: Exception) {
                     ErrorLog.writeLog(activity, tag, "${context.getString(R.string.exception_error)}: " + e.message)
                     sendEvent(
-                        "${context.getString(R.string.error_connecting_to)}: ${settingViewModel.printerBtAddress}",
+                        "${context.getString(R.string.error_connecting_to)}: ${settingsVm.printerBtAddress}",
                         SnackBarType.ERROR
                     )
                     onFinish(false)
@@ -164,7 +164,7 @@ open class BtPrinter(private val activity: FragmentActivity, private val onEvent
     }
 
     private fun refreshBluetoothPrinter() {
-        val sv = settingViewModel
+        val sv = settingsVm
         if (sv.useBtPrinter) {
             val printerMacAddress = sv.printerBtAddress
             if (printerMacAddress.isEmpty()) {

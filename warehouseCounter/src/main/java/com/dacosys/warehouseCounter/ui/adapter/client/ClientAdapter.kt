@@ -17,7 +17,7 @@ import androidx.core.content.res.ResourcesCompat
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.room.entity.client.Client
 import java.util.*
 
@@ -179,7 +179,7 @@ class ClientAdapter(
         fillSimpleView(position, v!!, alreadyExists)
 
         val h = if (v.height > 0) v.height else v.minimumHeight
-        settingViewModel.clientViewHeight = h
+        settingsVm.clientViewHeight = h
         if (BuildConfig.DEBUG) Log.d(this::class.java.simpleName, "-------{RES: $resource Height:${h}}-------")
 
         return v

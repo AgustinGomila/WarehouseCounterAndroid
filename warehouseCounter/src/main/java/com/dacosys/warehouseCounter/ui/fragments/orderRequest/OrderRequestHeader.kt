@@ -7,13 +7,13 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.TooltipCompat
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.room.dao.client.ClientCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.databinding.OrderRequestHeaderBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 
 /**
@@ -123,18 +123,18 @@ class OrderRequestHeader : Fragment() {
             if (orderRequest.resultDiffProduct!!) {
                 resume += breakLine + String.format(
                     getString(R.string._product_differences),
-                    Statics.roundToString(unknownItems.toDouble(), decimalPlaces)
+                    Statics.roundToString(unknownItems.toDouble(), settingsVm.decimalPlaces)
                 )
             }
 
             if (orderRequest.resultDiffQty!!) {
                 resume += breakLine + String.format(
                     getString(R.string._quantity_differences),
-                    Statics.roundToString(diffQtyItems.toDouble(), decimalPlaces)
+                    Statics.roundToString(diffQtyItems.toDouble(), settingsVm.decimalPlaces)
                 )
                 resume += breakLine + String.format(
                     getString(R.string._item_differences),
-                    Statics.roundToString(totalItems.toDouble(), decimalPlaces)
+                    Statics.roundToString(totalItems.toDouble(), settingsVm.decimalPlaces)
                 )
             }
         }
@@ -147,7 +147,7 @@ class OrderRequestHeader : Fragment() {
 
         resume += breakLine + String.format(
             getString(R.string._total_counted),
-            Statics.roundToString(totalQtyCollected, decimalPlaces)
+            Statics.roundToString(totalQtyCollected, settingsVm.decimalPlaces)
         )
 
         binding.resumeTextView.text = resume.trim()

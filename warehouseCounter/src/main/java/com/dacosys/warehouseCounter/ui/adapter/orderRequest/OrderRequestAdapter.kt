@@ -395,7 +395,6 @@ class OrderRequestAdapter private constructor(builder: Builder) :
     }
 
     private fun sortOrderRequests(originalList: MutableList<OrderRequest>): ArrayList<OrderRequest> {
-        // Run the follow method on each of the roots
         return ArrayList(
             originalList.sortedWith(
                 compareBy({ it.description },

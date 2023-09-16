@@ -14,14 +14,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.databinding.QtySelectorBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
-import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.round
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -146,9 +144,9 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
                 val validStr = getValidValue(
                     source = s.toString(),
                     maxIntegerPlaces = 7,
-                    maxDecimalPlaces = decimalPlaces,
+                    maxDecimalPlaces = settingsVm.decimalPlaces,
                     maxValue = maxValue,
-                    decimalSeparator = decimalSeparator
+                    decimalSeparator = settingsVm.decimalSeparator
                 )
 
                 // Si es NULL no hay que hacer cambios en el texto
@@ -215,7 +213,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         }
 
         val resultData = Intent()
-        resultData.putExtra(ARG_QTY, round(qty * multiplier, decimalPlaces))
+        resultData.putExtra(ARG_QTY, round(qty * multiplier, settingsVm.decimalPlaces))
         resultData.putExtra(ARG_ORDER_REQUEST_CONTENT, orc)
         setResult(RESULT_OK, resultData)
         finish()
@@ -291,7 +289,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
     }
 
     private fun refreshTextViews() {
-        decimalPlaces = 0
+        settingsVm.decimalPlaces = 0
 
         binding.itemDescriptionTextView.text = String.format(
             "%s: %s", getString(R.string.item), orc.itemDescription
@@ -304,7 +302,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         binding.totalTextView.text = String.format(
             "%s: %s",
             getString(R.string.total_qty),
-            Statics.roundToString(orc.qtyCollected!!, decimalPlaces)
+            Statics.roundToString(orc.qtyCollected!!, settingsVm.decimalPlaces)
         )
     }
 
@@ -333,7 +331,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
         if (equals(scanCode, orc.ean)) {

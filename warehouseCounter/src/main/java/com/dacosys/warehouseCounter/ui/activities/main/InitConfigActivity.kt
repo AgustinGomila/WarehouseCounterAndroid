@@ -20,7 +20,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
 import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages.Companion.getConfig
 import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
@@ -240,7 +240,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     private fun configApp() {
-        val realPass = settingViewModel.confPassword
+        val realPass = settingsVm.confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
@@ -289,7 +289,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = settingViewModel.confPassword
+        val realPass = settingsVm.confPassword
         if (password == realPass) {
             if (!rejectNewInstances) {
                 rejectNewInstances = true
@@ -308,7 +308,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             // Vamos a reconstruir el scanner por si cambió la configuración
             JotterListener.autodetectDeviceModel(this)
 
-            if (settingViewModel.urlPanel.isEmpty()) {
+            if (settingsVm.urlPanel.isEmpty()) {
                 showSnackBar(getString(R.string.server_is_not_configured), ERROR)
                 return@registerForActivityResult
             }
@@ -388,11 +388,11 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_login, menu)
 
-        if (!settingViewModel.showConfButton) {
+        if (!settingsVm.showConfButton) {
             menu.removeItem(menu.findItem(R.id.action_settings).itemId)
         }
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 

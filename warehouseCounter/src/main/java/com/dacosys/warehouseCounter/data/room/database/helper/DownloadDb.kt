@@ -4,8 +4,8 @@ import android.util.Log
 import com.dacosys.imageControl.network.upload.SendPending
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncVm
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.SendItemCodeArray
 import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.database.WcDatabase
@@ -385,10 +385,10 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
             }
 
             // Enviar las imágenes pendientes...
-            if (uploadStatus == ProgressStatus.finished && settingViewModel.useImageControl) {
+            if (uploadStatus == ProgressStatus.finished && settingsVm.useImageControl) {
                 SendPending(
                     context,
-                    onProgress = { syncViewModel.setUploadImagesProgress(it) })
+                    onProgress = { syncVm.setUploadImagesProgress(it) })
             }
         }
     }

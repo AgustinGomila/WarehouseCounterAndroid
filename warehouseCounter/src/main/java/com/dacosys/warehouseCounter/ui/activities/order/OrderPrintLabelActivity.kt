@@ -39,8 +39,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
@@ -133,9 +133,9 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     private var showCheckBoxes
         get() =
             if (!multiSelect) false
-            else settingViewModel.itemSelectShowCheckBoxes
+            else settingsVm.itemSelectShowCheckBoxes
         set(value) {
-            settingViewModel.itemSelectShowCheckBoxes = value
+            settingsVm.itemSelectShowCheckBoxes = value
         }
 
     private val countChecked: Int
@@ -345,7 +345,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         binding.printFragment.visibility = VISIBLE
 
         if (currentTemplateId == 0L) {
-            currentTemplateId = settingViewModel.defaultOrderTemplateId
+            currentTemplateId = settingsVm.defaultOrderTemplateId
         }
 
         printLabelFragment =
@@ -368,8 +368,8 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     }
 
     private fun setupFilterFragment() {
-        val sv = settingViewModel
-        val sr = settingRepository
+        val sv = settingsVm
+        val sr = settingsRepository
         filterFragment =
             SelectFilterFragment.Builder()
                 .searchByOrderId(sv.orderSearchByOrderId, sr.orderSearchByOrderId)
@@ -845,7 +845,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             return
         }
 
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
         JotterListener.lockScanner(this, true)
 
         // Buscar por ubicación
@@ -885,7 +885,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -987,19 +987,19 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
 
         item.isChecked = !item.isChecked
-        val sv = settingViewModel
+        val sv = settingsVm
         when (id) {
-            settingRepository.orderSearchByOrderId.key.hashCode() -> {
+            settingsRepository.orderSearchByOrderId.key.hashCode() -> {
                 filterFragment.setOrderIdVisibility(if (item.isChecked) VISIBLE else GONE)
                 sv.orderSearchByOrderId = item.isChecked
             }
 
-            settingRepository.orderSearchByOrderExtId.key.hashCode() -> {
+            settingsRepository.orderSearchByOrderExtId.key.hashCode() -> {
                 filterFragment.setOrderExtIdVisibility(if (item.isChecked) VISIBLE else GONE)
                 sv.orderSearchByOrderExtId = item.isChecked
             }
 
-            settingRepository.orderSearchByOrderDescription.key.hashCode() -> {
+            settingsRepository.orderSearchByOrderDescription.key.hashCode() -> {
                 filterFragment.setDescriptionVisibility(if (item.isChecked) VISIBLE else GONE)
                 sv.orderSearchByOrderDescription = item.isChecked
             }
@@ -1064,7 +1064,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         currentPrintQty = qty ?: 1
         currentTemplateId = template?.templateId ?: return
 
-        settingViewModel.defaultOrderTemplateId = currentTemplateId
+        settingsVm.defaultOrderTemplateId = currentTemplateId
     }
 
     override fun onPrintRequested(printer: String, qty: Int) {

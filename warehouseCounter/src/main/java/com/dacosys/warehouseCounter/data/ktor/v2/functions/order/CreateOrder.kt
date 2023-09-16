@@ -2,10 +2,10 @@ package com.dacosys.warehouseCounter.data.ktor.v2.functions.order
 
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV2
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
@@ -52,7 +52,7 @@ class CreateOrder(
         for ((index, order) in payload.withIndex()) {
             if (BuildConfig.DEBUG) println(json.encodeToString(OrderRequest.serializer(), order))
 
-            ktorApiServiceV2.createOrder(payload = order, callback = {
+            apiServiceV2.createOrder(payload = order, callback = {
                 if (it.onEvent != null) sendEvent(it.onEvent)
 
                 var id: Long = 0
@@ -68,7 +68,7 @@ class CreateOrder(
 
         val startTime = System.currentTimeMillis()
         while (!isDone) {
-            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong()) {
+            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
                 sendEvent(context.getString(R.string.connection_timeout), SnackBarType.ERROR)
                 isDone = true
             }

@@ -375,7 +375,6 @@ class PtlOrderAdapter private constructor(builder: Builder) :
     }
 
     private fun sortItems(originalList: MutableList<PtlOrder>): ArrayList<PtlOrder> {
-        // Run the follow method on each of the roots
         return ArrayList(
             originalList.sortedWith(
                 compareBy({ it.orderType },

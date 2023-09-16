@@ -1,8 +1,8 @@
 package com.dacosys.warehouseCounter.data.ktor.v1.functions
 
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV1
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV1
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PickItem
 import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetToken.Companion.Token
 import com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl.Companion.validUrl
@@ -72,7 +72,7 @@ class PickManual(
                 qty = qty
             )
         )
-        ktorApiServiceV1.pickManual(body = body, callback = {
+        apiServiceV1.pickManual(body = body, callback = {
             it.contents.forEach { s -> r.add(s) }
             if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
             else sendEvent(it.details, SnackBarType.INFO)

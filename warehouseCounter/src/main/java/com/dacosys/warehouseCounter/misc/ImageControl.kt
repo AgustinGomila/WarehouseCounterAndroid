@@ -1,7 +1,7 @@
 package com.dacosys.warehouseCounter.misc
 
 import com.dacosys.imageControl.ImageControl
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import org.koin.core.context.GlobalContext
 
 class ImageControl {
@@ -20,20 +20,20 @@ class ImageControl {
             imageControl.userId = Statics.currentUserId
             imageControl.userName = Statics.currentUserName
 
-            imageControl.appAllowScreenRotation = settingViewModel.allowScreenRotation
-            imageControl.useImageControl = settingViewModel.useImageControl
-            imageControl.wsIcUrl = settingViewModel.icWsServer
-            imageControl.wsIcNamespace = settingViewModel.icWsNamespace
-            imageControl.wsIcProxy = settingViewModel.icWsProxy
-            imageControl.wsIcProxyPort = settingViewModel.icWsProxyPort
-            imageControl.wsIcUseProxy = settingViewModel.icWsUseProxy
-            imageControl.wsIcProxyUser = settingViewModel.icWsProxyUser
-            imageControl.wsIcProxyPass = settingViewModel.icWsProxyPass
-            imageControl.icUser = settingViewModel.icUser
-            imageControl.icPass = settingViewModel.icPass
-            imageControl.wsIcUser = settingViewModel.icWsUser
-            imageControl.wsIcPass = settingViewModel.icWsPass
-            imageControl.maxHeightOrWidth = settingViewModel.icPhotoMaxHeightOrWidth
+            imageControl.appAllowScreenRotation = settingsVm.allowScreenRotation
+            imageControl.useImageControl = settingsVm.useImageControl
+            imageControl.wsIcUrl = settingsVm.icWsServer
+            imageControl.wsIcNamespace = settingsVm.icWsNamespace
+            imageControl.wsIcProxy = settingsVm.icWsProxy
+            imageControl.wsIcProxyPort = settingsVm.icWsProxyPort
+            imageControl.wsIcUseProxy = settingsVm.icWsUseProxy
+            imageControl.wsIcProxyUser = settingsVm.icWsProxyUser
+            imageControl.wsIcProxyPass = settingsVm.icWsProxyPass
+            imageControl.icUser = settingsVm.icUser
+            imageControl.icPass = settingsVm.icPass
+            imageControl.wsIcUser = settingsVm.icWsUser
+            imageControl.wsIcPass = settingsVm.icWsPass
+            imageControl.maxHeightOrWidth = settingsVm.icPhotoMaxHeightOrWidth
         }
     }
 }

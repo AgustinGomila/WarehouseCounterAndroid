@@ -1,8 +1,8 @@
 package com.dacosys.warehouseCounter.data.ktor.v2.functions.order
 
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV2
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.misc.Statics
@@ -42,7 +42,7 @@ class MoveOrder(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiServiceV2.moveOrder(
+        apiServiceV2.moveOrder(
             payload = order,
             callback = {
                 if (it.onEvent != null) onEvent(it.onEvent)

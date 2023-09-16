@@ -27,7 +27,7 @@ import androidx.appcompat.widget.AppCompatTextView
 import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 
 class Screen {
@@ -48,7 +48,7 @@ class Screen {
             height = displayMetrics.heightPixels
             width = displayMetrics.widthPixels
 
-            if (settingViewModel.allowScreenRotation) {
+            if (settingsVm.allowScreenRotation) {
                 activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             } else {
                 when (rotation) {

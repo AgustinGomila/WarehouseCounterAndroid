@@ -23,7 +23,7 @@ import com.dacosys.imageControl.ui.fragments.ImageControlButtonsFragment
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
@@ -153,7 +153,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     private fun saveSharedPreferences() {
-        settingViewModel.finishOrder = binding.finishCheckBox.isChecked
+        settingsVm.finishOrder = binding.finishCheckBox.isChecked
     }
 
     private fun destroyLocals() {
@@ -196,7 +196,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 orderRequestId = extras.getLong(ARG_ID)
             }
 
-            finishOrder = settingViewModel.finishOrder
+            finishOrder = settingsVm.finishOrder
         }
 
         binding.topAppbar.title = tempTitle
@@ -215,7 +215,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
         binding.confirmButton.setOnClickListener { confirm() }
 
-        if (!settingViewModel.useImageControl || settingViewModel.icWsServer.isEmpty()) {
+        if (!settingsVm.useImageControl || settingsVm.icWsServer.isEmpty()) {
             binding.imageControlLayout.visibility = View.GONE
         }
 
@@ -351,7 +351,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                     .replace(binding.imageControlLayout.id, imageControlFragment!!)
                     .commit()
 
-                if (!settingViewModel.useImageControl) {
+                if (!settingsVm.useImageControl) {
                     fm.beginTransaction()
                         .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
                         .hide(imageControlFragment as Fragment)
@@ -513,7 +513,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     private fun confirm() {
-        if (settingViewModel.signMandatory && imageControlFragment?.isSigned == false) {
+        if (settingsVm.signMandatory && imageControlFragment?.isSigned == false) {
             showSnackBar(getString(R.string.mandatory_sign), SnackBarType.ERROR)
         } else {
             val allowDiff = orderRequest.resultAllowDiff ?: true

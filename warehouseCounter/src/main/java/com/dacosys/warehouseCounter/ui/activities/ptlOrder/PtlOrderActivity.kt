@@ -29,7 +29,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.Label
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PickItem
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlContent
@@ -565,7 +565,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
             return
         }
 
-        val updateTime = settingViewModel.wcSyncRefreshOrder
+        val updateTime = settingsVm.wcSyncRefreshOrder
 
         timer = Timer()
         timerTask = object : TimerTask() {
@@ -590,7 +590,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         binding.printFragment.visibility = View.VISIBLE
 
         if (currentTemplateId == 0L) {
-            currentTemplateId = settingViewModel.defaultOrderTemplateId
+            currentTemplateId = settingsVm.defaultOrderTemplateId
         }
 
         printLabelFragment =
@@ -881,7 +881,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     // region Events from SCANNER, RFID, NFC
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
 
@@ -917,7 +917,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -1074,7 +1074,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         currentPrintQty = qty ?: 1
         currentTemplateId = template?.templateId ?: return
 
-        settingViewModel.defaultOrderTemplateId = currentTemplateId
+        settingsVm.defaultOrderTemplateId = currentTemplateId
     }
 
     override fun onPrintRequested(printer: String, qty: Int) {

@@ -1,8 +1,8 @@
 package com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode
 
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV2
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.Barcode
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.misc.Statics
@@ -45,7 +45,7 @@ class GetOrderBarcode(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiServiceV2.getOrderBarcode(
+        apiServiceV2.getOrderBarcode(
             params = param,
             callback = {
                 if (it.onEvent != null) sendEvent(it.onEvent)

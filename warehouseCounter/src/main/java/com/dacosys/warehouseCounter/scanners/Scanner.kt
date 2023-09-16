@@ -4,7 +4,7 @@ import android.os.Build
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.isDigitsOnly
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
 import com.dacosys.warehouseCounter.scanners.honeywell.Honeywell
 import com.dacosys.warehouseCounter.scanners.honeywell.HoneywellNative
@@ -37,7 +37,7 @@ open class Scanner {
         )
 
         try {
-            val idStr = settingViewModel.collectorType
+            val idStr = settingsVm.collectorType
             var collectorType: CollectorType = CollectorType.none
             if (idStr.isDigitsOnly()) collectorType = CollectorType.getById(idStr.toInt())
 

@@ -3,10 +3,10 @@ package com.dacosys.warehouseCounter.data.ktor.v2.impl
 import arrow.core.Either
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.httpClient
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.apiParam.ErrorResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.apiParam.Links
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.apiParam.ListResponse
@@ -775,7 +775,7 @@ class ApiRequest {
     }
 
     companion object {
-        val apiUrl by lazy { WarehouseCounterApp.settingViewModel.urlPanel }
+        val apiUrl by lazy { settingsVm.urlPanel }
 
         const val EXT_SEPARATOR = ","
 

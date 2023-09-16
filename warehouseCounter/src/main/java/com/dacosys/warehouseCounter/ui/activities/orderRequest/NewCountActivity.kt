@@ -16,7 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.room.dao.client.ClientCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.client.Client
@@ -51,7 +51,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     override fun scannerCompleted(scanCode: String) {
         if (isFinishing) return
 
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
 
         runOnUiThread {
             binding.descEditText.setText(scanCode)
@@ -285,7 +285,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 

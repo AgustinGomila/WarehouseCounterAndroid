@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.data.ktor.v2.sync
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -73,7 +73,7 @@ class Sync private constructor(builder: Builder) {
         Log.d(this::class.java.simpleName, "Iniciando sincronizador de órdenes...")
 
         timer = Timer()
-        val interval = settingViewModel.wcSyncInterval
+        val interval = settingsVm.wcSyncInterval
 
         timerTask = object : TimerTask() {
             override fun run() {

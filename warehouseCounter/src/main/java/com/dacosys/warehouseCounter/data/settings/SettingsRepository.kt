@@ -2,7 +2,7 @@ package com.dacosys.warehouseCounter.data.settings
 
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
@@ -749,9 +749,20 @@ class SettingsRepository {
         default = true
     )
 
+    var decimalSeparator = Preference(
+        key = "decimal_separator",
+        description = context.getString(R.string.decimal_separator),
+        default = '.'
+    )
+    var decimalPlaces = Preference(
+        key = "decimal_places",
+        description = context.getString(R.string.decimal_places),
+        default = 0
+    )
+
     companion object {
         fun getAll(): ArrayList<Preference> {
-            val sr = settingRepository
+            val sr = settingsRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
@@ -766,6 +777,9 @@ class SettingsRepository {
                 sr.allowScreenRotation,
                 sr.showScannedCode,
                 sr.sendBarcodeCheckDigit,
+
+                sr.decimalSeparator,
+                sr.decimalSeparator,
 
                 sr.connectionTimeout,
                 sr.colOffset,
@@ -917,14 +931,14 @@ class SettingsRepository {
                 sr.itemViewHeight,
                 sr.categoryViewHeight,
                 sr.locationViewHeight,
-                sr.templateViewHeight
+                sr.templateViewHeight,
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))
         }
 
         fun getSymbology(): ArrayList<Preference> {
-            val sr = settingRepository
+            val sr = settingsRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
@@ -949,7 +963,7 @@ class SettingsRepository {
         }
 
         fun getAppConf(): ArrayList<Preference> {
-            val sr = settingRepository
+            val sr = settingsRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
@@ -970,7 +984,7 @@ class SettingsRepository {
         }
 
         fun getImageControl(): ArrayList<Preference> {
-            val sr = settingRepository
+            val sr = settingsRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
@@ -992,7 +1006,7 @@ class SettingsRepository {
         }
 
         fun getClientPackage(): ArrayList<Preference> {
-            val sr = settingRepository
+            val sr = settingsRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
@@ -1007,7 +1021,7 @@ class SettingsRepository {
         }
 
         fun getClient(): ArrayList<Preference> {
-            val sr = settingRepository
+            val sr = settingsRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(allSections, sr.clientEmail, sr.clientPassword, sr.installationCode)
 
@@ -1015,7 +1029,7 @@ class SettingsRepository {
         }
 
         fun getAllSelectOrderLocationVisibleControls(): ArrayList<Preference> {
-            val sr = settingRepository
+            val sr = settingsRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
@@ -1033,7 +1047,7 @@ class SettingsRepository {
         }
 
         fun getAllSelectOrderVisibleControls(): ArrayList<Preference> {
-            val sr = settingRepository
+            val sr = settingsRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
@@ -1046,7 +1060,7 @@ class SettingsRepository {
         }
 
         fun getAllSelectItemVisibleControls(): ArrayList<Preference> {
-            val sr = settingRepository
+            val sr = settingsRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
@@ -1059,7 +1073,7 @@ class SettingsRepository {
         }
 
         fun getAllLinkCodeVisibleControls(): ArrayList<Preference> {
-            val sr = settingRepository
+            val sr = settingsRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,
@@ -1072,7 +1086,7 @@ class SettingsRepository {
         }
 
         fun getAllSelectLocationVisibleControls(): ArrayList<Preference> {
-            val sr = settingRepository
+            val sr = settingsRepository
             val allSections = ArrayList<Preference>()
             Collections.addAll(
                 allSections,

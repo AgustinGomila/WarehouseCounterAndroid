@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.cachedIn
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV2
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.OrderPagingSource
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.ViewOrder.Companion.defaultAction
@@ -71,7 +71,7 @@ class OrderViewModel : ViewModel() {
 
     fun loadOrderDetails(id: Long) = viewModelScope.launch {
         loading.postValue(true)
-        val apiResponse = ktorApiServiceV2.viewOrderResponse(id, defaultAction)
+        val apiResponse = apiServiceV2.viewOrderResponse(id, defaultAction)
         val tempOrder: OrderResponse? = apiResponse.response
 
         if (tempOrder != null) {

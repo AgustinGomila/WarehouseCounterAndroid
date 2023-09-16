@@ -1,8 +1,8 @@
 package com.dacosys.warehouseCounter.data.ktor.v1.functions
 
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV1
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV1
 import com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl.Companion.validUrl
 import com.dacosys.warehouseCounter.data.ktor.v1.service.DbLocationResult
 import com.dacosys.warehouseCounter.data.room.database.WcDatabase.Companion.DATABASE_VERSION
@@ -42,7 +42,7 @@ class GetDatabaseLocation(private val onEvent: (DbLocationResult) -> Unit) {
             version = "-v$DATABASE_VERSION"
         }
 
-        ktorApiServiceV1.getDbLocation(version = version, callback = {
+        apiServiceV1.getDbLocation(version = version, callback = {
             val db = it.firstOrNull() ?: com.dacosys.warehouseCounter.data.ktor.v1.dto.database.DatabaseData()
             sendEvent(
                 status = ProgressStatus.finished,

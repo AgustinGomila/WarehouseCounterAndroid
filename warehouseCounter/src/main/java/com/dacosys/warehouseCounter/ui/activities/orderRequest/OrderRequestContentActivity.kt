@@ -35,7 +35,7 @@ import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeJsonToFile
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
@@ -160,7 +160,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun saveSharedPreferences() {
-        settingViewModel.scanModeCount = when {
+        settingsVm.scanModeCount = when {
             !partialBlock && !partial -> 1 // Parcial auto
             partialBlock -> 2 // Parcial bloqueado
             else -> 0 // Manual
@@ -269,7 +269,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun loadDefaultValues() {
-        when (settingViewModel.scanModeCount) {
+        when (settingsVm.scanModeCount) {
             1 -> {
                 partialBlock = false
                 partial = false // Parcial auto
@@ -360,7 +360,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         binding.requiredDescCheckBox.setOnCheckedChangeListener(null)
         binding.requiredDescCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            settingViewModel.requiredDescription = isChecked
+            settingsVm.requiredDescription = isChecked
         }
 
         binding.partialButton.setOnClickListener {
@@ -388,7 +388,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
         // region Traer de la configuración guardada
-        binding.requiredDescCheckBox.isChecked = settingViewModel.requiredDescription
+        binding.requiredDescCheckBox.isChecked = settingsVm.requiredDescription
 
         binding.multiplierButton.setOnClickListener {
             if (allowClicks) {
@@ -669,7 +669,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun setMultiplierButtonText() {
         runOnUiThread {
             binding.multiplierButton.text = String.format(
-                context.getString(R.string.multiplier_x), settingViewModel.scanMultiplier
+                context.getString(R.string.multiplier_x), settingsVm.scanMultiplier
             )
         }
     }
@@ -741,7 +741,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
                     val startTime = System.currentTimeMillis()
                     while (!isDone) {
-                        if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong())
+                        if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong())
                             isDone = true
                     }
                     adapter?.remove(orcsToRemove)
@@ -956,7 +956,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
     private fun setQtyManually(orc: OrderRequestContent) {
-        val multi = if (itemCode == null) settingViewModel.scanMultiplier
+        val multi = if (itemCode == null) settingsVm.scanMultiplier
         else itemCode?.qty ?: 0
 
         qtySelectorDialog(
@@ -1291,7 +1291,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         rejectNewInstances = true
         JotterListener.lockScanner(this, true)
 
-        val multiplier = settingViewModel.scanMultiplier
+        val multiplier = settingsVm.scanMultiplier
         val intent = Intent(context, MultiplierSelectActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
         intent.putExtra(MultiplierSelectActivity.ARG_TITLE, context.getString(R.string.select_multiplier))
@@ -1361,7 +1361,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             manualAdd -> 1L
             else -> {
                 when (itemCode) {
-                    null -> settingViewModel.scanMultiplier.toLong()
+                    null -> settingsVm.scanMultiplier.toLong()
                     else -> itemCode?.qty?.toLong() ?: 0
                 }
             }
@@ -1451,7 +1451,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var lastRegexResult: ItemRegex.Companion.RegexResult? = null
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
 
@@ -1501,7 +1501,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
 
             if (divided) {
-                val splitCode = scanCode.split(settingViewModel.divisionChar.toRegex())
+                val splitCode = scanCode.split(settingsVm.divisionChar.toRegex())
                     .dropLastWhile { it2 -> it2.isEmpty() }
                 if (splitCode.any()) {
                     code = splitCode.toTypedArray()[0]
@@ -1577,7 +1577,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 

@@ -9,7 +9,7 @@ import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.databinding.EnterCodeActivityBinding
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -159,7 +159,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
 
         binding.codeEditText.setText(scanCode)
     }

@@ -1,8 +1,8 @@
 package com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode
 
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV2
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV2
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCodePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCodeResponse
 import com.dacosys.warehouseCounter.misc.Statics
@@ -54,7 +54,7 @@ class SendItemCode
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiServiceV2.sendItemCode(payload = payload, callback = {
+        apiServiceV2.sendItemCode(payload = payload, callback = {
             if (it.onEvent != null) sendEvent(it.onEvent)
             if (it.response != null) r = it.response
             if (r != null) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)

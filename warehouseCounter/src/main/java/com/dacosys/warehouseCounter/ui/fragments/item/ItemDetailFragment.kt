@@ -8,6 +8,7 @@ import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Price
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.ViewItem
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
@@ -140,7 +141,7 @@ class ItemDetailFragment : Fragment() {
             binding.codeTextView.visibility = VISIBLE
 
             binding.qtyAutoResizeTextView.text =
-                Statics.roundToString(itemCode?.qty ?: 0.0, Statics.decimalPlaces)
+                Statics.roundToString(itemCode?.qty ?: 0.0, settingsVm.decimalPlaces)
             binding.qtyAutoResizeTextView.visibility = VISIBLE
             binding.qtyTextView.visibility = VISIBLE
         } else {

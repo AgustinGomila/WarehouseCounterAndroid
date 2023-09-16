@@ -37,10 +37,10 @@ import androidx.fragment.app.FragmentManager
 import com.dacosys.imageControl.network.upload.UploadImagesProgress
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sync
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.syncViewModel
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeNewOrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
@@ -110,7 +110,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private fun sendCompletedOrders(onFinish: (Int) -> Unit) {
         val orders = getCompletedOrders()
 
-        if (!isSending && orders.isNotEmpty() && settingViewModel.autoSend) {
+        if (!isSending && orders.isNotEmpty() && settingsVm.autoSend) {
             isSending = true
 
             runOnUiThread {
@@ -126,7 +126,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                     },
                     onFinish = {
                         PendingLabelCoroutines.add(it)
-                        if (settingViewModel.autoPrint) {
+                        if (settingsVm.autoPrint) {
                             printOrderLabels(it)
                         }
                     }
@@ -138,8 +138,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     private fun printOrderLabels(ids: ArrayList<Long>) {
-        val templateId = settingViewModel.defaultOrderTemplateId
-        val qty = settingViewModel.printerQty
+        val templateId = settingsVm.defaultOrderTemplateId
+        val qty = settingsVm.printerQty
         val printOps = PrintOps.getPrintOps()
 
         GetOrderBarcode(
@@ -219,7 +219,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
         JotterListener.lockScanner(this, true)
         JotterListener.hideWindow(this)
@@ -269,11 +269,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_main, menu)
 
-        if (!settingViewModel.showConfButton) {
+        if (!settingsVm.showConfButton) {
             menu.removeItem(menu.findItem(R.id.action_settings).itemId)
         }
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -678,7 +678,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     private fun configApp() {
-        val realPass = settingViewModel.confPassword
+        val realPass = settingsVm.confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
@@ -727,7 +727,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = settingViewModel.confPassword
+        val realPass = settingsVm.confPassword
         if (password == realPass) {
             if (!rejectNewInstances) {
                 rejectNewInstances = true
@@ -762,8 +762,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
     private lateinit var splashScreen: SplashScreen
     private lateinit var binding: ActivityHomeBinding
-    private val syncVm: SyncViewModel by lazy { syncViewModel }
-    private var freshSessionReq = false
+    private val syncVm: SyncViewModel by lazy { WarehouseCounterApp.syncVm }
 
     private fun createSplashScreen() {
         // Set up 'core-splashscreen' to handle the splash screen in a backward compatible manner.
@@ -775,7 +774,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         if (isDestroyed || isFinishing) return
 
         runOnUiThread {
-            val restSec = settingViewModel.wcSyncInterval - secs
+            val restSec = settingsVm.wcSyncInterval - secs
             val restMin = restSec / 60
             val rstSecsInMin = restSec % 60
             val msg = "$restMin:${String.format("%02d", rstSecsInMin)}"
@@ -826,7 +825,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         super.onStart()
 
         if (Statics.currentUserId < 0L) {
-            if (settingViewModel.urlPanel.isEmpty()) {
+            if (settingsVm.urlPanel.isEmpty()) {
                 showSnackBar(getString(R.string.server_is_not_configured), ERROR)
                 setupInitConfig()
             } else {
@@ -860,7 +859,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         Statics.getCurrentUser {
             if (it != null) {
                 binding.clientTextView.text =
-                    String.format("%s - %s", settingViewModel.installationCode, it.name)
+                    String.format("%s - %s", settingsVm.installationCode, it.name)
             }
         }
     }
@@ -930,7 +929,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private val resultForInitConfig =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             try {
-                if (settingViewModel.urlPanel.isEmpty()) {
+                if (settingsVm.urlPanel.isEmpty()) {
                     showSnackBar(getString(R.string.server_is_not_configured), ERROR)
                     setupInitConfig()
                 } else {
@@ -983,10 +982,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         }
 
         if (newItems > 0) {
-            if (settingViewModel.shakeOnPendingOrders) {
+            if (settingsVm.shakeOnPendingOrders) {
                 shakeDevice()
             }
-            if (settingViewModel.soundOnPendingOrders) {
+            if (settingsVm.soundOnPendingOrders) {
                 playNotification()
             }
 

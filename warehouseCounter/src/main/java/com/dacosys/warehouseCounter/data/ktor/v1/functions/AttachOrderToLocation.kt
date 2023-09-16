@@ -1,8 +1,8 @@
 package com.dacosys.warehouseCounter.data.ktor.v1.functions
 
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV1
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV1
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.ApiResponse.Companion.RESULT_OK
 import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetToken.Companion.Token
 import com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl.Companion.validUrl
@@ -67,7 +67,7 @@ class AttachOrderToLocation(
                 warehouseAreaId = warehouseAreaId
             )
         )
-        ktorApiServiceV1.attachPtlOrderToLocation(body = body, callback = {
+        apiServiceV1.attachPtlOrderToLocation(body = body, callback = {
             if (it.result == RESULT_OK) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
             else sendEvent(it.details, SnackBarType.ERROR)
         })

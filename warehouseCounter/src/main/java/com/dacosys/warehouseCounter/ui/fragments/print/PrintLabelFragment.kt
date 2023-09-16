@@ -18,7 +18,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.Label
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.Barcode
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
@@ -100,7 +100,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
     }
 
     private fun saveSharedPreferences() {
-        settingViewModel.printerQty = qty
+        settingsVm.printerQty = qty
     }
 
     override fun onDetach() {
@@ -124,15 +124,15 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
     }
 
     private fun loadPrinterPreferences() {
-        qty = settingViewModel.printerQty
+        qty = settingsVm.printerQty
 
         // Impresora guardada en preferencias
-        val useBtPrinter = settingViewModel.useBtPrinter
-        val useNetPrinter = settingViewModel.useNetPrinter
+        val useBtPrinter = settingsVm.useBtPrinter
+        val useNetPrinter = settingsVm.useNetPrinter
 
-        val pBt = settingViewModel.printerBtAddress
-        val pIp = settingViewModel.ipNetPrinter
-        val port = settingViewModel.portNetPrinter
+        val pBt = settingsVm.printerBtAddress
+        val pIp = settingsVm.ipNetPrinter
+        val port = settingsVm.portNetPrinter
 
         printer = when {
             useBtPrinter -> pBt
@@ -341,7 +341,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
     }
 
     private fun configApp() {
-        val realPass = settingViewModel.confPassword
+        val realPass = settingsVm.confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
@@ -389,7 +389,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
     private fun attemptEnterConfig(password: String) {
         Screen.closeKeyboard(requireActivity())
 
-        val realPass = settingViewModel.confPassword
+        val realPass = settingsVm.confPassword
         if (password == realPass) {
             if (!rejectNewInstances) {
                 rejectNewInstances = true
@@ -464,7 +464,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
 
         var startTime = System.currentTimeMillis()
         while (!isDone) {
-            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong())
+            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong())
                 isDone = true
         }
 
@@ -485,7 +485,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
 
         startTime = System.currentTimeMillis()
         while (!isDone) {
-            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong())
+            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong())
                 isDone = true
         }
 

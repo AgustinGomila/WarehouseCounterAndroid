@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.UTCDataTime
 import java.io.File
@@ -27,7 +27,7 @@ class ErrorLog {
 
         val errorLogPath: File
             get() {
-                return File("${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}${Statics.WC_ROOT_PATH}/${settingViewModel.installationCode}${ERROR_LOG_PATH}/")
+                return File("${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}${Statics.WC_ROOT_PATH}/${settingsVm.installationCode}${ERROR_LOG_PATH}/")
             }
 
         override fun onRequestPermissionsResult(
@@ -113,7 +113,7 @@ class ErrorLog {
         private fun reallyWriteLog() {
             Log.e(tClassName, tMsg)
 
-            val writeLog = settingViewModel.registryError
+            val writeLog = settingsVm.registryError
             if (writeLog) {
                 val logFileName = getFileName()
                 val logPath = errorLogPath

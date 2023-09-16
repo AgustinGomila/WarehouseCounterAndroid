@@ -1,8 +1,8 @@
 package com.dacosys.warehouseCounter.data.ktor.v1.functions
 
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV1
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV1
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.token.UserToken
 import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetToken.Companion.Token
 import com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl.Companion.validUrl
@@ -50,7 +50,7 @@ class GetWarehouse(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiServiceV1.getWarehouse(body = body, callback = {
+        apiServiceV1.getWarehouse(body = body, callback = {
             r = it
             if (it.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
             else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)

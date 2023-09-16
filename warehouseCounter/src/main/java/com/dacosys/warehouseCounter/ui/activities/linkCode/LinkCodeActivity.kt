@@ -52,8 +52,8 @@ import com.dacosys.imageControl.ui.activities.ImageControlGridActivity
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.SendItemCodeArray
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
@@ -63,7 +63,6 @@ import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.LinkCodeActivityBottomPanelCollapsedBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalSeparator
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.JotterListener
@@ -148,7 +147,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
@@ -227,17 +226,17 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     private val menuItemShowImages = 9999
     private var showImages
-        get() = settingViewModel.linkCodeShowImages
+        get() = settingsVm.linkCodeShowImages
         set(value) {
-            settingViewModel.linkCodeShowImages = value
+            settingsVm.linkCodeShowImages = value
         }
 
     private var showCheckBoxes
         get() =
             if (!multiSelect) false
-            else settingViewModel.linkCodeShowCheckBoxes
+            else settingsVm.linkCodeShowCheckBoxes
         set(value) {
-            settingViewModel.linkCodeShowCheckBoxes = value
+            settingsVm.linkCodeShowCheckBoxes = value
         }
 
     private val countChecked: Int
@@ -365,7 +364,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 val validStr = getValidValue(
                     source = s.toString(),
                     maxValue = 100.toDouble(),
-                    decimalSeparator = decimalSeparator
+                    decimalSeparator = settingsVm.decimalSeparator
                 )
 
                 // Si es NULL no hay que hacer cambios en el texto
@@ -433,8 +432,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun setupFilterFragment() {
-        val sv = settingViewModel
-        val sr = settingRepository
+        val sv = settingsVm
+        val sr = settingsRepository
         filterFragment =
             SelectFilterFragment.Builder()
                 .searchByItemDescription(sv.linkCodeSearchByItemDescription, sr.linkCodeSearchByItemDescription)
@@ -900,12 +899,12 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
         // Opción de visibilidad de Imágenes
-        if (settingViewModel.useImageControl) {
+        if (settingsVm.useImageControl) {
             menu.add(Menu.NONE, menuItemShowImages, Menu.NONE, context.getString(R.string.show_images))
                 .setChecked(showImages).isCheckable = true
             val item = menu.findItem(menuItemShowImages)
@@ -1017,7 +1016,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }
 
         item.isChecked = !item.isChecked
-        val sv = settingViewModel
+        val sv = settingsVm
         when (id) {
             menuItemShowImages -> {
                 adapter?.showImages(item.isChecked)
@@ -1031,17 +1030,17 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                     )
             }
 
-            settingRepository.linkCodeSearchByItemEan.key.hashCode() -> {
+            settingsRepository.linkCodeSearchByItemEan.key.hashCode() -> {
                 filterFragment.setEanVisibility(if (item.isChecked) VISIBLE else GONE)
                 sv.linkCodeSearchByItemEan = item.isChecked
             }
 
-            settingRepository.linkCodeSearchByCategory.key.hashCode() -> {
+            settingsRepository.linkCodeSearchByCategory.key.hashCode() -> {
                 filterFragment.setCategoryVisibility(if (item.isChecked) VISIBLE else GONE)
                 sv.linkCodeSearchByCategory = item.isChecked
             }
 
-            settingRepository.linkCodeSearchByItemDescription.key.hashCode() -> {
+            settingsRepository.linkCodeSearchByItemDescription.key.hashCode() -> {
                 filterFragment.setDescriptionVisibility(if (item.isChecked) VISIBLE else GONE)
                 sv.linkCodeSearchByItemDescription = item.isChecked
             }
@@ -1344,7 +1343,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     //region ImageControl
     override fun onAddPhotoRequired(tableId: Int, itemId: Long, description: String) {
-        if (!settingViewModel.useImageControl) {
+        if (!settingsVm.useImageControl) {
             return
         }
 
@@ -1356,7 +1355,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             intent.putExtra(ImageControlCameraActivity.ARG_PROGRAM_OBJECT_ID, tableId.toLong())
             intent.putExtra(ImageControlCameraActivity.ARG_OBJECT_ID_1, itemId.toString())
             intent.putExtra(ImageControlCameraActivity.ARG_DESCRIPTION, description)
-            intent.putExtra(ImageControlCameraActivity.ARG_ADD_PHOTO, settingViewModel.autoSend)
+            intent.putExtra(ImageControlCameraActivity.ARG_ADD_PHOTO, settingsVm.autoSend)
             resultForPhotoCapture.launch(intent)
         }
     }
@@ -1377,7 +1376,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }
 
     override fun onAlbumViewRequired(tableId: Int, itemId: Long) {
-        if (!settingViewModel.useImageControl) {
+        if (!settingsVm.useImageControl) {
             return
         }
 

@@ -17,7 +17,7 @@ import android.widget.AdapterView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -277,7 +277,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         // TOP LAYOUT
         topLayout()
 
-        val viewHeight = settingViewModel.itemViewHeight
+        val viewHeight = settingsVm.itemViewHeight
         val maxNeeded = (binding.autoCompleteTextView.adapter?.count ?: 0) * viewHeight
         val availableHeight =
             calculateDropDownHeight() - (binding.autoCompleteTextView.y + binding.autoCompleteTextView.height).toInt()
@@ -358,7 +358,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
 
         JotterListener.lockScanner(this, true)
 

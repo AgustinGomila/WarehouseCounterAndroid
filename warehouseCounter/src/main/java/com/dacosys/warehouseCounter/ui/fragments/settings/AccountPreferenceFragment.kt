@@ -9,8 +9,8 @@ import androidx.preference.PreferenceScreen
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages
 import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.data.room.database.helper.FileHelper
@@ -55,11 +55,11 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
         // guidelines.
 
         if (BuildConfig.DEBUG) {
-            bindPreferenceSummaryToValue(this, settingRepository.clientEmail)
-            bindPreferenceSummaryToValue(this, settingRepository.clientPassword)
+            bindPreferenceSummaryToValue(this, settingsRepository.clientEmail)
+            bindPreferenceSummaryToValue(this, settingsRepository.clientPassword)
         }
 
-        val emailEditText = findPreference<Preference>(settingRepository.clientEmail.key)
+        val emailEditText = findPreference<Preference>(settingsRepository.clientEmail.key)
         emailEditText?.setOnPreferenceChangeListener { preference, newValue ->
             if (alreadyAnsweredYes) {
                 preference.summary = newValue.toString()
@@ -75,7 +75,7 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
             }
         }
 
-        val passwordEditText = findPreference<Preference>(settingRepository.clientPassword.key)
+        val passwordEditText = findPreference<Preference>(settingsRepository.clientPassword.key)
         passwordEditText?.setOnPreferenceChangeListener { preference, newValue ->
             if (alreadyAnsweredYes) {
                 preference.summary = newValue.toString()
@@ -94,8 +94,8 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
         val selectPackageButton = findPreference<Preference>("select_package")
         selectPackageButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
             if (emailEditText != null && passwordEditText != null) {
-                val email = settingViewModel.clientEmail
-                val password = settingViewModel.clientPassword
+                val email = settingsVm.clientEmail
+                val password = settingsVm.clientPassword
 
                 if (alreadyAnsweredYes) {
                     Statics.downloadDbRequired = true
@@ -130,11 +130,11 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
 
         val qrCodeButton = findPreference<Preference>("ac_qr_code")
         qrCodeButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            val urlPanel = settingViewModel.urlPanel
-            val installationCode = settingViewModel.installationCode
-            val clientEmail = settingViewModel.clientEmail
-            val clientPassword = settingViewModel.clientPassword
-            val clientPackage = settingViewModel.clientPackage
+            val urlPanel = settingsVm.urlPanel
+            val installationCode = settingsVm.installationCode
+            val clientEmail = settingsVm.clientEmail
+            val clientPassword = settingsVm.clientPassword
+            val clientPackage = settingsVm.clientPackage
 
             if (urlPanel.isEmpty() || installationCode.isEmpty() || clientPackage.isEmpty() || clientEmail.isEmpty() || clientPassword.isEmpty()) {
                 if (view != null) showSnackBar(

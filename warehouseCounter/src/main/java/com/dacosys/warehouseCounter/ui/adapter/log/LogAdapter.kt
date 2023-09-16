@@ -22,11 +22,11 @@ import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.LogStatus
 import com.dacosys.warehouseCounter.databinding.LogContentRowBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.decimalPlaces
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
@@ -206,11 +206,9 @@ class LogAdapter private constructor(builder: Builder) :
     }
 
     private fun sortItems(originalList: MutableList<Log>): ArrayList<Log> {
-        // Run the follow method on each of the roots
         return ArrayList(
             originalList.sortedWith(
-                compareBy({ it.itemCode },
-                    { it.itemDescription })
+                compareBy { it.date }
             ).toList()
         )
     }
@@ -326,8 +324,9 @@ class LogAdapter private constructor(builder: Builder) :
             binding.descriptionAutoResizeTextView.text = logContent.itemDescription
             binding.eanAutoResizeTextView.text = logContent.itemCode
             binding.variationQtyTextView.text =
-                Statics.roundToString(logContent.variationQty ?: 0.toDouble(), decimalPlaces)
-            binding.finalQtyTextView.text = Statics.roundToString(logContent.finalQty ?: 0.toDouble(), decimalPlaces)
+                Statics.roundToString(logContent.variationQty ?: 0.toDouble(), settingsVm.decimalPlaces)
+            binding.finalQtyTextView.text =
+                Statics.roundToString(logContent.finalQty ?: 0.toDouble(), settingsVm.decimalPlaces)
 
             setStyle(logContent, isSelected)
         }

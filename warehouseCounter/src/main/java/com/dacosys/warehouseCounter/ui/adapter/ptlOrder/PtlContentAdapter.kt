@@ -29,7 +29,7 @@ import androidx.recyclerview.widget.RecyclerView.VISIBLE
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.ContentStatus
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlContent
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlItem
@@ -318,7 +318,7 @@ class PtlContentAdapter private constructor(builder: Builder) :
                 initialQty = content.qtyCollected,
                 minValue = 0.0,
                 maxValue = 999999.0,
-                multiplier = settingViewModel.scanMultiplier
+                multiplier = settingsVm.scanMultiplier
             )
             true
         }
@@ -492,7 +492,6 @@ class PtlContentAdapter private constructor(builder: Builder) :
     }
 
     private fun sortItems(originalList: MutableList<PtlContent>): ArrayList<PtlContent> {
-        // Run the follow method on each of the roots
         return ArrayList(
             originalList.sortedWith(
                 compareBy(

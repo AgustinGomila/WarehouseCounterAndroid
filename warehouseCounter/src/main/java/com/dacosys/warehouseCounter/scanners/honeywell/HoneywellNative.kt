@@ -6,7 +6,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.honeywell.aidc.AidcManager
 import com.honeywell.aidc.BarcodeFailureEvent
@@ -193,7 +193,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
     }
 
     private fun loadProperties() {
-        val sv = settingViewModel
+        val sv = settingsVm
         properties = HashMap()
         properties[BarcodeReader.PROPERTY_PDF_417_ENABLED] = sv.symbologyPDF417
         properties[BarcodeReader.PROPERTY_AZTEC_ENABLED] = sv.symbologyAztec

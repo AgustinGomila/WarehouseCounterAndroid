@@ -48,8 +48,8 @@ import com.dacosys.imageControl.ui.activities.ImageControlGridActivity
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
@@ -136,17 +136,17 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private val menuItemShowImages = 9999
     private var showImages
-        get() = settingViewModel.itemSelectShowImages
+        get() = settingsVm.itemSelectShowImages
         set(value) {
-            settingViewModel.itemSelectShowImages = value
+            settingsVm.itemSelectShowImages = value
         }
 
     private var showCheckBoxes
         get() =
             if (!multiSelect) false
-            else settingViewModel.itemSelectShowCheckBoxes
+            else settingsVm.itemSelectShowCheckBoxes
         set(value) {
-            settingViewModel.itemSelectShowCheckBoxes = value
+            settingsVm.itemSelectShowCheckBoxes = value
         }
 
     private val countChecked: Int
@@ -332,7 +332,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         binding.printFragment.visibility = View.VISIBLE
 
         if (currentTemplateId == 0L) {
-            currentTemplateId = settingViewModel.defaultItemTemplateId
+            currentTemplateId = settingsVm.defaultItemTemplateId
         }
 
         printLabelFragment =
@@ -355,8 +355,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     private fun setupFilterFragment() {
-        val sv = settingViewModel
-        val sr = settingRepository
+        val sv = settingsVm
+        val sr = settingsRepository
         filterFragment =
             SelectFilterFragment.Builder()
                 .searchByItemDescription(sv.itemSearchByItemDescription, sr.itemSearchByItemDescription)
@@ -795,7 +795,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(scanCode, INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
@@ -839,12 +839,12 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
         // Opción de visibilidad de Imágenes
-        if (settingViewModel.useImageControl) {
+        if (settingsVm.useImageControl) {
             menu.add(Menu.NONE, menuItemShowImages, Menu.NONE, context.getString(R.string.show_images))
                 .setChecked(showImages).isCheckable = true
             val item = menu.findItem(menuItemShowImages)
@@ -956,7 +956,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
 
         item.isChecked = !item.isChecked
-        val sv = settingViewModel
+        val sv = settingsVm
         when (id) {
             menuItemShowImages -> {
                 adapter?.showImages(item.isChecked)
@@ -970,17 +970,17 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                     )
             }
 
-            settingRepository.itemSearchByItemEan.key.hashCode() -> {
+            settingsRepository.itemSearchByItemEan.key.hashCode() -> {
                 filterFragment.setEanVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.itemSearchByItemEan = item.isChecked
             }
 
-            settingRepository.itemSearchByCategory.key.hashCode() -> {
+            settingsRepository.itemSearchByCategory.key.hashCode() -> {
                 filterFragment.setCategoryVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.itemSearchByCategory = item.isChecked
             }
 
-            settingRepository.itemSearchByItemDescription.key.hashCode() -> {
+            settingsRepository.itemSearchByItemDescription.key.hashCode() -> {
                 filterFragment.setDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.itemSearchByItemDescription = item.isChecked
             }
@@ -1055,7 +1055,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         currentPrintQty = qty ?: 1
         currentTemplateId = template?.templateId ?: return
 
-        settingViewModel.defaultItemTemplateId = currentTemplateId
+        settingsVm.defaultItemTemplateId = currentTemplateId
     }
 
     override fun onPrintRequested(printer: String, qty: Int) {
@@ -1127,7 +1127,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     //region ImageControl
     override fun onAddPhotoRequired(tableId: Int, itemId: Long, description: String) {
-        if (!settingViewModel.useImageControl) {
+        if (!settingsVm.useImageControl) {
             return
         }
 
@@ -1139,7 +1139,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             intent.putExtra(ImageControlCameraActivity.ARG_PROGRAM_OBJECT_ID, tableId.toLong())
             intent.putExtra(ImageControlCameraActivity.ARG_OBJECT_ID_1, itemId.toString())
             intent.putExtra(ImageControlCameraActivity.ARG_DESCRIPTION, description)
-            intent.putExtra(ImageControlCameraActivity.ARG_ADD_PHOTO, settingViewModel.autoSend)
+            intent.putExtra(ImageControlCameraActivity.ARG_ADD_PHOTO, settingsVm.autoSend)
             resultForPhotoCapture.launch(intent)
         }
     }
@@ -1160,7 +1160,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
 
     override fun onAlbumViewRequired(tableId: Int, itemId: Long) {
-        if (!settingViewModel.useImageControl) {
+        if (!settingsVm.useImageControl) {
             return
         }
 

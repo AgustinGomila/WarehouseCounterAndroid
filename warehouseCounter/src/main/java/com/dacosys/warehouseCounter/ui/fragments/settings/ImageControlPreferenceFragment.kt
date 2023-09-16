@@ -11,8 +11,8 @@ import com.dacosys.imageControl.Statics.Companion.albumFolder
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.room.database.helper.FileHelper
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.data.settings.utils.ImageControlCheckUser
@@ -56,16 +56,16 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
         super.onCreate(savedInstanceState)
 
         // region: Tamaño de la imagen
-        bindPreferenceSummaryToValue(this, settingRepository.icPhotoMaxHeightOrWidth)
+        bindPreferenceSummaryToValue(this, settingsRepository.icPhotoMaxHeightOrWidth)
         // endregion
 
         // region: QR de configuración
         val qrCodeButton = findPreference<Preference>("ic_qr_code")
         qrCodeButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            val icUrl = settingViewModel.icWsServer
-            val icNamespace = settingViewModel.icWsNamespace
-            val icUserWs = settingViewModel.icWsUser
-            val icPasswordWs = settingViewModel.icWsPass
+            val icUrl = settingsVm.icWsServer
+            val icNamespace = settingsVm.icWsNamespace
+            val icUserWs = settingsVm.icWsUser
+            val icPasswordWs = settingsVm.icWsPass
 
             if (icUrl.isEmpty() || icNamespace.isEmpty() || icUserWs.isEmpty() || icPasswordWs.isEmpty()) {
                 if (view != null) showSnackBar(
@@ -117,14 +117,14 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
         // endregion
 
         // region: Datos de conexión
-        bindPreferenceSummaryToValue(this, settingRepository.icWsServer)
-        val urlPref = findPreference<Preference>(settingRepository.icWsServer.key)
+        bindPreferenceSummaryToValue(this, settingsRepository.icWsServer)
+        val urlPref = findPreference<Preference>(settingsRepository.icWsServer.key)
 
-        bindPreferenceSummaryToValue(this, settingRepository.icWsNamespace)
-        val namespacePref = findPreference<Preference>(settingRepository.icWsNamespace.key)
+        bindPreferenceSummaryToValue(this, settingsRepository.icWsNamespace)
+        val namespacePref = findPreference<Preference>(settingsRepository.icWsNamespace.key)
 
-        val userPref = findPreference<Preference>(settingRepository.icUser.key)
-        val passPref = findPreference<Preference>(settingRepository.icPass.key)
+        val userPref = findPreference<Preference>(settingsRepository.icUser.key)
+        val passPref = findPreference<Preference>(settingsRepository.icPass.key)
 
         /*
         val userWsPref = findPreference<Preference>(P.icWsUser.key)
@@ -134,8 +134,8 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
         val testButton = findPreference<Preference>("ic_test")
         testButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
             if (urlPref != null && namespacePref != null && userPref != null && passPref != null) {
-                val url = settingViewModel.icWsServer
-                val namespace = settingViewModel.icWsNamespace
+                val url = settingsVm.icWsServer
+                val namespace = settingsVm.icWsNamespace
 
                 testImageControlConnection(url = url, namespace = namespace)
             }
@@ -143,21 +143,21 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
         }
 
         if (BuildConfig.DEBUG) {
-            bindPreferenceSummaryToValue(this, settingRepository.icWsUser)
-            bindPreferenceSummaryToValue(this, settingRepository.icWsPass)
-            bindPreferenceSummaryToValue(this, settingRepository.icUser)
-            bindPreferenceSummaryToValue(this, settingRepository.icPass)
+            bindPreferenceSummaryToValue(this, settingsRepository.icWsUser)
+            bindPreferenceSummaryToValue(this, settingsRepository.icWsPass)
+            bindPreferenceSummaryToValue(this, settingsRepository.icUser)
+            bindPreferenceSummaryToValue(this, settingsRepository.icPass)
         }
         // endregion
 
         // region: Proxy preferences
-        val useProxyPref = findPreference<Preference>(settingRepository.icWsUseProxy.key) as SwitchPreference
+        val useProxyPref = findPreference<Preference>(settingsRepository.icWsUseProxy.key) as SwitchPreference
         useProxyPref.setOnPreferenceChangeListener { _, newValue ->
-            settingViewModel.icWsUseProxy = newValue == true
+            settingsVm.icWsUseProxy = newValue == true
             true
         }
-        bindPreferenceSummaryToValue(this, settingRepository.icWsProxy)
-        bindPreferenceSummaryToValue(this, settingRepository.icWsProxyPort)
+        bindPreferenceSummaryToValue(this, settingsRepository.icWsProxy)
+        bindPreferenceSummaryToValue(this, settingsRepository.icWsProxyPort)
 
         /*
         val proxyUrlPref = findPreference<Preference>(P.icWsProxy.key)

@@ -2,7 +2,7 @@ package com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode
 
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCodePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCodeResponse
 import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
@@ -52,7 +52,7 @@ class SendItemCodeArray
 
         val startTime = System.currentTimeMillis()
         while (!isDone) {
-            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong()) {
+            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
                 sendEvent(context.getString(R.string.connection_timeout), SnackBarType.ERROR)
                 isDone = true
             }

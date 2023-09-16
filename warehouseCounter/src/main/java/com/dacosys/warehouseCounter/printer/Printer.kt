@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.printer
 import androidx.fragment.app.FragmentActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 
@@ -31,8 +31,8 @@ open class Printer {
 
     private fun build(activity: FragmentActivity, onEvent: (SnackBarEventData) -> Unit): Printer? {
         printerDevice = when {
-            settingViewModel.useBtPrinter -> BtPrinter(activity, onEvent)
-            settingViewModel.useNetPrinter -> NetPrinter(onEvent)
+            settingsVm.useBtPrinter -> BtPrinter(activity, onEvent)
+            settingsVm.useNetPrinter -> NetPrinter(onEvent)
             else -> {
                 onEvent(SnackBarEventData(context.getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR))
                 null

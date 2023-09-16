@@ -76,7 +76,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
 
         /** Proxy */
         single {
-            val sv = settingViewModel
+            val sv = settingsVm
             if (sv.useProxy) {
                 val authenticator = object : Authenticator() {
                     override fun getPasswordAuthentication(): PasswordAuthentication =
@@ -105,7 +105,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
                 engine {
                     config {
                         followRedirects(true)
-                        connectTimeout(settingViewModel.connectionTimeout.toLong(), TimeUnit.SECONDS)
+                        connectTimeout(settingsVm.connectionTimeout.toLong(), TimeUnit.SECONDS)
                         proxy(currentProxy)
                     }
                 }
@@ -146,25 +146,25 @@ class WarehouseCounterApp : Application(), KoinComponent {
         val context: Context
             get() = get().get()
 
-        val settingRepository: SettingsRepository
+        val settingsRepository: SettingsRepository
             get() = get().get()
 
-        val settingViewModel: SettingsViewModel
+        val settingsVm: SettingsViewModel
             get() = get().get()
 
-        val syncViewModel: SyncViewModel
+        val syncVm: SyncViewModel
             get() = get().get()
 
         val httpClient: HttpClient
             get() = get().get()
 
-        val ktorApiServiceV1: com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl
+        val apiServiceV1: com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl
             get() = get().get()
 
-        val ktorDacoService: DacoServiceImpl
+        val dacoService: DacoServiceImpl
             get() = get().get()
 
-        val ktorApiServiceV2: com.dacosys.warehouseCounter.data.ktor.v2.impl.APIServiceImpl
+        val apiServiceV2: com.dacosys.warehouseCounter.data.ktor.v2.impl.APIServiceImpl
             get() = get().get()
 
         val currentProxy: Proxy

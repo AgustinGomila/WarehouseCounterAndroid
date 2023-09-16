@@ -18,7 +18,7 @@ import androidx.core.text.isDigitsOnly
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -177,7 +177,7 @@ object JotterListener : Jotter.Listener {
     }
 
     fun autodetectDeviceModel(activity: AppCompatActivity) {
-        val idStr = settingViewModel.collectorType
+        val idStr = settingsVm.collectorType
         var collectorType: CollectorType = CollectorType.none
         if (idStr.isDigitsOnly()) collectorType = CollectorType.getById(idStr.toInt())
 
@@ -209,7 +209,7 @@ object JotterListener : Jotter.Listener {
 
             Log.v(this::class.java.simpleName, "Manufacturer: $manufacturer, Model: $model")
 
-            settingViewModel.collectorType = collectorType.id.toString()
+            settingsVm.collectorType = collectorType.id.toString()
             showSnackBar(
                 activity.window.decorView,
                 "${context.getString(R.string.device)}: $manufacturer $model",
@@ -259,9 +259,9 @@ object JotterListener : Jotter.Listener {
             // Creamos y agregamos el escáner de la actividad
             createBarcodeReader(activity)
 
-            if (settingViewModel.useNfc) Nfc.setupNFCReader(activity)
+            if (settingsVm.useNfc) Nfc.setupNFCReader(activity)
 
-            if (activity is Rfid.RfidDeviceListener && settingViewModel.useBtRfid) {
+            if (activity is Rfid.RfidDeviceListener && settingsVm.useBtRfid) {
                 rfidStart(activity)
                 rfidSetup(activity)
             }
@@ -353,9 +353,9 @@ object JotterListener : Jotter.Listener {
     }
 
     fun resumeReaderDevices(activity: AppCompatActivity) {
-        if (settingViewModel.useNfc) enableNfcForegroundDispatch(activity)
+        if (settingsVm.useNfc) enableNfcForegroundDispatch(activity)
 
-        if (activity is Rfid.RfidDeviceListener && settingViewModel.useBtRfid) Rfid.resume(
+        if (activity is Rfid.RfidDeviceListener && settingsVm.useBtRfid) Rfid.resume(
             activity
         )
 
@@ -396,9 +396,9 @@ object JotterListener : Jotter.Listener {
     }
 
     fun pauseReaderDevices(activity: AppCompatActivity) {
-        if (activity is Rfid.RfidDeviceListener && settingViewModel.useBtRfid) Rfid.pause()
+        if (activity is Rfid.RfidDeviceListener && settingsVm.useBtRfid) Rfid.pause()
 
-        if (settingViewModel.useNfc) Nfc.disableNfcForegroundDispatch(activity)
+        if (settingsVm.useNfc) Nfc.disableNfcForegroundDispatch(activity)
 
         scannerList.firstOrNull { it.activityName() == activity::class.java.simpleName }?.onPause()
         floatingWindowList.firstOrNull { it.activityName == activity::class.java.simpleName }

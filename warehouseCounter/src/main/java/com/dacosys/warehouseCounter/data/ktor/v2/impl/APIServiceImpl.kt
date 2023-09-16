@@ -1,7 +1,7 @@
 package com.dacosys.warehouseCounter.data.ktor.v2.impl
 
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiRequest
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.apiParam.ListResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.Barcode
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeCodeParam
@@ -275,7 +275,7 @@ class APIServiceImpl : APIService {
 
         val startTime = System.currentTimeMillis()
         while (!isDone) {
-            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong()) {
+            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
                 isDone = true
             }
         }
@@ -358,7 +358,7 @@ class APIServiceImpl : APIService {
 
         val startTime = System.currentTimeMillis()
         while (!isDone) {
-            if (System.currentTimeMillis() - startTime == settingViewModel.connectionTimeout.toLong()) {
+            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
                 isDone = true
             }
         }

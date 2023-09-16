@@ -24,8 +24,8 @@ import androidx.preference.SeekBarPreference
 import androidx.preference.SwitchPreference
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.data.settings.SettingsViewModel
 import com.dacosys.warehouseCounter.data.settings.custom.CollectorTypePreference
@@ -50,8 +50,8 @@ import kotlin.concurrent.thread
  */
 class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceListener {
 
-    private val vm: SettingsViewModel by lazy { settingViewModel }
-    private val sp: SettingsRepository by lazy { settingRepository }
+    private val vm: SettingsViewModel by lazy { settingsVm }
+    private val sp: SettingsRepository by lazy { settingsRepository }
     private lateinit var printerPref: PreferenceScreen
     private lateinit var rfidPref: PreferenceScreen
 

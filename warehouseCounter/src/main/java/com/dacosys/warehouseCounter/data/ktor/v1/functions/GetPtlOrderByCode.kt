@@ -1,8 +1,8 @@
 package com.dacosys.warehouseCounter.data.ktor.v1.functions
 
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV1
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.ktorApiServiceV1
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlOrder
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlOrderBody
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.search.SearchItem
@@ -59,7 +59,7 @@ class GetPtlOrderByCode(
                 extId = code.toLong()
             )
         )
-        ktorApiServiceV1.getPtlOrderByCode(body = body, callback = {
+        apiServiceV1.getPtlOrderByCode(body = body, callback = {
             r = ArrayList(it.orders)
             if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
             else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
