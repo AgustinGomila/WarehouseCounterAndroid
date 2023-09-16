@@ -53,7 +53,6 @@ import com.dacosys.warehouseCounter.databinding.LoginActivityBinding
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.closeImageControl
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.Md5
-import com.dacosys.warehouseCounter.misc.Proxy
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -83,7 +82,7 @@ import kotlin.concurrent.thread
 
 class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedListener,
     UserSpinnerFragment.OnSpinnerFillListener, Scanner.ScannerListener,
-    Proxy.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded,
+    ProxySetup.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded,
     DownloadDb.DownloadDbTask {
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {

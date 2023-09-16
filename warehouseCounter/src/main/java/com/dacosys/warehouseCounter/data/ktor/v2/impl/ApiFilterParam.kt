@@ -8,8 +8,8 @@ data class ApiFilterParam(
     companion object {
         const val ACTION_FILTER = "filter"
 
-        const val ACTION_CONDITIONAL_LIKE = "like"
-        const val ACTION_CONDITIONAL_IN = "in"
+        const val ACTION_OPERATOR_LIKE = "like"
+        const val ACTION_OPERATOR_IN = "in"
 
         const val EXTENSION_ID = "id"
 

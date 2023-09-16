@@ -55,7 +55,6 @@ class TemplateSelectActivity : AppCompatActivity(),
         savedInstanceState.putString(ARG_TITLE, title.toString())
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun loadFromBundle(b: Bundle) {
         val t1 = b.getString(ARG_TITLE)
         title = if (!t1.isNullOrEmpty()) t1
@@ -64,6 +63,7 @@ class TemplateSelectActivity : AppCompatActivity(),
         template = b.parcelable(ARG_TEMPLATE)
         val temp = b.serializable<ArrayList<Long>>(ARG_TEMPLATE_TYPE_ID_LIST) as ArrayList<*>
         if (temp.first() is Long) {
+            @Suppress("UNCHECKED_CAST")
             templateTypeIdList = temp as ArrayList<Long>
         }
     }

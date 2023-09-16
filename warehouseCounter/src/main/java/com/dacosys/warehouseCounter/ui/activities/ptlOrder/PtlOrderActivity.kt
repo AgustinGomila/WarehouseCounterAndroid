@@ -183,7 +183,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     private fun onGetLabel(it: ArrayList<Label>) {
         if (it.any()) {
-            printLabelFragment.printPtlLabels(it)
+            printLabelFragment.printPtlLabels(labelArray = it, onFinish = {})
         }
         gentlyReturn()
     }

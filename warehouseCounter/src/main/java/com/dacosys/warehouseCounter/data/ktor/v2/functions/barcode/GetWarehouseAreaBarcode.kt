@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.data.ktor.v2.functions.order
+package com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode
 
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
@@ -18,7 +18,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class GetOrderBarcode(
+class GetWarehouseAreaBarcode(
     private val param: BarcodeParam,
     private val onEvent: (SnackBarEventData) -> Unit = { },
     private val onFinish: (ArrayList<Barcode>) -> Unit,
@@ -45,7 +45,7 @@ class GetOrderBarcode(
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        ktorApiServiceV2.getOrderBarcode(
+        ktorApiServiceV2.getWarehouseAreaBarcode(
             params = param,
             callback = {
                 if (it.onEvent != null) sendEvent(it.onEvent)

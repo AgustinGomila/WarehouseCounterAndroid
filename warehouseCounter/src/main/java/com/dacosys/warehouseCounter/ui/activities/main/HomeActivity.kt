@@ -49,10 +49,11 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrderBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetOrderBarcode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.SendOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.ViewOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.sync.SyncViewModel
+import com.dacosys.warehouseCounter.data.room.dao.pendingLabel.PendingLabelCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.client.Client
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.AddOrder
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.AddOrderFromFile
@@ -65,6 +66,7 @@ import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
+import com.dacosys.warehouseCounter.printer.Printer
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity
@@ -123,6 +125,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                         }
                     },
                     onFinish = {
+                        PendingLabelCoroutines.add(it)
                         if (settingViewModel.autoPrint) {
                             printOrderLabels(it)
                         }
@@ -136,19 +139,34 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
     private fun printOrderLabels(ids: ArrayList<Long>) {
         val templateId = settingViewModel.defaultOrderTemplateId
-        if (templateId == 0L) return
+        val qty = settingViewModel.printerQty
+        val printOps = PrintOps.getPrintOps()
 
         GetOrderBarcode(
             param = BarcodeParam(
                 idList = ids,
                 templateId = templateId,
-                printOps = PrintOps.getPrintOps()
+                printOps = printOps
             ),
-            onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) },
-            onFinish = {
-                // TODO: printLabelFragment.printBarcodes(it)
+            onEvent = {
+                if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType)
+            },
+            onFinish = { barcodes ->
+                if (barcodes.isNotEmpty()) {
+                    val sendThis = barcodes.joinToString(lineSeparator) { it.body }
+                    Printer(
+                        activity = this,
+                        onEvent = { showSnackBar(it.text, it.snackBarType) }
+                    ).printThis(
+                        printThis = sendThis,
+                        qty = qty,
+                        onFinish = { success ->
+                            if (success) PendingLabelCoroutines.remove(ids)
+                        }
+                    )
+                }
             }
-        )
+        ).execute()
     }
 
     @get:Synchronized
@@ -818,6 +836,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         }
 
         setHeader()
+        setupViewPager()
 
         sync.onCompletedOrders { syncVm.setSyncCompleted(it) }
         sync.onNewOrders { syncVm.setSyncNew(it) }
@@ -834,7 +853,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             setHeaderUserName()
             setHeaderVersion()
             setHeaderImageBanner()
-            setupViewPager()
         }
     }
 

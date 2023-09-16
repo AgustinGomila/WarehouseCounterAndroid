@@ -18,8 +18,8 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_CONDITIONAL_IN
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_CONDITIONAL_LIKE
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_OPERATOR_IN
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_OPERATOR_LIKE
 import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.data.settings.Preference
 import com.dacosys.warehouseCounter.databinding.SelectFilterFragmentBinding
@@ -882,7 +882,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         return ApiFilterParam(
             columnName = ApiFilterParam.EXTENSION_ID,
             value = id.toString(),
-            conditional = ACTION_CONDITIONAL_IN
+            conditional = ACTION_OPERATOR_IN
         )
     }
 
@@ -892,7 +892,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ITEM_EXTERNAL_ID,
                 value = itemCode,
-                conditional = ACTION_CONDITIONAL_LIKE
+                conditional = ACTION_OPERATOR_LIKE
             )
         }
 
@@ -902,7 +902,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ITEM_DESCRIPTION,
                 value = description,
-                conditional = ACTION_CONDITIONAL_LIKE
+                conditional = ACTION_OPERATOR_LIKE
             )
         }
 
@@ -912,7 +912,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
                 value = itemEan,
-                conditional = ACTION_CONDITIONAL_LIKE
+                conditional = ACTION_OPERATOR_LIKE
             )
         }
 
@@ -949,7 +949,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ORDER_EXTERNAL_ID,
                 value = orderExternalId,
-                conditional = ACTION_CONDITIONAL_LIKE
+                conditional = ACTION_OPERATOR_LIKE
             )
         }
 
@@ -959,7 +959,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ORDER_DESCRIPTION,
                 value = description,
-                conditional = ACTION_CONDITIONAL_LIKE
+                conditional = ACTION_OPERATOR_LIKE
             )
         }
 

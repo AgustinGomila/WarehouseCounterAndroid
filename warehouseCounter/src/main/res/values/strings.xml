@@ -515,9 +515,9 @@
     <string name="enter_code">Ingrese el código</string>
     <string name="expected">Esperado</string>
     <string name="registered">Registrado</string>
-    <string name="cant">Cant.</string>
-    <string name="checked">Marc.</string>
-    <string name="cont_">Cont.</string>
+    <string name="cant">Cant</string>
+    <string name="checked">Marc</string>
+    <string name="cont_">Cont</string>
     <string name="there_are_no_pending_counts">No existen arqueos pendientes</string>
     <string name="scan_log">Registro de escaneos</string>
     <string name="show_scanned_code">Mostrar código escaneado</string>
@@ -806,4 +806,13 @@
     <string name="search_by_external_id">Buscar por ID externo…</string>
     <string name="automatic_print_label_of_completed_counts">Impresión automática de pedidos completados</string>
     <string name="automatic_printing">Impresión automática</string>
+    <string name="printer_not_found">Impresora no encontrada</string>
+    <string name="pending_labels">Etiquetas pendientes</string>
+    <string name="no_pending_labels">No hay etiquetas pendientes</string>
+    <string name="remove_pending_label">Quitar etiqueta pendiente</string>
+    <string name="do_you_want_to_print_the_label_for_these_orders">¿Desea dar por impresa la etiqueta de estos
+        pedidos?
+    </string>
+    <string name="do_you_want_to_print_the_label_for_this_order">¿Desea dar por impresa la etiqueta de este pedido?
+    </string>
 </resources>

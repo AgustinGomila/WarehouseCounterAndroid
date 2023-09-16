@@ -320,7 +320,6 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
     }
 
     private fun setupSearchTextFragment() {
-        // Set up the search text fragment
         searchTextFragment =
             SearchTextFragment.Builder()
                 .focusChangedCallback(this)

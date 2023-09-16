@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.misc
+package com.dacosys.warehouseCounter.ui.activities.main
 
 import android.graphics.Typeface
 import android.text.InputType
@@ -16,7 +16,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.lang.ref.WeakReference
 
-class Proxy {
+class ProxySetup {
     companion object {
         private var avoidSetupProxyDialog = false
 

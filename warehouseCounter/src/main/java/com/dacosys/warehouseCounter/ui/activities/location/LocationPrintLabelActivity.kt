@@ -58,8 +58,8 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.LocationType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRackBarcode
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseAreaBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetRackBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetWarehouseAreaBarcode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouseArea
@@ -346,7 +346,6 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     }
 
     private fun setupSearchTextFragment() {
-        // Set up the search text fragment
         searchTextFragment =
             SearchTextFragment.Builder()
                 .focusChangedCallback(this)
@@ -1108,7 +1107,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 ),
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
-                    printLabelFragment.printBarcodes(it)
+                    printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
                 }
             )
         } else if (was.any()) {
@@ -1121,7 +1120,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 ),
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
-                    printLabelFragment.printBarcodes(it)
+                    printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
                 }
             )
         }

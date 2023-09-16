@@ -30,12 +30,11 @@ import com.dacosys.warehouseCounter.data.sync.ClientPackage
 import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.getConfigFromScannedCode
 import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.selectClientPackage
 import com.dacosys.warehouseCounter.databinding.InitConfigActivityBinding
-import com.dacosys.warehouseCounter.misc.Proxy
-import com.dacosys.warehouseCounter.misc.Proxy.Companion.setupProxy
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.scanners.JotterListener
 import com.dacosys.warehouseCounter.scanners.Scanner
+import com.dacosys.warehouseCounter.ui.activities.main.ProxySetup.Companion.setupProxy
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
@@ -46,7 +45,7 @@ import com.google.android.material.textfield.TextInputLayout
 import java.lang.ref.WeakReference
 
 class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
-    Proxy.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded {
+    ProxySetup.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded {
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
             isConfiguring = false

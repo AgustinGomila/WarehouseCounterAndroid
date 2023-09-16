@@ -47,8 +47,9 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrderBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetOrderBarcode
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.pendingLabel.PendingLabelCoroutines
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.misc.Statics
@@ -253,7 +254,6 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
     }
 
     private fun setupSearchTextFragment() {
-        // Set up the search text fragment
         searchTextFragment = SearchTextFragment.Builder().focusChangedCallback(this).searchTextChangedCallback(this)
             .setSearchText(searchedText).build()
         supportFragmentManager.beginTransaction().replace(R.id.searchTextFragment, searchTextFragment).commit()
@@ -885,9 +885,15 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
             ),
             onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
             onFinish = {
-                printLabelFragment.printBarcodes(it)
+                if (it.isNotEmpty()) {
+                    printLabelFragment.printBarcodes(
+                        labelArray = it,
+                        onFinish = { success ->
+                            if (success) PendingLabelCoroutines.remove(listOf(order.id))
+                        })
+                }
             }
-        )
+        ).execute()
     }
 
     override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {

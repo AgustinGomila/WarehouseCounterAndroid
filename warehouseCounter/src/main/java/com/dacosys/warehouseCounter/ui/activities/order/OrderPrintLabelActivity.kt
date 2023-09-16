@@ -22,10 +22,12 @@ import android.view.View.VISIBLE
 import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsAnimationCompat
@@ -44,10 +46,11 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetOrderBarcode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrderBarcode
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.pendingLabel.PendingLabelCoroutines
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.misc.Statics
@@ -67,8 +70,10 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.serializable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import com.google.android.material.textfield.TextInputEditText
@@ -105,6 +110,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     private var searchTextIsFocused = false
 
     private var showSelectButton = true
+    private var showRemoveButton = true
 
     private var multiSelect = false
     private var adapter: OrderAdapter? = null
@@ -169,6 +175,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     private fun saveBundleValues(b: Bundle) {
         b.putString(ARG_TITLE, tempTitle)
         b.putBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
+        b.putBoolean(ARG_SHOW_REMOVE_BUTTON, showRemoveButton)
         b.putBoolean(ARG_MULTI_SELECT, multiSelect)
         b.putBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
 
@@ -198,6 +205,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
         showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
+        showRemoveButton = b.getBoolean(ARG_SHOW_REMOVE_BUTTON, showRemoveButton)
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, multiSelect)
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
 
@@ -227,9 +235,20 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
         multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
-        showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, true)
 
-        ids = (b.getLongArray(ARG_IDS) ?: longArrayOf()).toCollection(ArrayList())
+        showSelectButton =
+            if (b.containsKey(ARG_SHOW_SELECT_BUTTON)) b.getBoolean(ARG_SHOW_SELECT_BUTTON, true)
+            else true
+
+        showRemoveButton =
+            if (b.containsKey(ARG_SHOW_REMOVE_BUTTON)) b.getBoolean(ARG_SHOW_REMOVE_BUTTON, false)
+            else false
+
+        val temp = b.serializable<ArrayList<Long>>(ARG_IDS) as ArrayList<*>
+        if (temp.first() is Long) {
+            @Suppress("UNCHECKED_CAST")
+            ids = temp as ArrayList<Long>
+        }
     }
 
     private lateinit var binding: ItemPrintLabelActivityTopPanelCollapsedBinding
@@ -285,17 +304,40 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         setBottomPanelAnimation()
         setTopPanelAnimation()
 
-        binding.okButton.setOnClickListener { itemSelect() }
-
         setFilterPanelVisibility()
+        setSelectRemoveButton()
 
         Screen.setupUI(binding.root, this)
+    }
+
+    private fun setSelectRemoveButton() {
+        if (showRemoveButton) {
+            val textColor =
+                getBestContrastColor(ResourcesCompat.getColor(context.resources, R.color.coral, null))
+            binding.okButton.text = getString(R.string.remove)
+            binding.okButton.setTextColor(textColor)
+            binding.okButton.background = AppCompatResources.getDrawable(
+                context,
+                R.drawable.rounded_corner_button_coral
+            )
+            binding.okButton.setOnClickListener { itemRemove() }
+        } else {
+            val textColor =
+                getBestContrastColor(ResourcesCompat.getColor(context.resources, R.color.seagreen, null))
+            binding.okButton.text = getString(R.string.accept)
+            binding.okButton.setTextColor(textColor)
+            binding.okButton.background = AppCompatResources.getDrawable(
+                context,
+                R.drawable.rounded_corner_button_seagreen
+            )
+            binding.okButton.setOnClickListener { itemSelect() }
+        }
     }
 
     private fun setFilterPanelVisibility() {
         runOnUiThread {
             binding.expandBottomPanelButton?.visibility = if (hideFilterPanel) GONE else VISIBLE
-            binding.panelButton.visibility = if (hideFilterPanel) GONE else VISIBLE
+            binding.filterFragment.visibility = if (hideFilterPanel) GONE else VISIBLE
         }
     }
 
@@ -316,7 +358,6 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     }
 
     private fun setupSearchTextFragment() {
-        // Set up the search text fragment
         searchTextFragment =
             SearchTextFragment.Builder()
                 .focusChangedCallback(this)
@@ -600,11 +641,47 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }, 20)
     }
 
+    private fun itemRemove() {
+        val selectedOrders = adapter?.selectedOrders() ?: arrayListOf()
+        if (!selectedOrders.any()) {
+            showSnackBar(getString(R.string.you_must_select_at_least_one_order), ERROR)
+            return
+        }
+        val idsToRemove = selectedOrders.map { it.id }
+        askForConfirmation(idsToRemove)
+    }
+
+    private fun askForConfirmation(idsToRemove: List<Long>) {
+        val msg = if (idsToRemove.count() == 1) {
+            context.getString(R.string.do_you_want_to_print_the_label_for_this_order)
+        } else {
+            context.getString(R.string.do_you_want_to_print_the_label_for_these_orders)
+        }
+
+        runOnUiThread {
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(context.getString(R.string.remove_pending_label))
+            builder.setMessage(msg)
+            builder.setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
+
+                PendingLabelCoroutines.remove(idsToRemove) {
+                    ids.removeAll(idsToRemove.toSet())
+                    getOrders()
+                }
+                dialogInterface.dismiss()
+            }
+            builder.setNegativeButton(getString(R.string.no)) { dialogInterface, _ ->
+                dialogInterface.dismiss()
+            }
+            val dialog = builder.create()
+            dialog.show()
+        }
+    }
+
     private fun itemSelect() {
         closeKeyboard(this)
 
         val selectedOrders = adapter?.selectedOrders() ?: arrayListOf()
-
         if (!selectedOrders.any()) {
             showSnackBar(getString(R.string.you_must_select_at_least_one_order), ERROR)
             return
@@ -633,7 +710,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                     ApiFilterParam(
                         columnName = ApiFilterParam.EXTENSION_ID,
                         value = id.toString(),
-                        conditional = ApiFilterParam.ACTION_CONDITIONAL_IN
+                        conditional = ApiFilterParam.ACTION_OPERATOR_IN
                     )
                 )
             }
@@ -1007,17 +1084,27 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         val printOps = PrintOps.getPrintOps()
 
         val ids = ArrayList(selectedOrders.map { it.id })
+
         GetOrderBarcode(
             param = BarcodeParam(
                 idList = ids,
                 templateId = template.templateId,
                 printOps = printOps
             ),
-            onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+            onEvent = {
+                if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType)
+            },
             onFinish = {
-                printLabelFragment.printBarcodes(it)
+                if (it.isNotEmpty()) {
+                    printLabelFragment.printBarcodes(
+                        labelArray = it,
+                        onFinish = { success ->
+                            if (success) PendingLabelCoroutines.remove(ids)
+                        }
+                    )
+                }
             }
-        )
+        ).execute()
     }
 
     override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {
@@ -1077,6 +1164,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         const val ARG_TITLE = "title"
         const val ARG_MULTI_SELECT = "multiSelect"
         const val ARG_SHOW_SELECT_BUTTON = "showSelectButton"
+        const val ARG_SHOW_REMOVE_BUTTON = "showRemoveButton"
         const val ARG_HIDE_FILTER_PANEL = "hideFilterPanel"
         const val ARG_IDS = "ids"
 

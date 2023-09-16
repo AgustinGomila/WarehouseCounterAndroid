@@ -7,10 +7,13 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.data.room.dao.pendingLabel.PendingLabelCoroutines
 import com.dacosys.warehouseCounter.databinding.PrintLabelActivityBinding
 import com.dacosys.warehouseCounter.ui.activities.item.ItemSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.location.LocationPrintLabelActivity
 import com.dacosys.warehouseCounter.ui.activities.order.OrderPrintLabelActivity
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.setScreenRotation
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.setupUI
 
@@ -73,7 +76,50 @@ class PrintLabelActivity : AppCompatActivity() {
             }
         }
 
+        binding.pendingLabelsButton.setOnClickListener {
+            if (!rejectNewInstances) {
+                rejectNewInstances = true
+
+                PendingLabelCoroutines.get {
+                    val ids = ArrayList(it.map { it2 -> it2.id })
+                    if (ids.any()) {
+                        val intent = Intent(baseContext, OrderPrintLabelActivity::class.java)
+                        intent.putExtra(OrderPrintLabelActivity.ARG_TITLE, getString(R.string.print_order_labels))
+                        intent.putExtra(OrderPrintLabelActivity.ARG_IDS, ids)
+                        intent.putExtra(OrderPrintLabelActivity.ARG_MULTI_SELECT, true)
+                        intent.putExtra(OrderPrintLabelActivity.ARG_HIDE_FILTER_PANEL, true)
+                        intent.putExtra(OrderPrintLabelActivity.ARG_SHOW_REMOVE_BUTTON, true)
+                        startActivity(intent)
+                    } else {
+                        showSnackBar(getString(R.string.no_pending_labels), SnackBarType.SUCCESS)
+                    }
+                }
+            }
+        }
+
         setupUI(binding.root, this)
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        setPendingLabelsButtonText()
+    }
+
+    private fun setPendingLabelsButtonText() {
+        PendingLabelCoroutines.get {
+            val ids = ArrayList(it.map { it2 -> it2.id })
+
+            val label =
+                if (ids.any()) "${getString(R.string.pending_labels)} (${ids.size})"
+                else getString(R.string.no_pending_labels)
+
+            binding.pendingLabelsButton.text = label
+        }
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

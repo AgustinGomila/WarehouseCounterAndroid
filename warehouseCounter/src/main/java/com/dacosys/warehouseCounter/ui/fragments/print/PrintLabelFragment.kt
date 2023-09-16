@@ -1,24 +1,12 @@
 package com.dacosys.warehouseCounter.ui.fragments.print
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothSocket
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Typeface
-import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.os.Message
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
-import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -28,10 +16,8 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.Label
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.Barcode
@@ -41,11 +27,10 @@ import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.itemCategory.ItemCategoryCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.databinding.PrintLabelFragmentBinding
-import com.dacosys.warehouseCounter.misc.BtPrinter.Companion.printerBluetoothDevice
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.UTCDataTime
-import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.printer.Printer
 import com.dacosys.warehouseCounter.ui.activities.barcodeLabel.TemplateSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -54,13 +39,8 @@ import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.serializable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.CounterHandler
-import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import java.io.IOException
-import java.net.ConnectException
-import java.net.Socket
-import java.net.UnknownHostException
 import java.util.*
 
 /**
@@ -69,7 +49,7 @@ import java.util.*
  * [PrintLabelFragment.FragmentListener] interface
  * to handle interaction events.
  */
-class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Runnable, CounterHandler.CounterListener {
+class PrintLabelFragment private constructor(builder: Builder) : Fragment(), CounterHandler.CounterListener {
 
     /**
      * Required constructor for Fragments
@@ -180,121 +160,16 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
         }
     }
 
-    // region PRINTER
-
-    // PRINT CONTROLS
-    private var mBluetoothAdapter: BluetoothAdapter? = null
-    private var mBluetoothDevice: BluetoothDevice? = null
-    private var mBluetoothSocket: BluetoothSocket? = null
-
-    private var mHandler = ConnectHandler(this)
-
-    @SuppressLint("MissingPermission")
-    override fun run() {
-        try {
-            if (ActivityCompat.checkSelfPermission(
-                    WarehouseCounterApp.context,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                mBluetoothSocket =
-                    mBluetoothDevice!!.createRfcommSocketToServiceRecord(mBluetoothDevice!!.uuids[0].uuid)
-                mBluetoothAdapter!!.cancelDiscovery()
-                mBluetoothSocket!!.connect()
-                mHandler.sendEmptyMessage(0)
-            } else {
-                // Here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    requestConnectPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
-                }
-                return
-            }
-
-        } catch (eConnectException: IOException) {
-            Log.d(this::class.java.simpleName, "CouldNotConnectToSocket", eConnectException)
-            if (mBluetoothSocket != null) {
-                mBluetoothSocket!!.close()
-            }
-
-            showSnackBar(getString(R.string.error_connecting_device), SnackBarType.ERROR)
-            return
-        }
-    }
-
-    private val requestConnectPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            // returns boolean representing whether the
-            // permission is granted or not
-            if (isGranted) {
-                // permission granted continues the normal workflow of app
-                Log.i("DEBUG", "permission granted")
-            } else {
-                // if permission denied then check whether never ask
-                // again is selected or not by making use of
-                Log.i("DEBUG", "permission denied")
-
-                !ActivityCompat.shouldShowRequestPermissionRationale(
-                    requireActivity(), Manifest.permission.CAMERA
-                )
-            }
-        }
-
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
         makeText(binding.root, text, snackBarType)
     }
 
-    private fun initializePrinter() {
-        if (printerBluetoothDevice == null) return
-
-        val bluetoothManager =
-            WarehouseCounterApp.context.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
-
-        val mBluetoothAdapter = bluetoothManager.adapter
-
-        if (mBluetoothAdapter == null) {
-            showSnackBar(getString(R.string.there_are_no_bluetooth_devices), SnackBarType.ERROR)
-        } else {
-            if (!mBluetoothAdapter.isEnabled) {
-                if (rejectNewInstances) return
-                rejectNewInstances = true
-
-                val enablePrinter = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                enablePrinter.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                if (ActivityCompat.checkSelfPermission(
-                        requireActivity(), Manifest.permission.BLUETOOTH_CONNECT
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        requestConnectPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
-                    }
-                    return
-                }
-                resultForPrinterConnect.launch(enablePrinter)
-            } else {
-                connectToPrinter(printerBluetoothDevice!!.address)
-            }
-        }
-    }
-
-    private val resultForPrinterConnect =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (it?.resultCode == CommonStatusCodes.SUCCESS || it?.resultCode == CommonStatusCodes.SUCCESS_CACHE) {
-                connectToPrinter(printerBluetoothDevice!!.address)
-            }
-        }
-
-    //endregion
-
-    @Suppress("UNCHECKED_CAST")
     private fun loadBundleValues(b: Bundle) {
         printer = b.getString(ARG_PRINTER) ?: ""
         template = b.parcelable(ARG_TEMPLATE)
         val temp = b.serializable<ArrayList<Long>>(TemplateSelectActivity.ARG_TEMPLATE_TYPE_ID_LIST) as ArrayList<*>
         if (temp.first() is Long) {
+            @Suppress("UNCHECKED_CAST")
             templateTypeIdList = temp as ArrayList<Long>
         }
     }
@@ -461,7 +336,6 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
         super.onViewCreated(view, savedInstanceState)
 
         loadPrinterPreferences()
-        initializePrinter()
 
         refreshViews()
     }
@@ -548,57 +422,34 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
         }
     }
 
-    fun printBarcodes(labelArray: ArrayList<Barcode>) {
+    fun printBarcodes(labelArray: ArrayList<Barcode>, onFinish: (Boolean) -> Unit) {
         if (labelArray.isEmpty()) {
             showSnackBar(getString(R.string.you_must_select_at_least_one_label), SnackBarType.ERROR)
-            return
-        }
-
-        if (printer.isEmpty() || settingViewModel.useBtPrinter && mBluetoothDevice == null) {
-            showSnackBar(getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR)
+            onFinish(false)
             return
         }
 
         val sendThis = labelArray.joinToString(lineSeparator) { it.body }
 
-        when {
-            settingViewModel.useBtPrinter -> printBtItem(sendThis)
-
-            settingViewModel.useNetPrinter -> printNetItem(sendThis)
-
-            else -> showSnackBar(
-                getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR
-            )
-        }
+        sendToPrinter(sendThis, onFinish)
     }
 
-    fun printPtlLabels(labelArray: ArrayList<Label>) {
+    fun printPtlLabels(labelArray: ArrayList<Label>, onFinish: (Boolean) -> Unit) {
         if (labelArray.isEmpty()) {
             showSnackBar(getString(R.string.you_must_select_at_least_one_label), SnackBarType.ERROR)
-            return
-        }
-
-        if (printer.isEmpty() || settingViewModel.useBtPrinter && mBluetoothDevice == null) {
-            showSnackBar(getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR)
+            onFinish(false)
             return
         }
 
         val sendThis = labelArray.joinToString(lineSeparator) { it.body }
 
-        when {
-            settingViewModel.useBtPrinter -> printBtItem(sendThis)
-
-            settingViewModel.useNetPrinter -> printNetItem(sendThis)
-
-            else -> showSnackBar(
-                getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR
-            )
-        }
+        sendToPrinter(sendThis, onFinish)
     }
 
-    fun printItemById(itemIdArray: ArrayList<Long>) {
+    fun printItemById(itemIdArray: ArrayList<Long>, onFinish: (Boolean) -> Unit) {
         if (itemIdArray.isEmpty()) {
             showSnackBar(getString(R.string.you_must_select_at_least_one_item), SnackBarType.ERROR)
+            onFinish(false)
             return
         }
 
@@ -619,11 +470,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
 
         if (items.isEmpty()) {
             showSnackBar(getString(R.string.you_must_select_at_least_one_item), SnackBarType.ERROR)
-            return
-        }
-
-        if (printer.isEmpty() || settingViewModel.useBtPrinter && mBluetoothDevice == null) {
-            showSnackBar(getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR)
+            onFinish(false)
             return
         }
 
@@ -642,76 +489,18 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
                 isDone = true
         }
 
-        when {
-            settingViewModel.useBtPrinter -> printBtItem(sendThis)
-
-            settingViewModel.useNetPrinter -> printNetItem(sendThis)
-
-            else -> showSnackBar(
-                getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR
-            )
-        }
+        sendToPrinter(sendThis, onFinish)
     }
 
-    private fun printNetItem(sendThis: String) {
-        val ipPrinter = settingViewModel.ipNetPrinter
-        val portPrinter = settingViewModel.portNetPrinter
-
-        Log.v(this::class.java.simpleName, "Printer IP: $ipPrinter ($portPrinter)")
-        Log.v(this::class.java.simpleName, sendThis)
-
-        val t = object : Thread() {
-            override fun run() {
-                try {
-                    val sock = Socket(ipPrinter, portPrinter)
-                    val out = sock.getOutputStream()
-                    out.write(sendThis.toByteArray())
-                    out.flush()
-                    sock.close()
-                } catch (e: UnknownHostException) {
-                    e.printStackTrace()
-                    showSnackBar("${getString(R.string.unknown_host)}: $ipPrinter ($portPrinter)", SnackBarType.ERROR)
-                } catch (e: ConnectException) {
-                    e.printStackTrace()
-                    showSnackBar(
-                        "${getString(R.string.error_connecting_to)}: $ipPrinter ($portPrinter)",
-                        SnackBarType.ERROR
-                    )
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                    showSnackBar(
-                        "${getString(R.string.error_printing_to)} $ipPrinter ($portPrinter)",
-                        SnackBarType.ERROR
-                    )
-                }
-            }
-        }
-        t.start()
-    }
-
-    private fun printBtItem(sendThis: String) {
-        val t = object : Thread() {
-            override fun run() {
-                try {
-                    val os = mBluetoothSocket!!.outputStream
-                    for (i in 0 until qty) {
-                        os.write(sendThis.toByteArray())
-                    }
-                    os.flush()
-                } catch (e: Exception) {
-                    ErrorLog.writeLog(
-                        requireActivity(),
-                        this::class.java.simpleName,
-                        "${getString(R.string.exception_error)}: " + e.message
-                    )
-                    showSnackBar(
-                        "${getString(R.string.error_connecting_to)}: ${settingViewModel.printerBtAddress}",
-                        SnackBarType.ERROR
-                    )
-                }
-            }
-        }
-        t.start()
+    private fun sendToPrinter(sendThis: String, onFinish: (Boolean) -> Unit) {
+        Printer(
+            activity = requireActivity(),
+            onEvent = { showSnackBar(it.text, it.snackBarType) }
+        ).printThis(
+            printThis = sendThis,
+            qty = qty,
+            onFinish = onFinish
+        )
     }
 
     private fun getLabel(item: Item, onFinished: (String) -> Unit = {}) {
@@ -867,16 +656,6 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
         sendMessage()
     }
 
-    private fun connectToPrinter(deviceAddress: String) {
-        Log.v(this::class.java.simpleName, "Coming incoming address $deviceAddress")
-        mBluetoothDevice = mBluetoothAdapter?.getRemoteDevice(deviceAddress)
-
-        mBluetoothSocket?.close()
-
-        val mBluetoothConnectThread = Thread(this)
-        mBluetoothConnectThread.start()
-    }
-
     init {
         templateId = builder.templateId
         templateTypeIdList = builder.templateTypeIdList
@@ -912,23 +691,8 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Run
     }
 
     companion object {
-
-        // region Fragment initialization parameters
         private const val ARG_PRINTER = "printer"
         private const val ARG_TEMPLATE_TYPE_ID_LIST = "templateTypeIdList"
         private const val ARG_TEMPLATE = "template"
-        private const val ARG_QTY = "qty"
-        // endregion
-
-        class ConnectHandler(private val activity: PrintLabelFragment) :
-            Handler(Looper.getMainLooper()) {
-            override fun handleMessage(msg: Message) {
-                makeText(
-                    activity.binding.root,
-                    activity.getString(R.string.device_connected),
-                    SnackBarType.INFO
-                )
-            }
-        }
     }
 }

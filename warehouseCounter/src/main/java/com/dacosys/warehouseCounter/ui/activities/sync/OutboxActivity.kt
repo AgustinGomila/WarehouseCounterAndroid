@@ -36,6 +36,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest.CREATOR.
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.SendOrder
+import com.dacosys.warehouseCounter.data.room.dao.pendingLabel.PendingLabelCoroutines
 import com.dacosys.warehouseCounter.databinding.OutboxActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.completeCompletedPath
@@ -301,6 +302,8 @@ class OutboxActivity : AppCompatActivity() {
                     }
                 },
                 onFinish = {
+                    PendingLabelCoroutines.add(it)
+
                     fillAdapter()
                     if (settingViewModel.autoPrint) {
                         launchOrderPrintLabelsActivity(it)

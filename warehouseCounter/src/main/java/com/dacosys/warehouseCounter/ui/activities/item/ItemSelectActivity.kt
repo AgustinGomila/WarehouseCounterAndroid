@@ -1066,7 +1066,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             return
         }
 
-        printLabelFragment.printItemById(ArrayList(itemArray.map { it.itemId }))
+        printLabelFragment.printItemById(
+            itemIdArray = ArrayList(itemArray.map { it.itemId }),
+            onFinish = { }
+        )
     }
 
     override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {
