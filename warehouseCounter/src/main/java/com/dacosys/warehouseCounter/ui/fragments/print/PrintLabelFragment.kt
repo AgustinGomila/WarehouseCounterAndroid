@@ -167,8 +167,10 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
     private fun loadBundleValues(b: Bundle) {
         printer = b.getString(ARG_PRINTER) ?: ""
         template = b.parcelable(ARG_TEMPLATE)
-        val temp = b.serializable<ArrayList<Long>>(TemplateSelectActivity.ARG_TEMPLATE_TYPE_ID_LIST) as ArrayList<*>
-        if (temp.first() is Long) {
+        val temp =
+            if (b.containsKey(ARG_TEMPLATE_TYPE_ID_LIST)) b.serializable<ArrayList<Long>>(ARG_TEMPLATE_TYPE_ID_LIST) as ArrayList<*>
+            else ArrayList<Long>()
+        if (temp.firstOrNull() is Long) {
             @Suppress("UNCHECKED_CAST")
             templateTypeIdList = temp as ArrayList<Long>
         }

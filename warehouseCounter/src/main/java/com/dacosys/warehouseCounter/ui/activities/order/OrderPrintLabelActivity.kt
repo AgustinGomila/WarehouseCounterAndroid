@@ -244,8 +244,10 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             if (b.containsKey(ARG_SHOW_REMOVE_BUTTON)) b.getBoolean(ARG_SHOW_REMOVE_BUTTON, false)
             else false
 
-        val temp = b.serializable<ArrayList<Long>>(ARG_IDS) as ArrayList<*>
-        if (temp.first() is Long) {
+        val temp =
+            if (b.containsKey(ARG_IDS)) b.serializable<ArrayList<Long>>(ARG_IDS) as ArrayList<*>
+            else ArrayList<Long>()
+        if (temp.firstOrNull() is Long) {
             @Suppress("UNCHECKED_CAST")
             ids = temp as ArrayList<Long>
         }

@@ -21,6 +21,8 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderLocation
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_FILTER
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_OPERATOR_IN
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.EXTENSION_ID
 import com.dacosys.warehouseCounter.data.ktor.v2.service.APIResponse
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
@@ -225,20 +227,16 @@ class ApiRequest {
         suspend fun httpResponse(): HttpResponse {
             val url = URL(apiUrl)
 
-            /** HTTP Post function */
             val response = httpClient.post {
-                /** Set a Basic auth */
                 basicAuth(
                     username = Statics.currentUserName, password = Statics.currentPass
                 )
-                /** Set the API URL */
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                     else URLProtocol.HTTPS
                     host = url.host
                     path("${url.path}/$VERSION_PATH/$objPath/$BARCODE_PATH")
                 }
-                /** Body content */
                 contentType(ContentType.Application.Json)
                 setBody(params)
             }
@@ -277,20 +275,16 @@ class ApiRequest {
         suspend fun httpResponse(): HttpResponse {
             val url = URL(apiUrl)
 
-            /** HTTP Post function */
             val response = httpClient.post {
-                /** Set a Basic auth */
                 basicAuth(
                     username = Statics.currentUserName, password = Statics.currentPass
                 )
-                /** Set the API URL */
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                     else URLProtocol.HTTPS
                     host = url.host
                     path("${url.path}/$VERSION_PATH/$objPath/$BARCODE_CODE_PATH")
                 }
-                /** Body content */
                 contentType(ContentType.Application.Json)
                 setBody(params)
             }
@@ -335,7 +329,6 @@ class ApiRequest {
     ) {
         val url = URL(apiUrl)
 
-        /** We build the parameters (query actions) */
         val params = Parameters.build {
             action.forEach {
                 if (it.action.isNotEmpty()) append(
@@ -344,7 +337,12 @@ class ApiRequest {
             }
             filter.forEach {
                 val col = it.columnName
-                val cond = if (it.conditional.isNotEmpty()) "[${it.conditional}]" else ""
+                val cond =
+                    if (it.conditional.isNotEmpty())
+                    /* Because: "Operator \"in\" requires multiple operands." */
+                        if (it.conditional == ACTION_OPERATOR_IN) "[${it.conditional}][]"
+                        else "[${it.conditional}]"
+                    else ""
                 val value = it.value
                 if (col.isNotEmpty()) this.append("$ACTION_FILTER[${col}]${cond}", value)
             }
@@ -356,13 +354,10 @@ class ApiRequest {
             println("PARAMS: $params")
         }
 
-        /** HTTP Get function */
         val httpResponse = httpClient.get {
-            /** Set a Basic auth */
             basicAuth(
                 username = Statics.currentUserName, password = Statics.currentPass
             )
-            /** Set the API URL and parameters */
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS
@@ -404,20 +399,16 @@ class ApiRequest {
     ) {
         val url = URL(apiUrl)
 
-        /** HTTP Post function */
         val response = httpClient.post {
-            /** Set a Basic auth */
             basicAuth(
                 username = Statics.currentUserName, password = Statics.currentPass
             )
-            /** Set the API URL and parameters */
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS
                 host = url.host
                 path("${url.path}/$VERSION_PATH/$objPath/$CREATE_PATH")
             }
-            /** Payload content */
             contentType(ContentType.Application.Json)
             setBody(payload)
         }
@@ -453,9 +444,8 @@ class ApiRequest {
         objPath: String, id: Long, payload: Any, callback: (APIResponse<T>) -> Unit
     ) {
         val url = URL(apiUrl)
-        val columnName = "id"
+        val columnName = EXTENSION_ID
 
-        /** We build the parameters (query actions) */
         val params = Parameters.build {
             append(columnName, id.toString())
         }
@@ -466,13 +456,10 @@ class ApiRequest {
             println("PARAM: $columnName $id")
         }
 
-        /** HTTP Post function */
         val response = httpClient.put {
-            /** Set a Basic auth */
             basicAuth(
                 username = Statics.currentUserName, password = Statics.currentPass
             )
-            /** Set the API URL and parameters */
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS
@@ -480,7 +467,6 @@ class ApiRequest {
                 path(urlComplete)
                 parameters.appendAll(params)
             }
-            /** Payload content */
             contentType(ContentType.Application.Json)
             setBody(payload)
         }
@@ -515,20 +501,16 @@ class ApiRequest {
         suspend fun httpResponse(): HttpResponse {
             val url = URL(apiUrl)
 
-            /** HTTP Post function */
             val response = httpClient.post {
-                /** Set a Basic auth */
                 basicAuth(
                     username = Statics.currentUserName, password = Statics.currentPass
                 )
-                /** Set the API URL and parameters */
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                     else URLProtocol.HTTPS
                     host = url.host
                     path("${url.path}/$VERSION_PATH/$ORDER_PATH/$MOVE_PATH")
                 }
-                /** Payload content */
                 contentType(ContentType.Application.Json)
                 setBody(payload)
             }
@@ -566,20 +548,16 @@ class ApiRequest {
         suspend fun httpResponse(): HttpResponse {
             val url = URL(apiUrl)
 
-            /** HTTP Post function */
             val response = httpClient.post {
-                /** Set a Basic auth */
                 basicAuth(
                     username = Statics.currentUserName, password = Statics.currentPass
                 )
-                /** Set the API URL and parameters */
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                     else URLProtocol.HTTPS
                     host = url.host
                     path("${url.path}/$VERSION_PATH/$ITEM_CODE_PATH/$CREATE_PATH")
                 }
-                /** Payload content */
                 contentType(ContentType.Application.Json)
                 setBody(payload)
             }
@@ -617,9 +595,8 @@ class ApiRequest {
         objPath: String, id: Long, action: ArrayList<ApiActionParam>, callback: (APIResponse<T>) -> Unit
     ) {
         val url = URL(apiUrl)
-        val columnName = "id"
+        val columnName = EXTENSION_ID
 
-        /** We build the parameters (query actions) */
         val params = Parameters.build {
             action.forEach {
                 if (it.action.isNotEmpty()) append(
@@ -635,13 +612,10 @@ class ApiRequest {
             println("PARAMS: $params")
         }
 
-        /** HTTP Get function */
         val response = httpClient.get {
-            /** Set a Basic auth */
             basicAuth(
                 username = Statics.currentUserName, password = Statics.currentPass
             )
-            /** Set the API URL and parameters */
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS
@@ -679,13 +653,10 @@ class ApiRequest {
         suspend fun httpResponse(): HttpResponse {
             val url = URL(apiUrl)
 
-            /** HTTP Post function */
             val response = httpClient.get {
-                /** Set a Basic auth */
                 basicAuth(
                     username = Statics.currentUserName, password = Statics.currentPass
                 )
-                /** Set the API URL and parameters */
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                     else URLProtocol.HTTPS
@@ -725,11 +696,15 @@ class ApiRequest {
     ) {
         val url = URL(apiUrl)
 
-        /** We build the parameters (query actions) */
         val params = Parameters.build {
             filter.forEach {
                 val col = it.columnName
-                val cond = if (it.conditional.isNotEmpty()) "[${it.conditional}]" else ""
+                val cond =
+                    if (it.conditional.isNotEmpty())
+                    /* Because: "Operator \"in\" requires multiple operands." */
+                        if (it.conditional == ACTION_OPERATOR_IN) "[${it.conditional}][]"
+                        else "[${it.conditional}]"
+                    else ""
                 val value = it.value
                 if (col.isNotEmpty()) this.append("$ACTION_FILTER[${col}]${cond}", value)
             }
@@ -742,11 +717,9 @@ class ApiRequest {
         }
 
         val httpResponse = httpClient.get {
-            /** Set a Basic auth */
             basicAuth(
                 username = Statics.currentUserName, password = Statics.currentPass
             )
-            /** Set the API URL and parameters */
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS

@@ -1052,22 +1052,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     // Vibrate for 150 milliseconds
     private fun shakeDevice() {
         if (Build.VERSION.SDK_INT >= 26) {
-            (getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(
-                VibrationEffect.createOneShot(
-                    150, 10
-                )
-            )
+            val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+            vibrator.vibrate(VibrationEffect.createOneShot(150, 10))
         } else {
             val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(
-                    VibrationEffect.createOneShot(
-                        150, VibrationEffect.DEFAULT_AMPLITUDE
-                    )
-                )
-            } else {
-                vibrator.vibrate(150)
-            }
+            vibrator.vibrate(150)
         }
     }
 

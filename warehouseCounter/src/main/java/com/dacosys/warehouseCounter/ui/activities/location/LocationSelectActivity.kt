@@ -590,16 +590,17 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
     private fun getWarehouseArea() {
         showWarehouseAreaProgressBar(VISIBLE)
         thread {
-            GetWarehouseArea(onEvent = {
-                if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(
-                    it.text,
-                    it.snackBarType
-                )
-            }, onFinish = {
-                fillWarehouseArea(it)
-                showWarehouseAreaProgressBar(View.GONE)
-                isFilling = false
-            }).execute()
+            GetWarehouseArea(
+                onEvent = {
+                    if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(
+                        it.text,
+                        it.snackBarType
+                    )
+                }, onFinish = {
+                    fillWarehouseArea(it)
+                    showWarehouseAreaProgressBar(View.GONE)
+                    isFilling = false
+                }).execute()
         }
     }
 

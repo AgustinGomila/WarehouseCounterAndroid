@@ -61,8 +61,10 @@ class TemplateSelectActivity : AppCompatActivity(),
         else getString(R.string.search_by_template)
 
         template = b.parcelable(ARG_TEMPLATE)
-        val temp = b.serializable<ArrayList<Long>>(ARG_TEMPLATE_TYPE_ID_LIST) as ArrayList<*>
-        if (temp.first() is Long) {
+        val temp =
+            if (b.containsKey(ARG_TEMPLATE_TYPE_ID_LIST)) b.serializable<ArrayList<Long>>(ARG_TEMPLATE_TYPE_ID_LIST) as ArrayList<*>
+            else ArrayList<Long>()
+        if (temp.firstOrNull() is Long) {
             @Suppress("UNCHECKED_CAST")
             templateTypeIdList = temp as ArrayList<Long>
         }

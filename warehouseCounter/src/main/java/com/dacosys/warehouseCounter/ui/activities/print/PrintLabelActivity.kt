@@ -92,6 +92,7 @@ class PrintLabelActivity : AppCompatActivity() {
                         startActivity(intent)
                     } else {
                         showSnackBar(getString(R.string.no_pending_labels), SnackBarType.SUCCESS)
+                        rejectNewInstances = false
                     }
                 }
             }
