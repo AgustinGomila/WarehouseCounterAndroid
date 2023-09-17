@@ -52,7 +52,6 @@ import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.selectClie
 import com.dacosys.warehouseCounter.databinding.LoginActivityBinding
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.closeImageControl
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
-import com.dacosys.warehouseCounter.misc.Md5
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog

@@ -284,7 +284,6 @@ class ClientSelectActivity : AppCompatActivity(),
     }
 
     private fun adjustAndShowDropDown() {
-        // TOP LAYOUT
         topLayout()
 
         val viewHeight = settingsVm.clientViewHeight
@@ -351,7 +350,6 @@ class ClientSelectActivity : AppCompatActivity(),
         if (count > 0) {
             adjustDropDownHeight()
         } else {
-            // CENTER LAYOUT
             centerLayout()
         }
     }

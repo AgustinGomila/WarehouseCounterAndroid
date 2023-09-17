@@ -721,8 +721,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         return r.bottom - r.top
     }
 
-    private fun adjustAndShowRackDropDown(c: Int = 0) {
-        // TOP LAYOUT
+    private fun adjustAndShowRackDropDown() {
         topLayout()
 
         val viewHeight = settingsVm.locationViewHeight
@@ -736,8 +735,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         binding.rackCode.showDropDown()
     }
 
-    private fun adjustAndShowWarehouseAreaDropDown(c: Int = 0) {
-        // TOP LAYOUT
+    private fun adjustAndShowWarehouseAreaDropDown() {
         topLayout()
 
         val viewHeight = settingsVm.locationViewHeight
@@ -752,8 +750,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         binding.warehouseArea.showDropDown()
     }
 
-    private fun adjustAndShowWarehouseDropDown(c: Int = 0) {
-        // TOP LAYOUT
+    private fun adjustAndShowWarehouseDropDown() {
         topLayout()
 
         val viewHeight = settingsVm.locationViewHeight
@@ -796,19 +793,19 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         isCentring = false
     }
 
-    private fun adjustDropDownHeight(c: Int = 0) {
+    private fun adjustDropDownHeight() {
         runOnUiThread {
             when {
                 binding.warehouse.isPopupShowing -> {
-                    adjustAndShowWarehouseDropDown(c)
+                    adjustAndShowWarehouseDropDown()
                 }
 
                 binding.warehouseArea.isPopupShowing -> {
-                    adjustAndShowWarehouseAreaDropDown(c)
+                    adjustAndShowWarehouseAreaDropDown()
                 }
 
                 binding.rackCode.isPopupShowing -> {
-                    adjustAndShowRackDropDown(c)
+                    adjustAndShowRackDropDown()
                 }
 
                 else -> {
@@ -820,9 +817,8 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
 
     override fun contractsRetrieved(count: Int) {
         if (count > 0) {
-            adjustDropDownHeight(count)
+            adjustDropDownHeight()
         } else {
-            // CENTER LAYOUT
             centerLayout()
         }
     }

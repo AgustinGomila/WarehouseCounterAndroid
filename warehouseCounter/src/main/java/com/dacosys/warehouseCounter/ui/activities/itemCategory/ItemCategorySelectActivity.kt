@@ -295,7 +295,6 @@ class ItemCategorySelectActivity : AppCompatActivity(),
     }
 
     private fun adjustAndShowDropDown() {
-        // TOP LAYOUT
         topLayout()
 
         val viewHeight = settingsVm.categoryViewHeight
@@ -362,7 +361,6 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         if (count > 0) {
             adjustDropDownHeight()
         } else {
-            // CENTER LAYOUT
             centerLayout()
         }
     }

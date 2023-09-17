@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.misc
+package com.dacosys.warehouseCounter.ui.activities.main
 
 import java.io.UnsupportedEncodingException
 import java.security.MessageDigest

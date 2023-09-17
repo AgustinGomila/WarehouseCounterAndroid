@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.misc
+package com.dacosys.warehouseCounter.ui.utils
 
 import android.os.Parcel
 import android.os.Parcelable

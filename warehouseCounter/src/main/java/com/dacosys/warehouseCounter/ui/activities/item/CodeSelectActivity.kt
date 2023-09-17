@@ -274,7 +274,6 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     private fun adjustAndShowDropDown() {
-        // TOP LAYOUT
         topLayout()
 
         val viewHeight = settingsVm.itemViewHeight
@@ -340,7 +339,6 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         if (count > 0) {
             adjustDropDownHeight()
         } else {
-            // CENTER LAYOUT
             centerLayout()
         }
     }

@@ -324,7 +324,6 @@ class TemplateSelectActivity : AppCompatActivity(),
     }
 
     private fun adjustAndShowDropDown() {
-        // TOP LAYOUT
         topLayout()
 
         val viewHeight = settingsVm.templateViewHeight
@@ -391,7 +390,6 @@ class TemplateSelectActivity : AppCompatActivity(),
         if (count > 0) {
             adjustDropDownHeight()
         } else {
-            // CENTER LAYOUT
             centerLayout()
         }
     }
