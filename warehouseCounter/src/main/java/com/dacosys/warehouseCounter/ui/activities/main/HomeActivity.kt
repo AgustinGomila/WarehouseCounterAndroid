@@ -154,10 +154,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             onFinish = { barcodes ->
                 if (barcodes.isNotEmpty()) {
                     val sendThis = barcodes.joinToString(lineSeparator) { it.body }
-                    Printer(
+                    Printer.PrinterFactory.createPrinter(
                         activity = this,
                         onEvent = { showSnackBar(it.text, it.snackBarType) }
-                    ).printThis(
+                    )?.printLabel(
                         printThis = sendThis,
                         qty = qty,
                         onFinish = { success ->

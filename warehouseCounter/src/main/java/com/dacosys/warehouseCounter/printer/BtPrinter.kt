@@ -25,7 +25,7 @@ import com.google.android.gms.common.api.CommonStatusCodes
 import java.io.IOException
 
 open class BtPrinter(private val activity: FragmentActivity, private val onEvent: (SnackBarEventData) -> Unit) :
-    Printer(), Runnable {
+    Printer.PrintLabelListener, Runnable {
 
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var bluetoothSocket: BluetoothSocket? = null
@@ -135,7 +135,7 @@ open class BtPrinter(private val activity: FragmentActivity, private val onEvent
         onEvent(SnackBarEventData(message, type))
     }
 
-    fun print(printThis: String, qty: Int, onFinish: (Boolean) -> Unit) {
+    override fun printLabel(printThis: String, qty: Int, onFinish: (Boolean) -> Unit) {
         val t = object : Thread() {
             override fun run() {
                 try {

@@ -7,37 +7,23 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 
-open class Printer {
-    fun printThis(printThis: String, qty: Int, onFinish: (Boolean) -> Unit) {
-        val printer = printerDevice
-        if (printer == null) {
-            onFinish(false)
-        } else {
-            when (printer) {
-                is BtPrinter -> printer.print(printThis, qty, onFinish)
-                is NetPrinter -> printer.print(printThis, qty, onFinish)
-                else -> onFinish(false)
-            }
-        }
+object Printer {
+    interface PrintLabelListener {
+        fun printLabel(printThis: String, qty: Int, onFinish: (Boolean) -> Unit)
     }
 
-    constructor()
+    object PrinterFactory {
+        fun createPrinter(activity: FragmentActivity, onEvent: (SnackBarEventData) -> Unit): PrintLabelListener? {
+            return when {
+                settingsVm.useNetPrinter -> NetPrinter(onEvent)
+                settingsVm.useBtPrinter -> BtPrinter(activity, onEvent)
 
-    constructor(activity: FragmentActivity, onEvent: (SnackBarEventData) -> Unit) {
-        build(activity, onEvent)
-    }
-
-    private var printerDevice: Printer? = null
-
-    private fun build(activity: FragmentActivity, onEvent: (SnackBarEventData) -> Unit): Printer? {
-        printerDevice = when {
-            settingsVm.useBtPrinter -> BtPrinter(activity, onEvent)
-            settingsVm.useNetPrinter -> NetPrinter(onEvent)
-            else -> {
-                onEvent(SnackBarEventData(context.getString(R.string.there_is_no_selected_printer), SnackBarType.ERROR))
-                null
+                else -> {
+                    val msg = context.getString(R.string.there_is_no_selected_printer)
+                    onEvent(SnackBarEventData(msg, SnackBarType.ERROR))
+                    null
+                }
             }
         }
-        return printerDevice
     }
 }

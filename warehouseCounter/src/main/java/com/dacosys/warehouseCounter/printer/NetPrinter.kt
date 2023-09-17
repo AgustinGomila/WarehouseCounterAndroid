@@ -12,10 +12,10 @@ import java.net.Socket
 import java.net.UnknownHostException
 
 open class NetPrinter(private val onEvent: (SnackBarEventData) -> Unit) :
-    Printer() {
+    Printer.PrintLabelListener {
 
     private val tag: String = this::class.java.simpleName
-    fun print(printThis: String, qty: Int, onFinish: (Boolean) -> Unit) {
+    override fun printLabel(printThis: String, qty: Int, onFinish: (Boolean) -> Unit) {
         val ipPrinter = settingsVm.ipNetPrinter
         val portPrinter = settingsVm.portNetPrinter
 

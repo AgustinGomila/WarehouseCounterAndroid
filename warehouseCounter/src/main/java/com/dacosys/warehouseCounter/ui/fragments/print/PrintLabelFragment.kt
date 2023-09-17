@@ -495,10 +495,10 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
     }
 
     private fun sendToPrinter(sendThis: String, onFinish: (Boolean) -> Unit) {
-        Printer(
+        Printer.PrinterFactory.createPrinter(
             activity = requireActivity(),
             onEvent = { showSnackBar(it.text, it.snackBarType) }
-        ).printThis(
+        )?.printLabel(
             printThis = sendThis,
             qty = qty,
             onFinish = onFinish
