@@ -462,7 +462,7 @@ class LogAdapter private constructor(builder: Builder) :
         super.submitList(sortedVisibleList(list), commitCallback)
     }
 
-    class Builder() {
+    class Builder {
         fun build(): LogAdapter {
             return LogAdapter(this)
         }

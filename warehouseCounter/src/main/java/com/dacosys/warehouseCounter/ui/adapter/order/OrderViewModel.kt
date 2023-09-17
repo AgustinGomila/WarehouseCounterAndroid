@@ -73,7 +73,6 @@ class OrderViewModel : ViewModel() {
         loading.postValue(true)
         val apiResponse = apiServiceV2.viewOrderResponse(id, defaultAction)
         val tempOrder: OrderResponse? = apiResponse.response
-
         if (tempOrder != null) {
             orderDetails.postValue(tempOrder!!)
         }

@@ -2,7 +2,6 @@ package com.dacosys.warehouseCounter.data.io
 
 import android.util.Log
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
@@ -26,7 +25,7 @@ class IOFunc {
 
             var isOk = true
             for (newOrder in newOrArray) {
-                val orJson = WarehouseCounterApp.json.encodeToString(OrderRequest.serializer(), newOrder)
+                val orJson = json.encodeToString(OrderRequest.serializer(), newOrder)
 
                 // Acá se comprueba si el ID ya existe y actualizamos la orden.
                 // Si no se agrega una orden nueva.

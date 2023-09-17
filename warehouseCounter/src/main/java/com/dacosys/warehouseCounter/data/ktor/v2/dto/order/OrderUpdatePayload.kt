@@ -15,8 +15,7 @@ data class OrderUpdatePayload(
         externalId = parcel.readString() ?: "",
         description = parcel.readString() ?: "",
         statusId = parcel.readInt()
-    ) {
-    }
+    )
 
     companion object CREATOR : Parcelable.Creator<OrderUpdatePayload> {
         const val EXTERNAL_ID_KEY = "external_id"

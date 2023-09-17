@@ -105,8 +105,6 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         // Add menu items without overriding methods in the Activity
         (this as ComponentActivity).addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                // Add menu items here
-                // Inflate the menu; this adds items to the action bar if it is present.
                 menuInflater.inflate(R.menu.menu_read_activity, menu)
                 menu.removeItem(menu.findItem(R.id.action_trigger_scan).itemId)
                 menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)

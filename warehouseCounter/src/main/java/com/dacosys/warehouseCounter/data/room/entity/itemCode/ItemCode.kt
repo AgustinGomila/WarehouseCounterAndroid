@@ -16,14 +16,14 @@ import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCodeEntry as E
     ]
 )
 data class ItemCode(
-    @PrimaryKey(autoGenerate = true) val _id: Long = 0L,
+    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = Entry.ID) val id: Long = 0L,
     @ColumnInfo(name = Entry.ITEM_ID) val itemId: Long? = 0L,
     @ColumnInfo(name = Entry.CODE) val code: String? = "",
     @ColumnInfo(name = Entry.QTY) val qty: Double? = null,
     @ColumnInfo(name = Entry.TO_UPLOAD) var toUpload: Int = 0,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
-        _id = parcel.readLong(),
+        id = parcel.readLong(),
         itemId = parcel.readValue(Long::class.java.classLoader) as? Long,
         code = parcel.readString(),
         qty = parcel.readValue(Double::class.java.classLoader) as? Double,
@@ -31,7 +31,7 @@ data class ItemCode(
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeLong(_id)
+        parcel.writeLong(id)
         parcel.writeValue(itemId)
         parcel.writeString(code)
         parcel.writeValue(qty)

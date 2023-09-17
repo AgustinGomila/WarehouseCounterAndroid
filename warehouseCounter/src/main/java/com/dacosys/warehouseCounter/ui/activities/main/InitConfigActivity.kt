@@ -385,7 +385,6 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_login, menu)
 
         if (!settingsVm.showConfButton) {
@@ -400,10 +399,6 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-
         return when (item.itemId) {
             R.id.home, android.R.id.home -> {
                 @Suppress("DEPRECATION") onBackPressed()

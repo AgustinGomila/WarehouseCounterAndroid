@@ -44,9 +44,7 @@ open class Rfid {
     }
 
     companion object {
-        // region Public methods
         var rfidDevice: Rfid? = null
-
         fun resume(listener: RfidDeviceListener) {
             if (rfidDevice != null) {
                 if (rfidDevice is Vh75Bt) {
@@ -68,16 +66,6 @@ open class Rfid {
             }
         }
 
-        fun startScan() {
-            if (rfidDevice != null) {
-            }
-        }
-
-        fun stopScan() {
-            if (rfidDevice != null) {
-            }
-        }
-
         fun destroy() {
             if (rfidDevice != null) {
                 if (rfidDevice is Vh75Bt) {
@@ -87,18 +75,6 @@ open class Rfid {
                 rfidDevice = null
             }
         }
-
-        fun lockScanner(lock: Boolean) {
-            if (rfidDevice != null) {
-            }
-        }
-
-        fun getStatus(): Int {
-            if (rfidDevice != null) {
-            }
-            return -1
-        }
-        //endregion
 
         fun setListener(listener: RfidDeviceListener, rfidType: RfidType) {
             if (initRequired()) {
@@ -122,8 +98,6 @@ open class Rfid {
                 }
             } else false
         }
-
-        //endregion
         fun build(listener: RfidDeviceListener?, rfidType: RfidType): Rfid? {
             if (rfidType == RfidType.vh75) {
                 rfidDevice = Vh75Bt(listener)
