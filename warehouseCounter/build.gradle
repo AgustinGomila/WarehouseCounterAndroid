@@ -78,9 +78,10 @@ android {
     }
     compileOptions {
         coreLibraryDesugaringEnabled true
-        targetCompatibility JavaVersion.VERSION_1_8
-        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility jvmCompatibility
+        sourceCompatibility jvmCompatibility
     }
+
     buildFeatures {
         dataBinding true
         viewBinding true

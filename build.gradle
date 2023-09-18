@@ -11,6 +11,8 @@ buildscript {
         zxingCore = 'com.google.zxing:core:3.4.1'
         kTorVersion = '2.3.4'
 
+        jvmCompatibility = JavaVersion.VERSION_1_8
+
         // testing
         coreTestingVersion = '2.2.0'
         junitVersion = '4.13.2'
