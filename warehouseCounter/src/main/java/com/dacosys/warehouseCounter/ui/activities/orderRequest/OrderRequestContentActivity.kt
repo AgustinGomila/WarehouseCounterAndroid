@@ -780,6 +780,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                         ItemCoroutines.getById(items.first().value) { it2 ->
                             if (it2 != null) {
                                 addOrc(OrderRequestContent().apply {
+                                    codeRead = it2.ean
                                     itemId = it2.itemId
                                     itemDescription = it2.description
                                     ean = it2.ean
