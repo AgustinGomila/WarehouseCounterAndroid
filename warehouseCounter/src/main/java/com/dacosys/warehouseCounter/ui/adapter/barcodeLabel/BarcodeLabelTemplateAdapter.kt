@@ -177,7 +177,7 @@ class BarcodeLabelTemplateAdapter(
         // Seleccionamos el layout dependiendo si es
         // un row visible u oculto según su AsseStatus.
 
-        val currentLayout: Int = R.layout.item_category_row
+        val currentLayout: Int = R.layout.template_row
 
         if (v == null || v.tag == null) {
             // El view todavía no fue creado, crearlo con el layout correspondiente.
@@ -198,8 +198,8 @@ class BarcodeLabelTemplateAdapter(
     private fun createSimpleViewHolder(v: View, holder: SimpleViewHolder) {
         // Holder para los rows de dropdown.
         holder.checkBox = v.findViewById(R.id.checkBox)
-        holder.descriptionTextView = v.findViewById(R.id.itemCategoryStr)
-        holder.templateTypeTextView = v.findViewById(R.id.parentStr)
+        holder.descriptionTextView = v.findViewById(R.id.templateStr)
+        holder.templateTypeTextView = v.findViewById(R.id.templateType)
 
         if (multiSelect) {
             holder.checkBox?.visibility = VISIBLE

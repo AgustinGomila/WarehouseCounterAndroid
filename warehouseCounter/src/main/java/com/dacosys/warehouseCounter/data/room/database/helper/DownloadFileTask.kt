@@ -22,31 +22,20 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 
-class DownloadFileTask {
+class DownloadFileTask private constructor(builder: Builder) {
     private var mWakeLock: PowerManager.WakeLock? = null
-    private var urlDestination: UrlDestParam? = null
-    private var mCallback: OnDownloadFileTask? = null
-    private var fileType: DownloadDb.FileType? = null
+
+    private var urlDestination: UrlDestParam
+    private var mCallback: OnDownloadFileTask
+    private var fileType: FileType
 
     interface OnDownloadFileTask {
         fun onDownloadFileTask(
             msg: String,
-            fileType: DownloadDb.FileType,
-            downloadStatus: DownloadDb.DownloadStatus,
-            progress: Int?,
-            bytesCompleted: Long?,
-            bytesTotal: Long?,
+            fileType: FileType,
+            downloadStatus: DownloadStatus,
+            progress: Int = 0,
         )
-    }
-
-    fun addParams(
-        urlDestination: UrlDestParam,
-        listener: OnDownloadFileTask,
-        fileType: DownloadDb.FileType,
-    ) {
-        this.urlDestination = urlDestination
-        this.fileType = fileType
-        this.mCallback = listener
     }
 
     private fun preExecute() {
@@ -60,26 +49,18 @@ class DownloadFileTask {
     private fun postExecute(result: Boolean): Boolean {
         mWakeLock?.release()
 
-        if (fileType != null) {
-            if (result) {
-                mCallback?.onDownloadFileTask(
-                    msg = "${context.getString(R.string.download_ok)}: ${fileType.toString()}",
-                    fileType = fileType!!,
-                    downloadStatus = DownloadDb.DownloadStatus.FINISHED,
-                    progress = null,
-                    bytesCompleted = null,
-                    bytesTotal = null
-                )
-            } else {
-                mCallback?.onDownloadFileTask(
-                    msg = "${context.getString(R.string.download_error)}: ${fileType.toString()}",
-                    fileType = fileType!!,
-                    downloadStatus = DownloadDb.DownloadStatus.CRASHED,
-                    progress = null,
-                    bytesCompleted = null,
-                    bytesTotal = null
-                )
-            }
+        if (result) {
+            mCallback.onDownloadFileTask(
+                msg = "${context.getString(R.string.download_ok)}: $fileType",
+                fileType = fileType,
+                downloadStatus = DownloadStatus.FINISHED
+            )
+        } else {
+            mCallback.onDownloadFileTask(
+                msg = "${context.getString(R.string.download_error)}: $fileType",
+                fileType = fileType,
+                downloadStatus = DownloadStatus.CRASHED
+            )
         }
 
         return result
@@ -114,37 +95,28 @@ class DownloadFileTask {
     }
 
     private fun getDownloadTaskResult(): Boolean {
-        mCallback?.onDownloadFileTask(
+        mCallback.onDownloadFileTask(
             msg = context.getString(R.string.starting_download),
-            fileType = fileType!!,
-            downloadStatus = DownloadDb.DownloadStatus.STARTING,
-            progress = null,
-            bytesCompleted = null,
-            bytesTotal = null
+            fileType = fileType,
+            downloadStatus = DownloadStatus.STARTING
         )
 
-        val destination = urlDestination!!.destination
-        val urlStr = urlDestination!!.url
+        val destination = urlDestination.destination
+        val urlStr = urlDestination.url
 
         if (destination.exists()) {
-            mCallback?.onDownloadFileTask(
+            mCallback.onDownloadFileTask(
                 msg = "${context.getString(R.string.destination_already_exists)}: $destination",
-                fileType = fileType!!,
-                downloadStatus = DownloadDb.DownloadStatus.INFO,
-                progress = null,
-                bytesCompleted = null,
-                bytesTotal = null
+                fileType = fileType,
+                downloadStatus = DownloadStatus.INFO
             )
             return true
         }
 
-        mCallback?.onDownloadFileTask(
+        mCallback.onDownloadFileTask(
             msg = "${context.getString(R.string.destination)}: $destination${lineSeparator()}URL: $urlStr",
-            fileType = fileType!!,
-            downloadStatus = DownloadDb.DownloadStatus.INFO,
-            progress = null,
-            bytesCompleted = null,
-            bytesTotal = null
+            fileType = fileType,
+            downloadStatus = DownloadStatus.INFO
         )
 
         var input: InputStream? = null
@@ -155,27 +127,21 @@ class DownloadFileTask {
         try {
             val url = URL(urlStr)
 
-            mCallback?.onDownloadFileTask(
+            mCallback.onDownloadFileTask(
                 msg = "${context.getString(R.string.opening_connection)}: $urlStr",
-                fileType = fileType!!,
-                downloadStatus = DownloadDb.DownloadStatus.INFO,
-                progress = null,
-                bytesCompleted = null,
-                bytesTotal = null
+                fileType = fileType,
+                downloadStatus = DownloadStatus.INFO
             )
             connection = url.openConnection() as HttpURLConnection
             connection.connect()
 
-            // expect HTTP 200 OK, so we don't mistakenly save error report
+            // expect HTTP 200 OK, so we don't mistakenly save an error report
             // instead of the file
             if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                mCallback?.onDownloadFileTask(
+                mCallback.onDownloadFileTask(
                     msg = "${context.getString(R.string.error_connecting_to)} $urlStr: Server returned HTTP ${connection.responseCode} ${connection.responseMessage}",
-                    fileType = fileType!!,
-                    downloadStatus = DownloadDb.DownloadStatus.CRASHED,
-                    progress = null,
-                    bytesCompleted = null,
-                    bytesTotal = null
+                    fileType = fileType,
+                    downloadStatus = DownloadStatus.CRASHED
                 )
                 return false
             }
@@ -183,13 +149,10 @@ class DownloadFileTask {
             // this will be useful to display download percentage
             // might be -1: server did not report the length
             val fileLength = connection.contentLength
-            mCallback?.onDownloadFileTask(
+            mCallback.onDownloadFileTask(
                 msg = "${context.getString(R.string.file_length)}: $fileLength",
-                fileType = fileType!!,
-                downloadStatus = DownloadDb.DownloadStatus.INFO,
-                progress = null,
-                bytesCompleted = null,
-                bytesTotal = null
+                fileType = fileType,
+                downloadStatus = DownloadStatus.INFO
             )
 
             // Crear un nuevo archivo
@@ -214,14 +177,11 @@ class DownloadFileTask {
 
                 // allow canceling with back button
                 if (deferred?.isCancelled == true) {
-                    mCallback?.onDownloadFileTask(
+                    mCallback.onDownloadFileTask(
                         msg = context
                             .getString(R.string.download_canceled),
-                        fileType = fileType!!,
-                        downloadStatus = DownloadDb.DownloadStatus.CANCELED,
-                        progress = null,
-                        bytesCompleted = null,
-                        bytesTotal = null
+                        fileType = fileType,
+                        downloadStatus = DownloadStatus.CANCELED
                     )
                     input.close()
                     return false
@@ -232,25 +192,20 @@ class DownloadFileTask {
 
                 if (fileLength > 0) {
                     // only if total length is known
-                    mCallback?.onDownloadFileTask(
+                    mCallback.onDownloadFileTask(
                         msg = context.getString(R.string.downloading_),
-                        fileType = fileType!!,
-                        downloadStatus = DownloadDb.DownloadStatus.DOWNLOADING,
-                        progress = (total * 100 / fileLength).toInt(),
-                        bytesCompleted = total,
-                        bytesTotal = fileLength.toLong()
+                        fileType = fileType,
+                        downloadStatus = DownloadStatus.DOWNLOADING,
+                        progress = (total * 100 / fileLength).toInt()
                     )
                 }
                 output.write(data, 0, count)
             } while (true)
         } catch (e: Exception) {
-            mCallback?.onDownloadFileTask(
+            mCallback.onDownloadFileTask(
                 msg = "${context.getString(R.string.exception_when_downloading)}: ${e.message}",
-                fileType = fileType!!,
-                downloadStatus = DownloadDb.DownloadStatus.CRASHED,
-                progress = null,
-                bytesCompleted = null,
-                bytesTotal = null
+                fileType = fileType,
+                downloadStatus = DownloadStatus.CRASHED
             )
             return false
         } finally {
@@ -262,5 +217,39 @@ class DownloadFileTask {
             connection?.disconnect()
         }
         return true
+    }
+
+    init {
+        urlDestination = builder.urlDestination
+        mCallback = builder.mCallback
+        fileType = builder.fileType
+    }
+
+    class Builder {
+        fun build(): DownloadFileTask {
+            return DownloadFileTask(this)
+        }
+
+        internal lateinit var urlDestination: UrlDestParam
+        internal lateinit var mCallback: OnDownloadFileTask
+        internal lateinit var fileType: FileType
+
+        @Suppress("unused")
+        fun urlDestination(value: UrlDestParam): Builder {
+            urlDestination = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun mCallback(value: OnDownloadFileTask): Builder {
+            mCallback = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun fileType(value: FileType): Builder {
+            fileType = value
+            return this
+        }
     }
 }

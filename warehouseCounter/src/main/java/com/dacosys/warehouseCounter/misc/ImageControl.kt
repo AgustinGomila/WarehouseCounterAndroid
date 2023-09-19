@@ -14,7 +14,6 @@ class ImageControl {
         }
 
         fun setupImageControl() {
-            // Setup ImageControl
             imageControl.cleanInstance()
 
             imageControl.userId = Statics.currentUserId

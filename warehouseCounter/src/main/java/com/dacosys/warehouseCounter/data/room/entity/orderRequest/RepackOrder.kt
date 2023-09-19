@@ -1,5 +1,6 @@
 package com.dacosys.warehouseCounter.data.room.entity.orderRequest
 
+import android.text.format.DateFormat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
@@ -20,9 +21,9 @@ class RepackOrder(order: OrderResponse, private val onEvent: (SnackBarEventData)
             ), SnackBarType.INFO
         )
 
-        val orderRequest = OrderRequest(
+        val orderRequestForPackaging = OrderRequest(
             clientId = order.clientId ?: 0,
-            creationDate = order.rowCreationDate, // TODO: Fecha actual
+            creationDate = DateFormat.format(Statics.DATE_FORMAT, System.currentTimeMillis()).toString(),
             description = order.description,
             orderTypeDescription = OrderRequestType.packaging.description,
             orderTypeId = OrderRequestType.packaging.id.toInt(),
@@ -35,12 +36,12 @@ class RepackOrder(order: OrderResponse, private val onEvent: (SnackBarEventData)
         )
 
         OrderRequestCoroutines.add(
-            orderRequest = orderRequest,
+            orderRequest = orderRequestForPackaging,
             onResult = { newId ->
                 if (newId != null) {
-                    orderRequest.orderRequestId = newId
+                    orderRequestForPackaging.orderRequestId = newId
                     OrderRequestCoroutines.update(
-                        orderRequest = orderRequest.toKtor,
+                        orderRequest = orderRequestForPackaging.toKtor,
                         contents = order.contentToKtor(),
                         onResult = {
                             if (it) {

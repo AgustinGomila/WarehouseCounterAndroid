@@ -2,9 +2,10 @@ package com.dacosys.warehouseCounter.data.ktor.v2.functions.order
 
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedPath
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.removeCountFiles
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 
@@ -22,8 +23,8 @@ class SendOrder(
                 if (successFiles.isNotEmpty()) {
 
                     /** We delete the files of the orders sent */
-                    OrderRequest.removeCountFiles(
-                        path = Statics.getCompletedPath(),
+                    removeCountFiles(
+                        path = getCompletedPath(),
                         filesToRemove = successFiles,
                         sendEvent = { eventData ->
 

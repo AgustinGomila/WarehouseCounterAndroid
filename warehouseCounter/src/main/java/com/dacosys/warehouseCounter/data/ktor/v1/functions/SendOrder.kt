@@ -4,6 +4,8 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV1
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedPath
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.removeCountFiles
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.user.AuthData
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.user.UserAuthData.Companion.USER_AUTH_KEY
@@ -22,7 +24,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import org.json.JSONObject
-import java.io.File
 import kotlin.concurrent.thread
 
 class SendOrder(
@@ -63,31 +64,15 @@ class SendOrder(
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         apiServiceV1.sendOrders(body = getBody(), callback = {
-            removeCountFiles()
+            removeCountFiles(
+                path = getCompletedPath(),
+                filesToRemove = successFiles,
+                sendEvent = onEvent
+            )
         })
     }
 
     private var successFiles: ArrayList<String> = ArrayList()
-    private fun removeCountFiles() {
-        var isOk = true
-        val currentDir = Statics.getCompletedPath()
-        for (f in successFiles) {
-            val filePath = currentDir.absolutePath + File.separator + f
-            val fl = File(filePath)
-            if (fl.exists()) {
-                if (!fl.delete()) {
-                    isOk = false
-                    break
-                }
-            }
-        }
-
-        if (isOk) {
-            sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
-        } else {
-            sendEvent(context.getString(R.string.an_error_occurred_while_deleting_counts), SnackBarType.ERROR)
-        }
-    }
 
     private fun getBody(): JSONObject {
         // BODY ////////////////////////////

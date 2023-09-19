@@ -41,12 +41,14 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sync
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.countPending
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedOrders
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.saveNewOrders
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeNewOrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetOrderBarcode
@@ -169,53 +171,25 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         ).execute()
     }
 
-    @get:Synchronized
-    private var isReceiving = false
     private fun onNewOrder(itemArray: ArrayList<OrderRequest>) {
         android.util.Log.d(
             this::class.java.simpleName,
             "${getString(R.string.new_orders_received_)}${itemArray.count()}"
         )
 
-        saveNewOrders(itemArray) {
-            setTextButton(MainButton.PendingCounts, countPending())
-        }
-    }
+        newOrArray = itemArray
 
-    private fun saveNewOrders(itemArray: ArrayList<OrderRequest>, onFinish: () -> Unit) {
         runOnUiThread {
-            if (!isReceiving && itemArray.isNotEmpty()) {
-                isReceiving = true
-
-                if (!Statics.isExternalStorageWritable) {
-                    isReceiving = false
-                    android.util.Log.e(
-                        this::class.java.simpleName,
-                        getString(R.string.error_external_storage_not_available_for_reading_or_writing)
-                    )
-                } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R &&
-                    PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(
-                        this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    )
-                ) {
-                    isReceiving = false
-                    newOrArray = itemArray
-                    requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE)
-                } else {
-                    writeNewOrderRequest(itemArray) {
-                        if (it.snackBarType in SnackBarType.getFinish()) isReceiving = false
-                        showSnackBar(it.text, it.snackBarType)
-                    }
-                }
-            }
-            onFinish()
+            saveNewOrders(
+                activity = this,
+                requestCode = REQUEST_EXTERNAL_STORAGE,
+                itemArray = itemArray,
+                onEvent = { showSnackBar(it.text, it.snackBarType) },
+                onFinish = {
+                    newOrArray.clear()
+                    setTextButton(MainButton.PendingCounts, countPending())
+                })
         }
-    }
-
-    private fun countPending(): Int {
-        val currentDir = Statics.getPendingPath()
-        val files = currentDir.listFiles() ?: return 0
-        return files.count { t -> t.extension == "json" }
     }
 
     override fun scannerCompleted(scanCode: String) {
@@ -1065,7 +1039,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
-        permissions: Array<String>, grantResults: IntArray,
+        permissions: Array<String>,
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) {
@@ -1079,7 +1054,15 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     showSnackBar(getString(R.string.cannot_write_to_external_storage), ERROR)
                 } else {
-                    writeNewOrderRequest(newOrArray) { showSnackBar(it.text, it.snackBarType) }
+                    writeNewOrderRequest(
+                        newOrArray = newOrArray,
+                        onEvent = {
+                            showSnackBar(it.text, it.snackBarType)
+                            if (it.snackBarType in SnackBarType.getFinish()) {
+                                newOrArray.clear()
+                            }
+                        }
+                    )
                 }
             }
         }

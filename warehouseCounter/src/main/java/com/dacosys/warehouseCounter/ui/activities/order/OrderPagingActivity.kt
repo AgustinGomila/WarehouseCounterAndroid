@@ -673,7 +673,6 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
 
     private val menuItemRandomIt = 999001
     private val menuItemManualCode = 999002
-    private val menuItemRandomOnListL = 999003
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -686,7 +685,6 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
         if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
             menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
-            menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
         }
 
         if (menu is MenuBuilder) {
@@ -754,13 +752,6 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
 
             R.id.action_read_barcode -> {
                 JotterListener.toggleCameraFloatingWindowVisibility(this)
-                return super.onOptionsItemSelected(item)
-            }
-
-            menuItemRandomOnListL -> {
-                val codes: ArrayList<String> = ArrayList()
-                // TODO: (pagingAdapter.fullList ?: ArrayList()).mapTo(codes) { it.externalId }
-                if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
 

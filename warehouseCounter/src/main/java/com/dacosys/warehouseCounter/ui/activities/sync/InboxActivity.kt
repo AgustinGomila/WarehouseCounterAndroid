@@ -26,10 +26,12 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.completePendingPath
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getPendingOrders
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getPendingPath
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.databinding.InboxActivityBinding
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderRequestAdapter
@@ -284,7 +286,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
     private fun removeSelected(toRemove: ArrayList<OrderRequest>) {
         var isOk = true
 
-        val currentDir = Statics.getPendingPath()
+        val currentDir = getPendingPath()
         for (i in toRemove) {
             val filePath = currentDir.absolutePath + File.separator + i.filename
             val fl = File(filePath)
@@ -322,7 +324,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
 
     private fun showDetail() {
         val filename = currentItem?.filename ?: return
-        val completePath = Path(Statics.completePendingPath, filename).toString()
+        val completePath = Path(completePendingPath, filename).toString()
 
         val intent = Intent(context, OrderRequestDetailActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -344,7 +346,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
 
         var temp = t
         if (!temp.any()) {
-            temp = OrderRequest.getPendingOrders()
+            temp = getPendingOrders()
             if (temp.isEmpty()) {
                 showSnackBar(getString(R.string.there_are_no_pending_counts), SnackBarType.INFO)
             }

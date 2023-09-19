@@ -4,13 +4,10 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.dacosys.imageControl.dto.Document
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
-import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getFiles
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getJsonFromFile
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.log.Log
-import com.dacosys.warehouseCounter.misc.Statics
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.io.File
 
 
 @Serializable
@@ -241,33 +238,6 @@ class OrderRequest() : Parcelable {
 
         override fun newArray(size: Int): Array<OrderRequest?> {
             return arrayOfNulls(size)
-        }
-
-        fun getPendingOrders(): ArrayList<OrderRequest> {
-            return getOrders(Statics.getPendingPath())
-        }
-
-        fun getCompletedOrders(): ArrayList<OrderRequest> {
-            return getOrders(Statics.getCompletedPath())
-        }
-
-        private fun getOrders(path: File): ArrayList<OrderRequest> {
-            val orArray: ArrayList<OrderRequest> = ArrayList()
-            if (Statics.isExternalStorageReadable) {
-                // Get the directory for the user's public pictures' directory.
-                val filesInFolder = getFiles(path.absolutePath)
-                if (!filesInFolder.isNullOrEmpty()) {
-                    for (filename in filesInFolder) {
-                        val filePath = path.absolutePath + File.separator + filename
-                        val tempOr = OrderRequest(filePath)
-                        if (tempOr.orderRequestId != null && !orArray.contains(tempOr)) {
-                            tempOr.filename = filename
-                            orArray.add(tempOr)
-                        }
-                    }
-                }
-            }
-            return orArray
         }
     }
 }

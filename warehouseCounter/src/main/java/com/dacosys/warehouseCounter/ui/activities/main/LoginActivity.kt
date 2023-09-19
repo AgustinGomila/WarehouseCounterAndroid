@@ -43,6 +43,9 @@ import com.dacosys.warehouseCounter.data.room.dao.user.UserCoroutines
 import com.dacosys.warehouseCounter.data.room.database.WcDatabase
 import com.dacosys.warehouseCounter.data.room.database.WcTempDatabase
 import com.dacosys.warehouseCounter.data.room.database.helper.DownloadDb
+import com.dacosys.warehouseCounter.data.room.database.helper.DownloadStatus
+import com.dacosys.warehouseCounter.data.room.database.helper.FileType
+import com.dacosys.warehouseCounter.data.room.database.helper.statusEnd
 import com.dacosys.warehouseCounter.data.room.entity.user.User
 import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType.CREATOR.QRConfigApp
 import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType.CREATOR.QRConfigClientAccount
@@ -134,11 +137,12 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     private fun onGetDatabaseData(data: DatabaseData?) {
         if (data != null) {
             thread {
-                val sync = DownloadDb()
-                sync.addParams(callBack = this,
-                    timeFileUrl = data.dbDate,
-                    dbFileUrl = data.dbFile,
-                    onEventData = { showSnackBar(it.text, it.snackBarType) })
+                val sync = DownloadDb.Builder()
+                    .onEventData { showSnackBar(it.text, it.snackBarType) }
+                    .callBack(this)
+                    .timeFileUrl(data.dbDate)
+                    .dbFileUrl(data.dbFile)
+                    .build()
                 sync.execute()
             }
         } else {
@@ -152,36 +156,36 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         makeText(binding.root, text, snackBarType)
     }
 
-    override fun onDownloadDbTask(downloadStatus: DownloadDb.DownloadStatus) {
-        if (downloadStatus in DownloadDb.statusEnd()) {
+    override fun onDownloadDbTask(downloadStatus: DownloadStatus) {
+        if (downloadStatus in statusEnd()) {
             attemptSync = false
         }
 
         when (downloadStatus) {
-            DownloadDb.DownloadStatus.STARTING -> {
+            DownloadStatus.STARTING -> {
                 setButton(ButtonStyle.BUSY)
                 showProgressBar(getString(R.string.downloading_database))
             }
 
-            DownloadDb.DownloadStatus.FINISHED, /* FINISHED = Ok */
-            DownloadDb.DownloadStatus.CANCELED, /* CANCELED = Sin conexión */
+            DownloadStatus.FINISHED, /* FINISHED = Ok */
+            DownloadStatus.CANCELED, /* CANCELED = Sin conexión */
             -> {
                 showProgressBar()
                 enableLogin()
             }
 
-            DownloadDb.DownloadStatus.CRASHED -> {
+            DownloadStatus.CRASHED -> {
                 setButton(ButtonStyle.REFRESH)
                 showProgressBar()
             }
 
-            DownloadDb.DownloadStatus.DOWNLOADING,
-            DownloadDb.DownloadStatus.COPYING,
+            DownloadStatus.DOWNLOADING,
+            DownloadStatus.COPYING,
             -> {
                 setButton(ButtonStyle.BUSY)
             }
 
-            DownloadDb.DownloadStatus.INFO -> {
+            DownloadStatus.INFO -> {
             }
         }
     }
@@ -198,11 +202,11 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
     override fun onDownloadFileTask(
         msg: String,
-        fileType: DownloadDb.FileType,
-        downloadStatus: DownloadDb.DownloadStatus,
+        fileType: FileType,
+        downloadStatus: DownloadStatus,
         progress: Int?,
     ) {
-        if (downloadStatus == DownloadDb.DownloadStatus.DOWNLOADING || downloadStatus == DownloadDb.DownloadStatus.COPYING) {
+        if (downloadStatus == DownloadStatus.DOWNLOADING || downloadStatus == DownloadStatus.COPYING) {
             showProgressBar(msg, progress)
         }
     }

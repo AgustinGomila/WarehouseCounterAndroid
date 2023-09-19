@@ -30,16 +30,16 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.completeCompletedPath
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedOrders
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getPendingPath
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeToFile
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.SendOrder
 import com.dacosys.warehouseCounter.data.room.dao.pendingLabel.PendingLabelCoroutines
 import com.dacosys.warehouseCounter.databinding.OutboxActivityBinding
-import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.completeCompletedPath
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.order.OrderPrintLabelActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
@@ -449,7 +449,7 @@ class OutboxActivity : AppCompatActivity() {
     }
 
     private fun write(filename: String, value: String): Boolean {
-        val path = Statics.getPendingPath()
+        val path = getPendingPath()
         return if (writeToFile(fileName = filename, data = value, directory = path)) {
             val completedPath = Path(completeCompletedPath, filename)
             val fl = File(completedPath.toString())

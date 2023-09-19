@@ -2,6 +2,7 @@ package com.dacosys.warehouseCounter.data.room.entity.orderRequest
 
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.completePendingPath
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.misc.Statics
@@ -18,7 +19,7 @@ class AddOrderFromFile(
     init {
         val order = OrderRequestKtor(
             Path(
-                Statics.completePendingPath,
+                completePendingPath,
                 filename
             ).toString()
         )

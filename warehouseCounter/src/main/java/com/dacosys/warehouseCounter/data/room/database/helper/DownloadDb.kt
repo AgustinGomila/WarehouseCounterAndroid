@@ -10,10 +10,10 @@ import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.SendItemCode
 import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.database.WcDatabase
 import com.dacosys.warehouseCounter.data.room.database.WcDatabase.Companion.DATABASE_NAME
-import com.dacosys.warehouseCounter.data.room.database.helper.DownloadDb.DownloadStatus.CANCELED
-import com.dacosys.warehouseCounter.data.room.database.helper.DownloadDb.DownloadStatus.CRASHED
-import com.dacosys.warehouseCounter.data.room.database.helper.DownloadDb.DownloadStatus.FINISHED
-import com.dacosys.warehouseCounter.data.room.database.helper.DownloadDb.DownloadStatus.STARTING
+import com.dacosys.warehouseCounter.data.room.database.helper.DownloadStatus.CANCELED
+import com.dacosys.warehouseCounter.data.room.database.helper.DownloadStatus.CRASHED
+import com.dacosys.warehouseCounter.data.room.database.helper.DownloadStatus.FINISHED
+import com.dacosys.warehouseCounter.data.room.database.helper.DownloadStatus.STARTING
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
@@ -32,8 +32,7 @@ import java.io.File
 import java.io.FileReader
 import kotlin.concurrent.thread
 
-
-class DownloadDb : DownloadFileTask.OnDownloadFileTask {
+class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDownloadFileTask {
 
     interface DownloadDbTask {
         fun onDownloadDbTask(downloadStatus: DownloadStatus)
@@ -50,9 +49,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
         msg: String,
         fileType: FileType,
         downloadStatus: DownloadStatus,
-        progress: Int?,
-        bytesCompleted: Long?,
-        bytesTotal: Long?,
+        progress: Int,
     ) {
         this.fileType = fileType
         this.downloadStatus = downloadStatus
@@ -73,7 +70,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
         }
 
         Log.d(this::class.java.simpleName, "${downloadStatus.name}: ${fileType.name}, $msg")
-        mCallback?.onDownloadFileTask(msg, fileType, downloadStatus, progress)
+        mCallback.onDownloadFileTask(msg, fileType, downloadStatus, progress)
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {
@@ -85,23 +82,6 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
         onEventData.invoke(event)
     }
 
-    /**
-     * Tiene el tipo de archivo que se está descargando.
-     * De esto depende la lógica para la secuencia de descargas.
-     */
-    enum class FileType(val id: Int) {
-        TIME_FILE(1), DB_FILE(2)
-    }
-
-    /**
-     * Tiene los diferentes estados durante una descarga
-     */
-    enum class DownloadStatus(val id: Int) {
-        STARTING(1), DOWNLOADING(2), CANCELED(3), FINISHED(4), CRASHED(5), INFO(6), COPYING(7)
-    }
-
-    /////////////////////
-    // region Privadas //
     private var errorMsg = ""
 
     @Volatile
@@ -110,44 +90,20 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
     @Volatile
     private var uploadStatus: ProgressStatus? = null
 
+    private val timeFileName: String = "android.wc.time.txt"
+
     private var oldDateTimeStr: String = ""
     private var currentDateTimeStr: String = ""
     private var fileType: FileType? = null
 
-    private var mCallback: DownloadDbTask? = null
-    // endregion Privadas //
-    ////////////////////////
-
-    ///////////////////////
-    // region Constantes //
-    private var destTimeFile: File? = null
-    private var destDbFile: File? = null
-
-    private val timeFileName: String = "android.wc.time.txt"
-
-    private var onEventData: (SnackBarEventData) -> Unit = {}
-
+    private var destDbFile: File
     private var dbFileUrl = ""
+
+    private var destTimeFile: File
     private var timeFileUrl = ""
 
-    // endregion Constantes //
-    //////////////////////////
-
-    fun addParams(
-        callBack: DownloadDbTask,
-        timeFileUrl: String, //"android.wc.time.txt",
-        dbFileUrl: String, //"android.wc.sqlite.txt",
-        onEventData: (SnackBarEventData) -> Unit = {},
-    ) {
-        mCallback = callBack
-        this.onEventData = onEventData
-
-        this.dbFileUrl = dbFileUrl
-        this.timeFileUrl = timeFileUrl
-
-        destTimeFile = File("${context.cacheDir.absolutePath}/${timeFileName}")
-        destDbFile = File("${context.cacheDir.absolutePath}/${DATABASE_NAME}")
-    }
+    private var mCallback: DownloadDbTask
+    private var onEventData: (SnackBarEventData) -> Unit
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
@@ -167,11 +123,11 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         if (!Statics.isOnline()) {
-            mCallback?.onDownloadDbTask(CANCELED)
+            mCallback.onDownloadDbTask(CANCELED)
             return@withContext
         }
 
-        mCallback?.onDownloadDbTask(STARTING)
+        mCallback.onDownloadDbTask(STARTING)
         goForrest()
     }
 
@@ -180,9 +136,9 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
             val destTimeFile = destTimeFile
             val destDbFile = destDbFile
 
-            if (dbFileUrl.isEmpty() || timeFileUrl.isEmpty() || destTimeFile == null || destDbFile == null) {
+            if (dbFileUrl.isEmpty() || timeFileUrl.isEmpty()) {
                 errorMsg = context.getString(R.string.database_name_is_invalid)
-                mCallback?.onDownloadDbTask(CRASHED)
+                mCallback.onDownloadDbTask(CRASHED)
                 return
             }
 
@@ -201,12 +157,11 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
 
             downloadStatus = null
 
-            var downloadTask = DownloadFileTask()
-            downloadTask.addParams(
-                UrlDestParam(
-                    url = timeFileUrl, destination = destTimeFile
-                ), this, FileType.TIME_FILE
-            )
+            var downloadTask = DownloadFileTask.Builder()
+                .urlDestination(UrlDestParam(url = timeFileUrl, destination = destTimeFile))
+                .fileType(FileType.TIME_FILE)
+                .mCallback(this)
+                .build()
             downloadTask.execute()
 
             var crashNr = 0
@@ -218,7 +173,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
 
                         // Si se cancela, sale
 
-                        mCallback?.onDownloadDbTask(CANCELED)
+                        mCallback.onDownloadDbTask(CANCELED)
                         return
                     }
 
@@ -232,12 +187,11 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                             break
                         } else {
                             downloadStatus = null
-                            downloadTask = DownloadFileTask()
-                            downloadTask.addParams(
-                                UrlDestParam(
-                                    url = timeFileUrl, destination = destTimeFile
-                                ), this, FileType.TIME_FILE
-                            )
+                            downloadTask = DownloadFileTask.Builder()
+                                .urlDestination(UrlDestParam(url = timeFileUrl, destination = destTimeFile))
+                                .fileType(FileType.TIME_FILE)
+                                .mCallback(this)
+                                .build()
                             downloadTask.execute()
                         }
                     }
@@ -255,7 +209,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                         if (crashNr > 1) {
                             // Si ya falló dos veces en bajar la fecha, a la mierda.
                             errorMsg = context.getString(R.string.failed_to_get_the_db_creation_date_from_the_server)
-                            mCallback?.onDownloadDbTask(CRASHED)
+                            mCallback.onDownloadDbTask(CRASHED)
                             return
                         }
                     }
@@ -276,7 +230,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                         context.getString(R.string.is_not_necessary_to_download_the_database)
                     )
 
-                    mCallback?.onDownloadDbTask(FINISHED)
+                    mCallback.onDownloadDbTask(FINISHED)
                     return
                 }
             }
@@ -288,12 +242,11 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
 
             try {
                 downloadStatus = null
-                downloadTask = DownloadFileTask()
-                downloadTask.addParams(
-                    UrlDestParam(
-                        url = dbFileUrl, destination = destDbFile
-                    ), this, FileType.DB_FILE
-                )
+                downloadTask = DownloadFileTask.Builder()
+                    .urlDestination(UrlDestParam(url = dbFileUrl, destination = destDbFile))
+                    .fileType(FileType.DB_FILE)
+                    .mCallback(this)
+                    .build()
                 downloadTask.execute()
 
                 while (true) {
@@ -303,7 +256,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                         CANCELED, CRASHED -> {
                             // Si se cancela o choca, sale
                             errorMsg = context.getString(R.string.error_downloading_the_database_from_the_server)
-                            mCallback?.onDownloadDbTask(CRASHED)
+                            mCallback.onDownloadDbTask(CRASHED)
                             return
                         }
 
@@ -318,7 +271,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                 errorMsg = "${
                     context.getString(R.string.exception_error)
                 } (Download database): ${ex.message}"
-                mCallback?.onDownloadDbTask(CRASHED)
+                mCallback.onDownloadDbTask(CRASHED)
                 return
             }
 
@@ -334,11 +287,11 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
 
         } catch (ex: Exception) {
             errorMsg = context.getString(R.string.error_downloading_the_database)
-            mCallback?.onDownloadDbTask(CRASHED)
+            mCallback.onDownloadDbTask(CRASHED)
             return
         }
 
-        mCallback?.onDownloadDbTask(FINISHED)
+        mCallback.onDownloadDbTask(FINISHED)
         return
     }
 
@@ -377,7 +330,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
                         ProgressStatus.crashed, ProgressStatus.canceled,
                         -> {
                             errorMsg = context.getString(R.string.error_trying_to_send_item_codes)
-                            mCallback?.onDownloadDbTask(CRASHED)
+                            mCallback.onDownloadDbTask(CRASHED)
                             return@getToUpload
                         }
                     }
@@ -397,7 +350,7 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
         var dateTime = ""
         //Read text from file
         try {
-            val br = BufferedReader(FileReader(destTimeFile!!.absolutePath))
+            val br = BufferedReader(FileReader(destTimeFile.absolutePath))
             while (true) {
                 dateTime = br.readLine() ?: break
             }
@@ -412,18 +365,77 @@ class DownloadDb : DownloadFileTask.OnDownloadFileTask {
 
     private fun deleteTimeFile() {
         destTimeFile = File(context.cacheDir.absolutePath + "/" + timeFileName)
-        if (destTimeFile?.exists() == true) {
-            destTimeFile?.delete()
+        if (destTimeFile.exists()) {
+            destTimeFile.delete()
         }
     }
 
-    companion object {
-        fun statusEnd(): ArrayList<DownloadStatus> {
-            val r = ArrayList<DownloadStatus>()
-            r.add(CANCELED)
-            r.add(FINISHED)
-            r.add(CRASHED)
-            return r
+    init {
+        mCallback = builder.callBack
+        onEventData = builder.onEventData
+        dbFileUrl = builder.dbFileUrl
+        timeFileUrl = builder.timeFileUrl
+
+        destTimeFile = File("${context.cacheDir.absolutePath}/${timeFileName}")
+        destDbFile = File("${context.cacheDir.absolutePath}/${DATABASE_NAME}")
+    }
+
+    class Builder {
+        fun build(): DownloadDb {
+            return DownloadDb(this)
+        }
+
+        internal lateinit var callBack: DownloadDbTask
+        internal lateinit var timeFileUrl: String // "android.wc.time.txt",
+        internal lateinit var dbFileUrl: String   // "android.wc.sqlite.txt",
+        internal lateinit var onEventData: (SnackBarEventData) -> Unit
+
+        @Suppress("unused")
+        fun callBack(value: DownloadDbTask): Builder {
+            callBack = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun timeFileUrl(value: String): Builder {
+            timeFileUrl = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun dbFileUrl(value: String): Builder {
+            dbFileUrl = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun onEventData(value: (SnackBarEventData) -> Unit): Builder {
+            onEventData = value
+            return this
         }
     }
+}
+
+
+/**
+ * Tiene el tipo de archivo que se está descargando.
+ * De esto depende la lógica para la secuencia de descargas.
+ */
+enum class FileType(val id: Int) {
+    TIME_FILE(1), DB_FILE(2)
+}
+
+/**
+ * Tiene los diferentes estados durante una descarga
+ */
+enum class DownloadStatus(val id: Int) {
+    STARTING(1), DOWNLOADING(2), CANCELED(3), FINISHED(4), CRASHED(5), INFO(6), COPYING(7)
+}
+
+fun statusEnd(): ArrayList<DownloadStatus> {
+    val r = ArrayList<DownloadStatus>()
+    r.add(CANCELED)
+    r.add(FINISHED)
+    r.add(CRASHED)
+    return r
 }

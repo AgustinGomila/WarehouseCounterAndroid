@@ -168,6 +168,12 @@ open class BtPrinter(private val activity: FragmentActivity, private val onEvent
         if (sv.useBtPrinter) {
             val printerMacAddress = sv.printerBtAddress
             if (printerMacAddress.isEmpty()) {
+                onEvent(
+                    SnackBarEventData(
+                        context.getString(R.string.bluetooth_printer_not_configured),
+                        SnackBarType.ERROR
+                    )
+                )
                 return
             }
 
@@ -179,6 +185,7 @@ open class BtPrinter(private val activity: FragmentActivity, private val onEvent
                     Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
+                onEvent(SnackBarEventData(context.getString(R.string.permission_denied), SnackBarType.ERROR))
                 return
             }
 
@@ -194,6 +201,13 @@ open class BtPrinter(private val activity: FragmentActivity, private val onEvent
                     }
                 }
             }
+
+            onEvent(
+                SnackBarEventData(
+                    context.getString(R.string.there_are_no_bluetooth_devices),
+                    SnackBarType.ERROR
+                )
+            )
         }
     }
 

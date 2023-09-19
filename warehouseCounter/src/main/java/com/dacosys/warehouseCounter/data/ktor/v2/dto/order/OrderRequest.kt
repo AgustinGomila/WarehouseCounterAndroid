@@ -2,23 +2,14 @@ package com.dacosys.warehouseCounter.data.ktor.v2.dto.order
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
-import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getFiles
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getJsonFromFile
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log.CREATOR.LOG_LIST_KEY
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent.CREATOR.CONTENT_LIST_KEY
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderStatus.CREATOR.outOfStock
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Package.CREATOR.PACKAGE_LIST_KEY
-import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequest as OrderRequestRoom
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequestContent as OrderRequestContentRoom
 
@@ -243,14 +234,6 @@ data class OrderRequest(
         const val USER_ID_KEY = "userId"
         const val ZONE_KEY = "zone"
 
-        fun getPendingOrders(): ArrayList<OrderRequest> {
-            return getOrders(Statics.getPendingPath())
-        }
-
-        fun getCompletedOrders(): ArrayList<OrderRequest> {
-            return getOrders(Statics.getCompletedPath())
-        }
-
         fun toUpdatePayload(or: OrderRequest): OrderUpdatePayload {
             return OrderUpdatePayload(
                 externalId = or.externalId,
@@ -259,73 +242,12 @@ data class OrderRequest(
             )
         }
 
-        private fun getOrders(path: File): ArrayList<OrderRequest> {
-            val orArray: ArrayList<OrderRequest> = ArrayList()
-            if (Statics.isExternalStorageReadable) {
-
-                val filesInFolder = getFiles(path.absolutePath)
-                if (!filesInFolder.isNullOrEmpty()) {
-
-                    for (filename in filesInFolder) {
-                        val filePath = path.absolutePath + File.separator + filename
-                        val tempOr = OrderRequest(filePath)
-
-                        if (tempOr.orderRequestId != null && !orArray.contains(tempOr)) {
-                            tempOr.filename = filename
-                            orArray.add(tempOr)
-                        }
-                    }
-
-                }
-            }
-            return orArray
-        }
-
-        fun removeCountFiles(path: File, filesToRemove: ArrayList<String>, sendEvent: (SnackBarEventData) -> Unit) {
-            sendEvent(removeOrders(path, filesToRemove))
-        }
-
-        private fun removeOrders(path: File, files: ArrayList<String>): SnackBarEventData {
-            var result = SnackBarEventData(context.getString(R.string.ok), SnackBarType.SUCCESS)
-
-            if (Statics.isExternalStorageWritable) {
-                for (f in files) {
-                    val filePath = "${path.absolutePath}${File.separator}$f"
-                    val fl = File(filePath)
-                    if (fl.exists()) {
-                        if (!fl.delete()) {
-                            result = SnackBarEventData(
-                                context.getString(R.string.error_when_deleting_counts),
-                                SnackBarType.ERROR
-                            )
-                            break
-                        }
-                    } else {
-                        result = SnackBarEventData(
-                            context.getString(R.string.error_when_deleting_counts_file_not_found),
-                            SnackBarType.ERROR
-                        )
-                        break
-                    }
-                }
-            } else {
-                result = SnackBarEventData(context.getString(R.string.external_storage_unwritable), SnackBarType.ERROR)
-            }
-
-            return result
-        }
-
         override fun createFromParcel(parcel: Parcel): OrderRequest {
             return OrderRequest(parcel)
         }
 
         override fun newArray(size: Int): Array<OrderRequest?> {
             return arrayOfNulls(size)
-        }
-
-        fun generateFilename(): String {
-            val df = SimpleDateFormat(Statics.FILENAME_DATE_FORMAT, Locale.getDefault())
-            return df.format(Date())
         }
     }
 }

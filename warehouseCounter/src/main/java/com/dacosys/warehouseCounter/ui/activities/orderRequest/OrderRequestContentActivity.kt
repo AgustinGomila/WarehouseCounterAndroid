@@ -36,6 +36,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.generateFilename
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeJsonToFile
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
@@ -861,7 +862,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             else ""
 
         if (orderRequest.filename.isEmpty()) {
-            val filename = OrderRequest.generateFilename()
+            val filename = generateFilename()
             orderRequest.filename = "$filename.json"
         }
 

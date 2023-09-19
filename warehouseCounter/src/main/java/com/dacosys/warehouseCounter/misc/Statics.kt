@@ -5,18 +5,15 @@ import android.content.pm.ApplicationInfo
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
-import android.os.Environment
 import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.applicationName
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.user.UserCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.data.room.entity.user.User
 import org.json.JSONObject
-import java.io.File
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.net.NetworkInterface
@@ -33,7 +30,6 @@ class Statics {
 
         val lineSeparator: String = System.getProperty("line.separator") ?: "\\r\\n"
         const val DATE_FORMAT: String = "yyyy-MM-dd hh:mm:ss"
-        const val FILENAME_DATE_FORMAT: String = "yyyyMMddHHmmss"
 
         /**
          * Modo DEMO
@@ -51,24 +47,6 @@ class Statics {
         // Lo utiliza internamente ImageControl para identificar la aplicación que lo está usando.
         // Ver: https://source.cloud.google.com/assetcontrol/libs_windows/+/master:Collector/Identification/Program.cs
         const val INTERNAL_IMAGE_CONTROL_APP_ID: Int = 4
-
-        const val WC_ROOT_PATH = "/warehouse_counter"
-        private const val PENDING_COUNT_PATH = "/pending_counts"
-        private const val COMPLETED_COUNT_PATH = "/completed_counts"
-
-        val completePendingPath: String =
-            "${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingsVm.installationCode}$PENDING_COUNT_PATH/"
-
-        fun getPendingPath(): File {
-            return File(completePendingPath)
-        }
-
-        val completeCompletedPath: String =
-            "${context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)}$WC_ROOT_PATH/${settingsVm.installationCode}$COMPLETED_COUNT_PATH/"
-
-        fun getCompletedPath(): File {
-            return File(completeCompletedPath)
-        }
 
         fun isOnline(): Boolean {
             val connectivityManager =
@@ -117,13 +95,6 @@ class Statics {
             tempItemCodes.clear()
         }
         // endregion
-
-        /* Checks if external storage is available to at least read */
-        val isExternalStorageReadable: Boolean
-            get() {
-                val state = Environment.getExternalStorageState()
-                return Environment.MEDIA_MOUNTED == state || Environment.MEDIA_MOUNTED_READ_ONLY == state
-            }
 
         // region CURRENT USER
         var currentUserId: Long = -1L
@@ -196,12 +167,6 @@ class Statics {
             }
             return collection
         }
-
-        val isExternalStorageWritable: Boolean
-            get() {
-                val state = Environment.getExternalStorageState()
-                return Environment.MEDIA_MOUNTED == state
-            }
 
         fun getDeviceData(): JSONObject {
             val ip = getIPAddress()

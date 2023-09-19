@@ -817,4 +817,8 @@
     </string>
     <string name="decimal_places">Decimales</string>
     <string name="decimal_separator">Separador decimal</string>
+    <string name="bluetooth_printer_not_configured">Impresora Bluetooth no configurada</string>
+    <string name="permission_denied">Permiso denegado</string>
+    <string name="template_type">Tipo de plantilla</string>
+    <string name="template">Plantilla</string>
 </resources>

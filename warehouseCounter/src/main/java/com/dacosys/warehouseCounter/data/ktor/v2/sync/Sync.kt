@@ -4,8 +4,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedOrders
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest.CREATOR.getCompletedOrders
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import java.util.*
 import kotlin.concurrent.thread

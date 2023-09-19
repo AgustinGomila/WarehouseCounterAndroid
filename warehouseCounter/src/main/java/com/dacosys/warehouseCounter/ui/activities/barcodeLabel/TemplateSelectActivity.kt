@@ -284,7 +284,7 @@ class TemplateSelectActivity : AppCompatActivity(),
     private fun fillBarcodeLabelTemplate(it: ArrayList<BarcodeLabelTemplate>) {
         val adapter = BarcodeLabelTemplateAdapter(
             activity = this,
-            resource = R.layout.item_category_row, // TODO: Hacer un row específico
+            resource = R.layout.template_row,
             templateArray = ArrayList(it)
         )
 
