@@ -26,7 +26,7 @@ import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.selectClie
 import com.dacosys.warehouseCounter.databinding.SettingsActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.ui.fragments.settings.HeaderFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -338,20 +338,22 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
     }
 
     override fun scannerCompleted(scanCode: String) {
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         try {
             // No capturar códigos que cambian el servidor cuando está autentificado.
             if (currentQRConfigType == QRConfigClientAccount || currentQRConfigType == QRConfigWebservice) return
 
             getConfigFromScannedCode(
-                onEvent = { onGetPackagesEnded(it) }, scanCode = scanCode, mode = currentQRConfigType
+                onEvent = { onGetPackagesEnded(it) },
+                scanCode = scanCode,
+                mode = currentQRConfigType
             )
         } catch (ex: Exception) {
             ex.printStackTrace()
@@ -359,7 +361,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
             ErrorLog.writeLog(this, tag, ex)
         } finally {
             // Unless is blocked, unlock the partial
-            JotterListener.lockScanner(this, false)
+            LifecycleListener.lockScanner(this, false)
         }
     }
 }

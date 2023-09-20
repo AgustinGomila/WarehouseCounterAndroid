@@ -19,7 +19,7 @@ import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.databinding.CodeCheckActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
@@ -154,17 +154,17 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_trigger_scan -> {
-                JotterListener.trigger(this)
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
 
@@ -207,7 +207,8 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             return
         }
 
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
+
         var itemObj: Item? = null
         var itemCode: ItemCode? = null
 
@@ -245,12 +246,15 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                                 )
                             }
                         }
-                        JotterListener.lockScanner(this, false)
                     } catch (ex: Exception) {
                         showSnackBar(ex.message.toString(), ERROR)
                         ErrorLog.writeLog(this, tag, ex.message.toString())
+                    } finally {
+                        LifecycleListener.lockScanner(this, false)
                     }
                 }
+            } else {
+                LifecycleListener.lockScanner(this, false)
             }
         }
     }
@@ -261,7 +265,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
     }

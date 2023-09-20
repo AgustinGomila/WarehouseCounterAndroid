@@ -55,7 +55,7 @@ import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
@@ -795,7 +795,6 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         rejectNewInstances = false
 
         closeKeyboard(this)
-        JotterListener.resumeReaderDevices(this)
 
         setPanels()
 
@@ -835,7 +834,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
     }
@@ -851,13 +850,16 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
 
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         // Buscar por ubicación
         GetResultFromCode(
             code = scanCode,
             searchOrder = true,
             onFinish = {
+
+                LifecycleListener.lockScanner(this, false)
+
                 val tList = it.typedObject ?: return@GetResultFromCode
                 if (tList is ArrayList<*> && tList.firstOrNull() is OrderResponse) {
                     fillAdapter(tList as ArrayList<OrderResponse>)
@@ -953,17 +955,17 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_trigger_scan -> {
-                JotterListener.trigger(this)
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
 

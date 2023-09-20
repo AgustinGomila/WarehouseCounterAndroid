@@ -54,7 +54,7 @@ import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.confirm
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.modify
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
@@ -353,8 +353,13 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         binding.removeButton.setOnClickListener {
             if (allowClicks) {
+
                 allowClicks = false
-                removeItem()
+                LifecycleListener.lockScanner(this, true)
+
+                removeItem {
+                    gentlyReturn()
+                }
             }
         }
 
@@ -679,20 +684,21 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     @SuppressLint("SimpleDateFormat")
-    private fun removeItem() {
+    private fun removeItem(onFinish: (Boolean) -> Unit) {
+
         val currentItem = currentItem
         if (currentItem == null && countChecked <= 0) {
-            allowClicks = true
+            onFinish(false)
             return
         }
 
         val orcsToRemove =
-            if (countChecked > 0) adapter?.getAllChecked()
+            if (countChecked > 0) adapter?.getAllChecked() ?: arrayListOf()
             else if (currentItem != null) arrayListOf(currentItem)
             else arrayListOf()
 
         var allCodes = ""
-        if (orcsToRemove!!.isNotEmpty()) {
+        if (orcsToRemove.isNotEmpty()) {
             for (w in orcsToRemove) {
                 allCodes = "${w.ean}, $allCodes"
             }
@@ -708,17 +714,23 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
         }
 
-        JotterListener.pauseReaderDevices(this)
+        if (allCodes.isEmpty()) {
+            onFinish(false)
+            return
+        }
 
         runOnUiThread {
             try {
                 val adb = AlertDialog.Builder(this)
                 adb.setTitle(if (orcsToRemove.count() > 1) R.string.remove_items else R.string.remove_item)
                 adb.setMessage(allCodes)
-                adb.setNegativeButton(R.string.cancel, null)
+                adb.setOnCancelListener { onFinish(false) }
+                adb.setNegativeButton(R.string.cancel) { _, _ -> onFinish(false) }
                 adb.setPositiveButton(R.string.accept) { _, _ ->
                     var isDone = false
+
                     for ((index, i) in orcsToRemove.withIndex()) {
+
                         val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
                         val now = df.format(Calendar.getInstance().time)
 
@@ -740,30 +752,33 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                                 ),
                                 onResult = { isDone = index == orcsToRemove.lastIndex }
                             )
+                        } else {
+                            isDone = index == orcsToRemove.lastIndex
                         }
                     }
 
                     val startTime = System.currentTimeMillis()
                     while (!isDone) {
-                        if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong())
+                        if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
                             isDone = true
+                        }
                     }
+
                     adapter?.remove(orcsToRemove)
+                    onFinish(true)
                 }
                 adb.show()
             } catch (ex: java.lang.Exception) {
                 ErrorLog.writeLog(this, tag, ex.message.toString())
+                onFinish(false)
             }
         }
-
-        JotterListener.resumeReaderDevices(this)
-        allowClicks = true
     }
 
     private fun selectItemDialog() {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, ItemSelectActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -809,7 +824,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
     private fun finishCountDialog() {
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         saveTempOrder {
             launchFinishDialog()
@@ -946,7 +961,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun showLogDialog() {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, LogContentActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -1023,7 +1038,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun showDialogForItemDescription(orc: OrderRequestContent) {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -1071,7 +1086,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun showDialogForAddDescription(orc: OrderRequestContent) {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -1121,7 +1136,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun lotCodeDialog(orc: OrderRequestContent) {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -1217,7 +1232,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     ) {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(this, QtySelectorActivity::class.java)
         intent.putExtra(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT, orc)
@@ -1294,7 +1309,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun multiplierDialog() {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val multiplier = settingsVm.scanMultiplier
         val intent = Intent(context, MultiplierSelectActivity::class.java)
@@ -1383,8 +1398,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
         if (tempQty <= 0) {
-            removeItem()
-            lastRegexResult = null
+            removeItem {
+                allowClicks = true
+                lastRegexResult = null
+            }
             return
         }
 
@@ -1427,7 +1444,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
         else {
@@ -1458,7 +1475,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     override fun scannerCompleted(scanCode: String) {
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         var code: String
         val fullList = adapter?.fullList ?: ArrayList()
@@ -1538,7 +1555,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         Screen.closeKeyboard(this)
         allowClicks = true
-        JotterListener.lockScanner(this, false)
+        LifecycleListener.lockScanner(this, false)
         rejectNewInstances = false
     }
 
@@ -1607,7 +1624,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
@@ -1621,12 +1638,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 scannerCompleted(s)
                 return super.onOptionsItemSelected(item)
                 */
-                JotterListener.trigger(this)
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
 

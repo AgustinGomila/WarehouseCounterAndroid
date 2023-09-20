@@ -110,7 +110,7 @@ import id.pahlevikun.jotter.Jotter
 //                                                                              //
 //------------------------------------------------------------------------------//
 
-object JotterListener : Jotter.Listener {
+object LifecycleListener : Jotter.Listener {
 
     private val tag = this::class.java.simpleName
 
@@ -166,7 +166,7 @@ object JotterListener : Jotter.Listener {
 
         when (requestCode) {
             REQUEST_BLUETOOTH_CONNECT -> {
-                // If the request is cancelled, the result arrays are empty.
+                // If the request is canceled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     showSnackBar(
                         activity.window.decorView,
@@ -355,7 +355,7 @@ object JotterListener : Jotter.Listener {
         resumeReaderDevices(activity)
     }
 
-    fun resumeReaderDevices(activity: AppCompatActivity) {
+    private fun resumeReaderDevices(activity: AppCompatActivity) {
         if (settingsVm.useNfc) enableNfcForegroundDispatch(activity)
 
         if (activity is Rfid.RfidDeviceListener && settingsVm.useBtRfid) Rfid.resume(
@@ -398,7 +398,7 @@ object JotterListener : Jotter.Listener {
         pauseReaderDevices(activity)
     }
 
-    fun pauseReaderDevices(activity: AppCompatActivity) {
+    private fun pauseReaderDevices(activity: AppCompatActivity) {
         if (activity is Rfid.RfidDeviceListener && settingsVm.useBtRfid) Rfid.pause()
 
         if (settingsVm.useNfc) Nfc.disableNfcForegroundDispatch(activity)

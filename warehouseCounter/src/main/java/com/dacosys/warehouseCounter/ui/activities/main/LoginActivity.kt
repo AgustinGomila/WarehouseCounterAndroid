@@ -59,7 +59,7 @@ import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment
 import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.CANCELED
@@ -315,7 +315,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     override fun onResume() {
         super.onResume()
 
-        JotterListener.lockScanner(this, false)
+        LifecycleListener.lockScanner(this, false)
         rejectNewInstances = false
 
         Statics.isLogged = false
@@ -588,7 +588,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     private val resultForSettings =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             // Vamos a reconstruir el scanner por si cambió la configuración
-            JotterListener.autodetectDeviceModel(this)
+            LifecycleListener.autodetectDeviceModel(this)
 
             initialSetup()
         }
@@ -664,7 +664,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
     }
@@ -674,8 +674,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             scanCode, SnackBarType.INFO
         )
 
-        JotterListener.lockScanner(this, true)
-        JotterListener.hideWindow(this)
+        LifecycleListener.lockScanner(this, true)
+        LifecycleListener.hideWindow(this)
 
         try {
             val mainJson = JSONObject(scanCode)
@@ -745,7 +745,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             ErrorLog.writeLog(this, tag, ex)
         } finally {
             // Unless is blocked, unlock the partial
-            JotterListener.lockScanner(this, false)
+            LifecycleListener.lockScanner(this, false)
         }
     }
 
@@ -780,7 +780,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
@@ -791,12 +791,12 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 //)
                 //return super.onOptionsItemSelected(item)
 
-                JotterListener.trigger(this)
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
 

@@ -12,7 +12,7 @@ import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.databinding.ObservationsActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -130,13 +130,13 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
     }
 
     override fun scannerCompleted(scanCode: String) {
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         try {
             addAutoText(scanCode)
@@ -155,7 +155,7 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial
-            JotterListener.lockScanner(this, false)
+            LifecycleListener.lockScanner(this, false)
         }
     }
 

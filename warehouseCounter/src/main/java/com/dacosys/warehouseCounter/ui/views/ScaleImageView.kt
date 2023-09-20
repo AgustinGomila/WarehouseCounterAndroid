@@ -22,6 +22,7 @@ class ScaleImageView(context: Context, attrs: AttributeSet? = null) :
 
     interface OnScaledListener {
         fun onScaled(x: Float, y: Float, event: MotionEvent)
+        fun onScaledEnded()
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -42,6 +43,9 @@ class ScaleImageView(context: Context, attrs: AttributeSet? = null) :
                     event.x - touchDownX,
                     event.y - touchDownY, event
                 )
+
+            MotionEvent.ACTION_UP ->
+                onScaledListener?.onScaledEnded()
         }
         return true
     }

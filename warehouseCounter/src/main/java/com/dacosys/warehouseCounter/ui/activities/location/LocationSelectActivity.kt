@@ -23,7 +23,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
 import com.dacosys.warehouseCounter.databinding.LocationSelectActivityBinding
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.ui.adapter.location.RackAdapter
 import com.dacosys.warehouseCounter.ui.adapter.location.WarehouseAdapter
 import com.dacosys.warehouseCounter.ui.adapter.location.WarehouseAreaAdapter
@@ -150,7 +150,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
 
         binding.selectButton.setOnClickListener { locationSelect() }
         binding.scanButton.setOnClickListener {
-            JotterListener.toggleCameraFloatingWindowVisibility(this)
+            LifecycleListener.toggleCameraFloatingWindowVisibility(this)
         }
 
         // region Setup WAREHOUSE ID AUTOCOMPLETE

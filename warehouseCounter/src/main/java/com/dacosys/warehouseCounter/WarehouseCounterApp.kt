@@ -13,7 +13,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.sync.SyncViewModel
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.data.settings.SettingsViewModel
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderViewModel
 import id.pahlevikun.jotter.Jotter
 import id.pahlevikun.jotter.event.ActivityEvent
@@ -63,7 +63,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
                     ActivityEvent.DESTROY
                 )
             )
-            .setJotterListener(JotterListener).build().startListening()
+            .setJotterListener(LifecycleListener).build().startListening()
     }
 
     private fun koinAppModule() = module {

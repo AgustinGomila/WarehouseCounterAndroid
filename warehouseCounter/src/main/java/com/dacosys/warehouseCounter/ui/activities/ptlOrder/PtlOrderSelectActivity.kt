@@ -37,7 +37,7 @@ import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetPtlOrderByCode
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.databinding.PtlSelectOrderActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
@@ -404,7 +404,6 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         rejectNewInstances = false
 
         Screen.closeKeyboard(this)
-        JotterListener.resumeReaderDevices(this)
 
         thread {
             fillAdapter(completeList)
@@ -417,7 +416,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
     }
@@ -433,12 +432,16 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             return
         }
 
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         thread {
             GetPtlOrderByCode(code = scanCode,
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
-                onFinish = { if (it.any()) onGetPtlOrder(it) }).execute()
+                onFinish = {
+                    if (it.any()) onGetPtlOrder(it)
+                    LifecycleListener.lockScanner(this, false)
+                }
+            ).execute()
         }
     }
 
@@ -482,17 +485,17 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_trigger_scan -> {
-                JotterListener.trigger(this)
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
 

@@ -21,7 +21,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -353,7 +353,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
     }
@@ -361,7 +361,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     override fun scannerCompleted(scanCode: String) {
         if (settingsVm.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
 
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         try {
             code = scanCode
@@ -372,7 +372,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
             ErrorLog.writeLog(this, tag, ex)
         } finally {
             // Unless is blocked, unlock the partial
-            JotterListener.lockScanner(this, false)
+            LifecycleListener.lockScanner(this, false)
         }
     }
 

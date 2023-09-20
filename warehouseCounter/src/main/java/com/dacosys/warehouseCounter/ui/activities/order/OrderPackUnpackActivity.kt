@@ -49,7 +49,7 @@ import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.OrderLocationActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
@@ -713,7 +713,6 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         rejectNewInstances = false
 
         closeKeyboard(this)
-        JotterListener.resumeReaderDevices(this)
     }
 
     public override fun onStart() {
@@ -734,7 +733,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
@@ -747,13 +746,16 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
 
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         // Buscar por ubicación de destino o pedido
         GetResultFromCode(
             code = scanCode,
             searchOrder = true,
             onFinish = {
+
+                LifecycleListener.lockScanner(this, false)
+
                 val tList = it.typedObject ?: return@GetResultFromCode
                 val res = if (tList is ArrayList<*>) {
                     tList.firstOrNull()
@@ -854,17 +856,17 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_trigger_scan -> {
-                JotterListener.trigger(this)
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
 

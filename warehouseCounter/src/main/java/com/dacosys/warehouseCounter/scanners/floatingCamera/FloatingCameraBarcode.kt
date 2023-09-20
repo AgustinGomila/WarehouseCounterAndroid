@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -45,6 +47,8 @@ import kotlin.math.min
 
 class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCallback,
     DecoratedBarcodeView.TorchListener {
+
+    private val tag = this::class.java.simpleName
 
     // Se utiliza exteriormente para conocer la actividad anfitriona de la ventana flotante
     var activityName: String = ""
@@ -106,11 +110,14 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
         loadValues()
         if (v == null) v = getView()
 
-        EasyFloat.with(activity).setTag(getEasyFloatTag()).setShowPattern(ShowPattern.FOREGROUND)
+        EasyFloat.with(activity)
+            .setTag(getEasyFloatTag())
+            .setShowPattern(ShowPattern.FOREGROUND)
             .setLocation(
                 if (getOrientation == Configuration.ORIENTATION_PORTRAIT) flCameraPortraitLoc[0] else flCameraLandscapeLoc[0],
                 if (getOrientation == Configuration.ORIENTATION_PORTRAIT) flCameraPortraitLoc[1] else flCameraLandscapeLoc[1]
-            ).setAnimator(DefaultAnimator()).setLayout(v!!) { }.registerCallback {
+            ).setAnimator(DefaultAnimator())
+            .setLayout(v!!) { }.registerCallback {
                 createResult { _, _, _ ->
                     createResult()
                 }
@@ -124,14 +131,14 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
                     floatWindowCreated = false
                     binding.barcodeView.pause()
                 }
+                drag { _, _ -> }
+                touchEvent { _, _ -> }
                 dragEnd {
                     // Guardar la posición actual
                     if (getOrientation == Configuration.ORIENTATION_PORTRAIT) {
                         it.getLocationOnScreen(flCameraPortraitLoc)
-                        //flCameraPortraitLoc[1] = flCameraPortraitLoc[1] - allBarHeight
                     } else {
                         it.getLocationOnScreen(flCameraLandscapeLoc)
-                        //flCameraLandscapeLoc[1] = flCameraLandscapeLoc[1] - allBarHeight
                     }
                 }
             }.show()
@@ -212,6 +219,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
         // Scale Button
         ivScale.onScaledListener = object : ScaleImageView.OnScaledListener {
             override fun onScaled(x: Float, y: Float, event: MotionEvent) {
+
                 params.width = min(max(params.width + x.toInt(), flCameraMinWidth), screenWidth)
                 params.height = min(max(params.height + y.toInt(), flCameraMinHeight), screenHeight)
 
@@ -230,8 +238,17 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
                 // Actualice el tamaño de la ventana flotante para evitar la limitación
                 // de ancho cuando otras aplicaciones se proyectan horizontalmente
                 EasyFloat.updateFloat(
-                    getEasyFloatTag(), width = params.width, height = params.height
+                    tag = getEasyFloatTag(),
+                    width = params.width,
+                    height = params.height
                 )
+            }
+
+            override fun onScaledEnded() {
+                /** Try to scale the child view to the new size */
+                Handler(Looper.getMainLooper()).postDelayed({
+                    binding.barcodeView.barcodeView.refreshView()
+                }, 50)
             }
         }
 
@@ -425,15 +442,15 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
     }
 
     fun hideWindow() {
-        if (floatWindowCreated && EasyFloat.isShow(getEasyFloatTag())) EasyFloat.hide(
-            getEasyFloatTag()
-        )
+        if (floatWindowCreated && EasyFloat.isShow(getEasyFloatTag())) {
+            EasyFloat.hide(getEasyFloatTag())
+        }
     }
 
     private fun showWindow() {
-        if (floatWindowCreated && !EasyFloat.isShow(getEasyFloatTag())) EasyFloat.show(
-            getEasyFloatTag()
-        )
+        if (floatWindowCreated && !EasyFloat.isShow(getEasyFloatTag())) {
+            EasyFloat.show(getEasyFloatTag())
+        }
     }
 
     fun toggleWindowVisibility() {

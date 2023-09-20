@@ -65,7 +65,7 @@ import com.dacosys.warehouseCounter.databinding.LinkCodeActivityBottomPanelColla
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
@@ -144,7 +144,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
     }
@@ -160,21 +160,14 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             return
         }
 
-        try {
-            GetItemFromCode(
-                scannedCode = scanCode,
-                list = adapter?.fullList ?: ArrayList(),
-                onEvent = { showSnackBar(it.text, it.snackBarType) },
-                onFinish = { onCheckCodeEnded(it) },
-            ).execute()
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            showSnackBar(ex.message.toString(), ERROR)
-            ErrorLog.writeLog(this, tag, ex)
-        } finally {
-            // Unless is blocked, unlock the partial
-            JotterListener.lockScanner(this, false)
-        }
+        LifecycleListener.lockScanner(this, true)
+
+        GetItemFromCode(
+            scannedCode = scanCode,
+            list = adapter?.fullList ?: ArrayList(),
+            onEvent = { showSnackBar(it.text, it.snackBarType) },
+            onFinish = { onCheckCodeEnded(it) },
+        ).execute()
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -980,17 +973,17 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_trigger_scan -> {
-                JotterListener.trigger(this)
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
 
@@ -1128,8 +1121,6 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     override fun onStart() {
         super.onStart()
         rejectNewInstances = false
-
-        JotterListener.resumeReaderDevices(this)
 
         setSendButtonText()
         setPanels()
@@ -1269,6 +1260,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     private fun onCheckCodeEnded(it: GetItemFromCode.GetFromCodeResult) {
+        LifecycleListener.lockScanner(this, false)
+
         val item: Item? = it.item
         val scannedCode: String = it.scannedCode
 

@@ -32,7 +32,7 @@ import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.selectClie
 import com.dacosys.warehouseCounter.databinding.InitConfigActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.ui.activities.main.ProxySetup.Companion.setupProxy
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -117,7 +117,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     override fun onResume() {
         super.onResume()
 
-        JotterListener.lockScanner(this, false)
+        LifecycleListener.lockScanner(this, false)
         rejectNewInstances = false
     }
 
@@ -162,7 +162,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
 
             clearOldPrefs()
-            JotterListener.autodetectDeviceModel(this)
+            LifecycleListener.autodetectDeviceModel(this)
         }
 
         val pInfo = packageManager.getPackageInfo(packageName, 0)
@@ -306,7 +306,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     private val resultForSettings =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             // Vamos a reconstruir el scanner por si cambió la configuración
-            JotterListener.autodetectDeviceModel(this)
+            LifecycleListener.autodetectDeviceModel(this)
 
             if (settingsVm.urlPanel.isEmpty()) {
                 showSnackBar(getString(R.string.server_is_not_configured), ERROR)
@@ -359,14 +359,14 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
     }
 
     override fun scannerCompleted(scanCode: String) {
-        JotterListener.lockScanner(this, true)
-        JotterListener.hideWindow(this)
+        LifecycleListener.lockScanner(this, true)
+        LifecycleListener.hideWindow(this)
 
         try {
             getConfigFromScannedCode(
@@ -380,7 +380,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial
-            JotterListener.lockScanner(this, false)
+            LifecycleListener.lockScanner(this, false)
         }
     }
 
@@ -411,7 +411,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
@@ -422,12 +422,12 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                 //)
                 //return super.onOptionsItemSelected(item)
 
-                JotterListener.trigger(this)
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
 

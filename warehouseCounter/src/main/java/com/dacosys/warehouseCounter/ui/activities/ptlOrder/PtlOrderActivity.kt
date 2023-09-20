@@ -48,7 +48,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.databinding.PtlOrderActivityBottomPanelCollapsedBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
@@ -851,7 +851,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
     }
@@ -883,19 +883,21 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     override fun scannerCompleted(scanCode: String) {
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         thread {
             GetPtlOrderByCode(code = scanCode,
                 onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) },
-                onFinish = { onGetPtlOrder(it) }).execute()
+                onFinish = {
+                    onGetPtlOrder(it)
+                }
+            ).execute()
         }
     }
 
     private fun onGetPtlOrder(it: ArrayList<PtlOrder>) {
         if (it.any()) {
             headerFragment.setOrder(order = it.first(), location = warehouseArea)
-            return
         }
         gentlyReturn()
     }
@@ -906,7 +908,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
         allowClicks = true
         getContentBlocked = false
 
-        JotterListener.lockScanner(this, false)
+        LifecycleListener.lockScanner(this, false)
         rejectNewInstances = false
 
         showProgressBar(false)
@@ -935,17 +937,17 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_trigger_scan -> {
-                JotterListener.trigger(this)
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
         }

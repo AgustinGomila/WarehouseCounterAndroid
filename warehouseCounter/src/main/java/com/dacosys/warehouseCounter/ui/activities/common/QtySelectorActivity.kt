@@ -22,7 +22,7 @@ import com.dacosys.warehouseCounter.databinding.QtySelectorBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.round
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
@@ -224,7 +224,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
     private fun itemDescriptionDialog(orc: OrderRequestContent) {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -250,7 +250,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
             } finally {
                 rejectNewInstances = false
                 allowClicks = true
-                JotterListener.lockScanner(this, false)
+                LifecycleListener.lockScanner(this, false)
             }
         }
 
@@ -327,7 +327,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
     }
@@ -335,9 +335,11 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
     override fun scannerCompleted(scanCode: String) {
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
+
         if (equals(scanCode, orc.ean)) {
             try {
+
                 val currentQty: Double
                 try {
                     currentQty = java.lang.Double.parseDouble(binding.qtyEditText.text.toString())
@@ -353,7 +355,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
             } catch (ex: Exception) {
                 showSnackBar(ex.message.toString(), ERROR)
             } finally {
-                JotterListener.lockScanner(this, false)
+                LifecycleListener.lockScanner(this, false)
             }
         }
     }

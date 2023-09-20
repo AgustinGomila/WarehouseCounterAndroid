@@ -12,7 +12,7 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.databinding.EnterCodeActivityBinding
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -153,7 +153,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
             this, requestCode, permissions, grantResults
         )
     }

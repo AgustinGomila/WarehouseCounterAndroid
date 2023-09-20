@@ -69,7 +69,7 @@ import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.printer.Printer
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity
 import com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
@@ -197,8 +197,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     override fun scannerCompleted(scanCode: String) {
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
-        JotterListener.lockScanner(this, true)
-        JotterListener.hideWindow(this)
+        LifecycleListener.lockScanner(this, true)
+        LifecycleListener.hideWindow(this)
 
         try {
             /*
@@ -213,7 +213,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             ErrorLog.writeLog(this, tag, ex.message.toString())
         } finally {
             // Unless is blocked, unlock the partial
-            JotterListener.lockScanner(this, false)
+            LifecycleListener.lockScanner(this, false)
         }
     }
 
@@ -268,17 +268,17 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_trigger_scan -> {
-                JotterListener.trigger(this)
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
 
@@ -360,7 +360,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private fun launchTestActivity() {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, OrderPagingActivity::class.java)
         intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.test))
@@ -371,7 +371,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private fun launchPackUnpackOrderActivity() {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, OrderPackUnpackActivity::class.java)
         intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.pack_unpack))
@@ -382,7 +382,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private fun launchMoveOrderActivity() {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, OrderMoveActivity::class.java)
         intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.move_order))
@@ -393,7 +393,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private fun launchOrderLocationLabelActivity() {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, OrderLocationSelectActivity::class.java)
         intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.order_location))
@@ -405,7 +405,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private fun launchPrintLabelsActivity() {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(baseContext, PrintLabelActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -452,7 +452,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private fun launchInboxActivity() {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, InboxActivity::class.java)
         intent.putExtra(InboxActivity.ARG_TITLE, getString(R.string.pending_counts))
@@ -717,7 +717,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             // Reconfiguración de parámetros
 
             // Vamos a reconstruir el scanner por si cambió la configuración
-            JotterListener.autodetectDeviceModel(this)
+            LifecycleListener.autodetectDeviceModel(this)
 
             // Reconfigurar ImageControl
             setupImageControl()
@@ -910,7 +910,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 ErrorLog.writeLog(this, tag, ex)
             } finally {
                 rejectNewInstances = false
-                JotterListener.lockScanner(this, false)
+                LifecycleListener.lockScanner(this, false)
             }
         }
 
@@ -926,7 +926,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private val resultForLogin =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             rejectNewInstances = false
-            JotterListener.lockScanner(this, false)
+            LifecycleListener.lockScanner(this, false)
         }
 
     // region ViewPager
@@ -1046,7 +1046,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) {
-            JotterListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
             return
         }
 
