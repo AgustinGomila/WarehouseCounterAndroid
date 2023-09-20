@@ -33,6 +33,7 @@ import java.io.FileReader
 import kotlin.concurrent.thread
 
 class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDownloadFileTask {
+    private val tag = this::class.java.simpleName
 
     interface DownloadDbTask {
         fun onDownloadDbTask(downloadStatus: DownloadStatus)
@@ -56,7 +57,7 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
 
         if (downloadStatus == CRASHED) {
             ErrorLog.writeLog(
-                null, this::class.java.simpleName, "${downloadStatus.name}: ${fileType.name}, $msg"
+                null, tag, "${downloadStatus.name}: ${fileType.name}, $msg"
             )
 
             /** If it fails to file the DB creation date, it may be due to no connection.
@@ -69,7 +70,7 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
             }
         }
 
-        Log.d(this::class.java.simpleName, "${downloadStatus.name}: ${fileType.name}, $msg")
+        Log.d(tag, "${downloadStatus.name}: ${fileType.name}, $msg")
         mCallback.onDownloadFileTask(msg, fileType, downloadStatus, progress)
     }
 
@@ -226,7 +227,7 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
             if (!Statics.DOWNLOAD_DB_ALWAYS) {
                 if (oldDateTimeStr == currentDateTimeStr) {
                     Log.d(
-                        this::class.java.simpleName,
+                        tag,
                         context.getString(R.string.is_not_necessary_to_download_the_database)
                     )
 
@@ -318,7 +319,7 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
                             }).execute()
                     }
                 } catch (ex: Exception) {
-                    ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
+                    ErrorLog.writeLog(null, tag, ex.message.toString())
                 }
 
                 /** Wait until I finish sending all the Item Codes.

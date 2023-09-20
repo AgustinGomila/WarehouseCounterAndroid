@@ -111,6 +111,9 @@ import id.pahlevikun.jotter.Jotter
 //------------------------------------------------------------------------------//
 
 object JotterListener : Jotter.Listener {
+
+    private val tag = this::class.java.simpleName
+
     private const val REQUEST_BLUETOOTH_CONNECT = 2001
 
     /**
@@ -207,7 +210,7 @@ object JotterListener : Jotter.Listener {
                 */
             }
 
-            Log.v(this::class.java.simpleName, "Manufacturer: $manufacturer, Model: $model")
+            Log.v(tag, "Manufacturer: $manufacturer, Model: $model")
 
             settingsVm.collectorType = collectorType.id.toString()
             showSnackBar(
@@ -327,7 +330,7 @@ object JotterListener : Jotter.Listener {
                 activity.getString(R.string.barcode_reader_not_initialized),
                 SnackBarType.ERROR
             )
-            ErrorLog.writeLog(activity, this::class.java.simpleName, ex)
+            ErrorLog.writeLog(activity, tag, ex)
         }
     }
 
@@ -341,7 +344,7 @@ object JotterListener : Jotter.Listener {
                 activity.getString(R.string.rfid_reader_not_initialized),
                 SnackBarType.ERROR
             )
-            ErrorLog.writeLog(activity, this::class.java.simpleName, ex)
+            ErrorLog.writeLog(activity, tag, ex)
         }
     }
 

@@ -76,6 +76,9 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     SelectFilterFragment.OnFilterOrderLocationChangedListener, OrderLocationRecyclerAdapter.CheckedChangedListener,
     OrderLocationRecyclerAdapter.DataSetChangedListener,
     SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
+
+    private val tag = this::class.java.simpleName
+
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -587,7 +590,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
          */
 
         try {
-            Log.d(this::class.java.simpleName, "Selecting orders...")
+            Log.d(tag, "Selecting orders...")
 
             GetOrderLocation(
                 filter = filter,
@@ -597,7 +600,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 }
             ).execute()
         } catch (ex: java.lang.Exception) {
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+            ErrorLog.writeLog(this, tag, ex.message.toString())
             showProgressBar(false)
         }
     }
@@ -643,7 +646,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 showProgressBar(false)
             }
@@ -686,7 +689,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
             showSnackBar(res, ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, res)
+            ErrorLog.writeLog(this, tag, res)
             return
         }
 

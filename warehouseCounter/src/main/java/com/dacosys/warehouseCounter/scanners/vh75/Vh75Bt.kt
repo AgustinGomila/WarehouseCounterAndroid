@@ -24,6 +24,9 @@ import kotlin.experimental.inv
 
 
 class Vh75Bt(private var listener: RfidDeviceListener?) : Rfid() {
+
+    private val tag = this::class.java.simpleName
+
     /**
      * Constructor. Prepares a new Vh75Bt session.     *
      * BuilderVH75 Contains both the Listener and the Context
@@ -73,7 +76,7 @@ class Vh75Bt(private var listener: RfidDeviceListener?) : Rfid() {
         }
 
         val pairedDevices = mAdapter.bondedDevices
-        Log.v(this::class.java.simpleName, "pairDevice: Total devices: ${pairedDevices.size}")
+        Log.v(tag, "pairDevice: Total devices: ${pairedDevices.size}")
         if (pairedDevices.size > 0) {
             var device: BluetoothDevice? = null
             for (d in pairedDevices.toTypedArray()) {
@@ -87,7 +90,7 @@ class Vh75Bt(private var listener: RfidDeviceListener?) : Rfid() {
                 return
             }
 
-            Log.v(this::class.java.simpleName, "pairDevice: Connecting to ${device.name}")
+            Log.v(tag, "pairDevice: Connecting to ${device.name}")
 
             // Start the thread to connect with the given device
             connect(device)
@@ -408,7 +411,7 @@ class Vh75Bt(private var listener: RfidDeviceListener?) : Rfid() {
             // 2. Comando de solicitud de la lista de TAG detectados
             listTagID(1, 0, 0)
         } catch (e: java.lang.Exception) {
-            Log.e(this::class.java.simpleName, "writeTag: Error reading InputStream. ${e.message}")
+            Log.e(tag, "writeTag: Error reading InputStream. ${e.message}")
         }
 
         return true
@@ -434,7 +437,7 @@ class Vh75Bt(private var listener: RfidDeviceListener?) : Rfid() {
      * Indicate that the connection attempt failed and notify the UI Activity.
      */
     private fun connectionFailed() {
-        Log.e(this::class.java.simpleName, "connectionFailed -> Unable to connect device")
+        Log.e(tag, "connectionFailed -> Unable to connect device")
 
         mState = STATE_NONE
         reportState()
@@ -446,7 +449,7 @@ class Vh75Bt(private var listener: RfidDeviceListener?) : Rfid() {
      * Indicate that the connection was lost and notify the UI Activity.
      */
     private fun connectionLost() {
-        Log.e(this::class.java.simpleName, "connectionLost -> Device connection was lost")
+        Log.e(tag, "connectionLost -> Device connection was lost")
 
         mState = STATE_NONE
         reportState()
@@ -560,7 +563,7 @@ class Vh75Bt(private var listener: RfidDeviceListener?) : Rfid() {
                                 currentThread().interrupt()
                             } catch (e: IOException) {
                                 Log.e(
-                                    this::class.java.simpleName,
+                                    tag,
                                     "${getThreadModeDescription(mThreadMode)}: Error reading InputStream. ${e.message}"
                                 )
                                 break

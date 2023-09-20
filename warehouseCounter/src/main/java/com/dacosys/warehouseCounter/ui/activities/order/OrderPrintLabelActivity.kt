@@ -85,6 +85,9 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     SelectFilterFragment.OnFilterOrderChangedListener, OrderAdapter.CheckedChangedListener,
     PrintLabelFragment.FragmentListener, OrderAdapter.DataSetChangedListener,
     SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
+
+    private val tag = this::class.java.simpleName
+
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -723,7 +726,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
          */
 
         try {
-            Log.d(this::class.java.simpleName, "Selecting orders...")
+            Log.d(tag, "Selecting orders...")
 
             GetOrder(
                 filter = filter,
@@ -734,7 +737,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                 }
             ).execute()
         } catch (ex: java.lang.Exception) {
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+            ErrorLog.writeLog(this, tag, ex.message.toString())
             showProgressBar(false)
         }
     }
@@ -780,7 +783,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                 }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 showProgressBar(false)
             }
@@ -843,7 +846,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
             showSnackBar(res, ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, res)
+            ErrorLog.writeLog(this, tag, res)
             return
         }
 

@@ -24,6 +24,8 @@ class GetResultFromCode(
     private var searchOrder: Boolean = false,
     private var onFinish: (GetFromCodeResult) -> Unit
 ) {
+    private val tag = this::class.java.simpleName
+
     data class GetFromCodeResult(var typedObject: Any?)
 
     private fun onItemIdResult(r: Item?) {
@@ -124,7 +126,7 @@ class GetResultFromCode(
                     ex.printStackTrace()
                     val res =
                         "Error doing regex.\r\n formula $formula\r\n string $origin\r\n${ex.message}"
-                    Log.e(this::class.java.simpleName, res)
+                    Log.e(tag, res)
                 }
             }
         }
@@ -235,7 +237,7 @@ class GetResultFromCode(
             try {
                 id = match.toLong()
             } catch (ex: NumberFormatException) {
-                Log.i(this::class.java.simpleName, "Could not parse: $ex")
+                Log.i(tag, "Could not parse: $ex")
                 return
             }
 
@@ -258,7 +260,7 @@ class GetResultFromCode(
             try {
                 id = match.toLong()
             } catch (ex: NumberFormatException) {
-                Log.i(this::class.java.simpleName, "Could not parse: $ex")
+                Log.i(tag, "Could not parse: $ex")
                 return
             }
 
@@ -281,7 +283,7 @@ class GetResultFromCode(
             try {
                 id = match.toLong()
             } catch (ex: NumberFormatException) {
-                Log.i(this::class.java.simpleName, "Could not parse: $ex")
+                Log.i(tag, "Could not parse: $ex")
                 return
             }
 
@@ -304,7 +306,7 @@ class GetResultFromCode(
             try {
                 id = match.toLong()
             } catch (ex: NumberFormatException) {
-                Log.i(this::class.java.simpleName, "Could not parse: $ex")
+                Log.i(tag, "Could not parse: $ex")
                 return
             }
 

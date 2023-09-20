@@ -86,6 +86,9 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     UserSpinnerFragment.OnSpinnerFillListener, Scanner.ScannerListener,
     ProxySetup.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded,
     DownloadDb.DownloadDbTask {
+
+    private val tag = this::class.java.simpleName
+
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
             showSnackBar(
@@ -324,7 +327,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         try {
             runOnUiThread { userSpinnerFragment!!.reFill() }
         } catch (ex: Exception) {
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+            ErrorLog.writeLog(this, tag, ex.message.toString())
         }
 
         attemptSync = false
@@ -510,7 +513,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             } catch (ex: Exception) {
                 showProgressBar()
                 showSnackBar(ex.message.toString(), ERROR)
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+                ErrorLog.writeLog(this, tag, ex.message.toString())
 
                 setButton(ButtonStyle.REFRESH)
                 attemptSync = false
@@ -718,7 +721,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                             adb.show()
                         } catch (ex: java.lang.Exception) {
                             ex.printStackTrace()
-                            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                            ErrorLog.writeLog(this, tag, ex)
                         }
                     }
                 }
@@ -739,7 +742,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         } catch (ex: Exception) {
             ex.printStackTrace()
             showSnackBar(ex.message.toString(), ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            ErrorLog.writeLog(this, tag, ex)
         } finally {
             // Unless is blocked, unlock the partial
             JotterListener.lockScanner(this, false)
@@ -820,7 +823,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 if (userSpinnerFragment!!.count < 1) {
                     setButton(ButtonStyle.REFRESH)
                     Log.d(
-                        this::class.java.simpleName,
+                        tag,
                         getString(R.string.there_are_no_users_in_the_database)
                     )
                 } else {

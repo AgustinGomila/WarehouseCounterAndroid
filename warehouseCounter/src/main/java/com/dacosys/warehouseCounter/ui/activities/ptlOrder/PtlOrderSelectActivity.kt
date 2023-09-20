@@ -58,6 +58,9 @@ import kotlin.concurrent.thread
 class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener, PtlOrderAdapter.CheckedChangedListener,
     PtlOrderAdapter.DataSetChangedListener {
+
+    private val tag = this::class.java.simpleName
+
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -389,7 +392,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                 }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 showProgressBar(false)
             }
@@ -426,7 +429,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
             showSnackBar(res, ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, res)
+            ErrorLog.writeLog(this, tag, res)
             return
         }
 
@@ -571,7 +574,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     }
 
     private fun fillSummaryRow() {
-        Log.d(this::class.java.simpleName, "fillSummaryRow")
+        Log.d(tag, "fillSummaryRow")
         runOnUiThread {
             if (multiSelect) {
                 binding.totalLabelTextView.text = context.getString(R.string.total)

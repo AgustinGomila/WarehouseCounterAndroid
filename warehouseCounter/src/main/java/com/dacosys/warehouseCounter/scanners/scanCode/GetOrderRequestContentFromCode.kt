@@ -26,6 +26,8 @@ class GetOrderRequestContentFromCode(
     private var onEvent: (SnackBarEventData) -> Unit = {},
     private var onFinish: (GetFromCodeResult) -> Unit = {},
 ) {
+    private val tag = this::class.java.simpleName
+
     data class GetFromCodeResult(var orc: OrderRequestContent? = null, var itemCode: ItemCode? = null)
 
     private var itemCode: ItemCode? = null
@@ -52,7 +54,7 @@ class GetOrderRequestContentFromCode(
                     val res = context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     sendEvent(res, SnackBarType.ERROR)
                     onFinish(GetFromCodeResult())
-                    Log.e(this::class.java.simpleName, res)
+                    Log.e(tag, res)
                     return@withContext
                 }
             }
@@ -64,7 +66,7 @@ class GetOrderRequestContentFromCode(
                 val res = context.getString(R.string.invalid_code)
                 sendEvent(res, SnackBarType.ERROR)
                 onFinish(GetFromCodeResult())
-                Log.e(this::class.java.simpleName, res)
+                Log.e(tag, res)
                 return@withContext
             }
 
@@ -132,7 +134,7 @@ class GetOrderRequestContentFromCode(
         } catch (ex: Exception) {
             onFinish(GetFromCodeResult())
             sendEvent(ex.message.toString(), SnackBarType.ERROR)
-            Log.e(this::class.java.simpleName, ex.message ?: "")
+            Log.e(tag, ex.message ?: "")
         }
     }
 

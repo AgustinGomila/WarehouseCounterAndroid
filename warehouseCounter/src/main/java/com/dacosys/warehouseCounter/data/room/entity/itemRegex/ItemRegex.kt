@@ -29,6 +29,10 @@ data class ItemRegex(
     @ColumnInfo(name = Entry.ACTIVE, defaultValue = "1") val active: Int,
 ) {
     companion object {
+        private const val EAN_KEY = "ean"
+        private const val LOT_ID_KEY = "lotid"
+        private const val QTY_KEY = "qty"
+
         class RegexResult(var ean: String, var lot: String, var qty: Float?) : Parcelable {
             constructor(parcel: Parcel) : this(
                 ean = parcel.readString() ?: "",
@@ -128,19 +132,19 @@ data class ItemRegex(
 
                                 var isFounded = false
                                 when (groupName) {
-                                    "ean" -> {
+                                    EAN_KEY -> {
                                         isFounded = true
                                         ean = gr.value
                                         isEanFounded = true
                                     }
 
-                                    "lotid" -> {
+                                    LOT_ID_KEY -> {
                                         isFounded = true
                                         lot = gr.value
                                         isLotIdFounded = true
                                     }
 
-                                    "qty" -> {
+                                    QTY_KEY -> {
                                         isFounded = true
                                         try {
                                             qty = gr.value.toFloat()
@@ -187,7 +191,7 @@ data class ItemRegex(
         /**
          * Devuelve el Key (GroupName), si el Valor es igual al índice dado.
          * @param json Json de origen
-         * @param index Indice que tiene que coincidir con el valor del Key
+         * @param index Índice que tiene que coincidir con el valor del Key
          * @return Nombre del grupo o NULL
          */
         private fun getKeyFromJsonByIndex(json: JSONObject, index: Int): String? {

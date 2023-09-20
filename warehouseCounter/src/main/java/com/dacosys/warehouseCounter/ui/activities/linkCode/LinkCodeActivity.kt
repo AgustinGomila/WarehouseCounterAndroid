@@ -94,6 +94,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     SwipeRefreshLayout.OnRefreshListener, ItemRecyclerAdapter.DataSetChangedListener,
     ItemRecyclerAdapter.AddPhotoRequiredListener, ItemRecyclerAdapter.AlbumViewRequiredListener,
     SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener {
+
+    private val tag = this::class.java.simpleName
+
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -153,7 +156,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
             showSnackBar(res, ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, res)
+            ErrorLog.writeLog(this, tag, res)
             return
         }
 
@@ -167,7 +170,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         } catch (ex: Exception) {
             ex.printStackTrace()
             showSnackBar(ex.message.toString(), ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            ErrorLog.writeLog(this, tag, ex)
         } finally {
             // Unless is blocked, unlock the partial
             JotterListener.lockScanner(this, false)
@@ -631,7 +634,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                         ).execute()
                     }
                 } catch (ex: Exception) {
-                    ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+                    ErrorLog.writeLog(this, tag, ex.message.toString())
                 }
             }
             alert.show()
@@ -877,7 +880,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 showProgressBar(false)
             }
@@ -1102,7 +1105,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }
 
         try {
-            Log.d(this::class.java.simpleName, "Selecting items...")
+            Log.d(tag, "Selecting items...")
             ItemCoroutines.getByQuery(
                 ean = itemCode.trim(),
                 description = itemCode.trim(),
@@ -1111,7 +1114,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 fillAdapter(it)
             }
         } catch (ex: java.lang.Exception) {
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+            ErrorLog.writeLog(this, tag, ex.message.toString())
             showProgressBar(false)
         }
     }

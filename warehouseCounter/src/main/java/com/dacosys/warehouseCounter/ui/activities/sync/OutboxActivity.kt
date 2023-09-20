@@ -58,6 +58,8 @@ import kotlin.io.path.Path
 
 class OutboxActivity : AppCompatActivity() {
 
+    private val tag = this::class.java.simpleName
+
     private var isListViewFilling = false
     private var multiSelect = true
     private var adapter: OrderRequestAdapter? = null
@@ -432,7 +434,7 @@ class OutboxActivity : AppCompatActivity() {
                 }
             } catch (e: UnsupportedEncodingException) {
                 e.printStackTrace()
-                Log.e(this::class.java.simpleName, e.message ?: "")
+                Log.e(tag, e.message ?: "")
             }
         }
 
@@ -444,7 +446,7 @@ class OutboxActivity : AppCompatActivity() {
         } else {
             val res = getString(R.string.an_error_occurred_while_trying_to_reset_the_count)
             showSnackBar(res, ERROR)
-            Log.e(this::class.java.simpleName, res)
+            Log.e(tag, res)
         }
     }
 
@@ -517,7 +519,7 @@ class OutboxActivity : AppCompatActivity() {
                 }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 showProgressBar(false)
                 isListViewFilling = false

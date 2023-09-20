@@ -31,6 +31,9 @@ import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.util.*
 
 class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
+
+    private val tag = this::class.java.simpleName
+
     private var rejectNewInstances = false
 
     private var currentFragment: androidx.fragment.app.Fragment? = null
@@ -200,7 +203,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         if (scannedCode.isEmpty()) {
             val res = getString(R.string.invalid_code)
             showSnackBar(res, ERROR)
-            Log.d(this::class.java.simpleName, res)
+            Log.d(tag, res)
             return
         }
 
@@ -245,7 +248,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                         JotterListener.lockScanner(this, false)
                     } catch (ex: Exception) {
                         showSnackBar(ex.message.toString(), ERROR)
-                        ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+                        ErrorLog.writeLog(this, tag, ex.message.toString())
                     }
                 }
             }

@@ -16,6 +16,8 @@ import kotlin.concurrent.thread
  * 2. Solicitar los arqueos completados (en el dispositivo)
  */
 class Sync private constructor(builder: Builder) {
+    private val tag = this::class.java.simpleName
+
     private var onNewOrders: (ArrayList<OrderRequest>) -> Unit = {}
     private var onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {}
     private var onTimerTick: (Int) -> Unit = {}
@@ -53,7 +55,7 @@ class Sync private constructor(builder: Builder) {
 
     //To stop timer
     fun stopSync() {
-        Log.d(this::class.java.simpleName, "Deteniendo sincronizador de órdenes")
+        Log.d(tag, "Deteniendo sincronizador de órdenes")
         if (timer != null) {
             timer?.cancel()
             timer?.purge()
@@ -70,7 +72,7 @@ class Sync private constructor(builder: Builder) {
 
     //To start timer
     fun startSync() {
-        Log.d(this::class.java.simpleName, "Iniciando sincronizador de órdenes...")
+        Log.d(tag, "Iniciando sincronizador de órdenes...")
 
         timer = Timer()
         val interval = settingsVm.wcSyncInterval
@@ -121,7 +123,7 @@ class Sync private constructor(builder: Builder) {
                 // GetNewOrder(onEvent = { }, onFinish = { onNewOrders(it) }).execute()
                 onNewOrders(arrayListOf())
             } catch (ex: Exception) {
-                ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
+                ErrorLog.writeLog(null, tag, ex.message.toString())
             } finally {
                 syncNewOrderStatus = DownloadStatus.NOT_RUNNING
             }
@@ -139,7 +141,7 @@ class Sync private constructor(builder: Builder) {
                 val orders = getCompletedOrders()
                 onCompletedOrders(orders)
             } catch (ex: java.lang.Exception) {
-                ErrorLog.writeLog(null, this::class.java.simpleName, ex.message.toString())
+                ErrorLog.writeLog(null, tag, ex.message.toString())
             } finally {
                 syncCompletedOrderStatus = DownloadStatus.NOT_RUNNING
             }

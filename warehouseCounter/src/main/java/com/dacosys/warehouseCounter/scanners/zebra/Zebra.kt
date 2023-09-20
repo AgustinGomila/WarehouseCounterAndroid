@@ -35,6 +35,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 // *                                                                                      *
 // ****************************************************************************************
 class Zebra(private val activity: AppCompatActivity) : Scanner() {
+
+    private val tag = this::class.java.simpleName
+
     // private variables
     private val bRequestSendResult = false
 
@@ -178,7 +181,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
         intentConfig.putBundle("PARAM_LIST", intentProps)
         profileConfig.putBundle("PLUGIN_CONFIG", intentConfig)
         sendDataWedgeIntentWithExtra(EXTRA_SET_CONFIG, profileConfig)
-        Log.v(this::class.java.simpleName, "Created profile.  Check DataWedge app UI.")
+        Log.v(tag, "Created profile.  Check DataWedge app UI.")
     }
 
     // Toggle soft scan trigger from UI onClick() event
@@ -194,7 +197,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
 
     // Create filter for the broadcast intent
     private fun registerReceivers() {
-        Log.v(this::class.java.simpleName, "registerReceivers() on $activityName")
+        Log.v(tag, "registerReceivers() on $activityName")
         val filter = IntentFilter()
         filter.addAction(ACTION_RESULT_NOTIFICATION) // for notification result
         filter.addAction(ACTION_RESULT) // for error code result
@@ -209,7 +212,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
 
     // Unregister scanner status notification
     private fun unRegisterScannerStatus() {
-        Log.v(this::class.java.simpleName, "unRegisterScannerStatus() on $activityName")
+        Log.v(tag, "unRegisterScannerStatus() on $activityName")
         val b = Bundle()
         b.putString(EXTRA_KEY_APPLICATION_NAME, context.packageName)
         b.putString(EXTRA_KEY_NOTIFICATION_TYPE, EXTRA_KEY_VALUE_SCANNER_STATUS)

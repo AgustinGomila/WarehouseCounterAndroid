@@ -34,6 +34,8 @@ import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 
 class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
+    private val tag = this::class.java.simpleName
+
     /**
      * Required constructor for Fragments
      */
@@ -363,7 +365,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             }
         } catch (ex: Exception) {
             ex.printStackTrace()
-            ErrorLog.writeLog(requireActivity(), this::class.java.simpleName, ex)
+            ErrorLog.writeLog(requireActivity(), tag, ex)
         }
     }
 
@@ -377,7 +379,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             }
         } catch (ex: Exception) {
             ex.printStackTrace()
-            ErrorLog.writeLog(requireActivity(), this::class.java.simpleName, ex)
+            ErrorLog.writeLog(requireActivity(), tag, ex)
         }
     }
 
@@ -391,7 +393,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             }
         } catch (ex: Exception) {
             ex.printStackTrace()
-            ErrorLog.writeLog(requireActivity(), this::class.java.simpleName, ex)
+            ErrorLog.writeLog(requireActivity(), tag, ex)
         }
     }
 
@@ -405,7 +407,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             }
         } catch (ex: Exception) {
             ex.printStackTrace()
-            ErrorLog.writeLog(requireActivity(), this::class.java.simpleName, ex)
+            ErrorLog.writeLog(requireActivity(), tag, ex)
         }
     }
 

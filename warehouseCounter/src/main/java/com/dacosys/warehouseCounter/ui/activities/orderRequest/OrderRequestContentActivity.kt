@@ -84,6 +84,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     OrcAdapter.EditQtyListener, OrcAdapter.EditDescriptionListener,
     Scanner.ScannerListener,
     SwipeRefreshLayout.OnRefreshListener, Rfid.RfidDeviceListener, OrcAdapter.CheckedChangedListener {
+
+    private val tag = this::class.java.simpleName
+
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
             binding.swipeRefreshItem.isRefreshing = false
@@ -659,7 +662,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 showProgressBar(false)
                 gentlyReturn()
@@ -749,7 +752,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
                 adb.show()
             } catch (ex: java.lang.Exception) {
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+                ErrorLog.writeLog(this, tag, ex.message.toString())
             }
         }
 
@@ -800,7 +803,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
                 gentlyReturn()
             }
         }
@@ -840,7 +843,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
@@ -881,7 +884,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val error: Boolean
         try {
             orJson = json.encodeToString(OrderRequest.serializer(), orderRequest)
-            android.util.Log.i(this::class.java.simpleName, orJson)
+            android.util.Log.i(tag, orJson)
 
             orFileName = orderRequest.filename.substringAfterLast('/')
 
@@ -907,7 +910,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
         } catch (e: UnsupportedEncodingException) {
             e.printStackTrace()
-            android.util.Log.e(this::class.java.simpleName, e.message ?: "")
+            android.util.Log.e(tag, e.message ?: "")
         }
     }
 
@@ -979,7 +982,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     val res =
                         context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     showSnackBar(res, ERROR)
-                    android.util.Log.e(this::class.java.simpleName, res)
+                    android.util.Log.e(tag, res)
                     return false
                 }
             }
@@ -1012,7 +1015,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             return true
         } catch (ex: Exception) {
             showSnackBar(ex.message.toString(), ERROR)
-            android.util.Log.e(this::class.java.simpleName, ex.message.toString())
+            android.util.Log.e(tag, ex.message.toString())
             return false
         }
     }
@@ -1059,7 +1062,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
@@ -1109,7 +1112,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
@@ -1142,7 +1145,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
@@ -1252,7 +1255,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
@@ -1282,7 +1285,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
@@ -1310,7 +1313,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }

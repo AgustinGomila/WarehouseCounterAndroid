@@ -99,6 +99,8 @@ import kotlin.concurrent.thread
 
 class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFragment.ButtonClickedListener {
 
+    private val tag = this::class.java.simpleName
+
     @get:Synchronized
     private var isSending = false
     private fun onCompletedOrder() {
@@ -173,7 +175,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
     private fun onNewOrder(itemArray: ArrayList<OrderRequest>) {
         android.util.Log.d(
-            this::class.java.simpleName,
+            tag,
             "${getString(R.string.new_orders_received_)}${itemArray.count()}"
         )
 
@@ -208,7 +210,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             */
         } catch (ex: Exception) {
             showSnackBar(ex.message.toString(), ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+            ErrorLog.writeLog(this, tag, ex.message.toString())
         } finally {
             // Unless is blocked, unlock the partial
             JotterListener.lockScanner(this, false)
@@ -486,7 +488,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 rejectNewInstances = false
             }
@@ -514,7 +516,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             }
         } catch (ex: Exception) {
             ex.printStackTrace()
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            ErrorLog.writeLog(this, tag, ex)
         }
     }
 
@@ -545,7 +547,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 rejectNewInstances = false
             }
@@ -557,7 +559,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 launchNewPtlOrderActivity()
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 rejectNewInstances = false
             }
@@ -578,7 +580,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 rejectNewInstances = false
             }
@@ -599,7 +601,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 rejectNewInstances = false
             }
@@ -905,7 +907,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 rejectNewInstances = false
                 JotterListener.lockScanner(this, false)

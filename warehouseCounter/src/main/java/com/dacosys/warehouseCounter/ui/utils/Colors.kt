@@ -23,6 +23,9 @@ import kotlin.math.roundToInt
 
 class Colors {
     companion object {
+
+        private val tag = this::class.java.simpleName
+
         fun changeDrawableColor(icon: Int, newColor: Int): Drawable {
             val mDrawable = ContextCompat.getDrawable(context, icon)!!.mutate()
 
@@ -83,7 +86,7 @@ class Colors {
                 if (l <= 128) textLightColor()
                 else textDarkColor()
             } catch (ex: Exception) {
-                Log.e(this::class.java.simpleName, ex.message.toString())
+                Log.e(tag, ex.message.toString())
                 textDarkColor()
             }
         }
@@ -98,7 +101,7 @@ class Colors {
                 if (l <= 128) textLightColor()
                 else textDarkColor()
             } catch (ex: Exception) {
-                Log.e(this::class.java.simpleName, ex.message.toString())
+                Log.e(tag, ex.message.toString())
                 textDarkColor()
             }
         }
@@ -113,7 +116,7 @@ class Colors {
                 if (l <= 128) textLightColor()
                 else textDarkColor()
             } catch (ex: Exception) {
-                Log.e(this::class.java.simpleName, ex.message.toString())
+                Log.e(tag, ex.message.toString())
                 textDarkColor()
             }
         }

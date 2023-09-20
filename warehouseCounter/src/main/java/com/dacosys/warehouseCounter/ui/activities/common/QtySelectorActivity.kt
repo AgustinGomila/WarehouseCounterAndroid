@@ -43,6 +43,8 @@ import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener {
 
+    private val tag = this::class.java.simpleName
+
     private var ch: CounterHandler? = null
 
     private lateinit var orc: OrderRequestContent
@@ -244,7 +246,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 rejectNewInstances = false
                 allowClicks = true
@@ -260,7 +262,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
                 val res =
                     getString(R.string.an_error_occurred_while_updating_the_description_of_the_item_in_the_database)
                 showSnackBar(res, ERROR)
-                android.util.Log.e(this::class.java.simpleName, res)
+                android.util.Log.e(tag, res)
                 return@updateItemDescriptionToDb
             }
 

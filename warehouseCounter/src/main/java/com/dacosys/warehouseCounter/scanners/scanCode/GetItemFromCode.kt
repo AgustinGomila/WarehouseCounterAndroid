@@ -24,6 +24,9 @@ class GetItemFromCode(
     private var onEvent: (SnackBarEventData) -> Unit = {},
     private var onFinish: (GetFromCodeResult) -> Unit = {},
 ) {
+
+    private val tag = this::class.java.simpleName
+
     data class GetFromCodeResult(var scannedCode: String = "", var item: Item? = null, var itemCode: ItemCode? = null)
 
     private var itemCode: ItemCode? = null
@@ -50,7 +53,7 @@ class GetItemFromCode(
                     val res = context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
                     sendEvent(res, SnackBarType.ERROR)
                     onFinish.invoke(GetFromCodeResult())
-                    Log.e(this::class.java.simpleName, res)
+                    Log.e(tag, res)
                     return@withContext
                 }
             }
@@ -60,7 +63,7 @@ class GetItemFromCode(
                 val res = context.getString(R.string.invalid_code)
                 sendEvent(res, SnackBarType.ERROR)
                 onFinish.invoke(GetFromCodeResult())
-                Log.e(this::class.java.simpleName, res)
+                Log.e(tag, res)
                 return@withContext
             }
 
@@ -110,7 +113,7 @@ class GetItemFromCode(
         } catch (ex: Exception) {
             sendEvent(ex.message.toString(), SnackBarType.ERROR)
             onFinish.invoke(GetFromCodeResult())
-            Log.e(this::class.java.simpleName, ex.message ?: "")
+            Log.e(tag, ex.message ?: "")
             return@withContext
         }
     }

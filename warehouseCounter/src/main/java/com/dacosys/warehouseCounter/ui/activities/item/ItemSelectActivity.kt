@@ -90,6 +90,9 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     ItemRecyclerAdapter.AddPhotoRequiredListener, ItemRecyclerAdapter.AlbumViewRequiredListener,
     SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener,
     SelectFilterFragment.OnFilterItemChangedListener {
+
+    private val tag = this::class.java.simpleName
+
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -681,7 +684,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
 
         try {
-            Log.d(this::class.java.simpleName, "Selecting items...")
+            Log.d(tag, "Selecting items...")
             ItemCoroutines.getByQuery(
                 ean = itemEan,
                 description = itemDescription,
@@ -690,7 +693,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 fillAdapter(it)
             }
         } catch (ex: java.lang.Exception) {
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+            ErrorLog.writeLog(this, tag, ex.message.toString())
             showProgressBar(false)
         }
     }
@@ -739,7 +742,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 showProgressBar(false)
             }
@@ -801,7 +804,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
             showSnackBar(res, ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, res)
+            ErrorLog.writeLog(this, tag, res)
             return
         }
 

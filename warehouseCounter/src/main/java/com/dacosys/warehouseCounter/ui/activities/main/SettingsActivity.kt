@@ -193,6 +193,8 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
     }
 
     companion object {
+        private val tag = this::class.java.simpleName
+
         const val ARG_TITLE = "title"
 
         //region CAMERA SCAN
@@ -323,7 +325,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
                         }
                     } catch (ex: Exception) {
                         ex.printStackTrace()
-                        ErrorLog.writeLog(null, this::class.java.simpleName, ex)
+                        ErrorLog.writeLog(null, tag, ex)
                     }
                 }
             }
@@ -354,7 +356,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         } catch (ex: Exception) {
             ex.printStackTrace()
             showSnackBar(ex.message.toString(), ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            ErrorLog.writeLog(this, tag, ex)
         } finally {
             // Unless is blocked, unlock the partial
             JotterListener.lockScanner(this, false)

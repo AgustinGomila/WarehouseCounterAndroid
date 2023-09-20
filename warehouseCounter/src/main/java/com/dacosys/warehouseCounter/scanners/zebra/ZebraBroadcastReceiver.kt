@@ -20,8 +20,11 @@ import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_RESULT_
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_RESULT_NOTIFICATION
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_RESULT_NOTIFICATION_TYPE
 
-@Suppress("ConvertSecondaryConstructorToPrimary", "unused")
+@Suppress("unused")
 class ZebraBroadcastReceiver : BroadcastReceiver {
+
+    private val tag = this::class.java.simpleName
+
     private lateinit var zebra: Zebra
 
     constructor()
@@ -33,13 +36,13 @@ class ZebraBroadcastReceiver : BroadcastReceiver {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
         val b = intent.extras
-        Log.d(this::class.java.simpleName, "DataWedge Action:$action")
+        Log.d(tag, "DataWedge Action:$action")
 
         // Get DataWedge version info
         if (intent.hasExtra(EXTRA_RESULT_GET_VERSION_INFO)) {
             val versionInfo = intent.getBundleExtra(EXTRA_RESULT_GET_VERSION_INFO)
             val dwVersion = versionInfo!!.getString("DATAWEDGE")
-            Log.i(this::class.java.simpleName, "DataWedge Version: $dwVersion")
+            Log.i(tag, "DataWedge Version: $dwVersion")
         }
 
         if (action == ACTIVITY_INTENT_FILTER_ACTION) {
@@ -69,13 +72,13 @@ class ZebraBroadcastReceiver : BroadcastReceiver {
                         }
                     }
                     Log.d(
-                        this::class.java.simpleName, """
+                        tag, """
      Command: $command
      Result: $result
      Result Info: $info""".trimIndent()
                     )
                     Log.d(
-                        this::class.java.simpleName,
+                        tag,
                         "Error Resulted. Command:$command\nResult: $result\nResult Info: $info"
                     )
                 }
@@ -95,7 +98,7 @@ class ZebraBroadcastReceiver : BroadcastReceiver {
                                 EXTRA_KEY_VALUE_NOTIFICATION_PROFILE_NAME
                             )
                             Log.i(
-                                this::class.java.simpleName,
+                                tag,
                                 "Scanner status: $displayScannerStatusText"
                             )
                         }

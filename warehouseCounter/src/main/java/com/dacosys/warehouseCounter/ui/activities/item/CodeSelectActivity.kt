@@ -35,6 +35,9 @@ import kotlin.concurrent.thread
 
 class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     ContractsAutoCompleteTextView.OnContractsAvailability, KeyboardVisibilityEventListener {
+
+    private val tag = this::class.java.simpleName
+
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -214,7 +217,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         isFilling = true
 
         try {
-            Log.d(this::class.java.simpleName, "Selecting items...")
+            Log.d(tag, "Selecting items...")
 
             ItemCoroutines.get {
                 val adapter = ItemAdapter(
@@ -237,7 +240,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
         } catch (ex: java.lang.Exception) {
             ex.printStackTrace()
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            ErrorLog.writeLog(this, tag, ex)
         } finally {
             isFilling = false
         }
@@ -366,7 +369,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         } catch (ex: Exception) {
             ex.printStackTrace()
             showSnackBar(ex.message.toString(), SnackBarType.ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            ErrorLog.writeLog(this, tag, ex)
         } finally {
             // Unless is blocked, unlock the partial
             JotterListener.lockScanner(this, false)

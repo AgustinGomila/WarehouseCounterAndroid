@@ -13,6 +13,7 @@ import com.dacosys.warehouseCounter.data.room.database.WcTempDatabase.Companion.
 
 class FileHelper {
     companion object {
+        private val tag = this::class.java.simpleName
         private const val IMAGE_CONTROL_DATABASE_NAME = "imagecontrol.sqlite"
 
         fun removeDataBases() {
@@ -72,7 +73,7 @@ class FileHelper {
             if (inputDbFile == null) return false
 
             Log.d(
-                this::class.java.simpleName, context.getString(R.string.copying_database)
+                tag, context.getString(R.string.copying_database)
             )
 
             //Open your local db as the input stream
@@ -83,16 +84,16 @@ class FileHelper {
 
             val file = File(outFileName)
             if (file.exists()) {
-                Log.d(this::class.java.simpleName, "Eliminando base de datos antigua: $outFileName")
+                Log.d(tag, "Eliminando base de datos antigua: $outFileName")
                 file.delete()
             }
 
             Log.d(
-                this::class.java.simpleName,
+                tag,
                 "${context.getString(R.string.origin)}: ${inputDbFile.absolutePath}"
             )
             Log.d(
-                this::class.java.simpleName,
+                tag,
                 "${context.getString(R.string.destination)}: $outFileName"
             )
 
@@ -126,14 +127,14 @@ class FileHelper {
                 myInput.close()
             } catch (e: IOException) {
                 ErrorLog.writeLog(
-                    null, this::class.java.simpleName, "${
+                    null, tag, "${
                         context.getString(R.string.exception_error)
                     } (Copy database): ${e.message}"
                 )
                 return false
             }
 
-            Log.d(this::class.java.simpleName, context.getString(R.string.copy_ok))
+            Log.d(tag, context.getString(R.string.copy_ok))
 
             return true
         }

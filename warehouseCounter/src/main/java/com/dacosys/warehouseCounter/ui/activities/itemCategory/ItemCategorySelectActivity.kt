@@ -31,6 +31,9 @@ import kotlin.concurrent.thread
 
 class ItemCategorySelectActivity : AppCompatActivity(),
     ContractsAutoCompleteTextView.OnContractsAvailability, KeyboardVisibilityEventListener {
+
+    private val tag = this::class.java.simpleName
+
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -242,7 +245,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         isFilling = true
 
         try {
-            Log.d(this::class.java.simpleName, "Selecting categories...")
+            Log.d(tag, "Selecting categories...")
 
             ItemCategoryCoroutines.get {
                 val adapter = ItemCategoryAdapter(
@@ -265,7 +268,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
             }
         } catch (ex: java.lang.Exception) {
             ex.printStackTrace()
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            ErrorLog.writeLog(this, tag, ex)
         } finally {
             isFilling = false
         }
