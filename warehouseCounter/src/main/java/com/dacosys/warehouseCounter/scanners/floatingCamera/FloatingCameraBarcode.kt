@@ -5,8 +5,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.CountDownTimer
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -21,6 +19,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.databinding.FloatingCameraActivityBinding
 import com.dacosys.warehouseCounter.scanners.Scanner
@@ -244,12 +243,7 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
                 )
             }
 
-            override fun onScaledEnded() {
-                /** Try to scale the child view to the new size */
-                Handler(Looper.getMainLooper()).postDelayed({
-                    binding.barcodeView.barcodeView.refreshView()
-                }, 50)
-            }
+            override fun onScaledEnded() {}
         }
 
         // Scan mode Button
@@ -315,7 +309,11 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
 
             // Actualice el tamaño de la ventana flotante para evitar la limitación
             // de ancho cuando otras aplicaciones se proyectan horizontalmente
-            EasyFloat.updateFloat(getEasyFloatTag(), width = params.width, height = params.height)
+            EasyFloat.updateFloat(
+                tag = getEasyFloatTag(),
+                width = params.width,
+                height = params.height
+            )
         }
 
         // Close Button
@@ -362,14 +360,14 @@ class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCa
     }
 
     private fun loadValues() {
+        val sr = settingsRepository
+        flCameraMinWidth = sr.flCameraPortraitWidth.default as Int
+        flCameraMinHeight = sr.flCameraPortraitHeight.default as Int
+
         val sv = settingsVm
         allBarHeight = Screen.getSystemBarsHeight(activity)
-        screenHeight = Screen.getScreenHeight(activity)
-        screenWidth = Screen.getScreenWidth(activity)
-
-        // Cargar la información de posición y tamaño de la ventana flotante
-        flCameraMinWidth = sv.flCameraPortraitWidth
-        flCameraMinHeight = sv.flCameraPortraitHeight
+        screenHeight = min(Screen.getScreenHeight(activity), flCameraMinHeight * 3)
+        screenWidth = Screen.getScreenWidth(activity) - 16
 
         flCameraPortraitLoc = intArrayOf(sv.flCameraPortraitLocX, sv.flCameraPortraitLocY)
         flCameraPortraitWidth = min(sv.flCameraPortraitWidth, screenWidth)
