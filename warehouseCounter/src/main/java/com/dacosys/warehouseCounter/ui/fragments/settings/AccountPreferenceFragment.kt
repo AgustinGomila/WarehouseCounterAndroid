@@ -26,6 +26,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.lang.ref.WeakReference
+import kotlin.concurrent.thread
 
 class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Companion.TaskConfigPanelEnded {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -99,13 +100,16 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
 
                 if (alreadyAnsweredYes) {
                     Statics.downloadDbRequired = true
-                    if (email.isNotEmpty() && password.isNotEmpty()) {
-                        GetClientPackages.getConfig(
-                            onEvent = { onGetPackagesEnded(it) },
-                            email = email,
-                            password = password,
-                            installationCode = ""
-                        )
+                    if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
+                        thread {
+                            GetClientPackages.Builder()
+                                .onEvent { onGetPackagesEnded(it) }
+                                .addParams(
+                                    email = email,
+                                    password = password,
+                                    installationCode = ""
+                                ).build()
+                        }
                     }
                 } else {
                     val diaBox = askForDownloadDbRequired2(email = email, password = password)
@@ -196,10 +200,16 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
                 Statics.downloadDbRequired = true
                 alreadyAnsweredYes = true
 
-                if (email.isNotEmpty() && password.isNotEmpty()) {
-                    GetClientPackages.getConfig(
-                        onEvent = { onGetPackagesEnded(it) }, email = email, password = password, installationCode = ""
-                    )
+                if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
+                    thread {
+                        GetClientPackages.Builder()
+                            .onEvent { onGetPackagesEnded(it) }
+                            .addParams(
+                                email = email,
+                                password = password,
+                                installationCode = ""
+                            ).build()
+                    }
                 }
                 dialog.dismiss()
             }.setNegativeButton(R.string.no) { dialog, _ -> dialog.dismiss() }.create()

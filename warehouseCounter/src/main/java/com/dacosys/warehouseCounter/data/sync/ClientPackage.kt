@@ -34,6 +34,7 @@ import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.serialization.json.JsonPrimitive
 import org.json.JSONObject
 import java.lang.ref.WeakReference
+import kotlin.concurrent.thread
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.clientPackage.Package as ClientPackage
 
 class ClientPackage {
@@ -323,12 +324,15 @@ class ClientPackage {
                         if (confJson.has(sp.clientPassword.key)) confJson.getString(sp.clientPassword.key) else ""
 
                     if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
-                        GetClientPackages.getConfig(
-                            onEvent = onEvent,
-                            email = email,
-                            password = password,
-                            installationCode = installationCode
-                        )
+                        thread {
+                            GetClientPackages.Builder()
+                                .onEvent(onEvent)
+                                .addParams(
+                                    email = email,
+                                    password = password,
+                                    installationCode = installationCode
+                                ).build()
+                        }
                     } else {
                         onEvent.invoke(
                             PackagesResult(

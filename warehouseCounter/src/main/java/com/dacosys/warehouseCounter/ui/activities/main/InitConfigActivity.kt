@@ -22,7 +22,7 @@ import androidx.core.content.ContextCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
-import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages.Companion.getConfig
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages
 import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.data.room.database.helper.FileHelper.Companion.removeDataBases
 import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType.CREATOR.QRConfigClientAccount
@@ -43,6 +43,7 @@ import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.lang.ref.WeakReference
+import kotlin.concurrent.thread
 
 class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     ProxySetup.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded {
@@ -100,12 +101,19 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         installationCode: String,
     ) {
         if (status == ProgressStatus.finished) {
-            getConfig(
-                onEvent = { onGetPackagesEnded(it) },
-                email = email,
-                password = password,
-                installationCode = installationCode
-            )
+            if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
+                thread {
+                    GetClientPackages.Builder()
+                        .onEvent { onGetPackagesEnded(it) }
+                        .addParams(
+                            email = email,
+                            password = password,
+                            installationCode = installationCode
+                        ).build()
+                }
+            } else {
+                isConfiguring = false
+            }
         }
     }
 
@@ -327,21 +335,27 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         val email = binding.emailEditText.text.toString()
         val password = binding.passwordEditText.text.toString()
 
-        if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
-            if (!binding.proxyCheckBox.isChecked) {
-                getConfig(
-                    onEvent = { onGetPackagesEnded(it) }, email = email, password = password
-                )
+        if (!binding.proxyCheckBox.isChecked) {
+            if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
+                thread {
+                    GetClientPackages.Builder()
+                        .onEvent { onGetPackagesEnded(it) }
+                        .addParams(
+                            email = email,
+                            password = password,
+                            installationCode = ""
+                        ).build()
+                }
             } else {
-                setupProxy(
-                    callback = this,
-                    weakAct = WeakReference(this),
-                    email = email,
-                    password = password
-                )
+                isConfiguring = false
             }
         } else {
-            isConfiguring = false
+            setupProxy(
+                callback = this,
+                weakAct = WeakReference(this),
+                email = email,
+                password = password
+            )
         }
     }
 

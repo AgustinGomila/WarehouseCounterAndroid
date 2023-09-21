@@ -14,7 +14,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.concurrent.thread
 
 class GetClientPackages private constructor(builder: Builder) {
 
@@ -76,27 +75,6 @@ class GetClientPackages private constructor(builder: Builder) {
                 msg = msg
             )
         )
-    }
-
-    companion object {
-        fun getConfig(
-            onEvent: (PackagesResult) -> Unit,
-            email: String,
-            password: String,
-            installationCode: String = "",
-        ) {
-            if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
-                thread {
-                    Builder()
-                        .onEvent(onEvent)
-                        .addParams(
-                            email = email,
-                            password = password,
-                            installationCode = installationCode
-                        ).build()
-                }
-            }
-        }
     }
 
     class Builder {

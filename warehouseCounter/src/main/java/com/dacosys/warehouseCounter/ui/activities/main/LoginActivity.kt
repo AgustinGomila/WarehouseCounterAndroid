@@ -34,7 +34,7 @@ import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
-import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages.Companion.getConfig
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages
 import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.database.DatabaseData
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.database.GetDatabase
@@ -221,12 +221,17 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         installationCode: String,
     ) {
         if (status == ProgressStatus.finished) {
-            getConfig(
-                onEvent = { onGetPackagesEnded(it) },
-                email = email,
-                password = password,
-                installationCode = installationCode
-            )
+            if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
+                thread {
+                    GetClientPackages.Builder()
+                        .onEvent { onGetPackagesEnded(it) }
+                        .addParams(
+                            email = email,
+                            password = password,
+                            installationCode = installationCode
+                        ).build()
+                }
+            }
         }
     }
 
