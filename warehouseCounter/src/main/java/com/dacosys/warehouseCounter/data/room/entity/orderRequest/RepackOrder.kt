@@ -39,7 +39,7 @@ class RepackOrder(order: OrderResponse, private val onEvent: (SnackBarEventData)
             orderRequest = orderRequestForPackaging,
             onResult = { newId ->
                 if (newId != null) {
-                    orderRequestForPackaging.orderRequestId = newId
+                    orderRequestForPackaging.id = newId
                     OrderRequestCoroutines.update(
                         orderRequest = orderRequestForPackaging.toKtor,
                         contents = order.contentToKtor(),

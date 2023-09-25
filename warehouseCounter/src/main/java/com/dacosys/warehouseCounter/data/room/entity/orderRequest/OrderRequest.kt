@@ -13,6 +13,7 @@ import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequestEn
     tableName = Entry.TABLE_NAME,
     indices = [
         Index(value = [Entry.DESCRIPTION], name = "IDX_${Entry.TABLE_NAME}_${Entry.DESCRIPTION}"),
+        Index(value = [Entry.ORDER_REQUEST_ID], name = "IDX_${Entry.TABLE_NAME}_${Entry.ORDER_REQUEST_ID}"),
         Index(value = [Entry.EXTERNAL_ID], name = "IDX_${Entry.TABLE_NAME}_${Entry.EXTERNAL_ID}"),
         Index(value = [Entry.ORDER_TYPE_ID], name = "IDX_${Entry.TABLE_NAME}_${Entry.ORDER_TYPE_ID}"),
         Index(value = [Entry.CLIENT_ID], name = "IDX_${Entry.TABLE_NAME}_${Entry.CLIENT_ID}"),
@@ -20,7 +21,8 @@ import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequestEn
     ]
 )
 data class OrderRequest(
-    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = Entry.ORDER_REQUEST_ID) var orderRequestId: Long = 0L,
+    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = Entry.ID) var id: Long = 0L,
+    @ColumnInfo(name = Entry.ORDER_REQUEST_ID) var orderRequestId: Long = 0L,
     @ColumnInfo(name = Entry.CLIENT_ID) var clientId: Long = 0L,
     @ColumnInfo(name = Entry.COMPLETED, defaultValue = "0") var completed: Int = 0,
     @ColumnInfo(name = Entry.CREATION_DATE) var creationDate: String = "",
@@ -38,6 +40,7 @@ data class OrderRequest(
     @ColumnInfo(name = Entry.ZONE) var zone: String = "",
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
+        id = parcel.readLong(),
         orderRequestId = parcel.readLong(),
         clientId = parcel.readLong(),
         completed = parcel.readInt(),
@@ -79,6 +82,7 @@ data class OrderRequest(
         }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeLong(id)
         parcel.writeLong(orderRequestId)
         parcel.writeLong(clientId)
         parcel.writeInt(completed)

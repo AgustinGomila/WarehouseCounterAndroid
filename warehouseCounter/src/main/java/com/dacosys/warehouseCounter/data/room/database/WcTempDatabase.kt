@@ -14,6 +14,7 @@ import com.dacosys.warehouseCounter.data.room.database.WcTempDatabase.Companion.
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.Log
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequestContent
+import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequestEntry
 import com.dacosys.warehouseCounter.data.room.entity.pendingLabel.PendingLabel
 import com.dacosys.warehouseCounter.data.room.entity.pendingLabel.PendingLabelEntry
 
@@ -28,7 +29,7 @@ abstract class WcTempDatabase : RoomDatabase() {
     abstract fun pendingLabelDao(): PendingLabelDao
 
     companion object {
-        const val DATABASE_VERSION = 2
+        const val DATABASE_VERSION = 3
         const val DATABASE_NAME = "wc_temp.sqlite"
 
         @Volatile
@@ -44,6 +45,7 @@ abstract class WcTempDatabase : RoomDatabase() {
                             name = DATABASE_NAME
                         )
                             .addMigrations(MIGRATION_1_2)
+                            .addMigrations(MIGRATION_2_3)
                             .build()
 
                     INSTANCE = instance
@@ -61,6 +63,22 @@ abstract class WcTempDatabase : RoomDatabase() {
                 database.execSQL(
                     """CREATE TABLE IF NOT EXISTS ${PendingLabelEntry.TABLE_NAME} 
                         |(${PendingLabelEntry.ID} INTEGER NOT NULL PRIMARY KEY)""".trimMargin()
+                )
+            }
+        }
+
+        /**
+         * Migration 2 3
+         *
+         */
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """ALTER TABLE ${OrderRequestEntry.TABLE_NAME} ADD ${OrderRequestEntry.ORDER_REQUEST_ID} INT""".trimMargin()
+                )
+                database.execSQL(
+                    """CREATE INDEX IDX_${OrderRequestEntry.TABLE_NAME}_${OrderRequestEntry.ORDER_REQUEST_ID} ON ${OrderRequestEntry.TABLE_NAME}
+                        |(${OrderRequestEntry.ORDER_REQUEST_ID})""".trimIndent()
                 )
             }
         }

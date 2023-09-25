@@ -77,7 +77,7 @@ data class OrderRequest(
                 description = this.description,
                 externalId = this.externalId,
                 finishDate = this.finishDate ?: "",
-                orderRequestId = this.orderRequestId ?: 0L,
+                id = this.orderRequestId ?: 0L,
                 orderTypeDescription = this.orderTypeDescription,
                 orderTypeId = this.orderTypeId?.toInt() ?: 0,
                 resultAllowDiff = if (this.resultAllowDiff == true) 1 else 0,

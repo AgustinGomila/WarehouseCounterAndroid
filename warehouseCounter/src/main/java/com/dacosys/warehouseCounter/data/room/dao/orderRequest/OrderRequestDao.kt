@@ -18,7 +18,7 @@ interface OrderRequestDao {
     suspend fun getAll(): List<OrderRequest>
 
     @RewriteQueriesToDropUnusedColumns
-    @Query("SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.ORDER_REQUEST_ID} = :itemId")
+    @Query("SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.ID} = :itemId")
     suspend fun getById(itemId: Long): OrderRequest?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -27,7 +27,7 @@ interface OrderRequestDao {
     @Update
     suspend fun update(orderRequest: OrderRequest)
 
-    @Query("DELETE FROM ${Entry.TABLE_NAME} WHERE ${Entry.ORDER_REQUEST_ID} = :itemId")
+    @Query("DELETE FROM ${Entry.TABLE_NAME} WHERE ${Entry.ID} = :itemId")
     suspend fun deleteById(itemId: Long)
 
     @Transaction
@@ -49,7 +49,7 @@ interface OrderRequestDao {
     @Transaction
     suspend fun update(orderRequest: OrderRequest, contents: List<OrderRequestContent>) {
         update(orderRequest)
-        database.orderRequestContentDao().deleteByOrderId(orderRequest.orderRequestId)
+        database.orderRequestContentDao().deleteByOrderId(orderRequest.id)
         database.orderRequestContentDao().insert(contents)
     }
 }

@@ -43,7 +43,7 @@ class AddOrderFromFile(
             orderRequest = orderRequest,
             onResult = { newId ->
                 if (newId != null) {
-                    orderRequest.orderRequestId = newId
+                    orderRequest.id = newId
                     OrderRequestCoroutines.update(
                         orderRequest = orderRequest.toKtor,
                         contents = completeList,

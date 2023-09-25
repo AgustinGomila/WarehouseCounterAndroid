@@ -4,7 +4,8 @@ abstract class OrderRequestEntry {
     companion object {
         const val TABLE_NAME = "order_request"
 
-        const val ORDER_REQUEST_ID = "_id"
+        const val ID = "_id"
+        const val ORDER_REQUEST_ID = "order_request_id"
         const val CLIENT_ID = "client_id"
         const val COMPLETED = "completed"
         const val CREATION_DATE = "creation_date"
