@@ -78,10 +78,12 @@ class GetWarehouse
             filter = filter,
             action = action,
             callback = {
-                if (it.onEvent != null) sendEvent(it.onEvent)
                 if (it.response != null) r = it.response.items
-                if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
-                else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
+                if (it.onEvent != null) sendEvent(it.onEvent)
+                else {
+                    if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
+                    else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
+                }
             })
     }
 

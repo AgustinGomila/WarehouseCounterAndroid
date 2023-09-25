@@ -296,11 +296,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         return BitmapDrawable(resources, bitmapResized)
     }
 
-    override fun onPause() {
-        super.onPause()
-        sync.stopSync()
-    }
-
     override fun onButtonClicked(button: Button) {
         clickButton(button)
     }

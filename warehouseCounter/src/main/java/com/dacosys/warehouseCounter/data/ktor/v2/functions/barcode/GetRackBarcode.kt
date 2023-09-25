@@ -48,10 +48,12 @@ class GetRackBarcode(
         apiServiceV2.getRackBarcode(
             params = param,
             callback = {
-                if (it.onEvent != null) sendEvent(it.onEvent)
                 if (it.response != null) r = ArrayList(it.response)
-                if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
-                else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
+                if (it.onEvent != null) sendEvent(it.onEvent)
+                else {
+                    if (r.any()) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
+                    else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
+                }
             })
     }
 

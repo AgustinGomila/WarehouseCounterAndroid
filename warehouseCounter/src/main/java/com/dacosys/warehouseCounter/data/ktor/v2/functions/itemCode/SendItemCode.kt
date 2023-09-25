@@ -55,13 +55,12 @@ class SendItemCode
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         apiServiceV2.sendItemCode(payload = payload, callback = {
-            if (it.onEvent != null) sendEvent(it.onEvent)
             if (it.response != null) r = it.response
-            if (r != null) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
-            else sendEvent(
-                context.getString(R.string.an_error_occurred_while_trying_to_add_the_item_code),
-                SnackBarType.INFO
-            )
+            if (it.onEvent != null) sendEvent(it.onEvent)
+            else {
+                if (r != null) sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
+                else sendEvent(context.getString(R.string.no_results), SnackBarType.INFO)
+            }
         })
     }
 

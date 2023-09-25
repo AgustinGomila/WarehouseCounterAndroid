@@ -5,7 +5,14 @@ import android.os.Looper
 import android.util.Log
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedOrders
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getPendingOrders
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderStatus
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
+import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.orderRequest.AddOrder
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import java.util.*
 import kotlin.concurrent.thread
@@ -119,9 +126,59 @@ class Sync private constructor(builder: Builder) {
 
         thread {
             try {
-                /** TODO: Hacer la función que traiga nuevos pedidos desde la API */
-                // GetNewOrder(onEvent = { }, onFinish = { onNewOrders(it) }).execute()
-                onNewOrders(arrayListOf())
+                val filter: ArrayList<ApiFilterParam> = arrayListOf()
+                filter.add(
+                    ApiFilterParam(
+                        columnName = ApiFilterParam.EXTENSION_STATUS_ID,
+                        value = OrderStatus.pending.id.toString()
+                    )
+                )
+
+                GetOrder(filter = filter, onEvent = { }, onFinish = { remotePendingOrders ->
+                    val ordersToAdd: ArrayList<OrderResponse> = arrayListOf()
+                    if (remotePendingOrders.isNotEmpty()) {
+                        val localPendingOrdersId = getPendingOrders().map { it.orderRequestId }
+
+                        for (order in remotePendingOrders) {
+                            if (!localPendingOrdersId.contains(order.id)) {
+                                ordersToAdd.add(order)
+                            }
+                        }
+                    }
+
+                    if (ordersToAdd.isNotEmpty()) {
+                        var isDone = false
+
+                        val newOrders: ArrayList<OrderRequest> = arrayListOf()
+                        for ((index, order) in ordersToAdd.withIndex()) {
+                            AddOrder(
+                                clientId = order.clientId,
+                                clientName = "",
+                                description = order.description,
+                                orderRequestType = order.orderType,
+                                onEvent = { },
+                                onNewId = { orderId ->
+                                    OrderRequestCoroutines.getOrderRequestById(orderId) { newOrder ->
+                                        if (newOrder != null) {
+                                            newOrders.add(newOrder)
+                                            isDone = index == ordersToAdd.lastIndex
+                                        }
+                                    }
+                                })
+                        }
+
+                        val startTime = System.currentTimeMillis()
+                        while (!isDone) {
+                            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
+                                isDone = true
+                            }
+                        }
+
+                        onNewOrders(newOrders)
+                    } else {
+                        onNewOrders(arrayListOf())
+                    }
+                }).execute()
             } catch (ex: Exception) {
                 ErrorLog.writeLog(null, tag, ex.message.toString())
             } finally {

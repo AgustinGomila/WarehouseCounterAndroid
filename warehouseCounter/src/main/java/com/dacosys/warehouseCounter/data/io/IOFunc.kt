@@ -139,37 +139,42 @@ class IOFunc {
             onEvent: (SnackBarEventData) -> Unit = { },
             onFinish: (Boolean) -> Unit
         ) {
-            if (!isReceiving && itemArray.isNotEmpty()) {
-                isReceiving = true
+            if (isReceiving) return
 
-                if (!isExternalStorageWritable) {
-                    isReceiving = false
-                    onEvent(
-                        SnackBarEventData(
-                            context.getString(R.string.error_external_storage_not_available_for_reading_or_writing),
-                            SnackBarType.ERROR
-                        )
+            if (itemArray.isEmpty()) {
+                onFinish(true)
+                return
+            }
+
+            isReceiving = true
+
+            if (!isExternalStorageWritable) {
+                isReceiving = false
+                onEvent(
+                    SnackBarEventData(
+                        context.getString(R.string.error_external_storage_not_available_for_reading_or_writing),
+                        SnackBarType.ERROR
                     )
-                    onFinish(false)
-                } else {
-                    verifyWritePermissions(
-                        activity = activity,
-                        requestCode = requestCode,
-                        onGranted = {
-                            writeNewOrderRequest(itemArray) {
-                                if (it.snackBarType in SnackBarType.getFinish()) {
-                                    isReceiving = false
+                )
+                onFinish(false)
+            } else {
+                verifyWritePermissions(
+                    activity = activity,
+                    requestCode = requestCode,
+                    onGranted = {
+                        writeNewOrderRequest(itemArray) {
+                            if (it.snackBarType in SnackBarType.getFinish()) {
+                                isReceiving = false
 
-                                    if (it.snackBarType == SnackBarType.SUCCESS) onFinish(true)
-                                    else {
-                                        onEvent(SnackBarEventData(it.text, it.snackBarType))
-                                        onFinish(false)
-                                    }
+                                if (it.snackBarType == SnackBarType.SUCCESS) onFinish(true)
+                                else {
+                                    onEvent(SnackBarEventData(it.text, it.snackBarType))
+                                    onFinish(false)
                                 }
                             }
                         }
-                    )
-                }
+                    }
+                )
             }
         }
 

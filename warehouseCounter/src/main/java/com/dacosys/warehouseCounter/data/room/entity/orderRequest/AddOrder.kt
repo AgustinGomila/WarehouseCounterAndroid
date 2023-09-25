@@ -10,25 +10,43 @@ import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 
-class AddOrder(
-    client: Client?,
-    description: String,
-    orderRequestType: OrderRequestType,
-    private val onEvent: (SnackBarEventData) -> Unit,
-    onNewId: (Long) -> Unit
-) {
-    init {
+class AddOrder {
+    private val onEvent: (SnackBarEventData) -> Unit
+
+    constructor(
+        client: Client?,
+        description: String,
+        orderRequestType: OrderRequestType,
+        onEvent: (SnackBarEventData) -> Unit,
+        onNewId: (Long) -> Unit
+    ) : this(
+        clientId = client?.clientId,
+        clientName = client?.name,
+        description = description,
+        orderRequestType = orderRequestType,
+        onEvent = onEvent,
+        onNewId = onNewId
+    )
+
+    constructor(
+        clientId: Long?,
+        clientName: String?,
+        description: String,
+        orderRequestType: OrderRequestType,
+        onEvent: (SnackBarEventData) -> Unit,
+        onNewId: (Long) -> Unit
+    ) {
+        this.onEvent = onEvent
         sendEvent(
             String.format(
                 context.getString(R.string.client_description),
-                client?.name ?: context.getString(R.string.no_client),
+                clientName ?: context.getString(R.string.no_client),
                 Statics.lineSeparator,
                 description
             ), SnackBarType.INFO
         )
-
         val orderRequest = OrderRequest(
-            clientId = client?.clientId ?: 0,
+            clientId = clientId ?: 0L,
             creationDate = DateFormat.format(Statics.DATE_FORMAT, System.currentTimeMillis()).toString(),
             description = description,
             orderTypeDescription = orderRequestType.description,
@@ -40,7 +58,6 @@ class AddOrder(
             startDate = DateFormat.format(Statics.DATE_FORMAT, System.currentTimeMillis()).toString(),
             userId = Statics.currentUserId,
         )
-
         OrderRequestCoroutines.add(
             orderRequest = orderRequest,
             onResult = { newId ->
