@@ -74,11 +74,10 @@ abstract class WcTempDatabase : RoomDatabase() {
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
-                    """ALTER TABLE ${OrderRequestEntry.TABLE_NAME} ADD ${OrderRequestEntry.ORDER_REQUEST_ID} INT""".trimMargin()
+                    """ALTER TABLE ${OrderRequestEntry.TABLE_NAME} ADD ${OrderRequestEntry.ORDER_REQUEST_ID} INTEGER NOT NULL""".trimMargin()
                 )
                 database.execSQL(
-                    """CREATE INDEX IDX_${OrderRequestEntry.TABLE_NAME}_${OrderRequestEntry.ORDER_REQUEST_ID} ON ${OrderRequestEntry.TABLE_NAME}
-                        |(${OrderRequestEntry.ORDER_REQUEST_ID})""".trimIndent()
+                    """CREATE INDEX IDX_${OrderRequestEntry.TABLE_NAME}_${OrderRequestEntry.ORDER_REQUEST_ID} ON ${OrderRequestEntry.TABLE_NAME} (${OrderRequestEntry.ORDER_REQUEST_ID})""".trimIndent()
                 )
             }
         }

@@ -4,7 +4,6 @@ buildscript {
     ext {
         roomVersion = '2.5.2'
         buildToolsVer = '30.0.3'
-        nav_version = '2.4.1'
         kotlinVersion = '1.8.22'
         androidTargetSdk = 34
         androidMinSdk = 23

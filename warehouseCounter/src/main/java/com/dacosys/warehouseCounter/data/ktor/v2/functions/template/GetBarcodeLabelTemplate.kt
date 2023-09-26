@@ -6,6 +6,8 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiActionParam
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiPaginationParam
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiPaginationParam.Companion.defaultPagination
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -22,6 +24,7 @@ import kotlinx.coroutines.withContext
 class GetBarcodeLabelTemplate(
     private val filter: ArrayList<ApiFilterParam> = arrayListOf(),
     private val action: ArrayList<ApiActionParam> = arrayListOf(),
+    private val pagination: ApiPaginationParam = defaultPagination,
     private val onEvent: (SnackBarEventData) -> Unit = { },
     private val onFinish: (ArrayList<BarcodeLabelTemplate>) -> Unit,
 ) {
@@ -50,6 +53,7 @@ class GetBarcodeLabelTemplate(
         apiServiceV2.getBarcodeLabelTemplate(
             filter = filter,
             action = action,
+            pagination = pagination,
             callback = {
                 if (it.response != null) r = it.response.items
                 if (it.onEvent != null) sendEvent(it.onEvent)

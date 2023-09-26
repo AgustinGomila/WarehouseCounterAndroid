@@ -20,8 +20,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCodeResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderLocation
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_FILTER
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_OPERATOR_IN
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.EXTENSION_ID
 import com.dacosys.warehouseCounter.data.ktor.v2.service.APIResponse
 import com.dacosys.warehouseCounter.misc.Statics
@@ -317,6 +315,7 @@ class ApiRequest {
      * @param listName el nombre de la lista en la respuesta que contiene los objetos.
      * @param action una lista de parámetros de acción que pueden aplicarse a la solicitud (opcional).
      * @param filter una lista de parámetros de filtro que controlan la consulta de objetos (opcional).
+     * @param pagination los parámetros de paginación para la consulta de objetos.
      * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de obtención de la lista de objetos.
      *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es una lista de objetos [T].
      */
@@ -325,27 +324,15 @@ class ApiRequest {
         listName: String,
         action: ArrayList<ApiActionParam> = arrayListOf(),
         filter: ArrayList<ApiFilterParam> = arrayListOf(),
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<T>>) -> Unit
     ) {
         val url = URL(apiUrl)
 
         val params = Parameters.build {
-            action.forEach {
-                if (it.action.isNotEmpty()) append(
-                    it.action, it.extension.joinToString(EXT_SEPARATOR)
-                )
-            }
-            filter.forEach {
-                val col = it.columnName
-                val cond =
-                    if (it.conditional.isNotEmpty())
-                    /* Because: "Operator \"in\" requires multiple operands." */
-                        if (it.conditional == ACTION_OPERATOR_IN) "[${it.conditional}][]"
-                        else "[${it.conditional}]"
-                    else ""
-                val value = it.value
-                if (col.isNotEmpty()) this.append("$ACTION_FILTER[${col}]${cond}", value)
-            }
+            appendAll(ApiActionParam.asParameter(action))
+            appendAll(ApiFilterParam.asParameter(filter))
+            appendAll(ApiPaginationParam.asParameter(pagination))
         }
 
         val urlComplete = "${url.path}/$VERSION_PATH/$objPath/"
@@ -598,11 +585,7 @@ class ApiRequest {
         val columnName = EXTENSION_ID
 
         val params = Parameters.build {
-            action.forEach {
-                if (it.action.isNotEmpty()) append(
-                    it.action, it.extension.joinToString(EXT_SEPARATOR)
-                )
-            }
+            appendAll(ApiActionParam.asParameter(action))
             append(columnName, id.toString())
         }
 
@@ -688,26 +671,21 @@ class ApiRequest {
      * Obtiene una lista de ubicaciones de pedidos utilizando los filtros proporcionados en [filter].
      *
      * @param filter una lista de parámetros de filtro que controlan la consulta de ubicaciones de pedidos.
+     * @param pagination los parámetros de paginación para la consulta de objetos.
      * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de obtención de ubicaciones de pedidos.
      *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es una lista de objetos [OrderLocation].
      */
     suspend inline fun <reified T : Any> getListOf(
-        listKey: String, filter: ArrayList<ApiFilterParam>, callback: (APIResponse<List<T>>) -> Unit
+        listKey: String,
+        filter: ArrayList<ApiFilterParam>,
+        pagination: ApiPaginationParam,
+        callback: (APIResponse<List<T>>) -> Unit
     ) {
         val url = URL(apiUrl)
 
         val params = Parameters.build {
-            filter.forEach {
-                val col = it.columnName
-                val cond =
-                    if (it.conditional.isNotEmpty())
-                    /* Because: "Operator \"in\" requires multiple operands." */
-                        if (it.conditional == ACTION_OPERATOR_IN) "[${it.conditional}][]"
-                        else "[${it.conditional}]"
-                    else ""
-                val value = it.value
-                if (col.isNotEmpty()) this.append("$ACTION_FILTER[${col}]${cond}", value)
-            }
+            appendAll(ApiFilterParam.asParameter(filter))
+            appendAll(ApiPaginationParam.asParameter(pagination))
         }
 
         val urlComplete = "${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH"
@@ -749,8 +727,6 @@ class ApiRequest {
 
     companion object {
         val apiUrl by lazy { settingsVm.urlPanel }
-
-        const val EXT_SEPARATOR = ","
 
         const val VERSION_PATH = "v2"
 

@@ -639,10 +639,6 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             return
         }
 
-        /** Usar pageNum y pageTotal
-         * filter.add(ApiFilterParam(EXTENSION_PAGE_NUMBER, pageNum.toString()))
-         */
-
         try {
             Log.d(tag, "Selecting orders...")
 

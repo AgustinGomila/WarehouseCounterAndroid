@@ -821,4 +821,6 @@
     <string name="permission_denied">Permiso denegado</string>
     <string name="template_type">Tipo de plantilla</string>
     <string name="template">Plantilla</string>
+    <string name="default_page_size">Tamaño de página predefinido</string>
+    <string name="page_size_limit">Tamaño límite de pagina</string>
 </resources>

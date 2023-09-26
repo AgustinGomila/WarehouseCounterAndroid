@@ -62,6 +62,7 @@ class APIServiceImpl : APIService {
      *
      * @param filter List of filters
      * @param action List of parameters
+     * @param pagination Pagination
      * @param callback [APIResponse] of desired list of objects
      *
      * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/rack/)
@@ -70,10 +71,16 @@ class APIServiceImpl : APIService {
     override suspend fun getRack(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<Rack>>) -> Unit
     ) {
         apiRequest.getListOf<Rack>(
-            objPath = RACK_PATH, listName = Rack.RACK_LIST_KEY, action = action, filter = filter, callback = callback
+            objPath = RACK_PATH,
+            listName = Rack.RACK_LIST_KEY,
+            action = action,
+            filter = filter,
+            pagination = pagination,
+            callback = callback
         )
     }
 
@@ -112,6 +119,7 @@ class APIServiceImpl : APIService {
      *
      * @param filter List of filters
      * @param action List of parameters
+     * @param pagination Pagination
      * @param callback [APIResponse] of desired list of objects
      *
      * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/warehouse_area/)
@@ -120,6 +128,7 @@ class APIServiceImpl : APIService {
     override suspend fun getWarehouseArea(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<WarehouseArea>>) -> Unit,
     ) {
         apiRequest.getListOf<WarehouseArea>(
@@ -127,6 +136,7 @@ class APIServiceImpl : APIService {
             listName = WarehouseArea.WAREHOUSE_AREA_LIST_KEY,
             action = action,
             filter = filter,
+            pagination = pagination,
             callback = callback
         )
     }
@@ -183,6 +193,7 @@ class APIServiceImpl : APIService {
      *
      * @param filter List of filters
      * @param action List of parameters
+     * @param pagination Pagination
      * @param callback [APIResponse] of desired list of objects
      *
      * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/warehouse/)
@@ -191,6 +202,7 @@ class APIServiceImpl : APIService {
     override suspend fun getWarehouse(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<Warehouse>>) -> Unit
     ) {
         apiRequest.getListOf<Warehouse>(
@@ -198,6 +210,7 @@ class APIServiceImpl : APIService {
             listName = Warehouse.WAREHOUSE_LIST_KEY,
             action = action,
             filter = filter,
+            pagination = pagination,
             callback = callback
         )
     }
@@ -223,6 +236,7 @@ class APIServiceImpl : APIService {
      *
      * @param filter List of filters
      * @param action List of parameters
+     * @param pagination Pagination
      * @param callback [APIResponse] of desired list of objects
      *
      * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/barcode-label-template)
@@ -231,6 +245,7 @@ class APIServiceImpl : APIService {
     override suspend fun getBarcodeLabelTemplate(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<BarcodeLabelTemplate>>) -> Unit
     ) {
         apiRequest.getListOf<BarcodeLabelTemplate>(
@@ -238,6 +253,7 @@ class APIServiceImpl : APIService {
             listName = BarcodeLabelTemplate.BARCODE_LABEL_TEMPLATE_LIST_KEY,
             action = action,
             filter = filter,
+            pagination = pagination,
             callback = callback
         )
     }
@@ -318,6 +334,7 @@ class APIServiceImpl : APIService {
      *
      * @param filter List of filters
      * @param action List of parameters
+     * @param pagination Pagination
      * @param callback [APIResponse] of desired [ListResponse] of objects
      *
      * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/order/)
@@ -326,6 +343,7 @@ class APIServiceImpl : APIService {
     override suspend fun getOrder(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<OrderResponse>>) -> Unit
     ) {
         apiRequest.getListOf<OrderResponse>(
@@ -333,12 +351,21 @@ class APIServiceImpl : APIService {
             listName = OrderResponse.ORDER_RESPONSE_LIST_KEY,
             action = action,
             filter = filter,
+            pagination = pagination,
             callback = callback
         )
     }
 
+    /**
+     * Get a list of [OrderResponse]
+     *
+     * @param pagination Pagination
+     * @param filter List of filters
+     * @param action List of parameters
+     * @return [APIResponse] of [ListResponse]<[OrderResponse]>
+     */
     suspend fun getOrderResponse(
-        page: Int,
+        pagination: ApiPaginationParam,
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>
     ): APIResponse<ListResponse<OrderResponse>> {
@@ -350,6 +377,7 @@ class APIServiceImpl : APIService {
             listName = OrderResponse.ORDER_RESPONSE_LIST_KEY,
             action = action,
             filter = filter,
+            pagination = pagination,
             callback = {
                 response = it
                 isDone = true
@@ -406,6 +434,7 @@ class APIServiceImpl : APIService {
      *
      * @param filter List of filters
      * @param action List of parameters
+     * @param pagination Pagination
      * @param callback [APIResponse] of desired list of objects
      *
      * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/order_package/)
@@ -414,6 +443,7 @@ class APIServiceImpl : APIService {
     override suspend fun getOrderPackage(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<OrderPackage>>) -> Unit,
     ) {
         apiRequest.getListOf<OrderPackage>(
@@ -421,6 +451,7 @@ class APIServiceImpl : APIService {
             listName = OrderPackage.ORDER_PACKAGE_LIST_KEY,
             action = action,
             filter = filter,
+            pagination = pagination,
             callback = callback
         )
     }
@@ -453,6 +484,7 @@ class APIServiceImpl : APIService {
      *
      * @param filter List of filters
      * @param action List of parameters
+     * @param pagination Pagination
      * @param callback [APIResponse] of desired list of objects
      *
      * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/item/)
@@ -461,10 +493,16 @@ class APIServiceImpl : APIService {
     override suspend fun getItem(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<Item>>) -> Unit,
     ) {
         apiRequest.getListOf<Item>(
-            objPath = ITEM_PATH, listName = Item.ITEM_LIST_KEY, action = action, filter = filter, callback = callback
+            objPath = ITEM_PATH,
+            listName = Item.ITEM_LIST_KEY,
+            action = action,
+            filter = filter,
+            pagination = pagination,
+            callback = callback
         )
     }
 
@@ -504,16 +542,22 @@ class APIServiceImpl : APIService {
      * Get a [List]<[OrderLocation]> through a callback
      *
      * @param filter List of parameters
-     * @param callback [APIResponse] of desired list of objects
+     * @param pagination Pagination
+     * @param callback With the [APIResponse] of a desired list of objects
      *
      * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/order_location/)
      * [index GET](http://localhost:8002/v2/order_location)
      */
     override suspend fun getOrderLocation(
-        filter: ArrayList<ApiFilterParam>, callback: (APIResponse<List<OrderLocation>>) -> Unit
+        filter: ArrayList<ApiFilterParam>,
+        pagination: ApiPaginationParam,
+        callback: (APIResponse<List<OrderLocation>>) -> Unit
     ) {
         apiRequest.getListOf(
-            listKey = OrderLocation.ORDER_LOCATION_LIST_KEY, filter = filter, callback = callback
+            listKey = OrderLocation.ORDER_LOCATION_LIST_KEY,
+            filter = filter,
+            pagination = pagination,
+            callback = callback
         )
     }
 }

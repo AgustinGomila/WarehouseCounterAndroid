@@ -5,6 +5,8 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV2
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderLocation
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiPaginationParam
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiPaginationParam.Companion.defaultPagination
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -20,6 +22,7 @@ import kotlinx.coroutines.withContext
 
 class GetOrderLocation(
     private val filter: ArrayList<ApiFilterParam>,
+    private val pagination: ApiPaginationParam = defaultPagination,
     private val onEvent: (SnackBarEventData) -> Unit = { },
     private val onFinish: (List<OrderLocation>) -> Unit,
 ) {
@@ -47,6 +50,7 @@ class GetOrderLocation(
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         apiServiceV2.getOrderLocation(
             filter = filter,
+            pagination = pagination,
             callback = {
                 if (it.response != null) r = it.response
                 if (it.onEvent != null) sendEvent(it.onEvent)

@@ -858,4 +858,10 @@ class SettingsViewModel : ViewModel() {
         set(value) {
             settingsRepository.decimalPlaces.value = value
         }
+
+    var defaultPageSize: Int
+        get() = settingsRepository.defaultPageSize.value as Int
+        set(value) {
+            settingsRepository.defaultPageSize.value = value
+        }
 }

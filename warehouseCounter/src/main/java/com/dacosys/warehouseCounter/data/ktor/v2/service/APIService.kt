@@ -20,9 +20,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderUpdatePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiActionParam
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
-
-data class APIResponse<T>(val response: T? = null, val onEvent: SnackBarEventData? = null)
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiPaginationParam
 
 interface APIService {
     suspend fun getDatabase(version: String, callback: (APIResponse<DatabaseData>) -> Unit)
@@ -34,6 +32,7 @@ interface APIService {
     suspend fun getRack(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<Rack>>) -> Unit
     )
 
@@ -46,6 +45,7 @@ interface APIService {
     suspend fun getWarehouseArea(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<WarehouseArea>>) -> Unit
     )
 
@@ -59,6 +59,7 @@ interface APIService {
     suspend fun getWarehouse(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<Warehouse>>) -> Unit
     )
 
@@ -69,6 +70,7 @@ interface APIService {
     suspend fun getBarcodeLabelTemplate(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<BarcodeLabelTemplate>>) -> Unit
     )
 
@@ -81,6 +83,7 @@ interface APIService {
     suspend fun getOrder(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<OrderResponse>>) -> Unit
     )
 
@@ -91,6 +94,7 @@ interface APIService {
     suspend fun getOrderPackage(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<OrderPackage>>) -> Unit
     )
 
@@ -103,6 +107,7 @@ interface APIService {
     suspend fun getItem(
         filter: ArrayList<ApiFilterParam>,
         action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
         callback: (APIResponse<ListResponse<Item>>) -> Unit
     )
 
@@ -110,6 +115,8 @@ interface APIService {
     suspend fun getItemBarcodeByCode(params: BarcodeCodeParam, callback: (APIResponse<List<Barcode>>) -> Unit)
 
     suspend fun getOrderLocation(
-        filter: ArrayList<ApiFilterParam>, callback: (APIResponse<List<OrderLocation>>) -> Unit
+        filter: ArrayList<ApiFilterParam>,
+        pagination: ApiPaginationParam,
+        callback: (APIResponse<List<OrderLocation>>) -> Unit
     )
 }

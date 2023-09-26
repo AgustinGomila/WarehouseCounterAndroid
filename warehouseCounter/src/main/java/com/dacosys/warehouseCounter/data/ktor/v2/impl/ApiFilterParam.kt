@@ -1,12 +1,32 @@
 package com.dacosys.warehouseCounter.data.ktor.v2.impl
 
+import io.ktor.http.*
+
 data class ApiFilterParam(
     var columnName: String = "",
     var value: String = "",
     var conditional: String = "",
 ) {
     companion object {
-        const val ACTION_FILTER = "filter"
+        fun asParameter(filter: List<ApiFilterParam>): Parameters {
+            return Parameters.build {
+                filter.forEach {
+                    val col = it.columnName
+                    val cond =
+                        if (it.conditional.isNotEmpty())
+                        /* Because: "Operator \"in\" requires multiple operands." */
+                            if (it.conditional == ACTION_OPERATOR_IN) "[${it.conditional}][]"
+                            else "[${it.conditional}]"
+                        else ""
+                    val value = it.value
+
+                    if (col.isNotEmpty())
+                        this.append("$ACTION_FILTER[${col}]${cond}", value)
+                }
+            }
+        }
+
+        private const val ACTION_FILTER = "filter"
 
         const val ACTION_OPERATOR_LIKE = "like"
         const val ACTION_OPERATOR_IN = "in"

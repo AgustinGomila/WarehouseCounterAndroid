@@ -5,21 +5,23 @@ import androidx.paging.PagingState
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV2
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiActionParam
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiPaginationParam
 
 class OrderPagingSource private constructor(builder: Builder) : PagingSource<Int, OrderResponse>() {
 
-    private var filter: List<ApiFilterParam> = listOf()
-    private var action: List<ApiActionParam> = listOf()
+    private var filter: List<ApiFilterParam>
+    private var action: List<ApiActionParam>
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, OrderResponse> {
         return try {
             val currentPage = params.key ?: 1
             val response =
                 apiServiceV2.getOrderResponse(
-                    page = currentPage,
+                    pagination = ApiPaginationParam(currentPage, settingsVm.defaultPageSize),
                     filter = ArrayList(filter),
                     action = ArrayList(action)
                 )

@@ -1,5 +1,5 @@
 include ':warehouseCounter', ':imageControl', ':zxing-android-embedded', ':easyfloat', ':jotter'
-project(':easyfloat').projectDir = new File(rootDir, 'androidLibs/easyfloat/easyfloat')
+project(':easyfloat').projectDir = new File(rootDir, 'androidLibs/easyfloat/easyfloat/')
 project(':zxing-android-embedded').projectDir = new File(rootDir, 'androidLibs/zxing/zxing-android-embedded/')
 project(':imageControl').projectDir = new File(rootDir, 'imageControl/')
 project(':jotter').projectDir = new File(rootDir, 'androidLibs/jotter/jotter/')

@@ -760,6 +760,12 @@ class SettingsRepository {
         default = 0
     )
 
+    var defaultPageSize = Preference(
+        key = "default_page_size",
+        description = context.getString(R.string.default_page_size),
+        default = 250
+    )
+
     companion object {
         fun getAll(): ArrayList<Preference> {
             val sr = settingsRepository
@@ -777,9 +783,6 @@ class SettingsRepository {
                 sr.allowScreenRotation,
                 sr.showScannedCode,
                 sr.sendBarcodeCheckDigit,
-
-                sr.decimalSeparator,
-                sr.decimalSeparator,
 
                 sr.connectionTimeout,
                 sr.colOffset,
@@ -932,6 +935,11 @@ class SettingsRepository {
                 sr.categoryViewHeight,
                 sr.locationViewHeight,
                 sr.templateViewHeight,
+
+                sr.decimalSeparator,
+                sr.decimalPlaces,
+
+                sr.defaultPageSize,
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))
