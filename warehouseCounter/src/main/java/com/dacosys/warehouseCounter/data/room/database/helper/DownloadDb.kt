@@ -97,10 +97,10 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
     private var currentDateTimeStr: String = ""
     private var fileType: FileType? = null
 
-    private var destDbFile: File
+    private var cacheDbFile: File
     private var dbFileUrl = ""
 
-    private var destTimeFile: File
+    private var cacheTimeFile: File
     private var timeFileUrl = ""
 
     private var mCallback: DownloadDbTask
@@ -135,9 +135,6 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
 
     private fun goForrest() {
         try {
-            val cacheTimeFile = destTimeFile
-            val cacheDbFile = destDbFile
-
             if (dbFileUrl.isEmpty() || timeFileUrl.isEmpty()) {
                 errorMsg = context.getString(R.string.database_name_is_invalid)
                 mCallback.onDownloadDbTask(CRASHED)
@@ -284,7 +281,7 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
             WcDatabase.cleanInstance()
 
             // Sobrescribir la base de datos actual de Room con la nueva base de datos descargada desde la web.
-            FileHelper.copyDataBase(destDbFile)
+            FileHelper.moveDatabaseFrom(cacheDbFile)
 
             // Se iniciará una nueva instancia de la base de datos de Room utilizando la base de datos actualizada la próxima vez que se la invoque.
             mCallback.onDownloadDbTask(FINISHED)
@@ -349,7 +346,7 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
         var dateTime = ""
         //Read text from file
         try {
-            val br = BufferedReader(FileReader(destTimeFile.absolutePath))
+            val br = BufferedReader(FileReader(cacheTimeFile.absolutePath))
             while (true) {
                 dateTime = br.readLine() ?: break
             }
@@ -363,9 +360,9 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
     }
 
     private fun deleteTimeFile() {
-        destTimeFile = File(context.cacheDir.absolutePath + "/" + timeFileName)
-        if (destTimeFile.exists()) {
-            destTimeFile.delete()
+        cacheTimeFile = File(context.cacheDir.absolutePath + "/" + timeFileName)
+        if (cacheTimeFile.exists()) {
+            cacheTimeFile.delete()
         }
     }
 
@@ -375,8 +372,8 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
         dbFileUrl = builder.dbFileUrl
         timeFileUrl = builder.timeFileUrl
 
-        destTimeFile = File("${context.cacheDir.absolutePath}/${timeFileName}")
-        destDbFile = File("${context.cacheDir.absolutePath}/${DATABASE_NAME}")
+        cacheTimeFile = File("${context.cacheDir.absolutePath}/${timeFileName}")
+        cacheDbFile = File("${context.cacheDir.absolutePath}/${DATABASE_NAME}")
     }
 
     class Builder {

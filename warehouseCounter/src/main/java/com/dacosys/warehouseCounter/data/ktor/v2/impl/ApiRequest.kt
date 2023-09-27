@@ -732,7 +732,10 @@ class ApiRequest {
     }
 
     companion object {
-        val apiUrl by lazy { settingsVm.urlPanel }
+        val apiUrl: String
+            get() {
+                return settingsVm.urlPanel
+            }
 
         const val VERSION_PATH = "v2"
 

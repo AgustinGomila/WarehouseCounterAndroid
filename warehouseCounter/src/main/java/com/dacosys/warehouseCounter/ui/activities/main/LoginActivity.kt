@@ -193,21 +193,15 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         }
     }
 
-    private fun onGetDatabaseData(data: DatabaseData?) {
-        if (data != null) {
-            thread {
-                val sync = DownloadDb.Builder()
-                    .onEventData { showSnackBar(it.text, it.snackBarType) }
-                    .callBack(this)
-                    .timeFileUrl(data.dbDate)
-                    .dbFileUrl(data.dbFile)
-                    .build()
-                sync.execute()
-            }
-        } else {
-            showProgressBar()
-            setButton(ButtonStyle.REFRESH)
-            attemptSync = false
+    private fun onGetDatabaseData(data: DatabaseData) {
+        thread {
+            val sync = DownloadDb.Builder()
+                .onEventData { showSnackBar(it.text, it.snackBarType) }
+                .callBack(this)
+                .timeFileUrl(data.dbDate)
+                .dbFileUrl(data.dbFile)
+                .build()
+            sync.execute()
         }
     }
 
@@ -539,7 +533,15 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 onEvent = {
                     if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType)
                 },
-                onFinish = { onGetDatabaseData(it) }).execute()
+                onFinish = {
+                    if (it != null) {
+                        onGetDatabaseData(it)
+                    } else {
+                        showProgressBar()
+                        setButton(ButtonStyle.REFRESH)
+                        attemptSync = false
+                    }
+                }).execute()
         }
     }
 
