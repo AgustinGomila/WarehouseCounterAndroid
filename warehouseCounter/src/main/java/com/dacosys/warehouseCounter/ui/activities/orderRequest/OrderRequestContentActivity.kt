@@ -85,7 +85,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     Scanner.ScannerListener,
     SwipeRefreshLayout.OnRefreshListener, Rfid.RfidDeviceListener, OrcAdapter.CheckedChangedListener {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({

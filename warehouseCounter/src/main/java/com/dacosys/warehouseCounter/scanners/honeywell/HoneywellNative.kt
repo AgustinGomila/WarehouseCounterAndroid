@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : Scanner(),
     BarcodeReader.BarcodeListener, BarcodeReader.TriggerListener {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     private var initialized = AtomicBoolean(false)
     private var initializing = AtomicBoolean(false)

@@ -11,6 +11,8 @@ import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.InputType
 import android.util.Log
 import android.view.KeyEvent
@@ -39,6 +41,12 @@ import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.database.DatabaseData
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.database.GetDatabase
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest
+import com.dacosys.warehouseCounter.data.room.dao.client.ClientCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.itemCategory.ItemCategoryCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.itemRegex.ItemRegexCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.lot.LotCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.user.UserCoroutines
 import com.dacosys.warehouseCounter.data.room.database.WcDatabase
 import com.dacosys.warehouseCounter.data.room.database.WcTempDatabase
@@ -87,7 +95,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     ProxySetup.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded,
     DownloadDb.DownloadDbTask {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
@@ -137,24 +145,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         }
     }
 
-    private fun onGetDatabaseData(data: DatabaseData?) {
-        if (data != null) {
-            thread {
-                val sync = DownloadDb.Builder()
-                    .onEventData { showSnackBar(it.text, it.snackBarType) }
-                    .callBack(this)
-                    .timeFileUrl(data.dbDate)
-                    .dbFileUrl(data.dbFile)
-                    .build()
-                sync.execute()
-            }
-        } else {
-            showProgressBar()
-            setButton(ButtonStyle.REFRESH)
-            attemptSync = false
-        }
-    }
-
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
         makeText(binding.root, text, snackBarType)
     }
@@ -174,7 +164,17 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             DownloadStatus.CANCELED, /* CANCELED = Sin conexión */
             -> {
                 showProgressBar()
-                enableLogin()
+
+                Handler(Looper.getMainLooper()).postDelayed({
+                    setHeader()
+                    closeCurrentInstances()
+
+                    if (BuildConfig.DEBUG) {
+                        setHeaderDbInfo()
+                    }
+
+                    enableLogin()
+                }, 200)
             }
 
             DownloadStatus.CRASHED -> {
@@ -190,6 +190,24 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
             DownloadStatus.INFO -> {
             }
+        }
+    }
+
+    private fun onGetDatabaseData(data: DatabaseData?) {
+        if (data != null) {
+            thread {
+                val sync = DownloadDb.Builder()
+                    .onEventData { showSnackBar(it.text, it.snackBarType) }
+                    .callBack(this)
+                    .timeFileUrl(data.dbDate)
+                    .dbFileUrl(data.dbFile)
+                    .build()
+                sync.execute()
+            }
+        } else {
+            showProgressBar()
+            setButton(ButtonStyle.REFRESH)
+            attemptSync = false
         }
     }
 
@@ -310,7 +328,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 ColorStateList.valueOf(ResourcesCompat.getColor(resources, R.color.cornsilk, null))
 
             binding.loginImageView.setOnClickListener {
-                user = userSpinnerFragment!!.selectedUser
+                user = userSpinnerFragment?.selectedUser
                 password = binding.passwordEditText.text.toString()
                 attemptLogin()
             }
@@ -330,7 +348,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         if (Statics.downloadDbRequired) return
 
         try {
-            runOnUiThread { userSpinnerFragment!!.reFill() }
+            runOnUiThread { userSpinnerFragment?.reFill() }
         } catch (ex: Exception) {
             ErrorLog.writeLog(this, tag, ex.message.toString())
         }
@@ -352,7 +370,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putParcelable(ARG_USER, userSpinnerFragment!!.selectedUser)
+        savedInstanceState.putParcelable(ARG_USER, userSpinnerFragment?.selectedUser)
         savedInstanceState.putString(ARG_PASSWORD, binding.passwordEditText.text.toString())
     }
 
@@ -439,6 +457,41 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         }
     }
 
+    private fun setHeaderDbInfo() {
+        runOnUiThread {
+            binding.dbInfoLayout.visibility = VISIBLE
+
+            ItemCoroutines.count {
+                binding.dbItemsTextView.text =
+                    String.format(getString(R.string._0_items), it.toString())
+            }
+            ItemCategoryCoroutines.count {
+                binding.dbCategoriesTextView.text =
+                    String.format(getString(R.string._0_categories), it.toString())
+            }
+            ClientCoroutines.count {
+                binding.dbClientsTextView.text =
+                    String.format(getString(R.string._0_clients), it.toString())
+            }
+            ItemCodeCoroutines.count {
+                binding.dbItemCodesTextView.text =
+                    String.format(getString(R.string._0_item_codes), it.toString())
+            }
+            ItemRegexCoroutines.count {
+                binding.dbItemRegexTextView.text =
+                    String.format(getString(R.string._0_item_regexs), it.toString())
+            }
+            LotCoroutines.count {
+                binding.dbLotTextView.text =
+                    String.format(getString(R.string._0_lots), it.toString())
+            }
+            UserCoroutines.count {
+                binding.dbUserTextView.text =
+                    String.format(getString(R.string._0_users), it.toString())
+            }
+        }
+    }
+
     private fun setHeaderUserName() {
         binding.clientTextView.text = settingsVm.installationCode
     }
@@ -503,17 +556,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             attemptSync = false
         } else {
             try {
-                /* Des-inicializamos IC para evitar que se
-                   suban imágenes pendientes antes de autentificarse.
-                   Escenario en el que el usuario ha vuelto a esta
-                   actividad después haber estado autentificado.
-                 */
-                closeImageControl()
-
-                WcDatabase.cleanInstance()
-                WcTempDatabase.cleanInstance()
-                IcDatabase.cleanInstance()
-
+                closeCurrentInstances()
                 initSync()
             } catch (ex: Exception) {
                 showProgressBar()
@@ -524,6 +567,19 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 attemptSync = false
             }
         }
+    }
+
+    private fun closeCurrentInstances() {
+        /** Cerramos ImageControl para evitar que se
+         *  suban imágenes pendientes antes de autentificarse.
+         *  Escenario en el que el usuario ha vuelto a esta
+         *  actividad después haber estado autentificado.
+         */
+        closeImageControl()
+
+        WcDatabase.cleanInstance()
+        WcTempDatabase.cleanInstance()
+        IcDatabase.cleanInstance()
     }
 
     private fun configApp() {
@@ -611,8 +667,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         attemptRunning = true
 
         // Store values at the time of the login attempt.
-        val userId = userSpinnerFragment!!.selectedUserId ?: 0L
-        val userPass = userSpinnerFragment!!.selectedUserPass
+        val userId = userSpinnerFragment?.selectedUserId ?: 0L
+        val userPass = userSpinnerFragment?.selectedUserPass ?: ""
         val password = binding.passwordEditText.text.toString()
 
         attemptLogin(userId.toLong(), userPass, password)
@@ -640,7 +696,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             // There was an error; don't attempt login and focus the first
             // form field with an error.
             runOnUiThread {
-                userSpinnerFragment!!.view?.requestFocus()
+                userSpinnerFragment?.view?.requestFocus()
             }
         } else {
             // Show a progress spinner and kick off a background task to
@@ -790,11 +846,16 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             }
 
             R.id.action_trigger_scan -> {
-                ///* For Debug */
-                //scannerCompleted(
-                //    """{"config":{"client_email":"example@mail.com","client_password":"1234"}}""".trimIndent()
-                //)
-                //return super.onOptionsItemSelected(item)
+                /* For Debug */
+                // if (!settingsVm.clientEmail.contains("casapalm")) {
+                //     scannerCompleted(
+                //         """{"config":{"client_email":"administracion@casapalm.com.ar","client_password":"9827a"}}""".trimIndent()
+                //     )
+                // } else {
+                //     scannerCompleted(
+                //         """{"config":{"client_email":"miguel@dacosys.com","client_password":"sarasa123!!"}}""".trimIndent()
+                //     )
+                // }
 
                 LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
@@ -825,7 +886,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
             FINISHED -> {
                 showProgressBar()
-                if (userSpinnerFragment!!.count < 1) {
+                if ((userSpinnerFragment?.count ?: 0) < 1) {
                     setButton(ButtonStyle.REFRESH)
                     Log.d(
                         tag,

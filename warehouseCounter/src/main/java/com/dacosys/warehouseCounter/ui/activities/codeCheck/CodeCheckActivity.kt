@@ -32,7 +32,7 @@ import java.util.*
 
 class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     private var rejectNewInstances = false
 

@@ -33,7 +33,7 @@ import java.io.FileReader
 import kotlin.concurrent.thread
 
 class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDownloadFileTask {
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     interface DownloadDbTask {
         fun onDownloadDbTask(downloadStatus: DownloadStatus)
@@ -132,10 +132,11 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
         goForrest()
     }
 
+
     private fun goForrest() {
         try {
-            val destTimeFile = destTimeFile
-            val destDbFile = destDbFile
+            val cacheTimeFile = destTimeFile
+            val cacheDbFile = destDbFile
 
             if (dbFileUrl.isEmpty() || timeFileUrl.isEmpty()) {
                 errorMsg = context.getString(R.string.database_name_is_invalid)
@@ -151,15 +152,15 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
             // Leer el archivo antiguo de fecha de creación de la base de datos
             // en el servidor, si la fecha es igual a la del archivo del servidor,
             // no hace falta descargar la base de datos.
-            if (destTimeFile.exists()) {
+            if (cacheTimeFile.exists()) {
                 oldDateTimeStr = getDateTimeStr()
-                destTimeFile.delete()
+                cacheTimeFile.delete()
             }
 
             downloadStatus = null
 
             var downloadTask = DownloadFileTask.Builder()
-                .urlDestination(UrlDestParam(url = timeFileUrl, destination = destTimeFile))
+                .urlDestination(UrlDestParam(url = timeFileUrl, destination = cacheTimeFile))
                 .fileType(FileType.TIME_FILE)
                 .mCallback(this)
                 .build()
@@ -189,7 +190,7 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
                         } else {
                             downloadStatus = null
                             downloadTask = DownloadFileTask.Builder()
-                                .urlDestination(UrlDestParam(url = timeFileUrl, destination = destTimeFile))
+                                .urlDestination(UrlDestParam(url = timeFileUrl, destination = cacheTimeFile))
                                 .fileType(FileType.TIME_FILE)
                                 .mCallback(this)
                                 .build()
@@ -237,14 +238,15 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
             }
 
             // Eliminar la base de datos antigua
-            if (destDbFile.exists()) {
-                destDbFile.delete()
+            if (cacheDbFile.exists()) {
+                Log.d(tag, "DB Caché eliminada")
+                cacheDbFile.delete()
             }
 
             try {
                 downloadStatus = null
                 downloadTask = DownloadFileTask.Builder()
-                    .urlDestination(UrlDestParam(url = dbFileUrl, destination = destDbFile))
+                    .urlDestination(UrlDestParam(url = dbFileUrl, destination = cacheDbFile))
                     .fileType(FileType.DB_FILE)
                     .mCallback(this)
                     .build()
@@ -281,19 +283,15 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
             // Detener la instancia actual de la base de datos de Room.
             WcDatabase.cleanInstance()
 
-            // Borrar la base de datos actual de Room del almacenamiento del dispositivo.
-            // Copiar la nueva base de datos descargada desde la web a la ubicación de la base de datos anterior.
-            // Se iniciará una nueva instancia de la base de datos de Room utilizando la base de datos actualizada la próxima vez que se la invoque.
-            FileHelper.copyDataBase(this.destDbFile, mCallback)
+            // Sobrescribir la base de datos actual de Room con la nueva base de datos descargada desde la web.
+            FileHelper.copyDataBase(destDbFile)
 
+            // Se iniciará una nueva instancia de la base de datos de Room utilizando la base de datos actualizada la próxima vez que se la invoque.
+            mCallback.onDownloadDbTask(FINISHED)
         } catch (ex: Exception) {
             errorMsg = context.getString(R.string.error_downloading_the_database)
             mCallback.onDownloadDbTask(CRASHED)
-            return
         }
-
-        mCallback.onDownloadDbTask(FINISHED)
-        return
     }
 
     /**

@@ -249,34 +249,37 @@ class UserSpinnerFragment : Fragment() {
 
     private fun getUsers() {
         UserCoroutines.get {
-            allUser = it
-
-            if (!allUser!!.any() && Statics.SUPER_DEMO_MODE) {
-                // En modo desarrollo o para mostrar sin datos reales
-                // y si no hay usuarios agregados, agrego
-                // DATOS FALSOS de 5 items de fantasía
-                val fantasyNames = arrayListOf<String>()
-                fantasyNames.add("miguel")
-                fantasyNames.add("adriana")
-                fantasyNames.add("milagros")
-                fantasyNames.add("arturo")
-                fantasyNames.add("agustin")
-                for (i in 1..5) {
-                    UserCoroutines.add(
-                        User(
-                            name = fantasyNames[i - 1],
-                            password = "81dc9bdb52d04dc20036dbd8313ed055"
-                        )
-                    )
-                }
-
-                UserCoroutines.get { it2 ->
-                    allUser = it2
-                    fillAdapter()
-                }
+            if (!it.any() && Statics.SUPER_DEMO_MODE) {
+                addFantasyUsers()
             } else {
+                allUser = it
                 fillAdapter()
             }
+        }
+    }
+
+    private fun addFantasyUsers() {
+        // En modo desarrollo o para mostrar sin datos reales
+        // y si no hay usuarios agregados, agrego
+        // DATOS FALSOS de 5 items de fantasía
+        val fantasyNames = arrayListOf<String>()
+        fantasyNames.add("miguel")
+        fantasyNames.add("adriana")
+        fantasyNames.add("milagros")
+        fantasyNames.add("arturo")
+        fantasyNames.add("agustin")
+        for (i in 1..5) {
+            UserCoroutines.add(
+                User(
+                    name = fantasyNames[i - 1],
+                    password = "81dc9bdb52d04dc20036dbd8313ed055"
+                )
+            )
+        }
+
+        UserCoroutines.get {
+            allUser = it
+            fillAdapter()
         }
     }
 

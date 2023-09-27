@@ -25,7 +25,7 @@ import kotlin.experimental.inv
 
 class Vh75Bt(private var listener: RfidDeviceListener?) : Rfid() {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     /**
      * Constructor. Prepares a new Vh75Bt session.     *

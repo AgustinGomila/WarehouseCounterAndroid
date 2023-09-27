@@ -307,6 +307,108 @@ class ApiRequest {
             })
     }
 
+
+    /**
+     * Obtiene información de la base de datos correspondiente a la versión especificada.
+     *
+     * @param version la versión de la base de datos para la que se desea obtener información.
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de obtención de información de la base de datos.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es un objeto [DatabaseData].
+     */
+    suspend fun getDatabase(version: String, callback: (APIResponse<DatabaseData>) -> Unit) {
+        suspend fun httpResponse(): HttpResponse {
+            val url = URL(apiUrl)
+
+            val response = httpClient.get {
+                basicAuth(
+                    username = Statics.currentUserName, password = Statics.currentPass
+                )
+                url {
+                    protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
+                    else URLProtocol.HTTPS
+                    host = url.host
+                    path("${url.path}/$VERSION_PATH/$DATABASE_PATH/$DB_PATH$version")
+                }
+            }
+            return response
+        }
+
+        val result = handleHttpResponse<DatabaseData>(
+            response = httpResponse(),
+            success = { it },
+            error = { it }
+        )
+
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
+    }
+
+    /**
+     * Obtiene una lista de ubicaciones de pedidos utilizando los filtros proporcionados en [filter].
+     *
+     * @param filter una lista de parámetros de filtro que controlan la consulta de ubicaciones de pedidos.
+     * @param pagination los parámetros de paginación para la consulta de objetos.
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de obtención de ubicaciones de pedidos.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es una lista de objetos [OrderLocation].
+     */
+    suspend inline fun <reified T : Any> getListOf(
+        listKey: String,
+        filter: ArrayList<ApiFilterParam>,
+        pagination: ApiPaginationParam,
+        callback: (APIResponse<List<T>>) -> Unit
+    ) {
+        val url = URL(apiUrl)
+
+        val params = Parameters.build {
+            appendAll(ApiFilterParam.asParameter(filter))
+            appendAll(ApiPaginationParam.asParameter(pagination))
+        }
+
+        val urlComplete = "${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH"
+
+        if (BuildConfig.DEBUG) {
+            println("URL: $urlComplete")
+            println("PARAMS: $params")
+        }
+
+        val httpResponse = httpClient.get {
+            basicAuth(
+                username = Statics.currentUserName, password = Statics.currentPass
+            )
+            url {
+                protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
+                else URLProtocol.HTTPS
+                host = url.host
+                path(urlComplete)
+                parameters.appendAll(params)
+            }
+        }
+
+        val result = handleHttpListResponse<T>(
+            response = httpResponse,
+            success = { it },
+            error = { it },
+            listKey = listKey
+        )
+
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
+    }
+
     /**
      * Obtiene una lista de objetos del tipo especificado [T] desde el recurso en [objPath], opcionalmente aplicando acciones y filtros.
      *
@@ -336,6 +438,7 @@ class ApiRequest {
         }
 
         val urlComplete = "${url.path}/$VERSION_PATH/$objPath/"
+
         if (BuildConfig.DEBUG) {
             println("URL: $urlComplete")
             println("PARAMS: $params")
@@ -395,64 +498,6 @@ class ApiRequest {
                 else URLProtocol.HTTPS
                 host = url.host
                 path("${url.path}/$VERSION_PATH/$objPath/$CREATE_PATH")
-            }
-            contentType(ContentType.Application.Json)
-            setBody(payload)
-        }
-
-        val result = handleHttpResponse<T>(
-            response = response,
-            success = { it },
-            error = { it }
-        )
-
-        result.fold(
-            ifLeft = {
-                callback(APIResponse(it))
-            },
-            ifRight = {
-                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
-                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
-            })
-    }
-
-    /**
-     * Actualiza un objeto del tipo especificado [T] en el recurso especificado por [objPath] utilizando los datos proporcionados en [payload].
-     *
-     * @param T el tipo de objeto que se espera recibir como respuesta.
-     * @param objPath la ruta al recurso donde se actualizará el objeto.
-     * @param id el ID del objeto que se desea actualizar.
-     * @param payload un objeto que contiene los datos necesarios para actualizar el objeto en el recurso.
-     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de actualización.
-     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación.
-     */
-    suspend inline fun <reified T : Any> update(
-        objPath: String, id: Long, payload: Any, callback: (APIResponse<T>) -> Unit
-    ) {
-        val url = URL(apiUrl)
-        val columnName = EXTENSION_ID
-
-        val params = Parameters.build {
-            append(columnName, id.toString())
-        }
-
-        val urlComplete = "${url.path}/$VERSION_PATH/$objPath/$UPDATE_PATH"
-        if (BuildConfig.DEBUG) {
-            println("URL: $urlComplete")
-            println("PARAM: $columnName $id")
-        }
-
-        val response = httpClient.put {
-            basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
-            )
-            url {
-                protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
-                else URLProtocol.HTTPS
-                host = url.host
-                path(urlComplete)
-                parameters.appendAll(params)
             }
             contentType(ContentType.Application.Json)
             setBody(payload)
@@ -568,6 +613,66 @@ class ApiRequest {
             })
     }
 
+
+    /**
+     * Actualiza un objeto del tipo especificado [T] en el recurso especificado por [objPath] utilizando los datos proporcionados en [payload].
+     *
+     * @param T el tipo de objeto que se espera recibir como respuesta.
+     * @param objPath la ruta al recurso donde se actualizará el objeto.
+     * @param id el ID del objeto que se desea actualizar.
+     * @param payload un objeto que contiene los datos necesarios para actualizar el objeto en el recurso.
+     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de actualización.
+     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación.
+     */
+    suspend inline fun <reified T : Any> update(
+        objPath: String, id: Long, payload: Any, callback: (APIResponse<T>) -> Unit
+    ) {
+        val url = URL(apiUrl)
+        val columnName = EXTENSION_ID
+
+        val params = Parameters.build {
+            append(columnName, id.toString())
+        }
+
+        val urlComplete = "${url.path}/$VERSION_PATH/$objPath/$UPDATE_PATH"
+
+        if (BuildConfig.DEBUG) {
+            println("URL: $urlComplete")
+            println("PARAM: $columnName $id")
+        }
+
+        val response = httpClient.put {
+            basicAuth(
+                username = Statics.currentUserName, password = Statics.currentPass
+            )
+            url {
+                protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
+                else URLProtocol.HTTPS
+                host = url.host
+                path(urlComplete)
+                parameters.appendAll(params)
+            }
+            contentType(ContentType.Application.Json)
+            setBody(payload)
+        }
+
+        val result = handleHttpResponse<T>(
+            response = response,
+            success = { it },
+            error = { it }
+        )
+
+        result.fold(
+            ifLeft = {
+                callback(APIResponse(it))
+            },
+            ifRight = {
+                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
+                println(r)
+                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
+            })
+    }
+
     /**
      * Obtiene y muestra información detallada de un objeto específico del tipo [T] en [objPath] con el ID proporcionado.
      *
@@ -590,6 +695,7 @@ class ApiRequest {
         }
 
         val urlComplete = "${url.path}/$VERSION_PATH/$objPath/$VIEW_PATH"
+
         if (BuildConfig.DEBUG) {
             println("URL: $urlComplete")
             println("PARAMS: $params")
@@ -612,106 +718,6 @@ class ApiRequest {
             response = response,
             success = { it },
             error = { it }
-        )
-
-        result.fold(
-            ifLeft = {
-                callback(APIResponse(it))
-            },
-            ifRight = {
-                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
-                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
-            })
-    }
-
-    /**
-     * Obtiene información de la base de datos correspondiente a la versión especificada.
-     *
-     * @param version la versión de la base de datos para la que se desea obtener información.
-     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de obtención de información de la base de datos.
-     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es un objeto [DatabaseData].
-     */
-    suspend fun getDatabase(version: String, callback: (APIResponse<DatabaseData>) -> Unit) {
-        suspend fun httpResponse(): HttpResponse {
-            val url = URL(apiUrl)
-
-            val response = httpClient.get {
-                basicAuth(
-                    username = Statics.currentUserName, password = Statics.currentPass
-                )
-                url {
-                    protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
-                    else URLProtocol.HTTPS
-                    host = url.host
-                    path("${url.path}/$VERSION_PATH/$DATABASE_PATH/$DB_PATH$version")
-                }
-            }
-            return response
-        }
-
-        val result = handleHttpResponse<DatabaseData>(
-            response = httpResponse(),
-            success = { it },
-            error = { it }
-        )
-
-        result.fold(
-            ifLeft = {
-                callback(APIResponse(it))
-            },
-            ifRight = {
-                val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
-                callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
-            })
-    }
-
-    /**
-     * Obtiene una lista de ubicaciones de pedidos utilizando los filtros proporcionados en [filter].
-     *
-     * @param filter una lista de parámetros de filtro que controlan la consulta de ubicaciones de pedidos.
-     * @param pagination los parámetros de paginación para la consulta de objetos.
-     * @param callback una función de devolución de llamada que se ejecutará cuando se complete la operación de obtención de ubicaciones de pedidos.
-     *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es una lista de objetos [OrderLocation].
-     */
-    suspend inline fun <reified T : Any> getListOf(
-        listKey: String,
-        filter: ArrayList<ApiFilterParam>,
-        pagination: ApiPaginationParam,
-        callback: (APIResponse<List<T>>) -> Unit
-    ) {
-        val url = URL(apiUrl)
-
-        val params = Parameters.build {
-            appendAll(ApiFilterParam.asParameter(filter))
-            appendAll(ApiPaginationParam.asParameter(pagination))
-        }
-
-        val urlComplete = "${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH"
-        if (BuildConfig.DEBUG) {
-            println("URL: $urlComplete")
-            println("PARAMS: $params")
-        }
-
-        val httpResponse = httpClient.get {
-            basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
-            )
-            url {
-                protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
-                else URLProtocol.HTTPS
-                host = url.host
-                path(urlComplete)
-                parameters.appendAll(params)
-            }
-        }
-
-        val result = handleHttpListResponse<T>(
-            response = httpResponse,
-            success = { it },
-            error = { it },
-            listKey = listKey
         )
 
         result.fold(

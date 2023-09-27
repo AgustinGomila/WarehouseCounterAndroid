@@ -29,6 +29,7 @@ abstract class WcTempDatabase : RoomDatabase() {
     abstract fun pendingLabelDao(): PendingLabelDao
 
     companion object {
+        private val TAG = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
         const val DATABASE_VERSION = 3
         const val DATABASE_NAME = "wc_temp.sqlite"
 
@@ -37,9 +38,10 @@ abstract class WcTempDatabase : RoomDatabase() {
 
         val database: WcTempDatabase
             get() {
-                return INSTANCE ?: synchronized(this) {
-                    val instance =
-                        Room.databaseBuilder(
+                synchronized(this) {
+                    var instance = INSTANCE
+                    if (instance == null) {
+                        instance = Room.databaseBuilder(
                             context = context,
                             klass = WcTempDatabase::class.java,
                             name = DATABASE_NAME
@@ -47,9 +49,10 @@ abstract class WcTempDatabase : RoomDatabase() {
                             .addMigrations(MIGRATION_1_2)
                             .addMigrations(MIGRATION_2_3)
                             .build()
-
-                    INSTANCE = instance
-                    instance
+                        INSTANCE = instance
+                        android.util.Log.i(TAG, "NEW Instance: $INSTANCE")
+                    }
+                    return instance
                 }
             }
 
@@ -83,7 +86,10 @@ abstract class WcTempDatabase : RoomDatabase() {
         }
 
         fun cleanInstance() {
-            INSTANCE?.close()
+            if (INSTANCE?.isOpen == true) {
+                android.util.Log.i(TAG, "CLOSING Instance: $INSTANCE")
+                INSTANCE?.close()
+            }
             INSTANCE = null
         }
     }

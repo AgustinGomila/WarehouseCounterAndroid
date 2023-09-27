@@ -43,7 +43,7 @@ import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     private var ch: CounterHandler? = null
 

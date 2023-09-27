@@ -16,6 +16,9 @@ import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategoryEn
 
 @Dao
 interface ItemDao {
+    @Query("SELECT COUNT(*) FROM ${Entry.TABLE_NAME}")
+    suspend fun count(): Int
+
     @Query("SELECT * FROM ${Entry.TABLE_NAME}")
     suspend fun getAll(): List<Item>
 

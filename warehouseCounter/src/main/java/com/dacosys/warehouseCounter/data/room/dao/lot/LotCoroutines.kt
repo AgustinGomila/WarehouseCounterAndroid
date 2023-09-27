@@ -1,17 +1,17 @@
-package com.dacosys.warehouseCounter.data.room.dao.itemRegex
+package com.dacosys.warehouseCounter.data.room.dao.lot
 
 import android.util.Log
 import com.dacosys.warehouseCounter.data.room.database.WcDatabase.Companion.database
-import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegex
+import com.dacosys.warehouseCounter.data.room.entity.lot.Lot
 import kotlinx.coroutines.*
 
-object ItemRegexCoroutines {
+object LotCoroutines {
     @Throws(Exception::class)
     fun count(
         onResult: (Int) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = async { database.itemRegexDao().count() }.await()
+            val r = async { database.lotDao().count() }.await()
             onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())
@@ -21,16 +21,10 @@ object ItemRegexCoroutines {
 
     @Throws(Exception::class)
     fun get(
-        onlyActive: Boolean = true,
-        onResult: (ArrayList<ItemRegex>) -> Unit = {},
+        onResult: (ArrayList<Lot>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = async {
-                ArrayList(
-                    if (onlyActive) database.itemRegexDao().getActive()
-                    else database.itemRegexDao().getAll()
-                )
-            }.await()
+            val r = async { ArrayList(database.lotDao().getAll()) }.await()
             onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())

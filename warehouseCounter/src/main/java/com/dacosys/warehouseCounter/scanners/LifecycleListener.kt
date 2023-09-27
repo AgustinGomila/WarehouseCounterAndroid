@@ -112,7 +112,7 @@ import id.pahlevikun.jotter.Jotter
 
 object LifecycleListener : Jotter.Listener {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     private const val REQUEST_BLUETOOTH_CONNECT = 2001
 

@@ -25,7 +25,7 @@ class GetItemFromCode(
     private var onFinish: (GetFromCodeResult) -> Unit = {},
 ) {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     data class GetFromCodeResult(var scannedCode: String = "", var item: Item? = null, var itemCode: ItemCode? = null)
 

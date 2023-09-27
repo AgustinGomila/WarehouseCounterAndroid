@@ -6,6 +6,20 @@ import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import kotlinx.coroutines.*
 
 object ItemCodeCoroutines {
+
+    @Throws(Exception::class)
+    fun count(
+        onResult: (Int) -> Unit = {},
+    ) = CoroutineScope(Job() + Dispatchers.IO).launch {
+        try {
+            val r = async { database.itemCodeDao().count() }.await()
+            onResult(r)
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, e.message.toString())
+            onResult(0)
+        }
+    }
+
     @Throws(Exception::class)
     fun getByItemId(
         itemId: Long,

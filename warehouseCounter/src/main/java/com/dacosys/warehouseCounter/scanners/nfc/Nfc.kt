@@ -28,7 +28,7 @@ import kotlin.experimental.or
 
 object Nfc {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     private var mNfcAdapter: NfcAdapter? = null
 

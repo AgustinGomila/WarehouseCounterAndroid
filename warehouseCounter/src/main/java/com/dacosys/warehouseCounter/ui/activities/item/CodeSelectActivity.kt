@@ -36,7 +36,7 @@ import kotlin.concurrent.thread
 class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     ContractsAutoCompleteTextView.OnContractsAvailability, KeyboardVisibilityEventListener {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     override fun onDestroy() {
         destroyLocals()

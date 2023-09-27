@@ -190,4 +190,100 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp" android:id="@+id/dbInfoLayout"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp" android:layout_marginBottom="4dp"
+            android:background="@drawable/layout_thin_border_stock_audit_from_device" android:visibility="gone">
+
+        <androidx.constraintlayout.widget.Guideline
+                android:orientation="vertical"
+                app:layout_constraintGuide_percent="0.5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:id="@+id/guidelineDbInfoCenter"/>
+        <TextView
+                android:id="@+id/dbItemsTextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/_0_items"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/guidelineDbInfoCenter"/>
+        <TextView
+                android:id="@+id/dbCategoriesTextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/_0_categories"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="@+id/guidelineDbInfoCenter"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+        <TextView
+                android:id="@+id/dbClientsTextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/_0_clients"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/dbCategoriesTextView"
+                app:layout_constraintEnd_toStartOf="@+id/guidelineDbInfoCenter"/>
+        <TextView
+                android:id="@+id/dbItemCodesTextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/_0_item_codes"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="@+id/guidelineDbInfoCenter"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/dbCategoriesTextView"/>
+        <TextView
+                android:id="@+id/dbItemRegexTextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/_0_item_regexs"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/dbItemCodesTextView"
+                app:layout_constraintEnd_toStartOf="@+id/guidelineDbInfoCenter"/>
+        <TextView
+                android:id="@+id/dbLotTextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/_0_lots"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="@+id/guidelineDbInfoCenter"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/dbItemCodesTextView"/>
+        <TextView
+                android:id="@+id/dbUserTextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/_0_users"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/dbLotTextView"
+                app:layout_constraintEnd_toStartOf="@+id/guidelineDbInfoCenter"/>
+        <TextView
+                android:id="@+id/dbStatusLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/database_status"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/dbUserTextView"
+                app:layout_constraintEnd_toEndOf="parent" android:textStyle="bold"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

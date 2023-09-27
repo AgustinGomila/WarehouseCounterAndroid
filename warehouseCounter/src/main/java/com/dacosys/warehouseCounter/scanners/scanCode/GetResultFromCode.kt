@@ -24,7 +24,7 @@ class GetResultFromCode(
     private var searchOrder: Boolean = false,
     private var onFinish: (GetFromCodeResult) -> Unit
 ) {
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     data class GetFromCodeResult(var typedObject: Any?)
 

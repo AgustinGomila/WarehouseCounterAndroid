@@ -23,7 +23,7 @@ import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_RESULT_
 @Suppress("unused")
 class ZebraBroadcastReceiver : BroadcastReceiver {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     private lateinit var zebra: Zebra
 

@@ -24,7 +24,7 @@ import kotlin.math.roundToInt
 class Colors {
     companion object {
 
-        private val tag = this::class.java.simpleName
+        private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
         fun changeDrawableColor(icon: Int, newColor: Int): Drawable {
             val mDrawable = ContextCompat.getDrawable(context, icon)!!.mutate()

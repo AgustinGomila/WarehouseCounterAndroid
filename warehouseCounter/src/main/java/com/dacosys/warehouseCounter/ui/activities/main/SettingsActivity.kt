@@ -193,7 +193,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
     }
 
     companion object {
-        private val tag = this::class.java.simpleName
+        private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
         const val ARG_TITLE = "title"
 

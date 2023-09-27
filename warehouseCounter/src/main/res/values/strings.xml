@@ -1,5 +1,4 @@
 <resources>
-    <string name="_0_items">0 ítems</string>
     <string name="_1x">1X</string>
     <string name="_item_differences">%s ítems diferentes</string>
     <string name="_product_differences">%s diferencias de productos</string>
@@ -823,4 +822,12 @@
     <string name="template">Plantilla</string>
     <string name="default_page_size">Tamaño de página predefinido</string>
     <string name="page_size_limit">Tamaño límite de pagina</string>
+    <string name="_0_items">%s items</string>
+    <string name="_0_categories">%s categorías</string>
+    <string name="_0_clients">%s clientes</string>
+    <string name="_0_item_codes">%s códigos</string>
+    <string name="_0_item_regexs">%s Regex</string>
+    <string name="_0_lots">%s lotes</string>
+    <string name="_0_users">%s usuarios</string>
+    <string name="database_status">Estado de la base de datos</string>
 </resources>

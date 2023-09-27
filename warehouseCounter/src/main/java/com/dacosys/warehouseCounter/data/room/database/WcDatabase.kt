@@ -1,5 +1,6 @@
 package com.dacosys.warehouseCounter.data.room.database
 
+import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -36,6 +37,7 @@ abstract class WcDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
 
     companion object {
+        private val TAG = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
         const val DATABASE_VERSION = 2
         const val DATABASE_NAME = "wc.sqlite"
 
@@ -44,9 +46,10 @@ abstract class WcDatabase : RoomDatabase() {
 
         val database: WcDatabase
             get() {
-                return INSTANCE ?: synchronized(this) {
-                    val instance =
-                        Room.databaseBuilder(
+                synchronized(this) {
+                    var instance = INSTANCE
+                    if (instance == null) {
+                        instance = Room.databaseBuilder(
                             context = context,
                             klass = WcDatabase::class.java,
                             name = DATABASE_NAME
@@ -54,14 +57,18 @@ abstract class WcDatabase : RoomDatabase() {
                             .createFromAsset(DATABASE_NAME)
                             .addMigrations(MIGRATION_1_2)
                             .build()
-
-                    INSTANCE = instance
-                    instance
+                        INSTANCE = instance
+                        Log.i(TAG, "NEW Instance: $INSTANCE")
+                    }
+                    return instance
                 }
             }
 
         fun cleanInstance() {
-            INSTANCE?.close()
+            if (INSTANCE?.isOpen == true) {
+                Log.i(TAG, "CLOSING Instance: $INSTANCE")
+                INSTANCE?.close()
+            }
             INSTANCE = null
         }
 

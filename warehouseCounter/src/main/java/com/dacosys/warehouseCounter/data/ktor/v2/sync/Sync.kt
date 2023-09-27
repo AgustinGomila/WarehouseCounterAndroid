@@ -23,7 +23,7 @@ import kotlin.concurrent.thread
  * 2. Solicitar los arqueos completados (en el dispositivo)
  */
 class Sync private constructor(builder: Builder) {
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     private var onNewOrders: (ArrayList<OrderRequest>) -> Unit = {}
     private var onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {}

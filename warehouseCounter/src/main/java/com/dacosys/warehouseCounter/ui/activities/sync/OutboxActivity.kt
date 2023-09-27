@@ -58,7 +58,7 @@ import kotlin.io.path.Path
 
 class OutboxActivity : AppCompatActivity() {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     private var isListViewFilling = false
     private var multiSelect = true

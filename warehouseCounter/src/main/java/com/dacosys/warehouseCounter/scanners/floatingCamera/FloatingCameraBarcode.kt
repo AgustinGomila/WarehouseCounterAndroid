@@ -47,7 +47,7 @@ import kotlin.math.min
 class FloatingCameraBarcode(private var activity: AppCompatActivity) : BarcodeCallback,
     DecoratedBarcodeView.TorchListener {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     // Se utiliza exteriormente para conocer la actividad anfitriona de la ventana flotante
     var activityName: String = ""

@@ -45,7 +45,7 @@ open class Rfid {
 
     companion object {
 
-        private val tag = this::class.java.simpleName
+        private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
         var rfidDevice: Rfid? = null
         fun resume(listener: RfidDeviceListener) {

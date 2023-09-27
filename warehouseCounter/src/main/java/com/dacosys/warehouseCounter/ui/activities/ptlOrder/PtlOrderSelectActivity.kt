@@ -59,7 +59,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     Scanner.ScannerListener, Rfid.RfidDeviceListener, PtlOrderAdapter.CheckedChangedListener,
     PtlOrderAdapter.DataSetChangedListener {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     override fun onDestroy() {
         destroyLocals()

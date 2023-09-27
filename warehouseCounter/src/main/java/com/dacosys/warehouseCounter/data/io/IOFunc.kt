@@ -29,7 +29,7 @@ import java.util.*
 
 class IOFunc {
     companion object {
-        private val tag = this::class.java.simpleName
+        private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
         private const val PENDING_COUNT_PATH = "/pending_counts"
         private const val COMPLETED_COUNT_PATH = "/completed_counts"

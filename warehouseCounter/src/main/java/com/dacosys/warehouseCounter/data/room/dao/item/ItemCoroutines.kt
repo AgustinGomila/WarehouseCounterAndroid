@@ -21,6 +21,19 @@ object ItemCoroutines {
     }
 
     @Throws(Exception::class)
+    fun count(
+        onResult: (Int) -> Unit = {},
+    ) = CoroutineScope(Job() + Dispatchers.IO).launch {
+        try {
+            val r = async { database.itemDao().count() }.await()
+            onResult(r)
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, e.message.toString())
+            onResult(0)
+        }
+    }
+
+    @Throws(Exception::class)
     fun get(
         onResult: (ArrayList<Item>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {

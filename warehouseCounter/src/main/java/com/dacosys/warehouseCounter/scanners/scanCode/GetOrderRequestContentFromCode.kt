@@ -26,7 +26,7 @@ class GetOrderRequestContentFromCode(
     private var onEvent: (SnackBarEventData) -> Unit = {},
     private var onFinish: (GetFromCodeResult) -> Unit = {},
 ) {
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     data class GetFromCodeResult(var orc: OrderRequestContent? = null, var itemCode: ItemCode? = null)
 

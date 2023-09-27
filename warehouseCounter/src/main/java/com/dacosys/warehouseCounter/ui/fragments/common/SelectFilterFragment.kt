@@ -34,7 +34,7 @@ import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 
 class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     /**
      * Required constructor for Fragments

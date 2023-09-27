@@ -6,14 +6,12 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.room.database.WcDatabase.Companion.DATABASE_NAME
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.IOException
 import com.dacosys.warehouseCounter.data.room.database.WcTempDatabase.Companion.DATABASE_NAME as TEMP_DATABASE_NAME
 
 class FileHelper {
     companion object {
-        private val tag = this::class.java.simpleName
+        private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
         private const val IMAGE_CONTROL_DATABASE_NAME = "imagecontrol.sqlite"
 
         fun removeDataBases() {
@@ -66,77 +64,16 @@ class FileHelper {
             }
         }
 
-        fun copyDataBase(
-            inputDbFile: File?,
-            mCallback: DownloadDb.DownloadDbTask? = null,
-        ): Boolean {
-            if (inputDbFile == null) return false
+        fun copyDataBase(inputDbFile: File) {
+            Log.d(tag, context.getString(R.string.copying_database))
 
-            Log.d(
-                tag, context.getString(R.string.copying_database)
-            )
+            val outFile = context.getDatabasePath(DATABASE_NAME)
 
-            //Open your local db as the input stream
-            val myInput = FileInputStream(inputDbFile)
+            Log.d(tag, "${context.getString(R.string.origin)}: ${inputDbFile.absolutePath}")
+            Log.d(tag, "${context.getString(R.string.destination)}: $outFile")
 
-            // Path to the just created empty db
-            val outFileName = context.getDatabasePath(DATABASE_NAME).toString()
-
-            val file = File(outFileName)
-            if (file.exists()) {
-                Log.d(tag, "Eliminando base de datos antigua: $outFileName")
-                file.delete()
-            }
-
-            Log.d(
-                tag,
-                "${context.getString(R.string.origin)}: ${inputDbFile.absolutePath}"
-            )
-            Log.d(
-                tag,
-                "${context.getString(R.string.destination)}: $outFileName"
-            )
-
-            try {
-                //Open the empty db as the output stream
-                val myOutput = FileOutputStream(outFileName)
-
-                //transfer bytes from the inputfile to the outputfile
-                val buffer = ByteArray(1024)
-                var length: Int
-                val totalSize: Long = inputDbFile.length()
-                var total: Long = 0
-                while (run {
-                        length = myInput.read(buffer)
-                        length
-                    } > 0) {
-                    total += length.toLong()
-                    // only if total length is known
-                    mCallback?.onDownloadFileTask(
-                        msg = context.getString(R.string.copying_database),
-                        fileType = FileType.DB_FILE,
-                        downloadStatus = DownloadStatus.COPYING,
-                        progress = (total * 100 / totalSize).toInt()
-                    )
-                    myOutput.write(buffer, 0, length)
-                }
-
-                //Close the streams
-                myOutput.flush()
-                myOutput.close()
-                myInput.close()
-            } catch (e: IOException) {
-                ErrorLog.writeLog(
-                    null, tag, "${
-                        context.getString(R.string.exception_error)
-                    } (Copy database): ${e.message}"
-                )
-                return false
-            }
-
+            inputDbFile.copyTo(outFile, true)
             Log.d(tag, context.getString(R.string.copy_ok))
-
-            return true
         }
     }
 }

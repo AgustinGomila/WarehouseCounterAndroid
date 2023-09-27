@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class Honeywell(private val activity: AppCompatActivity) : Scanner() {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     private var ls = AtomicBoolean(false)
     var lockScannerEvent: Boolean

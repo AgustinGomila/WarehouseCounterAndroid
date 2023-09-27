@@ -11,6 +11,9 @@ import com.dacosys.warehouseCounter.data.room.entity.client.ClientEntry as Entry
 
 @Dao
 interface ClientDao {
+    @Query("SELECT COUNT(*) FROM ${Entry.TABLE_NAME}")
+    suspend fun count(): Int
+
     @Query("SELECT * FROM ${Entry.TABLE_NAME}")
     suspend fun getAll(): List<Client>
 

@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 // ****************************************************************************************
 class Zebra(private val activity: AppCompatActivity) : Scanner() {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     // private variables
     private val bRequestSendResult = false

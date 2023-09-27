@@ -99,7 +99,7 @@ import kotlin.concurrent.thread
 
 class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFragment.ButtonClickedListener {
 
-    private val tag = this::class.java.simpleName
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     @get:Synchronized
     private var isSending = false
