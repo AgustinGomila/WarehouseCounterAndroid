@@ -64,7 +64,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     private var currentScrollPosition: Int = 0
 
     // OrderRequest    
-    private var orderRequestId: Long = 0L
+    private var id: Long = 0L
     private lateinit var orderRequest: OrderRequest
 
     // Lista completa
@@ -111,7 +111,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
         savedInstanceState.putString(ARG_TITLE, tempTitle)
 
-        savedInstanceState.putLong(ARG_ID, orderRequestId)
+        savedInstanceState.putLong(ARG_ID, id)
 
         if (adapter != null) {
             savedInstanceState.putParcelable("lastSelected", currentItem)
@@ -132,7 +132,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = getString(R.string.confirm_count)
 
-        orderRequestId = b.getLong(ARG_ID)
+        id = b.getLong(ARG_ID)
 
         lastSelected = b.parcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
@@ -193,7 +193,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 tempTitle = extras.getString(ARG_TITLE) ?: ""
                 if (tempTitle.isEmpty()) tempTitle = getString(R.string.confirm_count)
 
-                orderRequestId = extras.getLong(ARG_ID)
+                id = extras.getLong(ARG_ID)
             }
 
             finishOrder = settingsVm.finishOrder
@@ -238,7 +238,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
     private fun loadOrderRequest() {
         OrderRequestCoroutines.getOrderRequestById(
-            id = orderRequestId,
+            id = id,
             onResult = {
                 if (it != null) {
 
@@ -297,7 +297,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 orType == OrderRequestType.stockAuditFromDevice ||
                 orType == OrderRequestType.packaging
             ) {
-                OrderRequestHeader.newInstance(orderRequestId)
+                OrderRequestHeader.newInstance(id)
             } else {
                 return
             }

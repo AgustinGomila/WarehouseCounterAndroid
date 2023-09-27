@@ -134,51 +134,54 @@ class Sync private constructor(builder: Builder) {
                     )
                 )
 
-                GetOrder(filter = filter, onEvent = { }, onFinish = { remotePendingOrders ->
-                    val ordersToAdd: ArrayList<OrderResponse> = arrayListOf()
-                    if (remotePendingOrders.isNotEmpty()) {
-                        val localPendingOrdersId = getPendingOrders().map { it.orderRequestId }
+                GetOrder(
+                    filter = filter,
+                    onEvent = { },
+                    onFinish = { remotePendingOrders ->
+                        val ordersToAdd: ArrayList<OrderResponse> = arrayListOf()
+                        if (remotePendingOrders.isNotEmpty()) {
+                            val localPendingOrdersId = getPendingOrders().map { it.orderRequestId }
 
-                        for (order in remotePendingOrders) {
-                            if (!localPendingOrdersId.contains(order.id)) {
-                                ordersToAdd.add(order)
+                            for (order in remotePendingOrders) {
+                                if (!localPendingOrdersId.contains(order.id)) {
+                                    ordersToAdd.add(order)
+                                }
                             }
                         }
-                    }
 
-                    if (ordersToAdd.isNotEmpty()) {
-                        var isDone = false
+                        if (ordersToAdd.isNotEmpty()) {
+                            var isDone = false
 
-                        val newOrders: ArrayList<OrderRequest> = arrayListOf()
-                        for ((index, order) in ordersToAdd.withIndex()) {
-                            AddOrder(
-                                clientId = order.clientId,
-                                clientName = "",
-                                description = order.description,
-                                orderRequestType = order.orderType,
-                                onEvent = { },
-                                onNewId = { orderId ->
-                                    OrderRequestCoroutines.getOrderRequestById(orderId) { newOrder ->
-                                        if (newOrder != null) {
-                                            newOrders.add(newOrder)
-                                            isDone = index == ordersToAdd.lastIndex
+                            val newOrders: ArrayList<OrderRequest> = arrayListOf()
+                            for ((index, order) in ordersToAdd.withIndex()) {
+                                AddOrder(
+                                    clientId = order.clientId,
+                                    clientName = "",
+                                    description = order.description,
+                                    orderRequestType = order.orderType,
+                                    onEvent = { },
+                                    onNewId = { orderId ->
+                                        OrderRequestCoroutines.getOrderRequestById(orderId) { newOrder ->
+                                            if (newOrder != null) {
+                                                newOrders.add(newOrder)
+                                                isDone = index == ordersToAdd.lastIndex
+                                            }
                                         }
-                                    }
-                                })
-                        }
-
-                        val startTime = System.currentTimeMillis()
-                        while (!isDone) {
-                            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
-                                isDone = true
+                                    })
                             }
-                        }
 
-                        onNewOrders(newOrders)
-                    } else {
-                        onNewOrders(arrayListOf())
-                    }
-                }).execute()
+                            val startTime = System.currentTimeMillis()
+                            while (!isDone) {
+                                if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
+                                    isDone = true
+                                }
+                            }
+
+                            onNewOrders(newOrders)
+                        } else {
+                            onNewOrders(arrayListOf())
+                        }
+                    }).execute()
             } catch (ex: Exception) {
                 ErrorLog.writeLog(null, tag, ex.message.toString())
             } finally {

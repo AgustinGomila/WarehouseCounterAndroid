@@ -103,7 +103,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private lateinit var orderRequest: OrderRequest
 
     private var itemCode: ItemCode? = null
-    private var orderRequestId: Long = 0L
+    private var id: Long = 0L
     private var completeList: ArrayList<OrderRequestContent> = ArrayList()
     private var checkedIdArray: ArrayList<Long> = ArrayList()
     private var isNew: Boolean = false
@@ -184,7 +184,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
-        b.putLong(ARG_ID, orderRequestId)
+        b.putLong(ARG_ID, id)
         b.putBoolean(ARG_IS_NEW, isNew)
 
         b.putParcelable("itemCode", itemCode)
@@ -218,7 +218,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         currentScrollPosition = b.getInt("currentScrollPosition")
 
         isNew = b.getBoolean(ARG_IS_NEW)
-        orderRequestId = b.getLong(ARG_ID)
+        id = b.getLong(ARG_ID)
 
         partial = b.getBoolean("partial")
         partialBlock = b.getBoolean("partialBlock")
@@ -239,14 +239,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         if (!t1.isNullOrEmpty()) tempTitle = t1
 
         isNew = extras.getBoolean(ARG_IS_NEW)
-        orderRequestId = extras.getLong(ARG_ID)
+        id = extras.getLong(ARG_ID)
 
         loadDefaultValues()
     }
 
     private fun loadOrderRequest() {
         OrderRequestCoroutines.getOrderRequestById(
-            id = orderRequestId,
+            id = id,
             onResult = {
                 if (it != null) {
 
@@ -597,7 +597,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun removeOrder(onFinish: () -> Unit) {
         OrderRequestCoroutines.removeById(
-            id = orderRequestId,
+            id = id,
             onResult = { onFinish() })
     }
 
@@ -713,7 +713,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                         if (variationQty != 0.toDouble()) {
 
                             LogCoroutines.add(
-                                orderId = orderRequestId,
+                                orderId = id,
                                 log = Log(
                                     clientId = orderRequest.clientId,
                                     userId = Statics.currentUserId,
@@ -817,7 +817,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun launchFinishDialog() {
         val intent = Intent(this, OrderRequestConfirmActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra(OrderRequestConfirmActivity.ARG_ID, orderRequestId)
+        intent.putExtra(OrderRequestConfirmActivity.ARG_ID, id)
         resultForFinishCount.launch(intent)
     }
 
@@ -862,7 +862,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         setImagesJson()
 
         LogCoroutines.getByOrderId(
-            orderId = orderRequestId,
+            orderId = id,
             onResult = {
                 orderRequest.logs = it.toList()
                 proceed()
@@ -941,7 +941,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val intent = Intent(context, LogContentActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
         intent.putExtra(LogContentActivity.ARG_TITLE, context.getString(R.string.count_log))
-        intent.putExtra(LogContentActivity.ARG_ID, orderRequestId)
+        intent.putExtra(LogContentActivity.ARG_ID, id)
         resultForLog.launch(intent)
     }
 
@@ -1419,7 +1419,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val variationQty = (tempOrc.qtyCollected ?: 0.0) - initialQty
         if (variationQty != 0.toDouble()) {
             LogCoroutines.add(
-                orderId = orderRequestId,
+                orderId = id,
                 log = Log(
                     clientId = orderRequest.clientId,
                     userId = Statics.currentUserId,

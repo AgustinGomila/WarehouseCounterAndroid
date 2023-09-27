@@ -9,6 +9,11 @@ Authorization: Basic {{username}} {{password}}
 Accept: application/json
 
 ### INDEX
+GET {{server}}/v2/order?[filter[status_id]=[7],page=[1],per-page=[250]]
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+### INDEX
 GET {{server}}/v2/order?filter[id][in][]=1745&filter[id][in][]=1746
 Authorization: Basic {{username}} {{password}}
 Content-Type: application/json

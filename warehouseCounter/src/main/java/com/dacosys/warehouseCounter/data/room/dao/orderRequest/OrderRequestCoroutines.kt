@@ -15,6 +15,8 @@ object OrderRequestCoroutines {
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
             val r = async { database.orderRequestDao().getById(id)?.toKtor }.await()
+            r?.roomId = id
+
             if (r != null) {
                 val rc =
                     async { database.orderRequestContentDao().getByOrderId(id).map { it.toKtor } }.await()
@@ -49,7 +51,7 @@ object OrderRequestCoroutines {
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
             async {
-                val id = orderRequest.orderRequestId ?: 0
+                val id = orderRequest.roomId
                 val newContent = contents.map { it.toRoom(id) }.toList()
                 val orRoom = orderRequest.toRoom
 

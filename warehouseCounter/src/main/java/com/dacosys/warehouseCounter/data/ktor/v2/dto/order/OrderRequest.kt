@@ -39,6 +39,8 @@ data class OrderRequest(
 
     var filename: String = ""
 
+    var roomId: Long = 0
+
     val orderRequestType: OrderRequestType
         get() {
             return OrderRequestType.getById(this.orderTypeId ?: 0)
@@ -66,6 +68,7 @@ data class OrderRequest(
         packages = parcel.createTypedArrayList(Package)?.toList() ?: listOf(),
     ) {
         filename = parcel.readString() ?: ""
+        roomId = parcel.readLong()
     }
 
     val toRoom: OrderRequestRoom
@@ -77,7 +80,7 @@ data class OrderRequest(
                 description = this.description,
                 externalId = this.externalId,
                 finishDate = this.finishDate ?: "",
-                id = this.orderRequestId ?: 0L,
+                id = this.roomId,
                 orderTypeDescription = this.orderTypeDescription,
                 orderTypeId = this.orderTypeId?.toInt() ?: 0,
                 resultAllowDiff = if (this.resultAllowDiff == true) 1 else 0,
@@ -126,6 +129,7 @@ data class OrderRequest(
             this.packages = or.packages
 
             this.filename = filename.substringAfterLast('/')
+            this.roomId = or.roomId
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
@@ -210,6 +214,7 @@ data class OrderRequest(
         parcel.writeTypedList(packages)
 
         parcel.writeString(filename)
+        parcel.writeLong(roomId)
     }
 
     override fun describeContents(): Int {
