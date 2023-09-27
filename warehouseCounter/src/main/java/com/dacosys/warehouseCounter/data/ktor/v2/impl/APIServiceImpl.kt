@@ -41,7 +41,7 @@ class APIServiceImpl : APIService {
      * [index GET](http://localhost:8002/v2/database/location-v2)
      */
     override suspend fun getDatabase(version: String, callback: (APIResponse<DatabaseData>) -> Unit) {
-        apiRequest.getDatabase(version, callback = callback)
+        apiRequest.getDatabase(version = version, callback = callback)
     }
 
     /**

@@ -129,10 +129,9 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         rejectNewInstances = false
     }
 
-    @Suppress("DEPRECATION")
-    @Deprecated("Deprecated in Java")
+    @SuppressLint("MissingSuperCall")
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onBackPressed() {
-        super.onBackPressed()
         val i = baseContext.packageManager.getLaunchIntentForPackage(baseContext.packageName)
         if (i != null) {
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)

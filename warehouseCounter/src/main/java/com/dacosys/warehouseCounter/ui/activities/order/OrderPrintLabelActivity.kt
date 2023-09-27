@@ -868,10 +868,9 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         makeText(binding.root, text, snackBarType)
     }
 
-    @Suppress("DEPRECATION")
-    @Deprecated("Deprecated in Java")
+    @SuppressLint("MissingSuperCall")
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onBackPressed() {
-        super.onBackPressed()
         closeKeyboard(this)
 
         isFinishingByUser = true

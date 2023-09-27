@@ -601,31 +601,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             onResult = { onFinish() })
     }
 
-    private fun cancelCount() {
-        if (itemCount <= 0) {
-            removeOrder(onFinish = { finish() })
-            return
-        }
-
-        runOnUiThread {
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle(getString(R.string.save_count))
-            builder.setMessage(getString(R.string.save_changes_and_continue_later))
-            builder.setNeutralButton(getString(R.string.cancel)) { dialog, _ ->
-                dialog.dismiss()
-            }
-            builder.setNegativeButton(R.string.no) { _, _ ->
-                removeOrder(onFinish = { finish() })
-            }
-            builder.setPositiveButton(R.string.yes) { _, _ ->
-                processCount(completed = false)
-            }
-
-            val alertDialog: AlertDialog = builder.create()
-            alertDialog.show()
-        }
-    }
-
     private fun fillAdapter(t: ArrayList<OrderRequestContent>) {
         completeList = t
 
@@ -1215,11 +1190,35 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
     }
 
-    @Suppress("DEPRECATION")
-    @Deprecated("Deprecated in Java")
+    @SuppressLint("MissingSuperCall")
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onBackPressed() {
-        super.onBackPressed()
         cancelCount()
+    }
+
+    private fun cancelCount() {
+        if (itemCount <= 0) {
+            removeOrder(onFinish = { finish() })
+            finish()
+        } else {
+            runOnUiThread {
+                val builder = AlertDialog.Builder(this)
+                builder.setTitle(getString(R.string.save_count))
+                builder.setMessage(getString(R.string.save_changes_and_continue_later))
+                builder.setNeutralButton(getString(R.string.cancel)) { dialog, _ ->
+                    dialog.dismiss()
+                }
+                builder.setNegativeButton(R.string.no) { _, _ ->
+                    removeOrder(onFinish = { finish() })
+                }
+                builder.setPositiveButton(R.string.yes) { _, _ ->
+                    processCount(completed = false)
+                }
+
+                val alertDialog: AlertDialog = builder.create()
+                alertDialog.show()
+            }
+        }
     }
 
     private fun qtySelectorDialog(

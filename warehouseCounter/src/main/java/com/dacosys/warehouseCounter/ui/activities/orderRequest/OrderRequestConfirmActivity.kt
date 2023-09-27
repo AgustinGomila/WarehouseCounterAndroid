@@ -438,10 +438,9 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         }, 20)
     }
 
-    @Suppress("DEPRECATION")
-    @Deprecated("Deprecated in Java")
+    @SuppressLint("MissingSuperCall")
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onBackPressed() {
-        super.onBackPressed()
         Screen.closeKeyboard(this)
 
         ////////////// IMAGE CONTROL //////////////
@@ -451,8 +450,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         val data = Intent()
         data.putExtra(ARG_CONFIRM_STATUS, ConfirmStatus.modify)
         setResult(RESULT_CANCELED, data)
-
-        super.onBackPressed()
+        finish()
     }
 
     private fun fillAdapter(t: ArrayList<OrderRequestContent>) {
