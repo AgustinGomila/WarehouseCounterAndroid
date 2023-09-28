@@ -695,9 +695,9 @@ class SettingsRepository {
         description = context.getString(R.string.search_by_item_description),
         default = true
     )
-    var itemSearchByItemCode = Preference(
-        key = "item_search_by_item_code",
-        description = context.getString(R.string.search_by_item_code),
+    var itemSearchByItemExternalId = Preference(
+        key = "item_search_by_item_external_id",
+        description = context.getString(R.string.search_by_item_external_id),
         default = true
     )
     var itemSearchByItemEan = Preference(
@@ -917,7 +917,7 @@ class SettingsRepository {
                 sr.itemSearchByArea,
                 sr.itemSearchByRack,
                 sr.itemSearchByItemDescription,
-                sr.itemSearchByItemCode,
+                sr.itemSearchByItemExternalId,
                 sr.itemSearchByItemEan,
                 sr.itemSearchByOnlyActive,
                 sr.itemOnlyActive,

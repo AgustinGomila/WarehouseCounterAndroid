@@ -63,14 +63,16 @@ object ItemCoroutines {
     @Throws(Exception::class)
     fun getByQuery(
         ean: String = "",
+        externalId: String = "",
         description: String = "",
         itemCategoryId: Long? = null,
         onResult: (ArrayList<Item>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
             val r = async {
-                val query = ItemDao.getEanDescCatQuery(
+                val query = ItemDao.getMultiQuery(
                     ean = ean,
+                    externalId = externalId,
                     description = description,
                     itemCategoryId = itemCategoryId
                 )
@@ -84,12 +86,12 @@ object ItemCoroutines {
     }
 
     @Throws(Exception::class)
-    fun getCodes(
+    fun getEanCodes(
         onlyActive: Boolean = true,
         onResult: (ArrayList<String>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
-            val r = async { ArrayList(database.itemDao().getCodes(if (onlyActive) 1 else 0)) }.await()
+            val r = async { ArrayList(database.itemDao().getEanCodes(if (onlyActive) 1 else 0)) }.await()
             onResult(r)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, e.message.toString())

@@ -166,7 +166,6 @@ object LifecycleListener : Jotter.Listener {
 
         when (requestCode) {
             REQUEST_BLUETOOTH_CONNECT -> {
-                // If the request is canceled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     showSnackBar(
                         activity.window.decorView,

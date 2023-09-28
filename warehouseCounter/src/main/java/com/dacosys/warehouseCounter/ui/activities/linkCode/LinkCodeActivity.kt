@@ -438,7 +438,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 .itemDescription(filterItemDescription)
                 .itemEan(filterItemEan)
                 .itemCategory(filterItemCategory)
-                .itemCode(filterItemCode)
+                .itemExternalId(filterItemCode)
                 .onlyActive(filterOnlyActive)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
@@ -995,7 +995,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             }
 
             menuItemRandomIt -> {
-                ItemCoroutines.getCodes(true) {
+                ItemCoroutines.getEanCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)
@@ -1089,10 +1089,12 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         // Limpiamos los ítems marcados
         checkedIdArray.clear()
 
-        val itemCode = filterFragment.itemCode
+        val itemEan = filterFragment.itemEan.trim()
+        val itemDescription = filterFragment.description.trim()
+        val externalId = filterFragment.itemExternalId.trim()
         val itemCategory = filterFragment.itemCategory
 
-        if (itemCode.isEmpty() && itemCategory == null) {
+        if (itemEan.isEmpty() && externalId.isEmpty() && itemDescription.isEmpty() && itemCategory == null) {
             fillAdapter(arrayListOf())
             return
         }
@@ -1100,8 +1102,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         try {
             Log.d(tag, "Selecting items...")
             ItemCoroutines.getByQuery(
-                ean = itemCode.trim(),
-                description = itemCode.trim(),
+                ean = itemEan,
+                externalId = externalId,
+                description = itemDescription,
                 itemCategoryId = itemCategory?.itemCategoryId
             ) {
                 fillAdapter(it)
@@ -1244,13 +1247,13 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     override fun onFilterChanged(
-        code: String,
+        externalId: String,
         description: String,
         ean: String,
         itemCategory: ItemCategory?,
         onlyActive: Boolean
     ) {
-        filterItemCode = code
+        filterItemCode = externalId
         filterItemDescription = description
         filterItemEan = ean
         filterItemCategory = itemCategory
@@ -1270,7 +1273,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             if (pos != NO_POSITION) {
                 adapter?.selectItem(item)
             } else {
-                filterFragment.itemCode = item.ean
+                filterFragment.itemExternalId = item.ean
                 thread {
                     completeList = arrayListOf(item)
                     checkedIdArray.clear()

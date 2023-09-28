@@ -1,5 +1,6 @@
 package com.dacosys.warehouseCounter.data.ktor.v2.impl
 
+import android.util.Log
 import arrow.core.Either
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
@@ -36,6 +37,8 @@ import kotlinx.serialization.json.jsonObject
 import java.net.URL
 
 class ApiRequest {
+    val tag: String = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
+
     /**
      * Procesa una respuesta HTTP que contiene un objeto de tipo [T] de acuerdo con el formato
      * especificado y realiza acciones personalizadas en caso de éxito o error.
@@ -58,8 +61,8 @@ class ApiRequest {
         val content = response.bodyAsText()
 
         if (BuildConfig.DEBUG) {
-            println(response.status.description)
-            println(content)
+            Log.d(tag, response.status.description)
+            Log.d(tag, content)
         }
 
         return try {
@@ -107,8 +110,8 @@ class ApiRequest {
         val content = response.bodyAsText()
 
         if (BuildConfig.DEBUG) {
-            println(response.status.description)
-            println(content)
+            Log.d(tag, response.status.description)
+            Log.d(tag, content)
         }
 
         return try {
@@ -166,8 +169,8 @@ class ApiRequest {
         val content = response.bodyAsText()
 
         if (BuildConfig.DEBUG) {
-            println(response.status.description)
-            println(content)
+            Log.d(tag, response.status.description)
+            Log.d(tag, content)
         }
 
         return try {
@@ -254,7 +257,7 @@ class ApiRequest {
             },
             ifRight = {
                 val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
+                Log.d(tag, r)
                 callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
             })
     }
@@ -302,7 +305,7 @@ class ApiRequest {
             },
             ifRight = {
                 val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
+                Log.d(tag, r)
                 callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
             })
     }
@@ -345,7 +348,7 @@ class ApiRequest {
             },
             ifRight = {
                 val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
+                Log.d(tag, r)
                 callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
             })
     }
@@ -374,8 +377,8 @@ class ApiRequest {
         val urlComplete = "${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH"
 
         if (BuildConfig.DEBUG) {
-            println("URL: $urlComplete")
-            println("PARAMS: $params")
+            Log.d(tag, "URL: $urlComplete")
+            Log.d(tag, "PARAMS: $params")
         }
 
         val httpResponse = httpClient.get {
@@ -404,7 +407,7 @@ class ApiRequest {
             },
             ifRight = {
                 val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
+                Log.d(tag, r)
                 callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
             })
     }
@@ -440,8 +443,8 @@ class ApiRequest {
         val urlComplete = "${url.path}/$VERSION_PATH/$objPath/"
 
         if (BuildConfig.DEBUG) {
-            println("URL: $urlComplete")
-            println("PARAMS: $params")
+            Log.d(tag, "URL: $urlComplete")
+            Log.d(tag, "PARAMS: $params")
         }
 
         val httpResponse = httpClient.get {
@@ -470,7 +473,7 @@ class ApiRequest {
             },
             ifRight = {
                 val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
+                Log.d(tag, r)
                 callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
             })
     }
@@ -515,7 +518,7 @@ class ApiRequest {
             },
             ifRight = {
                 val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
+                Log.d(tag, r)
                 callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
             })
     }
@@ -562,7 +565,7 @@ class ApiRequest {
             },
             ifRight = {
                 val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
+                Log.d(tag, r)
                 callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
             })
     }
@@ -608,7 +611,7 @@ class ApiRequest {
             },
             ifRight = {
                 val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
+                Log.d(tag, r)
                 callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
             })
     }
@@ -637,8 +640,8 @@ class ApiRequest {
         val urlComplete = "${url.path}/$VERSION_PATH/$objPath/$UPDATE_PATH"
 
         if (BuildConfig.DEBUG) {
-            println("URL: $urlComplete")
-            println("PARAM: $columnName $id")
+            Log.d(tag, "URL: $urlComplete")
+            Log.d(tag, "PARAM: $columnName $id")
         }
 
         val response = httpClient.put {
@@ -668,7 +671,7 @@ class ApiRequest {
             },
             ifRight = {
                 val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
+                Log.d(tag, r)
                 callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
             })
     }
@@ -697,8 +700,8 @@ class ApiRequest {
         val urlComplete = "${url.path}/$VERSION_PATH/$objPath/$VIEW_PATH"
 
         if (BuildConfig.DEBUG) {
-            println("URL: $urlComplete")
-            println("PARAMS: $params")
+            Log.d(tag, "URL: $urlComplete")
+            Log.d(tag, "PARAMS: $params")
         }
 
         val response = httpClient.get {
@@ -726,7 +729,7 @@ class ApiRequest {
             },
             ifRight = {
                 val r = "${it.name}${Statics.lineSeparator}${it.message}".trim()
-                println(r)
+                Log.d(tag, r)
                 callback(APIResponse(onEvent = SnackBarEventData(r, SnackBarType.ERROR)))
             })
     }

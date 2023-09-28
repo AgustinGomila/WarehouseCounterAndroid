@@ -25,7 +25,7 @@ class AddOrderFromFile(
         )
         val completeList = ArrayList(order.contents)
 
-        val orderRequest = OrderRequest(
+        val orderRoom = OrderRequest(
             clientId = order.clientId ?: 0,
             creationDate = order.creationDate.toString(),
             description = order.description,
@@ -40,12 +40,14 @@ class AddOrderFromFile(
         )
 
         OrderRequestCoroutines.add(
-            orderRequest = orderRequest,
+            orderRequest = orderRoom,
             onResult = { newId ->
                 if (newId != null) {
-                    orderRequest.id = newId
+
+                    // orderRoom.orderRequestId = newId
+
                     OrderRequestCoroutines.update(
-                        orderRequest = orderRequest.toKtor,
+                        orderRequest = orderRoom.toKtor,
                         contents = completeList,
                         onResult = {
                             if (it) {

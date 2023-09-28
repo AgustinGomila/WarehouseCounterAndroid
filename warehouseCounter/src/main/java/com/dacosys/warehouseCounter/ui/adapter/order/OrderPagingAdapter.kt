@@ -181,7 +181,7 @@ class OrderPagingAdapter private constructor(builder: Builder) :
             val startDate = item.startDate
             val finishDate = item.finishDate ?: ""
 
-            if (startDate.isNotEmpty() || finishDate.isNotEmpty()) binding.datesPanel.visibility = VISIBLE
+            if (!startDate.isNullOrEmpty() || finishDate.isNotEmpty()) binding.datesPanel.visibility = VISIBLE
             else binding.datesPanel.visibility = GONE
 
             binding.creationDateTextView.text = startDate

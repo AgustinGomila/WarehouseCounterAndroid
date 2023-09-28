@@ -21,9 +21,10 @@ class RepackOrder(order: OrderResponse, private val onEvent: (SnackBarEventData)
             ), SnackBarType.INFO
         )
 
+        val currentDate = DateFormat.format(Statics.DATE_FORMAT, System.currentTimeMillis()).toString()
         val orderRequestForPackaging = OrderRequest(
             clientId = order.clientId ?: 0,
-            creationDate = DateFormat.format(Statics.DATE_FORMAT, System.currentTimeMillis()).toString(),
+            creationDate = currentDate,
             description = order.description,
             orderTypeDescription = OrderRequestType.packaging.description,
             orderTypeId = OrderRequestType.packaging.id.toInt(),
@@ -31,7 +32,7 @@ class RepackOrder(order: OrderResponse, private val onEvent: (SnackBarEventData)
             resultAllowMod = if (order.resultAllowMod == true) 1 else 0,
             resultDiffProduct = if (order.resultDiffProduct == true) 1 else 0,
             resultDiffQty = if (order.resultDiffQty == true) 1 else 0,
-            startDate = order.startDate,
+            startDate = order.startDate ?: currentDate,
             userId = Statics.currentUserId,
         )
 

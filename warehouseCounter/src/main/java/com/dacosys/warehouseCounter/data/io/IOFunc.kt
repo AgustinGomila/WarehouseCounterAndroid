@@ -10,7 +10,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.requestPermissions
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
@@ -20,7 +19,6 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStreamWriter
-import java.io.UnsupportedEncodingException
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.charset.Charset
@@ -68,7 +66,7 @@ class IOFunc {
                         val filePath = path.absolutePath + File.separator + filename
                         val tempOr = OrderRequest(filePath)
 
-                        if (tempOr.orderRequestId != null && !orArray.contains(tempOr)) {
+                        if (!orArray.contains(tempOr)) {
                             tempOr.filename = filename
                             orArray.add(tempOr)
                         }
@@ -130,141 +128,44 @@ class IOFunc {
             return result
         }
 
-        @get:Synchronized
-        private var isReceiving = false
-        fun saveNewOrders(
+        fun checkPermissions(
             activity: AppCompatActivity,
             requestCode: Int,
-            itemArray: ArrayList<OrderRequest>,
             onEvent: (SnackBarEventData) -> Unit = { },
-            onFinish: (Boolean) -> Unit
+            onGranted: (Boolean) -> Unit
         ) {
-            if (isReceiving) return
-
-            if (itemArray.isEmpty()) {
-                onFinish(true)
-                return
-            }
-
-            isReceiving = true
-
             if (!isExternalStorageWritable) {
-                isReceiving = false
                 onEvent(
                     SnackBarEventData(
                         context.getString(R.string.error_external_storage_not_available_for_reading_or_writing),
                         SnackBarType.ERROR
                     )
                 )
-                onFinish(false)
-            } else {
-                verifyWritePermissions(
-                    activity = activity,
-                    requestCode = requestCode,
-                    onGranted = {
-                        writeNewOrderRequest(itemArray) {
-                            if (it.snackBarType in SnackBarType.getFinish()) {
-                                isReceiving = false
-
-                                if (it.snackBarType == SnackBarType.SUCCESS) onFinish(true)
-                                else {
-                                    onEvent(SnackBarEventData(it.text, it.snackBarType))
-                                    onFinish(false)
-                                }
-                            }
-                        }
-                    }
-                )
+                onGranted(false)
+                return
             }
+
+            verifyWritePermissions(
+                activity = activity,
+                requestCode = requestCode,
+                onGranted = { onGranted(true) },
+            )
         }
 
         @Suppress("SpellCheckingInspection")
         private const val FILENAME_DATE_FORMAT: String = "yyyyMMddHHmmss"
 
         fun generateFilename(): String {
-            val df = SimpleDateFormat(FILENAME_DATE_FORMAT, Locale.getDefault())
-            return df.format(Date())
+            val timeStamp = SimpleDateFormat(FILENAME_DATE_FORMAT, Locale.getDefault())
+            val uniqueNumber = (0..99999).random().toString().padStart(5, '0')
+            return "${timeStamp.format(Date())}$uniqueNumber"
         }
 
-        fun writeNewOrderRequest(newOrArray: ArrayList<OrderRequest>, onEvent: (SnackBarEventData) -> Unit) {
-            val pendingOrderArray = getPendingOrders()
-
-            var isOk = true
-            for (newOrder in newOrArray) {
-                val orJson = json.encodeToString(OrderRequest.serializer(), newOrder)
-
-                // Acá se comprueba si el ID ya existe y actualizamos la orden.
-                // Si no se agrega una orden nueva.
-                var alreadyExists = false
-                if (pendingOrderArray.any()) {
-                    for (pendingOr in pendingOrderArray) {
-                        if (pendingOr.orderRequestId == newOrder.orderRequestId) {
-                            alreadyExists = true
-
-                            isOk = if (newOrder.completed == true) {
-                                // Está completada, eliminar localmente
-                                val currentDir = getPendingPath()
-                                val filePath = "${currentDir.absolutePath}${File.separator}${pendingOr.filename}"
-                                val fl = File(filePath)
-                                fl.delete()
-                            } else {
-                                // Actualizar contenido local
-                                updateOrder(origOrder = pendingOr, newOrder = newOrder, onEvent = onEvent)
-                            }
-
-                            break
-                        }
-                    }
-                }
-
-                if (!alreadyExists) {
-                    val orFileName = "${generateFilename()}.json"
-                    if (!writeToFile(
-                            fileName = orFileName,
-                            data = orJson,
-                            directory = getPendingPath()
-                        )
-                    ) {
-                        isOk = false
-                        break
-                    }
-                }
-            }
-
-            newOrArray.clear()
-
-            if (isOk) {
-                val res = context.getString(R.string.new_counts_saved)
-                onEvent(SnackBarEventData(res, SnackBarType.SUCCESS))
-            } else {
-                val res = context.getString(R.string.an_error_occurred_while_trying_to_save_the_count)
-                onEvent(SnackBarEventData(res, SnackBarType.ERROR))
-            }
-        }
-
-        private fun updateOrder(
-            origOrder: OrderRequest,
-            newOrder: OrderRequest,
-            onEvent: (SnackBarEventData) -> Unit
-        ): Boolean {
-            var error: Boolean
-            try {
-                val orJson = json.encodeToString(OrderRequest.serializer(), newOrder)
-                Log.i(tag, orJson)
-                val orFileName = origOrder.filename.substringAfterLast('/')
-
-                error = !writeJsonToFile(
-                    filename = orFileName,
-                    value = orJson,
-                    completed = newOrder.completed ?: false,
-                    onEvent = onEvent,
-                )
-            } catch (e: UnsupportedEncodingException) {
-                e.printStackTrace()
-                Log.e(tag, e.message ?: "")
-                error = true
-            }
-            return !error
+        fun removePendingOrder(filename: String): Boolean {
+            val currentDir = getPendingPath()
+            val filePath = "${currentDir.absolutePath}${File.separator}${filename}"
+            val fl = File(filePath)
+            return fl.delete()
         }
 
         private val isExternalStorageWritable: Boolean
@@ -290,7 +191,7 @@ class IOFunc {
             var error = false
 
             val path = if (completed) getCompletedPath() else getPendingPath()
-            if (writeToFile(fileName = filename, data = value, directory = path)) {
+            if (writeToFile(directory = path, fileName = filename, data = value)) {
                 if (completed) {
                     // Elimino la orden original
                     val file = File(getPendingPath(), filename)
@@ -307,7 +208,7 @@ class IOFunc {
             return !error
         }
 
-        fun writeToFile(fileName: String, data: String, directory: File): Boolean {
+        fun writeToFile(directory: File, fileName: String, data: String): Boolean {
             try {
                 val file = File(directory, fileName)
 

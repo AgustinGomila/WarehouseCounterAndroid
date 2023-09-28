@@ -43,7 +43,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
     var description: String
 
-    var itemCode: String
+    var itemExternalId: String
     var itemEan: String
     var itemCategory: ItemCategory?
 
@@ -55,8 +55,8 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     var rack: Rack?
     var onlyActive: Boolean
 
-    private var searchByItemCode: Boolean
-    private var pSearchByItemCode: Preference? = null
+    private var searchByItemExternalId: Boolean
+    private var pSearchByItemExternalId: Preference? = null
 
     private var searchByItemDescription: Boolean
     private var pSearchByItemDescription: Preference? = null
@@ -120,7 +120,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
     interface OnFilterItemChangedListener {
         fun onFilterChanged(
-            code: String,
+            externalId: String,
             description: String,
             ean: String,
             itemCategory: ItemCategory?,
@@ -141,7 +141,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
         savedInstanceState.putString(ARG_ITEM_DESCRIPTION, description)
 
-        savedInstanceState.putString(ARG_ITEM_CODE, itemCode)
+        savedInstanceState.putString(ARG_ITEM_EXTERNAL_ID, itemExternalId)
         savedInstanceState.putString(ARG_ITEM_EAN, itemEan)
         savedInstanceState.putParcelable(ARG_ITEM_CATEGORY, itemCategory)
 
@@ -166,7 +166,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     private fun loadSavedValues(b: Bundle) {
         description = b.getString(ARG_ITEM_DESCRIPTION) ?: ""
 
-        itemCode = b.getString(ARG_ITEM_CODE) ?: ""
+        itemExternalId = b.getString(ARG_ITEM_EXTERNAL_ID) ?: ""
         itemEan = b.getString(ARG_ITEM_EAN) ?: ""
         itemCategory = b.parcelable(ARG_ITEM_CATEGORY)
 
@@ -210,18 +210,18 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             onFilterChanged()
         }
 
-        // CODE
+        // EXTERNAL ID
         binding.codeTextView.setOnClickListener {
-            enterText(getString(R.string.enter_code), itemCode, getString(R.string.code)) {
-                itemCode = it
-                setCodeText()
+            enterText(getString(R.string.enter_item_external_id), itemExternalId, getString(R.string.external_id)) {
+                itemExternalId = it
+                setExternalIdText()
                 onFilterChanged()
             }
         }
         binding.codeSearchImageView.setOnClickListener { binding.codeTextView.performClick() }
         binding.codeClearImageView.setOnClickListener {
-            itemCode = ""
-            setCodeText()
+            itemExternalId = ""
+            setExternalIdText()
             onFilterChanged()
         }
 
@@ -493,7 +493,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
     private fun onFilterItemChanged() {
         filterItemChangedListener?.onFilterChanged(
-            code = itemCode,
+            externalId = itemExternalId,
             description = description,
             ean = itemEan,
             itemCategory = itemCategory,
@@ -520,7 +520,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
     private fun onFilterOrderLocationChanged() {
         filterOrderLocationChangedListener?.onFilterChanged(
-            externalId = itemCode,
+            externalId = itemExternalId,
             description = description,
             ean = itemEan,
             itemCategory = itemCategory,
@@ -546,7 +546,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     }
 
     private fun setItemTexts() {
-        setCodeText()
+        setExternalIdText()
         setDescriptionText()
         setEanText()
         setCategoryText()
@@ -578,26 +578,14 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         binding.onlyActiveCheckBox.isChecked = onlyActive
     }
 
-    private fun setCodeText() {
-        activity?.runOnUiThread {
-            if (itemCode.isEmpty()) {
-                binding.codeTextView.typeface = Typeface.DEFAULT
-                binding.codeTextView.text = getString(R.string.search_by_item_code)
-            } else {
-                binding.codeTextView.typeface = Typeface.DEFAULT_BOLD
-                binding.codeTextView.text = itemCode
-            }
-        }
-    }
-
     private fun setExternalIdText() {
         activity?.runOnUiThread {
-            if (itemCode.isEmpty()) {
+            if (itemExternalId.isEmpty()) {
                 binding.codeTextView.typeface = Typeface.DEFAULT
                 binding.codeTextView.text = getString(R.string.search_by_external_id)
             } else {
                 binding.codeTextView.typeface = Typeface.DEFAULT_BOLD
-                binding.codeTextView.text = itemCode
+                binding.codeTextView.text = itemExternalId
             }
         }
     }
@@ -726,7 +714,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     fun getVisibleFilters(): ArrayList<Preference> {
         val r: ArrayList<Preference> = ArrayList()
 
-        if (searchByItemCode && pSearchByItemCode != null) r.add(pSearchByItemCode!!)
+        if (searchByItemExternalId && pSearchByItemExternalId != null) r.add(pSearchByItemExternalId!!)
         if (searchByItemDescription && pSearchByItemDescription != null) r.add(pSearchByItemDescription!!)
         if (searchByItemEan && pSearchByItemEan != null) r.add(pSearchByItemEan!!)
         if (searchByCategory && pSearchByCategory != null) r.add(pSearchByCategory!!)
@@ -743,7 +731,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
     private fun setVisibleFilters() {
         //Retrieve the values
-        if (searchByItemCode) setCodeVisibility(View.VISIBLE)
+        if (searchByItemExternalId) setCodeVisibility(View.VISIBLE)
         else setCodeVisibility(View.GONE)
 
         if (searchByItemDescription || searchByOrderDescription) setDescriptionVisibility(View.VISIBLE)
@@ -777,7 +765,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     @Suppress("MemberVisibilityCanBePrivate")
     fun setCodeVisibility(visibility: Int) {
         binding.codePanel.visibility = visibility
-        searchByItemCode = visibility == View.VISIBLE
+        searchByItemExternalId = visibility == View.VISIBLE
     }
 
     @Suppress("MemberVisibilityCanBePrivate")
@@ -846,7 +834,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     }
 
     private fun validItemFilter(): Boolean {
-        return itemCode.isNotEmpty() ||
+        return itemExternalId.isNotEmpty() ||
                 description.isNotEmpty() ||
                 itemEan.isNotEmpty() ||
                 itemCategory != null
@@ -865,7 +853,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     }
 
     private fun validOrderLocationFilter(): Boolean {
-        return itemCode.isNotEmpty() ||
+        return itemExternalId.isNotEmpty() ||
                 description.isNotEmpty() ||
                 itemEan.isNotEmpty() ||
                 itemCategory != null ||
@@ -890,7 +878,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         get() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ITEM_EXTERNAL_ID,
-                value = itemCode,
+                value = itemExternalId,
                 conditional = ACTION_OPERATOR_LIKE
             )
         }
@@ -1003,7 +991,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         val filter: ArrayList<ApiFilterParam> = arrayListOf()
 
         if (validOrderLocationFilter()) {
-            if (itemCode.isNotEmpty()) filter.add(filterItemExternalId)
+            if (itemExternalId.isNotEmpty()) filter.add(filterItemExternalId)
             if (description.isNotEmpty()) filter.add(filterItemDescription)
             if (itemEan.isNotEmpty()) filter.add(filterItemEan)
             if (itemCategory != null) filter.add(filterItemCategory)
@@ -1031,7 +1019,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         val filter: ArrayList<ApiFilterParam> = arrayListOf()
 
         if (validItemFilter()) {
-            if (itemCode.isNotEmpty()) filter.add(filterItemExternalId)
+            if (itemExternalId.isNotEmpty()) filter.add(filterItemExternalId)
             if (description.isNotEmpty()) filter.add(filterItemDescription)
             if (itemEan.isNotEmpty()) filter.add(filterItemEan)
             if (itemCategory != null) filter.add(filterItemCategory)
@@ -1052,7 +1040,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
     fun clear() {
         description = ""
-        itemCode = ""
+        itemExternalId = ""
         itemEan = ""
         itemCategory = null
         orderId = ""
@@ -1069,7 +1057,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         // Values
         description = builder.description
 
-        itemCode = builder.itemCode
+        itemExternalId = builder.itemExternalId
         itemEan = builder.itemEan
         itemCategory = builder.itemCategory
 
@@ -1082,7 +1070,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         onlyActive = builder.onlyActive
 
         // Visibility
-        searchByItemCode = builder.searchByItemCode
+        searchByItemExternalId = builder.searchByItemExternalId
         searchByItemDescription = builder.searchByItemDescription
         searchByItemEan = builder.searchByItemEan
         searchByCategory = builder.searchByCategory
@@ -1097,7 +1085,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         searchByOnlyActive = builder.searchByOnlyActive
 
         // Preferences
-        pSearchByItemCode = builder.pSearchByItemCode
+        pSearchByItemExternalId = builder.pSearchByItemExternalId
         pSearchByItemDescription = builder.pSearchByItemDescription
         pSearchByItemEan = builder.pSearchByItemEan
         pSearchByCategory = builder.pSearchByCategory
@@ -1119,7 +1107,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
         internal var description: String = ""
 
-        internal var itemCode: String = ""
+        internal var itemExternalId: String = ""
         internal var itemEan: String = ""
         internal var itemCategory: ItemCategory? = null
 
@@ -1131,8 +1119,8 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         internal var rack: Rack? = null
         internal var onlyActive: Boolean = true
 
-        internal var searchByItemCode: Boolean = false
-        internal var pSearchByItemCode: Preference? = null
+        internal var searchByItemExternalId: Boolean = false
+        internal var pSearchByItemExternalId: Preference? = null
 
         internal var searchByItemDescription: Boolean = false
         internal var pSearchByItemDescription: Preference? = null
@@ -1166,8 +1154,8 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
         // Setter methods for variables with chained methods
         @Suppress("unused")
-        fun itemCode(`val`: String): Builder {
-            itemCode = `val`
+        fun itemExternalId(`val`: String): Builder {
+            itemExternalId = `val`
             return this
         }
 
@@ -1232,9 +1220,9 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         }
 
         @Suppress("unused")
-        fun searchByItemCode(value: Boolean, pref: Preference? = null): Builder {
-            searchByItemCode = value
-            pSearchByItemCode = pref
+        fun searchByItemExternalId(value: Boolean, pref: Preference? = null): Builder {
+            searchByItemExternalId = value
+            pSearchByItemExternalId = pref
             return this
         }
 
@@ -1312,7 +1300,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     companion object {
 
         // The fragment initialization parameters
-        const val ARG_ITEM_CODE = "itemCode"
+        const val ARG_ITEM_EXTERNAL_ID = "itemExternalId"
         const val ARG_ITEM_DESCRIPTION = "description"
         const val ARG_ITEM_EAN = "itemEan"
         const val ARG_ITEM_CATEGORY = "itemCategory"

@@ -49,7 +49,7 @@ class OrderRequestHeader : Fragment() {
         if (arguments == null) return
 
         val id = requireArguments().getLong(ARG_ID)
-        OrderRequestCoroutines.getOrderRequestById(
+        OrderRequestCoroutines.getByIdAsKtor(
             id = id,
             onResult = {
                 if (it != null) {

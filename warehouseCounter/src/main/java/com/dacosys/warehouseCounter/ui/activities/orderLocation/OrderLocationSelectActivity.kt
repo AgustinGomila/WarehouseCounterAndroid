@@ -317,7 +317,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         val sr = settingsRepository
         filterFragment =
             SelectFilterFragment.Builder()
-                .searchByItemCode(sv.orderLocationSearchByItemCode, sr.orderLocationSearchByItemCode)
+                .searchByItemExternalId(sv.orderLocationSearchByItemCode, sr.orderLocationSearchByItemCode)
                 .searchByItemDescription(
                     sv.orderLocationSearchByItemDescription,
                     sr.orderLocationSearchByItemDescription
@@ -328,7 +328,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 .searchByWarehouse(sv.orderLocationSearchByWarehouse, sr.orderLocationSearchByWarehouse)
                 .searchByArea(sv.orderLocationSearchByArea, sr.orderLocationSearchByArea)
                 .searchByRack(sv.orderLocationSearchByRack, sr.orderLocationSearchByRack)
-                .itemCode(filterExternalId)
+                .itemExternalId(filterExternalId)
                 .itemDescription(filterDescription)
                 .itemEan(filterEan)
                 .itemCategory(filterItemCategory)
@@ -800,7 +800,7 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             }
 
             menuItemRandomIt -> {
-                ItemCoroutines.getCodes(true) {
+                ItemCoroutines.getEanCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)

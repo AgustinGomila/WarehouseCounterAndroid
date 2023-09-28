@@ -6,14 +6,17 @@ import android.util.Log
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedOrders
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getPendingOrders
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.removePendingOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderStatus
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines.update
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.AddOrder
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import java.util.*
 import kotlin.concurrent.thread
 
@@ -29,7 +32,6 @@ class Sync private constructor(builder: Builder) {
     private var onCompletedOrders: (ArrayList<OrderRequest>) -> Unit = {}
     private var onTimerTick: (Int) -> Unit = {}
 
-    // Thread status
     @get:Synchronized
     private var syncNewOrderStatus: DownloadStatus = DownloadStatus.NOT_RUNNING
 
@@ -60,7 +62,6 @@ class Sync private constructor(builder: Builder) {
         onTimerTick = `val`
     }
 
-    //To stop timer
     fun stopSync() {
         Log.d(tag, "Deteniendo sincronizador de órdenes")
         if (timer != null) {
@@ -77,7 +78,6 @@ class Sync private constructor(builder: Builder) {
         goSync(onNewOrders, onCompletedOrders)
     }
 
-    //To start timer
     fun startSync() {
         Log.d(tag, "Iniciando sincronizador de órdenes...")
 
@@ -99,7 +99,7 @@ class Sync private constructor(builder: Builder) {
             }
         }
 
-        // Primera ejecución
+        /** Forzamos la sincronización inicial */
         if (ticks == 0) goSync(onNewOrders, onCompletedOrders)
 
         timer?.scheduleAtFixedRate(
@@ -118,7 +118,6 @@ class Sync private constructor(builder: Builder) {
             getCompletedOrderRequest(onCompletedOrders)
         }
     }
-    // endregion
 
     private fun getNewOrderRequest(onNewOrders: (ArrayList<OrderRequest>) -> Unit = {}) {
         if (syncNewOrderStatus != DownloadStatus.NOT_RUNNING) return
@@ -137,57 +136,97 @@ class Sync private constructor(builder: Builder) {
                 GetOrder(
                     filter = filter,
                     onEvent = { },
-                    onFinish = { remotePendingOrders ->
-                        val ordersToAdd: ArrayList<OrderResponse> = arrayListOf()
-                        if (remotePendingOrders.isNotEmpty()) {
-                            val localPendingOrdersId = getPendingOrders().map { it.orderRequestId }
+                    onFinish = { onPendingOrdersReceived(it, onNewOrders) }
+                ).execute()
 
-                            for (order in remotePendingOrders) {
-                                if (!localPendingOrdersId.contains(order.id)) {
-                                    ordersToAdd.add(order)
-                                }
-                            }
-                        }
-
-                        if (ordersToAdd.isNotEmpty()) {
-                            var isDone = false
-
-                            val newOrders: ArrayList<OrderRequest> = arrayListOf()
-                            for ((index, order) in ordersToAdd.withIndex()) {
-                                AddOrder(
-                                    clientId = order.clientId,
-                                    clientName = "",
-                                    description = order.description,
-                                    orderRequestType = order.orderType,
-                                    onEvent = { },
-                                    onNewId = { orderId ->
-                                        OrderRequestCoroutines.getOrderRequestById(orderId) { newOrder ->
-                                            if (newOrder != null) {
-                                                newOrders.add(newOrder)
-                                                isDone = index == ordersToAdd.lastIndex
-                                            }
-                                        }
-                                    })
-                            }
-
-                            val startTime = System.currentTimeMillis()
-                            while (!isDone) {
-                                if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
-                                    isDone = true
-                                }
-                            }
-
-                            onNewOrders(newOrders)
-                        } else {
-                            onNewOrders(arrayListOf())
-                        }
-                    }).execute()
             } catch (ex: Exception) {
                 ErrorLog.writeLog(null, tag, ex.message.toString())
             } finally {
                 syncNewOrderStatus = DownloadStatus.NOT_RUNNING
             }
         }
+    }
+
+    private fun onPendingOrdersReceived(
+        pending: ArrayList<OrderResponse>,
+        onPendingOrders: (ArrayList<OrderRequest>) -> Unit = {}
+    ) {
+        val ordersToAdd: ArrayList<OrderResponse> = arrayListOf()
+        val filesToRemove: ArrayList<String> = arrayListOf()
+
+        if (pending.isNotEmpty()) {
+            val localPendingOrdersId: List<Pair<Long, String>> =
+                getPendingOrders().map { Pair(it.orderRequestId ?: 0L, it.filename) }
+
+            for (order in pending) {
+                val localPending = localPendingOrdersId.firstOrNull { par -> par.first == order.id }
+                if (localPending != null) {
+                    if (!order.finishDate.isNullOrEmpty()) {
+                        filesToRemove.add(localPending.second)
+                    } else {
+                        OrderRequestCoroutines.getByIdAsKtor(localPending.first) { localOrder ->
+                            if (localOrder != null) {
+                                localOrder.orderRequestId = order.id
+                                localOrder.contents = order.contentToKtor()
+                                update(orderRequest = localOrder, onEvent = { })
+                            }
+                        }
+                    }
+                } else {
+                    ordersToAdd.add(order)
+                }
+            }
+        }
+
+        if (filesToRemove.isNotEmpty()) {
+            for (filename in filesToRemove) {
+                Log.d(tag, "Removing completed order: $filename")
+                removePendingOrder(filename)
+            }
+        }
+
+        if (ordersToAdd.isEmpty()) {
+            onPendingOrders(arrayListOf())
+            return
+        }
+
+        var isDone = false
+
+        val newOrderList: ArrayList<OrderRequest> = arrayListOf()
+        for ((index, order) in ordersToAdd.withIndex()) {
+
+            AddOrder(
+                clientId = order.clientId,
+                clientName = "",
+                description = order.description,
+                orderRequestType = order.orderType,
+                onEvent = {
+                    if (it.snackBarType == SnackBarType.ERROR) {
+                        isDone = index == ordersToAdd.lastIndex
+                    }
+                },
+                onNewId = { newId ->
+                    OrderRequestCoroutines.getByIdAsKtor(newId) { newOrder ->
+                        if (newOrder != null) {
+
+                            newOrder.orderRequestId = order.id
+                            newOrder.contents = order.contentToKtor()
+                            update(orderRequest = newOrder, onEvent = { })
+                            newOrderList.add(newOrder)
+                        }
+                        isDone = index == ordersToAdd.lastIndex
+                    }
+                })
+        }
+
+        val startTime = System.currentTimeMillis()
+        while (!isDone) {
+            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
+                isDone = true
+            }
+        }
+
+        onPendingOrders(newOrderList)
     }
 
     private fun getCompletedOrderRequest(

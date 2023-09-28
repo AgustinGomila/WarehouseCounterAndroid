@@ -452,10 +452,12 @@ class OutboxActivity : AppCompatActivity() {
 
     private fun write(filename: String, value: String): Boolean {
         val path = getPendingPath()
-        return if (writeToFile(fileName = filename, data = value, directory = path)) {
+        return if (writeToFile(directory = path, fileName = filename, data = value)) {
+
             val completedPath = Path(completeCompletedPath, filename)
             val fl = File(completedPath.toString())
             fl.delete()
+
         } else {
             false
         }
@@ -630,7 +632,6 @@ class OutboxActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             REQUEST_EXTERNAL_STORAGE -> {
-                // If the request is canceled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     showSnackBar(
                         getString(R.string.cannot_write_to_external_storage), ERROR

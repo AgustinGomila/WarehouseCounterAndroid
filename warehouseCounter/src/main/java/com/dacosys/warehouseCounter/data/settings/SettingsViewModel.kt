@@ -620,10 +620,10 @@ class SettingsViewModel : ViewModel() {
             settingsRepository.itemSearchByRack.value = value
         }
 
-    var itemSearchByItemCode: Boolean
-        get() = settingsRepository.itemSearchByItemCode.value as Boolean
+    var itemSearchByItemExternalId: Boolean
+        get() = settingsRepository.itemSearchByItemExternalId.value as Boolean
         set(value) {
-            settingsRepository.itemSearchByItemCode.value = value
+            settingsRepository.itemSearchByItemExternalId.value = value
         }
 
     var itemSearchByItemDescription: Boolean

@@ -13,7 +13,6 @@ import kotlinx.serialization.Serializable
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequest as OrderRequestRoom
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequestContent as OrderRequestContentRoom
 
-
 @Serializable
 data class OrderRequest(
     @SerialName(CLIENT_ID_KEY) var clientId: Long? = null,
@@ -32,6 +31,7 @@ data class OrderRequest(
     @SerialName(START_DATE_KEY) var startDate: String? = null,
     @SerialName(USER_ID_KEY) var userId: Long? = null,
     @SerialName(ZONE_KEY) var zone: String = "",
+
     @SerialName(CONTENT_LIST_KEY) var contents: List<OrderRequestContent> = listOf(),
     @SerialName(LOG_LIST_KEY) var logs: List<Log> = listOf(),
     @SerialName(PACKAGE_LIST_KEY) var packages: List<Package> = listOf(),
@@ -63,6 +63,7 @@ data class OrderRequest(
         startDate = parcel.readString(),
         userId = parcel.readValue(Long::class.java.classLoader) as? Long,
         zone = parcel.readString() ?: "",
+
         contents = parcel.createTypedArrayList(OrderRequestContent)?.toList() ?: listOf(),
         logs = parcel.createTypedArrayList(Log)?.toList() ?: listOf(),
         packages = parcel.createTypedArrayList(Package)?.toList() ?: listOf(),

@@ -175,8 +175,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
     private var filterItemDescription: String = ""
     private var filterItemEan: String = ""
     private var filterItemCategory: ItemCategory? = null
+    private var filterItemExternalId: String = ""
     private var filterOnlyActive: Boolean = true
-    private var filterItemCode: String = ""
 
     private var searchedText: String = ""
 
@@ -208,7 +208,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         b.putString("filterItemDescription", filterItemDescription)
         b.putString("filterItemEan", filterItemEan)
         b.putParcelable("filterItemCategory", filterItemCategory)
-        b.putString("filterItemCode", filterItemCode)
+        b.putString("filterItemCode", filterItemExternalId)
         b.putBoolean("filterOnlyActive", filterOnlyActive)
 
         b.putString("searchedText", searchedText)
@@ -239,7 +239,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         filterItemDescription = b.getString("filterItemDescription") ?: ""
         filterItemEan = b.getString("filterItemEan") ?: ""
         filterItemCategory = b.parcelable("filterItemCategory")
-        filterItemCode = b.getString("filterItemCode") ?: ""
+        filterItemExternalId = b.getString("filterItemCode") ?: ""
         filterOnlyActive = b.getBoolean("filterOnlyActive")
 
         // Search Text Fragment
@@ -364,18 +364,19 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             SelectFilterFragment.Builder()
                 .searchByItemDescription(sv.itemSearchByItemDescription, sr.itemSearchByItemDescription)
                 .searchByItemEan(sv.itemSearchByItemEan, sr.itemSearchByItemEan)
+                .searchByItemExternalId(sv.itemSearchByItemExternalId, sr.itemSearchByItemExternalId)
                 .searchByCategory(sv.itemSearchByCategory, sr.itemSearchByCategory)
                 .itemDescription(filterItemDescription)
                 .itemEan(filterItemEan)
+                .itemExternalId(filterItemExternalId)
                 .itemCategory(filterItemCategory)
-                .itemCode(filterItemCode)
                 .onlyActive(filterOnlyActive)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
 
     override fun onFilterChanged(
-        code: String,
+        externalId: String,
         description: String,
         ean: String,
         itemCategory: ItemCategory?,
@@ -384,7 +385,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         filterItemDescription = description
         filterItemEan = ean
         filterItemCategory = itemCategory
-        filterItemCode = code
+        filterItemExternalId = externalId
         filterOnlyActive = onlyActive
 
         Handler(Looper.getMainLooper()).postDelayed({ getItems() }, 200)
@@ -676,9 +677,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         val itemEan = filterFragment.itemEan.trim()
         val itemDescription = filterFragment.description.trim()
+        val externalId = filterFragment.itemExternalId.trim()
         val itemCategory = filterFragment.itemCategory
 
-        if (itemEan.isEmpty() && itemDescription.isEmpty() && itemCategory == null) {
+        if (itemEan.isEmpty() && externalId.isEmpty() && itemDescription.isEmpty() && itemCategory == null) {
             fillAdapter(arrayListOf())
             return
         }
@@ -687,6 +689,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             Log.d(tag, "Selecting items...")
             ItemCoroutines.getByQuery(
                 ean = itemEan,
+                externalId = externalId,
                 description = itemDescription,
                 itemCategoryId = itemCategory?.itemCategoryId
             ) {
@@ -940,7 +943,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             }
 
             menuItemRandomIt -> {
-                ItemCoroutines.getCodes(true) {
+                ItemCoroutines.getEanCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)
@@ -1039,7 +1042,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         if (pos != NO_POSITION) {
             adapter?.selectItem(item)
         } else {
-            filterFragment.itemCode = item.ean
+            filterFragment.itemExternalId = item.ean
             thread {
                 completeList = arrayListOf(item)
                 checkedIdArray.clear()

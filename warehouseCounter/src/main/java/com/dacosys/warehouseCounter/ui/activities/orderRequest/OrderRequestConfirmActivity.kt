@@ -237,7 +237,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     private fun loadOrderRequest() {
-        OrderRequestCoroutines.getOrderRequestById(
+        OrderRequestCoroutines.getByIdAsKtor(
             id = id,
             onResult = {
                 if (it != null) {

@@ -9,7 +9,7 @@ Authorization: Basic {{username}} {{password}}
 Accept: application/json
 
 ### INDEX
-GET {{server}}/v2/order?[filter[status_id]=[7],page=[1],per-page=[250]]
+GET {{server}}/v2/order?[filter[status_id]=[7],page=[1],per-page=[250]]&expand=orderContents,orderScanLogs,location
 Authorization: Basic {{username}} {{password}}
 Accept: application/json
 

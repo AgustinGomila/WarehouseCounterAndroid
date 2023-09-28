@@ -35,6 +35,7 @@ import com.dacosys.warehouseCounter.databinding.InboxActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderRequestAdapter
+import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
@@ -44,7 +45,8 @@ import java.io.File
 import kotlin.concurrent.thread
 import kotlin.io.path.Path
 
-class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener {
+class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
+    OrderRequestAdapter.DataSetChangedListener {
 
     private var isListViewFilling = false
     private var multiSelect = false
@@ -54,6 +56,8 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
     private var completeList: ArrayList<OrderRequest> = ArrayList()
     private var checkedIdArray: ArrayList<Long> = ArrayList()
     private var currentScrollPosition: Int = 0
+
+    private lateinit var summaryFragment: SummaryFragment
 
     // Se usa para saber si estamos en onStart luego de onCreate
     private var fillRequired = false
@@ -120,6 +124,8 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
+
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 currentScrollPosition =
@@ -180,6 +186,21 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
         if (fillRequired) {
             fillRequired = false
             fillAdapter(completeList)
+        }
+    }
+
+    override fun onDataSetChanged() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            fillSummaryFragment()
+        }, 100)
+    }
+
+    private fun fillSummaryFragment() {
+        runOnUiThread {
+            summaryFragment
+                .firstLabel(getString(R.string.total))
+                .first(adapter?.totalVisible() ?: 0)
+                .fill()
         }
     }
 
@@ -370,6 +391,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener 
                     .checkedIdArray(checkedIdArray)
                     .multiSelect(multiSelect)
                     .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
+                    .dataSetChangedListener(this)
                     .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)

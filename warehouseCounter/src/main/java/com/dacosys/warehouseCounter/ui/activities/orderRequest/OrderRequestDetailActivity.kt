@@ -206,7 +206,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
             fillOrderRequest()
         } else {
-            OrderRequestCoroutines.getOrderRequestById(
+            OrderRequestCoroutines.getByIdAsKtor(
                 id = orderRequestId,
                 onResult = {
                     if (it != null) {

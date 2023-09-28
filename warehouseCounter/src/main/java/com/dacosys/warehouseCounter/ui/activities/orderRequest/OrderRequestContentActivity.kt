@@ -1,13 +1,10 @@
 package com.dacosys.warehouseCounter.ui.activities.orderRequest
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -25,7 +22,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.constraintlayout.widget.ConstraintSet
-import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -34,10 +30,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
-import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.generateFilename
-import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeJsonToFile
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
@@ -45,6 +38,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.LogCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines.update
 import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegex
 import com.dacosys.warehouseCounter.databinding.OrderRequestActivityBothPanelsCollapsedBinding
@@ -76,7 +70,6 @@ import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import java.io.UnsupportedEncodingException
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -199,8 +192,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         b.putParcelable("lastRegexResult", lastRegexResult)
 
-        b.putBoolean("tempCompleted", tempCompleted)
-
         // Guardar en Room la orden
         saveTempOrder()
     }
@@ -230,8 +221,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
 
         lastRegexResult = b.parcelable("lastRegexResult")
-
-        tempCompleted = b.getBoolean("tempCompleted")
     }
 
     private fun loadExtraBundleValues(extras: Bundle) {
@@ -245,7 +234,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun loadOrderRequest() {
-        OrderRequestCoroutines.getOrderRequestById(
+        OrderRequestCoroutines.getByIdAsKtor(
             id = id,
             onResult = {
                 if (it != null) {
@@ -808,10 +797,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun saveTempOrder(onFinish: () -> Unit = {}) {
         val fullList = adapter?.fullList?.toList() ?: listOf()
-        OrderRequestCoroutines.update(
-            orderRequest = orderRequest,
-            contents = fullList,
-            onResult = { onFinish() })
+
+        orderRequest.contents = fullList
+
+        update(orderRequest = orderRequest, onEvent = { })
+
+        onFinish()
     }
 
     private fun launchFinishDialog() {
@@ -839,25 +830,13 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
         }
 
-    // Flag que guarda el estado "completed" en caso de que
-    // se requerirán permisos de escritura y se tenga que retomar la
-    // actividad después de que el usuario los otorgue.
-    private var tempCompleted = false
-
     private fun processCount(completed: Boolean) {
-        tempCompleted = completed
-
         // Preparar el conteo
         orderRequest.contents = adapter?.fullList?.toList() ?: listOf()
-        orderRequest.completed = tempCompleted
+        orderRequest.completed = completed
         orderRequest.finishDate =
-            if (tempCompleted) DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString()
+            if (completed) DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString()
             else ""
-
-        if (orderRequest.filename.isEmpty()) {
-            val filename = generateFilename()
-            orderRequest.filename = "$filename.json"
-        }
 
         setImagesJson()
 
@@ -865,43 +844,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             orderId = id,
             onResult = {
                 orderRequest.logs = it.toList()
-                proceed()
-            }
-        )
-    }
 
-    private fun proceed() {
-        val error: Boolean
-        try {
-            orJson = json.encodeToString(OrderRequest.serializer(), orderRequest)
-            android.util.Log.i(tag, orJson)
-
-            orFileName = orderRequest.filename.substringAfterLast('/')
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
-                PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
-            ) {
-                error = !writeJsonToFile(
-                    onEvent = { showSnackBar(it.text, it.snackBarType) },
-                    filename = orFileName,
-                    value = orJson,
-                    completed = tempCompleted
-                )
-
-                if (!error) {
+                saveTempOrder {
                     finish()
                 }
-            } else {
-                requestPermissions(
-                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE
-                )
             }
-        } catch (e: UnsupportedEncodingException) {
-            e.printStackTrace()
-            android.util.Log.e(tag, e.message ?: "")
-        }
+        )
     }
 
     private fun setImagesJson() {
@@ -1437,37 +1385,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         checkLotEnabled(tempOrc)
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray,
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
-        else {
-            when (requestCode) {
-                REQUEST_EXTERNAL_STORAGE -> {
-                    // If the request is canceled, the result arrays are empty.
-                    if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                        showSnackBar(
-                            getString(R.string.cannot_write_images_to_external_storage), ERROR
-                        )
-                    } else {
-                        val error = !writeJsonToFile(
-                            onEvent = { showSnackBar(it.text, it.snackBarType) },
-                            filename = orFileName,
-                            value = orJson,
-                            completed = tempCompleted
-                        )
-                        if (!error) finish()
-                    }
-                }
-            }
-        }
-    }
-
     // Este flag lo vamos a usar para saber si estamos tratando con un Regex
     private var lastRegexResult: ItemRegex.Companion.RegexResult? = null
 
@@ -1658,7 +1575,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
 
             menuItemRandomIt -> {
-                ItemCoroutines.getCodes(true) {
+                ItemCoroutines.getEanCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)
@@ -1818,13 +1735,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         const val ARG_ID = "id"
         const val ARG_IS_NEW = "isNew"
 
-        private const val REQUEST_EXTERNAL_STORAGE = 3001
-
         fun equals(a: Any?, b: Any?): Boolean {
             return a != null && a == b
         }
-
-        private var orFileName = ""
-        private var orJson = ""
     }
 }

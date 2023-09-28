@@ -36,13 +36,13 @@ interface ItemDao {
     @Query("$BASIC_SELECT, $JOIN_SELECT $BASIC_FROM $LEFT_JOIN WHERE ${Entry.TABLE_NAME}.${Entry.ITEM_CATEGORY_ID} = :itemCatId $BASIC_ORDER")
     suspend fun getByItemCategoryId(itemCatId: Long): List<Item>
 
-    @Query(GET_CODES_QUERY)
-    suspend fun getCodes(onlyActive: Int = 1): List<String>
+    @Query(GET_EAN_CODES_QUERY)
+    suspend fun getEanCodes(onlyActive: Int = 1): List<String>
 
     /**
      * Get by formatted query
      *
-     * @param query Ejemplo: [getEanDescCatQuery]
+     * @param query Ejemplo: [getMultiQuery]
      * @return Una lista de [Item]
      */
     @RawQuery
@@ -79,7 +79,7 @@ interface ItemDao {
         const val LEFT_JOIN =
             "LEFT JOIN ${IcEntry.TABLE_NAME} ON ${IcEntry.TABLE_NAME}.${IcEntry.ITEM_CATEGORY_ID} = ${Entry.TABLE_NAME}.${Entry.ITEM_CATEGORY_ID}"
 
-        const val GET_CODES_QUERY =
+        const val GET_EAN_CODES_QUERY =
             "SELECT ${Entry.TABLE_NAME}.${Entry.EAN} FROM ${Entry.TABLE_NAME} WHERE ${Entry.TABLE_NAME}.${Entry.ACTIVE} = :onlyActive ORDER BY ${Entry.TABLE_NAME}.${Entry.EAN}"
 
         /**
@@ -87,12 +87,14 @@ interface ItemDao {
          *
          * @param ean             Ean del ítem. Opcional.
          * @param description     Descripción del ítem. Opcional.
+         * @param externalId      Id externo del ítem. Opcional.
          * @param itemCategoryId  Categoría. Opcional.
          * @return Query formateado
          */
-        fun getEanDescCatQuery(
+        fun getMultiQuery(
             ean: String = "",
             description: String = "",
+            externalId: String = "",
             itemCategoryId: Long? = null,
         ): SimpleSQLiteQuery {
             var where = String()
@@ -103,6 +105,13 @@ interface ItemDao {
                 where += "WHERE "
                 where += "${Entry.TABLE_NAME}.${Entry.EAN} LIKE ?"
                 args.add("${ean}%")
+                condAdded = true
+            }
+
+            if (externalId.isNotEmpty()) {
+                where += "WHERE "
+                where += "${Entry.TABLE_NAME}.${Entry.EXTERNAL_ID} LIKE ?"
+                args.add("${externalId}%")
                 condAdded = true
             }
 

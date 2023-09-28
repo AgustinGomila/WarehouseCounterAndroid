@@ -1,10 +1,8 @@
 package com.dacosys.warehouseCounter.ui.activities.main
 
-import android.Manifest
 import android.animation.ObjectAnimator
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -16,6 +14,7 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.text.InputType
+import android.util.Log
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
@@ -43,8 +42,6 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sync
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.countPending
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedOrders
-import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.saveNewOrders
-import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeNewOrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
@@ -96,6 +93,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
 import kotlin.concurrent.thread
+
 
 class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFragment.ButtonClickedListener {
 
@@ -174,24 +172,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     private fun onNewOrder(itemArray: ArrayList<OrderRequest>) {
-        android.util.Log.d(
-            tag,
-            "${getString(R.string.new_orders_received_)}${itemArray.count()}"
-        )
+        Log.d(tag, "${getString(R.string.new_orders_received_)}${itemArray.count()}")
+        Log.d(tag, itemArray.map { it.orderRequestId }.joinToString(","))
 
-        newOrArray = itemArray
-
-        runOnUiThread {
-            saveNewOrders(
-                activity = this,
-                requestCode = REQUEST_EXTERNAL_STORAGE,
-                itemArray = itemArray,
-                onEvent = { showSnackBar(it.text, it.snackBarType) },
-                onFinish = {
-                    newOrArray.clear()
-                    setTextButton(MainButton.PendingCounts, countPending())
-                })
-        }
+        setTextButton(MainButton.PendingCounts, countPending())
     }
 
     override fun scannerCompleted(scanCode: String) {
@@ -230,7 +214,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         Screen.closeKeyboard(this)
 
         if (Statics.currentUserId > 0L) {
-            runOnUiThread { sync.startSync() }
+            sync.startSync()
         }
     }
 
@@ -1033,44 +1017,9 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray,
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) {
-            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
-            return
-        }
-
-        when (requestCode) {
-            REQUEST_EXTERNAL_STORAGE -> {
-                // If the request is canceled, the result arrays are empty.
-                if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    showSnackBar(getString(R.string.cannot_write_to_external_storage), ERROR)
-                } else {
-                    writeNewOrderRequest(
-                        newOrArray = newOrArray,
-                        onEvent = {
-                            showSnackBar(it.text, it.snackBarType)
-                            if (it.snackBarType in SnackBarType.getFinish()) {
-                                newOrArray.clear()
-                            }
-                        }
-                    )
-                }
-            }
-        }
-    }
-
     companion object {
-        private const val REQUEST_EXTERNAL_STORAGE = 5001
-
         fun equals(a: Any?, b: Any): Boolean {
             return a != null && a == b
         }
-
-        private var newOrArray: ArrayList<OrderRequest> = ArrayList()
     }
 }
