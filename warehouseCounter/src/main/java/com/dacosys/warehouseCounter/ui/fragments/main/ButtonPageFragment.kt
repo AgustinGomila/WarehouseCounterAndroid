@@ -143,7 +143,7 @@ class ButtonPageFragment : Fragment() {
         val orientation = resources.configuration.orientation
 
         val icon = AppCompatResources.getDrawable(requireContext(), m.iconResource).apply {
-            this?.setBounds(0, 0, 115, 115)
+            this?.setBounds(0, 0, 100, 100)
         }
 
         try {
