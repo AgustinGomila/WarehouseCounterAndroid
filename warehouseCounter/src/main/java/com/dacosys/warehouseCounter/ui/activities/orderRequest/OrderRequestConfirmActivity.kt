@@ -65,6 +65,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
     // OrderRequest    
     private var id: Long = 0L
+    private var filename: String = ""
     private lateinit var orderRequest: OrderRequest
 
     // Lista completa
@@ -112,6 +113,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         savedInstanceState.putString(ARG_TITLE, tempTitle)
 
         savedInstanceState.putLong(ARG_ID, id)
+        savedInstanceState.putString(ARG_FILENAME, filename)
 
         if (adapter != null) {
             savedInstanceState.putParcelable("lastSelected", currentItem)
@@ -133,6 +135,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         if (tempTitle.isEmpty()) tempTitle = getString(R.string.confirm_count)
 
         id = b.getLong(ARG_ID)
+        filename = b.getString(ARG_FILENAME) ?: ""
 
         lastSelected = b.parcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
@@ -239,6 +242,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     private fun loadOrderRequest() {
         OrderRequestCoroutines.getByIdAsKtor(
             id = id,
+            filename = filename,
             onResult = {
                 if (it != null) {
 
@@ -297,7 +301,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 orType == OrderRequestType.stockAuditFromDevice ||
                 orType == OrderRequestType.packaging
             ) {
-                OrderRequestHeader.newInstance(id)
+                OrderRequestHeader.newInstance(id, filename)
             } else {
                 return
             }
@@ -608,6 +612,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     companion object {
         const val ARG_TITLE = "title"
         const val ARG_ID = "id"
+        const val ARG_FILENAME = "filename"
         const val ARG_CONFIRM_STATUS = "confirmStatus"
         const val ARG_IS_SIGNED = "isSigned"
 

@@ -31,6 +31,8 @@ import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getPendingPath
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.removeOrdersFiles
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
@@ -38,7 +40,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.LogCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
-import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines.update
 import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegex
 import com.dacosys.warehouseCounter.databinding.OrderRequestActivityBothPanelsCollapsedBinding
@@ -94,9 +95,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var panelTopIsExpanded = false
 
     private lateinit var orderRequest: OrderRequest
+    private var id: Long = 0L
+    private var filename: String = ""
 
     private var itemCode: ItemCode? = null
-    private var id: Long = 0L
     private var completeList: ArrayList<OrderRequestContent> = ArrayList()
     private var checkedIdArray: ArrayList<Long> = ArrayList()
     private var isNew: Boolean = false
@@ -178,6 +180,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
         b.putLong(ARG_ID, id)
+        b.putString(ARG_FILENAME, filename)
         b.putBoolean(ARG_IS_NEW, isNew)
 
         b.putParcelable("itemCode", itemCode)
@@ -210,6 +213,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         isNew = b.getBoolean(ARG_IS_NEW)
         id = b.getLong(ARG_ID)
+        filename = b.getString(ARG_FILENAME) ?: ""
 
         partial = b.getBoolean("partial")
         partialBlock = b.getBoolean("partialBlock")
@@ -229,6 +233,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         isNew = extras.getBoolean(ARG_IS_NEW)
         id = extras.getLong(ARG_ID)
+        filename = extras.getString(ARG_FILENAME) ?: ""
 
         loadDefaultValues()
     }
@@ -236,6 +241,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun loadOrderRequest() {
         OrderRequestCoroutines.getByIdAsKtor(
             id = id,
+            filename = filename,
             onResult = {
                 if (it != null) {
 
@@ -584,12 +590,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
     }
 
-    private fun removeOrder(onFinish: () -> Unit) {
-        OrderRequestCoroutines.removeById(
-            id = id,
-            onResult = { onFinish() })
-    }
-
     private fun fillAdapter(t: ArrayList<OrderRequestContent>) {
         completeList = t
 
@@ -723,7 +723,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
                     val startTime = System.currentTimeMillis()
                     while (!isDone) {
-                        if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
+                        if (System.currentTimeMillis() - startTime == (settingsVm.connectionTimeout * 1000).toLong()) {
                             isDone = true
                         }
                     }
@@ -800,15 +800,26 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         orderRequest.contents = fullList
 
-        update(orderRequest = orderRequest, onEvent = { })
-
-        onFinish()
+        OrderRequestCoroutines.update(
+            orderRequest = orderRequest,
+            onEvent = {
+                if (it.snackBarType != SnackBarType.SUCCESS) {
+                    showSnackBar(it.text, it.snackBarType)
+                }
+            },
+            onFilename = {
+                if (it.isNotEmpty()) {
+                    onFinish()
+                }
+            }
+        )
     }
 
     private fun launchFinishDialog() {
         val intent = Intent(this, OrderRequestConfirmActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
         intent.putExtra(OrderRequestConfirmActivity.ARG_ID, id)
+        intent.putExtra(OrderRequestConfirmActivity.ARG_FILENAME, filename)
         resultForFinishCount.launch(intent)
     }
 
@@ -831,18 +842,13 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
     private fun processCount(completed: Boolean) {
-        // Preparar el conteo
-        orderRequest.contents = adapter?.fullList?.toList() ?: listOf()
-        orderRequest.completed = completed
-        orderRequest.finishDate =
-            if (completed) DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString()
-            else ""
-
-        setImagesJson()
-
         LogCoroutines.getByOrderId(
             orderId = id,
             onResult = {
+                orderRequest.completed = completed
+                orderRequest.finishDate =
+                    if (completed) DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString()
+                    else ""
                 orderRequest.logs = it.toList()
 
                 saveTempOrder {
@@ -850,35 +856,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             }
         )
-    }
-
-    private fun setImagesJson() {
-        /*
-        // IMAGE CONTROL
-        // LUEGO, CUANDO FINALMENTE SE ENVÍA LA RECOLECCIÓN,
-        // EL SERVIDOR DEVUELVE LOS ID'S NECESARIOS PARA COMPLETAR LOS DATOS DEL DOCUMENTO
-        // Y SUBIRLO AL FTP
-        if (docContObjArrayList.count() > 0) {
-            val docs: ArrayList<Document> = ArrayList()
-            docContObjArrayList.forEach { t ->
-
-                val x = Document()
-                x.description = t.description
-                x.observations = t.obs
-                x.reference = t.reference
-
-                val y = DocumentContent(
-                    t.filename_original,
-                    DocumentType.Jpg
-                )
-
-                x.content = arrayListOf(y)
-                docs.add(x)
-            }
-
-            orderRequest!!.docArray = docs
-        }
-        */
     }
 
     private fun showLogDialog() {
@@ -1144,10 +1121,23 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         cancelCount()
     }
 
+    private fun removeOrderAndFinish() {
+        removeOrdersFiles(
+            path = getPendingPath(),
+            filesToRemove = arrayListOf(filename),
+            sendEvent = {
+                if (it.snackBarType == SnackBarType.SUCCESS) {
+                    OrderRequestCoroutines.removeById(
+                        id = id,
+                        onResult = { finish() })
+                }
+            }
+        )
+    }
+
     private fun cancelCount() {
         if (itemCount <= 0) {
-            removeOrder(onFinish = { finish() })
-            finish()
+            removeOrderAndFinish()
         } else {
             runOnUiThread {
                 val builder = AlertDialog.Builder(this)
@@ -1157,7 +1147,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     dialog.dismiss()
                 }
                 builder.setNegativeButton(R.string.no) { _, _ ->
-                    removeOrder(onFinish = { finish() })
+                    removeOrderAndFinish()
                 }
                 builder.setPositiveButton(R.string.yes) { _, _ ->
                     processCount(completed = false)
@@ -1733,6 +1723,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     companion object {
         const val ARG_TITLE = "title"
         const val ARG_ID = "id"
+        const val ARG_FILENAME = "filename"
         const val ARG_IS_NEW = "isNew"
 
         fun equals(a: Any?, b: Any?): Boolean {

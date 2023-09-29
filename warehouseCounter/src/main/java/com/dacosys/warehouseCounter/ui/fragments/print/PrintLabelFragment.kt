@@ -466,8 +466,9 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
 
         var startTime = System.currentTimeMillis()
         while (!isDone) {
-            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong())
+            if (System.currentTimeMillis() - startTime == (settingsVm.connectionTimeout * 1000).toLong()) {
                 isDone = true
+            }
         }
 
         if (items.isEmpty()) {
@@ -487,8 +488,9 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
 
         startTime = System.currentTimeMillis()
         while (!isDone) {
-            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong())
+            if (System.currentTimeMillis() - startTime == (settingsVm.connectionTimeout * 1000).toLong()) {
                 isDone = true
+            }
         }
 
         sendToPrinter(sendThis, onFinish)

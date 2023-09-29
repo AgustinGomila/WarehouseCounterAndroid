@@ -5,7 +5,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV1
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedPath
-import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.removeCountFiles
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.removeOrdersFiles
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.user.AuthData
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.user.UserAuthData.Companion.USER_AUTH_KEY
@@ -64,7 +64,7 @@ class SendOrder(
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
         apiServiceV1.sendOrders(body = getBody(), callback = {
-            removeCountFiles(
+            removeOrdersFiles(
                 path = getCompletedPath(),
                 filesToRemove = successFiles,
                 sendEvent = onEvent

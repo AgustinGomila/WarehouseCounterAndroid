@@ -47,8 +47,22 @@ class UpdateOrder(
     /** Save the Ids of the orders updated correctly */
     private val successIdList: ArrayList<Long> = ArrayList()
 
+    @get:Synchronized
+    private var isProcessDone = false
+
+    @Synchronized
+    private fun getProcessState(): Boolean {
+        return isProcessDone
+    }
+
+    @Synchronized
+    private fun setProcessState(state: Boolean) {
+        isProcessDone = state
+    }
+
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        var isDone = false
+        setProcessState(false)
+
         for ((index, order) in payload.withIndex()) {
 
             val orderId = order.orderRequestId
@@ -66,19 +80,19 @@ class UpdateOrder(
                         if (it.response != null) id = it.response.id
 
                         if (id > 0) successIdList.add(id)
-                        isDone = index == payload.lastIndex
+                        setProcessState(index == payload.lastIndex)
                     })
             } else {
                 sendEvent(context.getString(R.string.unknown_error), SnackBarType.ERROR)
-                isDone = true
+                setProcessState(true)
             }
         }
 
         val startTime = System.currentTimeMillis()
-        while (!isDone) {
-            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
+        while (!getProcessState()) {
+            if (System.currentTimeMillis() - startTime == (settingsVm.connectionTimeout * 1000).toLong()) {
                 sendEvent(context.getString(R.string.connection_timeout), SnackBarType.ERROR)
-                isDone = true
+                setProcessState(true)
             }
         }
 

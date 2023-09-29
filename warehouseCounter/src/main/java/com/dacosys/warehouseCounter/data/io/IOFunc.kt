@@ -47,7 +47,7 @@ class IOFunc {
             return File(completeCompletedPath)
         }
 
-        fun getPendingOrders(): ArrayList<OrderRequest> {
+        fun getPendingJsonOrders(): ArrayList<OrderRequest> {
             return getOrders(getPendingPath())
         }
 
@@ -63,7 +63,7 @@ class IOFunc {
                 if (!filesInFolder.isNullOrEmpty()) {
 
                     for (filename in filesInFolder) {
-                        val filePath = path.absolutePath + File.separator + filename
+                        val filePath = "${path.absolutePath}${File.separator}$filename"
                         val tempOr = OrderRequest(filePath)
 
                         if (!orArray.contains(tempOr)) {
@@ -71,7 +71,6 @@ class IOFunc {
                             orArray.add(tempOr)
                         }
                     }
-
                 }
             }
             return orArray
@@ -84,12 +83,12 @@ class IOFunc {
                 return Environment.MEDIA_MOUNTED == state || Environment.MEDIA_MOUNTED_READ_ONLY == state
             }
 
-        fun removeCountFiles(
+        fun removeOrdersFiles(
             path: File,
             filesToRemove: ArrayList<String>,
             sendEvent: (SnackBarEventData) -> Unit
         ) {
-            sendEvent(removeOrders(path, filesToRemove))
+            sendEvent(removeFiles(path = path, files = filesToRemove))
         }
 
         fun countPending(): Int {
@@ -98,33 +97,33 @@ class IOFunc {
             return files.count { t -> t.extension == "json" }
         }
 
-        private fun removeOrders(path: File, files: ArrayList<String>): SnackBarEventData {
+        private fun removeFiles(path: File, files: ArrayList<String>): SnackBarEventData {
             var result = SnackBarEventData(context.getString(R.string.ok), SnackBarType.SUCCESS)
 
-            if (isExternalStorageWritable) {
-                for (f in files) {
-                    val filePath = "${path.absolutePath}${File.separator}$f"
-                    val fl = File(filePath)
-                    if (fl.exists()) {
-                        if (!fl.delete()) {
-                            result = SnackBarEventData(
-                                context.getString(R.string.error_when_deleting_counts),
-                                SnackBarType.ERROR
-                            )
-                            break
-                        }
-                    } else {
+            if (!isExternalStorageWritable) {
+                result = SnackBarEventData(context.getString(R.string.external_storage_unwritable), SnackBarType.ERROR)
+                return result
+            }
+
+            for (f in files) {
+                val filePath = "${path.absolutePath}${File.separator}$f"
+                val fl = File(filePath)
+                if (fl.exists()) {
+                    if (!fl.delete()) {
                         result = SnackBarEventData(
-                            context.getString(R.string.error_when_deleting_counts_file_not_found),
+                            context.getString(R.string.error_when_deleting_counts),
                             SnackBarType.ERROR
                         )
                         break
                     }
+                } else {
+                    result = SnackBarEventData(
+                        context.getString(R.string.error_when_deleting_counts_file_not_found),
+                        SnackBarType.ERROR
+                    )
+                    break
                 }
-            } else {
-                result = SnackBarEventData(context.getString(R.string.external_storage_unwritable), SnackBarType.ERROR)
             }
-
             return result
         }
 
@@ -190,12 +189,17 @@ class IOFunc {
 
             var error = false
 
-            val path = if (completed) getCompletedPath() else getPendingPath()
+            val path =
+                if (completed) getCompletedPath()
+                else getPendingPath()
+
             if (writeToFile(directory = path, fileName = filename, data = value)) {
                 if (completed) {
                     // Elimino la orden original
                     val file = File(getPendingPath(), filename)
-                    if (file.exists()) file.delete()
+                    if (file.exists()) {
+                        file.delete()
+                    }
                 }
             } else {
                 val res =

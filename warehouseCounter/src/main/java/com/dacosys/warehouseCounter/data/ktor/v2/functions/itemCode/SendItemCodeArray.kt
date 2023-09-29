@@ -22,7 +22,22 @@ class SendItemCodeArray
     private val onEvent: (SnackBarEventData) -> Unit = { },
     private val onFinish: (ArrayList<ItemCodeResponse>) -> Unit,
 ) {
+    @get:Synchronized
+    private var isProcessDone = false
+
+    @Synchronized
+    private fun getProcessState(): Boolean {
+        return isProcessDone
+    }
+
+    @Synchronized
+    private fun setProcessState(state: Boolean) {
+        isProcessDone = state
+    }
+
     fun execute() {
+        setProcessState(false)
+
         /** Converting the list of [ItemCode] to a list of [ItemCodePayload] */
         val icPayloadArray: ArrayList<ItemCodePayload> = ArrayList()
         for (ic in payload) {
@@ -32,7 +47,6 @@ class SendItemCodeArray
             icPayloadArray.add(ItemCodePayload(qty, itemId, code))
         }
 
-        var isDone = false
         val allResp: ArrayList<ItemCodeResponse> = ArrayList()
 
         for ((index, icP) in icPayloadArray.withIndex()) {
@@ -45,16 +59,16 @@ class SendItemCodeArray
                         /** Update transferred: Actualizar los ItemCode enviados en la base de datos local */
                         ItemCodeCoroutines.updateTransferred(itemId = it.itemId, code = it.code)
                     }
-                    isDone = index == icPayloadArray.lastIndex
+                    setProcessState(index == icPayloadArray.lastIndex)
                 }
             ).execute()
         }
 
         val startTime = System.currentTimeMillis()
-        while (!isDone) {
-            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
+        while (!getProcessState()) {
+            if (System.currentTimeMillis() - startTime == (settingsVm.connectionTimeout * 1000).toLong()) {
                 sendEvent(context.getString(R.string.connection_timeout), SnackBarType.ERROR)
-                isDone = true
+                setProcessState(true)
             }
         }
 

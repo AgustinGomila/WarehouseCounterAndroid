@@ -62,22 +62,22 @@ data class OrderRequest(
     val toKtor: OrderRequestKtor
         get() {
             return OrderRequestKtor(
-                orderRequestId = this.orderRequestId,
-                externalId = this.externalId,
+                clientId = this.clientId,
+                completed = this.completed == 1,
                 creationDate = this.creationDate,
                 description = this.description,
-                zone = this.zone,
-                orderTypeId = this.orderTypeId.toLong(),
+                externalId = this.externalId,
+                finishDate = this.finishDate,
+                orderRequestId = this.orderRequestId,
                 orderTypeDescription = this.orderTypeDescription,
+                orderTypeId = this.orderTypeId.toLong(),
                 resultAllowDiff = this.resultAllowDiff == 1,
                 resultAllowMod = this.resultAllowMod == 1,
                 resultDiffProduct = this.resultDiffProduct == 1,
                 resultDiffQty = this.resultDiffQty == 1,
-                completed = this.completed == 1,
                 startDate = this.startDate,
-                finishDate = this.finishDate,
-                clientId = this.clientId,
-                userId = this.userId
+                userId = this.userId,
+                zone = this.zone,
             )
         }
 

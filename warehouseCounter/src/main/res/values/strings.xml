@@ -831,4 +831,5 @@
     <string name="_0_lots">%s lotes</string>
     <string name="_0_users">%s usuarios</string>
     <string name="database_status">Estado de la base de datos</string>
+    <string name="no_name">Sin nombre</string>
 </resources>

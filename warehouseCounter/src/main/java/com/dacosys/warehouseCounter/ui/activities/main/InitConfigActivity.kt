@@ -429,11 +429,12 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
 
             R.id.action_trigger_scan -> {
-                ///* For Debug */
-                //scannerCompleted(
-                //    """{"config":{"client_email":"miguel@dacosys.com","client_password":"sarasa123!!"}}""".trimIndent()
-                //)
-                //return super.onOptionsItemSelected(item)
+                //if (BuildConfig.DEBUG) {
+                //    scannerCompleted(
+                //        """{"config":{"client_email":"miguel@dacosys.com","client_password":"sarasa123!!"}}""".trimIndent()
+                //    )
+                //    return super.onOptionsItemSelected(item)
+                //}
 
                 LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)

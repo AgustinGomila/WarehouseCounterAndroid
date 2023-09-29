@@ -3,13 +3,16 @@ package com.dacosys.warehouseCounter.data.ktor.v2.functions.order
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiServiceV2
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.apiRequest
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.apiParam.ListResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiActionParam
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiPaginationParam
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ORDER_PATH
+import com.dacosys.warehouseCounter.data.ktor.v2.service.APIResponse
 
 class OrderPagingSource private constructor(builder: Builder) : PagingSource<Int, OrderResponse>() {
 
@@ -20,7 +23,7 @@ class OrderPagingSource private constructor(builder: Builder) : PagingSource<Int
         return try {
             val currentPage = params.key ?: 1
             val response =
-                apiServiceV2.getOrderResponse(
+                getOrderResponse(
                     pagination = ApiPaginationParam(currentPage, settingsVm.defaultPageSize),
                     filter = ArrayList(filter),
                     action = ArrayList(action)
@@ -54,6 +57,57 @@ class OrderPagingSource private constructor(builder: Builder) : PagingSource<Int
 
     override fun getRefreshKey(state: PagingState<Int, OrderResponse>): Int? {
         return null
+    }
+
+    @get:Synchronized
+    private var isProcessDone = false
+
+    @Synchronized
+    private fun getProcessState(): Boolean {
+        return isProcessDone
+    }
+
+    @Synchronized
+    private fun setProcessState(state: Boolean) {
+        isProcessDone = state
+    }
+
+    /**
+     * Get a list of [OrderResponse]
+     *
+     * @param pagination Pagination
+     * @param filter List of filters
+     * @param action List of parameters
+     * @return [APIResponse] of [ListResponse]<[OrderResponse]>
+     */
+    private suspend fun getOrderResponse(
+        pagination: ApiPaginationParam,
+        filter: ArrayList<ApiFilterParam>,
+        action: ArrayList<ApiActionParam>
+    ): APIResponse<ListResponse<OrderResponse>> {
+        setProcessState(false)
+        var response: APIResponse<ListResponse<OrderResponse>> = APIResponse()
+
+        apiRequest.getListOf<OrderResponse>(
+            objPath = ORDER_PATH,
+            listName = OrderResponse.ORDER_RESPONSE_LIST_KEY,
+            action = action,
+            filter = filter,
+            pagination = pagination,
+            callback = {
+                response = it
+                setProcessState(true)
+            }
+        )
+
+        val startTime = System.currentTimeMillis()
+        while (!getProcessState()) {
+            if (System.currentTimeMillis() - startTime == (settingsVm.connectionTimeout * 1000).toLong()) {
+                setProcessState(true)
+            }
+        }
+
+        return response
     }
 
     class InvalidApiResponseException(message: String) : Exception(message)

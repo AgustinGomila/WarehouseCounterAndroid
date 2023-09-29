@@ -47,8 +47,22 @@ class CreateOrder(
     private val successFiles: ArrayList<String> = ArrayList()
     private val ids: ArrayList<Long> = ArrayList()
 
+    @get:Synchronized
+    private var isProcessDone = false
+
+    @Synchronized
+    private fun getProcessState(): Boolean {
+        return isProcessDone
+    }
+
+    @Synchronized
+    private fun setProcessState(state: Boolean) {
+        isProcessDone = state
+    }
+
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        var isDone = false
+        setProcessState(false)
+
         for ((index, order) in payload.withIndex()) {
             if (BuildConfig.DEBUG) println(json.encodeToString(OrderRequest.serializer(), order))
 
@@ -62,15 +76,15 @@ class CreateOrder(
                     ids.add(id)
                     successFiles.add(order.filename)
                 }
-                isDone = index == payload.lastIndex
+                setProcessState(index == payload.lastIndex)
             })
         }
 
         val startTime = System.currentTimeMillis()
-        while (!isDone) {
-            if (System.currentTimeMillis() - startTime == settingsVm.connectionTimeout.toLong()) {
+        while (!getProcessState()) {
+            if (System.currentTimeMillis() - startTime == (settingsVm.connectionTimeout * 1000).toLong()) {
                 sendEvent(context.getString(R.string.connection_timeout), SnackBarType.ERROR)
-                isDone = true
+                setProcessState(true)
             }
         }
 

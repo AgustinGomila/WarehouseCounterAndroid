@@ -1,8 +1,8 @@
 package com.dacosys.warehouseCounter.data.room.dao.orderRequest
 
 import android.util.Log
-import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.generateFilename
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeJsonToFile
 import com.dacosys.warehouseCounter.data.room.database.WcTempDatabase.Companion.database
@@ -18,13 +18,28 @@ object OrderRequestCoroutines {
     private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     @Throws(Exception::class)
+    fun getAll(
+        onResult: (List<OrderRequest>) -> Unit = {},
+    ) = CoroutineScope(Job() + Dispatchers.IO).launch {
+        try {
+            val r = async { database.orderRequestDao().getAll() }.await()
+            onResult(r)
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, e.message.toString())
+            onResult(listOf())
+        }
+    }
+
+    @Throws(Exception::class)
     fun getByIdAsKtor(
         id: Long,
+        filename: String,
         onResult: (OrderRequestKtor?) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
             val r = async { database.orderRequestDao().getById(id)?.toKtor }.await()
             r?.roomId = id
+            r?.filename = filename
 
             if (r != null) {
                 val rc =
@@ -60,14 +75,16 @@ object OrderRequestCoroutines {
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
             async {
-                val id = orderRequest.roomId
-                val newContent = contents.map { it.toRoom(id) }.toList()
-                val orRoom = orderRequest.toRoom
+                val id = orderRequest.roomId ?: 0L
+                if (id != 0L) {
+                    val newContent = contents.map { it.toRoom(id) }.toList()
+                    val orRoom = orderRequest.toRoom
 
-                database.orderRequestDao().update(
-                    orderRequest = orRoom,
-                    contents = ArrayList(newContent),
-                )
+                    database.orderRequestDao().update(
+                        orderRequest = orRoom,
+                        contents = ArrayList(newContent),
+                    )
+                }
             }.await()
             onResult(true)
         } catch (e: Exception) {
@@ -76,11 +93,25 @@ object OrderRequestCoroutines {
         }
     }
 
+    @get:Synchronized
+    private var isProcessDone = false
+
+    @Synchronized
+    private fun getProcessState(): Boolean {
+        return isProcessDone
+    }
+
+    @Synchronized
+    private fun setProcessState(state: Boolean) {
+        isProcessDone = state
+    }
+
     fun update(
         orderRequest: OrderRequestKtor,
-        onEvent: (SnackBarEventData) -> Unit
+        onEvent: (SnackBarEventData) -> Unit,
+        onFilename: (String) -> Unit,
     ): Boolean {
-        var isDone = false
+        setProcessState(false)
         var isOk = false
 
         try {
@@ -89,33 +120,41 @@ object OrderRequestCoroutines {
                 filename = "${generateFilename()}.json"
             }
 
+            orderRequest.filename = filename
+
             val orJson = json.encodeToString(OrderRequestKtor.serializer(), orderRequest)
             Log.i(tag, orJson)
 
             update(orderRequest, orderRequest.contents) {
                 isOk = if (it) {
-                    writeJsonToFile(
-                        filename = filename,
-                        value = orJson,
-                        completed = orderRequest.completed ?: false,
-                        onEvent = onEvent,
-                    )
+                    if (writeJsonToFile(
+                            filename = filename,
+                            value = orJson,
+                            completed = orderRequest.completed == true,
+                            onEvent = onEvent
+                        )
+                    ) {
+                        onFilename(filename)
+                        true
+                    } else {
+                        false
+                    }
                 } else {
                     false
                 }
-                isDone = true
+                setProcessState(true)
             }
         } catch (e: UnsupportedEncodingException) {
             e.printStackTrace()
             Log.e(tag, e.message ?: "")
             isOk = false
-            isDone = true
+            setProcessState(true)
         }
 
         val startTime = System.currentTimeMillis()
-        while (!isDone) {
-            if (System.currentTimeMillis() - startTime == WarehouseCounterApp.settingsVm.connectionTimeout.toLong()) {
-                isDone = true
+        while (!getProcessState()) {
+            if (System.currentTimeMillis() - startTime == (settingsVm.connectionTimeout * 1000).toLong()) {
+                setProcessState(true)
             }
         }
 

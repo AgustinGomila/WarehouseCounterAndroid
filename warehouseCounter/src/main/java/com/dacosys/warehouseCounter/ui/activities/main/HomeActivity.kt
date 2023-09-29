@@ -40,6 +40,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sync
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.completePendingPath
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.countPending
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedOrders
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
@@ -55,7 +56,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.sync.SyncViewModel
 import com.dacosys.warehouseCounter.data.room.dao.pendingLabel.PendingLabelCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.client.Client
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.AddOrder
-import com.dacosys.warehouseCounter.data.room.entity.orderRequest.AddOrderFromFile
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.RepackOrder
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
 import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
@@ -93,6 +93,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
 import kotlin.concurrent.thread
+import kotlin.io.path.Path
 
 
 class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFragment.ButtonClickedListener {
@@ -453,23 +454,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
     private val resultForCompletedCount =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            val data = it?.data
-            try {
-                if (it?.resultCode == RESULT_OK && data != null) {
-                    val filenames: ArrayList<String> =
-                        data.getStringArrayListExtra(OutboxActivity.ARG_ORDER_REQUEST_FILENAMES)
-                            ?: return@registerForActivityResult
-
-                    if (filenames.isEmpty()) return@registerForActivityResult
-
-                    addOrderRequestFromJson(filenames[0])
-                }
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                ErrorLog.writeLog(this, tag, ex)
-            } finally {
-                rejectNewInstances = false
-            }
+            rejectNewInstances = false
         }
 
     private val resultForUnpackOrder = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -575,7 +560,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
                     if (filenames.isEmpty()) return@registerForActivityResult
 
-                    addOrderRequestFromJson(filenames[0])
+                    loadOrderFromFile(filenames[0])
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
@@ -585,41 +570,44 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             }
         }
 
+    private fun loadOrderFromFile(filename: String) {
+        val order = OrderRequest(Path(completePendingPath, filename).toString())
+        val id = order.roomId ?: return
+        if (id == 0L) return
+
+        launchOrderRequestContentActivity(id, filename, false)
+    }
+
     private fun addOrderRequest(client: Client?, description: String, orderRequestType: OrderRequestType) {
         AddOrder(
             client = client,
             description = description,
             orderRequestType = orderRequestType,
             onEvent = { showSnackBar(it.text, it.snackBarType) },
-            onNewId = {
-                val intent = Intent(context, OrderRequestContentActivity::class.java)
-                intent.putExtra(OrderRequestContentActivity.ARG_ID, it)
-                intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, true)
-                startActivity(intent)
+            onNewId = { newId, filename ->
+                if (newId != 0L) {
+                    launchOrderRequestContentActivity(newId, filename, true)
+                }
             }
         )
+    }
+
+    private fun launchOrderRequestContentActivity(id: Long, filename: String, isNew: Boolean) {
+        val intent = Intent(context, OrderRequestContentActivity::class.java)
+        intent.putExtra(OrderRequestContentActivity.ARG_ID, id)
+        intent.putExtra(OrderRequestContentActivity.ARG_FILENAME, filename)
+        intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, isNew)
+        startActivity(intent)
     }
 
     private fun repackOrder(order: OrderResponse) {
         RepackOrder(
             order = order,
             onEvent = { showSnackBar(it.text, it.snackBarType) },
-            onNewId = {
+            onNewId = { newId, filename ->
                 val intent = Intent(context, OrderRequestContentActivity::class.java)
-                intent.putExtra(OrderRequestContentActivity.ARG_ID, it)
-                intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
-                startActivity(intent)
-            }
-        )
-    }
-
-    private fun addOrderRequestFromJson(filename: String) {
-        AddOrderFromFile(
-            filename = filename,
-            onEvent = { showSnackBar(it.text, it.snackBarType) },
-            onNewId = {
-                val intent = Intent(context, OrderRequestContentActivity::class.java)
-                intent.putExtra(OrderRequestContentActivity.ARG_ID, it)
+                intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
+                intent.putExtra(OrderRequestContentActivity.ARG_FILENAME, filename)
                 intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
                 startActivity(intent)
             }

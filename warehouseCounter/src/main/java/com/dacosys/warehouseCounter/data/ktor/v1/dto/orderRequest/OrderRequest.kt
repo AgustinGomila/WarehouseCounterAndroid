@@ -3,8 +3,6 @@ package com.dacosys.warehouseCounter.data.ktor.v1.dto.orderRequest
 import android.os.Parcel
 import android.os.Parcelable
 import com.dacosys.imageControl.dto.Document
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
-import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getJsonFromFile
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.log.Log
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -136,39 +134,6 @@ class OrderRequest() : Parcelable {
         this.log = log
         this.content = content
         this.docArray = documents
-    }
-
-    constructor(filename: String) : this() {
-        val jsonString = getJsonFromFile(filename)
-
-        try {
-            val or = json.decodeFromString<OrderRequest>(jsonString)
-            if (or.orderRequestId == null || or.orderRequestId!! <= 0L) return
-
-            this.orderRequestId = or.orderRequestId
-            this.externalId = or.externalId
-            this.creationDate = or.creationDate
-            this.description = or.description
-            this.zone = or.zone
-            this.orderRequestedType = or.orderRequestedType
-            this.resultDiffQty = or.resultDiffQty
-            this.resultDiffProduct = or.resultDiffProduct
-            this.resultAllowDiff = or.resultAllowDiff
-            this.resultAllowMod = or.resultAllowMod
-            this.completed = or.completed
-            this.startDate = or.startDate
-            this.finishDate = or.finishDate
-            this.clientId = or.clientId
-            this.userId = or.userId
-
-            this.log = or.log
-            this.content = or.content
-            this.docArray = or.docArray
-
-            this.filename = filename.substringAfterLast('/')
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-        }
     }
 
     override fun toString(): String {

@@ -258,11 +258,11 @@ class OutboxActivity : AppCompatActivity() {
 
     private fun showDetail() {
         val filename = currentItem?.filename ?: return
-        val completePath = Path(completeCompletedPath, filename).toString()
 
         val intent = Intent(context, OrderRequestDetailActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra(OrderRequestDetailActivity.ARG_FILENAME, completePath)
+        intent.putExtra(OrderRequestDetailActivity.ARG_ID, currentItem?.roomId)
+        intent.putExtra(OrderRequestDetailActivity.ARG_FILENAME, Path(completeCompletedPath, filename).toString())
         startActivity(intent)
     }
 

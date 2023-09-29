@@ -14,6 +14,7 @@ import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequestEn
 
 @Dao
 interface OrderRequestDao {
+
     @Query("SELECT * FROM ${Entry.TABLE_NAME}")
     suspend fun getAll(): List<OrderRequest>
 

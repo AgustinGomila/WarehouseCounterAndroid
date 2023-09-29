@@ -27,10 +27,12 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.completePendingPath
-import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getPendingOrders
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getPendingJsonOrders
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getPendingPath
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.removeOrdersFiles
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
+import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.databinding.InboxActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
@@ -41,7 +43,6 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import java.io.File
 import kotlin.concurrent.thread
 import kotlin.io.path.Path
 
@@ -305,23 +306,21 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     }
 
     private fun removeSelected(toRemove: ArrayList<OrderRequest>) {
-        var isOk = true
+        val filenames = ArrayList(toRemove.map { it.filename })
+        val ids = toRemove.mapNotNull { it.roomId }
 
-        val currentDir = getPendingPath()
-        for (i in toRemove) {
-            val filePath = currentDir.absolutePath + File.separator + i.filename
-            val fl = File(filePath)
-            if (!fl.delete()) {
-                isOk = false
-                break
-            }
-        }
-
-        if (!isOk) {
-            showSnackBar(getString(R.string.an_error_occurred_while_trying_to_delete_the_count), SnackBarType.ERROR)
-        }
-
-        thread { fillAdapter(ArrayList()) }
+        removeOrdersFiles(
+            path = getPendingPath(),
+            filesToRemove = filenames,
+            sendEvent = {
+                if (it.snackBarType == SnackBarType.SUCCESS) {
+                    OrderRequestCoroutines.removeById(
+                        idList = ids,
+                        onResult = { thread { fillAdapter(ArrayList()) } })
+                } else {
+                    showSnackBar(it.text, it.snackBarType)
+                }
+            })
     }
 
     private fun continueOrder() {
@@ -345,11 +344,11 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
 
     private fun showDetail() {
         val filename = currentItem?.filename ?: return
-        val completePath = Path(completePendingPath, filename).toString()
 
         val intent = Intent(context, OrderRequestDetailActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra(OrderRequestDetailActivity.ARG_FILENAME, completePath)
+        intent.putExtra(OrderRequestDetailActivity.ARG_ID, currentItem?.roomId)
+        intent.putExtra(OrderRequestDetailActivity.ARG_FILENAME, Path(completePendingPath, filename).toString())
         startActivity(intent)
     }
 
@@ -367,7 +366,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
 
         var temp = t
         if (!temp.any()) {
-            temp = getPendingOrders()
+            temp = getPendingJsonOrders()
             if (temp.isEmpty()) {
                 showSnackBar(getString(R.string.there_are_no_pending_counts), SnackBarType.INFO)
             }

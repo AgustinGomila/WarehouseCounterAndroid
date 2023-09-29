@@ -111,11 +111,8 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
         client = b.parcelable(ARG_CLIENT)
 
-        if (b.containsKey(ARG_FILENAME)) {
-            filename = b.getString(ARG_FILENAME) ?: ""
-        } else if (b.containsKey(ARG_ID)) {
-            orderRequestId = b.getLong(ARG_ID)
-        }
+        if (b.containsKey(ARG_FILENAME)) filename = b.getString(ARG_FILENAME) ?: ""
+        if (b.containsKey(ARG_ID)) orderRequestId = b.getLong(ARG_ID)
     }
 
     private fun loadBundleValues(b: Bundle) {
@@ -197,28 +194,19 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     }
 
     private fun loadOrderRequest() {
-        if (filename.isNotEmpty()) {
-            val or = OrderRequest(filename)
+        OrderRequestCoroutines.getByIdAsKtor(
+            id = orderRequestId,
+            filename = filename,
+            onResult = {
+                if (it != null) {
 
-            orderRequestId = or.orderRequestId ?: 0L
-            orderRequest = or
-            completeList = ArrayList(or.contents)
+                    orderRequest = it
+                    completeList = ArrayList(it.contents)
 
-            fillOrderRequest()
-        } else {
-            OrderRequestCoroutines.getByIdAsKtor(
-                id = orderRequestId,
-                onResult = {
-                    if (it != null) {
-
-                        orderRequest = it
-                        completeList = ArrayList(it.contents)
-
-                        fillOrderRequest()
-                    }
+                    fillOrderRequest()
                 }
-            )
-        }
+            }
+        )
     }
 
     private fun fillOrderRequest() {
@@ -255,7 +243,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 orType == OrderRequestType.stockAuditFromDevice ||
                 orType == OrderRequestType.packaging
             ) {
-                OrderRequestHeader.newInstance(orderRequestId)
+                OrderRequestHeader.newInstance(orderRequestId, filename)
             } else {
                 return
             }

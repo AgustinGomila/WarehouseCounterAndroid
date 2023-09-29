@@ -35,11 +35,10 @@ data class OrderRequest(
     @SerialName(CONTENT_LIST_KEY) var contents: List<OrderRequestContent> = listOf(),
     @SerialName(LOG_LIST_KEY) var logs: List<Log> = listOf(),
     @SerialName(PACKAGE_LIST_KEY) var packages: List<Package> = listOf(),
+
+    @SerialName(ROOM_ID_KEY) var roomId: Long? = null,
+    @SerialName(FILENAME_KEY) var filename: String = "",
 ) : Parcelable {
-
-    var filename: String = ""
-
-    var roomId: Long = 0
 
     val orderRequestType: OrderRequestType
         get() {
@@ -67,21 +66,22 @@ data class OrderRequest(
         contents = parcel.createTypedArrayList(OrderRequestContent)?.toList() ?: listOf(),
         logs = parcel.createTypedArrayList(Log)?.toList() ?: listOf(),
         packages = parcel.createTypedArrayList(Package)?.toList() ?: listOf(),
-    ) {
-        filename = parcel.readString() ?: ""
-        roomId = parcel.readLong()
-    }
+
+        roomId = parcel.readValue(Long::class.java.classLoader) as? Long,
+        filename = parcel.readString() ?: "",
+    )
 
     val toRoom: OrderRequestRoom
         get() {
             return OrderRequestRoom(
+                id = this.roomId ?: 0L,
+                orderRequestId = this.orderRequestId ?: 0L,
                 clientId = this.clientId ?: 0L,
                 completed = if (this.completed == true) 1 else 0,
                 creationDate = this.creationDate ?: "",
                 description = this.description,
                 externalId = this.externalId,
                 finishDate = this.finishDate ?: "",
-                id = this.roomId,
                 orderTypeDescription = this.orderTypeDescription,
                 orderTypeId = this.orderTypeId?.toInt() ?: 0,
                 resultAllowDiff = if (this.resultAllowDiff == true) 1 else 0,
@@ -106,7 +106,6 @@ data class OrderRequest(
 
         try {
             val or = json.decodeFromString<OrderRequest>(jsonString)
-            if (or.orderRequestId == null || or.orderRequestId!! <= 0L) return
 
             this.clientId = or.clientId
             this.completed = or.completed
@@ -129,8 +128,8 @@ data class OrderRequest(
             this.logs = or.logs
             this.packages = or.packages
 
-            this.filename = filename.substringAfterLast('/')
             this.roomId = or.roomId
+            this.filename = filename
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
@@ -157,6 +156,9 @@ data class OrderRequest(
         this.contents = orderResponse.contents.map { OrderRequestContent(it) }
         this.logs = listOf()
         this.packages = listOf()
+
+        this.roomId = 0L
+        this.filename = ""
     }
 
     override fun toString(): String {
@@ -214,8 +216,8 @@ data class OrderRequest(
         parcel.writeTypedList(logs)
         parcel.writeTypedList(packages)
 
+        parcel.writeValue(roomId)
         parcel.writeString(filename)
-        parcel.writeLong(roomId)
     }
 
     override fun describeContents(): Int {
@@ -239,6 +241,9 @@ data class OrderRequest(
         const val START_DATE_KEY = "startDate"
         const val USER_ID_KEY = "userId"
         const val ZONE_KEY = "zone"
+
+        const val FILENAME_KEY = "filename"
+        const val ROOM_ID_KEY = "roomId"
 
         fun toUpdatePayload(or: OrderRequest): OrderUpdatePayload {
             return OrderUpdatePayload(

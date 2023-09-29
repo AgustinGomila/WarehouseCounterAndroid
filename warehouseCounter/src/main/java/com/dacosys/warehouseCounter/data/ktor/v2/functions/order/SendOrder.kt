@@ -1,11 +1,8 @@
 package com.dacosys.warehouseCounter.data.ktor.v2.functions.order
 
-import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedPath
-import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.removeCountFiles
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.removeOrdersFiles
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
-import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 
@@ -15,36 +12,40 @@ class SendOrder(
     private val onFinish: (ArrayList<Long>) -> Unit
 ) {
     init {
-
         CreateOrder(
             payload = orders,
             onEvent = { sendEvent(it.text, it.snackBarType) },
             onFinish = { ids, successFiles ->
                 if (successFiles.isNotEmpty()) {
-
-                    /** We delete the files of the orders sent */
-                    removeCountFiles(
-                        path = getCompletedPath(),
-                        filesToRemove = successFiles,
-                        sendEvent = { eventData ->
-
-                            if (eventData.snackBarType == SnackBarType.SUCCESS) {
-
-                                /** We remove the reference to the order in room database,
-                                 * and we fill the list adapter at the end. */
-                                OrderRequestCoroutines.removeById(
-                                    idList = orders.mapNotNull { orderRequest -> orderRequest.orderRequestId },
-                                    onResult = {
-                                        onFinish(ids)
-                                        sendEvent(context.getString(R.string.ok), SnackBarType.SUCCESS)
-                                    })
-                            } else {
-                                sendEvent(eventData)
-                            }
-                        })
+                    removeOrders(ids, successFiles)
                 }
             }
         ).execute()
+    }
+
+    private fun removeOrders(ids: ArrayList<Long>, filesToRemove: ArrayList<String>) {
+        /** We delete the files of the orders sent */
+        removeOrdersFiles(
+            path = getCompletedPath(),
+            filesToRemove = filesToRemove,
+            sendEvent = { eventData ->
+
+                if (eventData.snackBarType == SnackBarType.SUCCESS) {
+                    // TODO: Ver esto, qué hacer con los pedidos enviados?
+
+                    /** We remove the reference to the order in room database. */
+
+                    // OrderRequestCoroutines.removeById(
+                    //     idList = orders.mapNotNull { orderRequest -> orderRequest.roomId },
+                    //     onResult = {
+                    //         onFinish(ids)
+                    //     })
+
+                    onFinish(ids)
+                } else {
+                    sendEvent(eventData)
+                }
+            })
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {

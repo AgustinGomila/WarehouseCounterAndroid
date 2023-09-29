@@ -10,7 +10,11 @@ import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 
-class RepackOrder(order: OrderResponse, private val onEvent: (SnackBarEventData) -> Unit, onNewId: (Long) -> Unit) {
+class RepackOrder(
+    order: OrderResponse,
+    private val onEvent: (SnackBarEventData) -> Unit,
+    onNewId: (Long, String) -> Unit
+) {
     init {
         sendEvent(
             String.format(
@@ -40,17 +44,17 @@ class RepackOrder(order: OrderResponse, private val onEvent: (SnackBarEventData)
             orderRequest = orderRequestForPackaging,
             onResult = { newId ->
                 if (newId != null) {
-                    orderRequestForPackaging.id = newId
+
+                    val orderRequest = orderRequestForPackaging.toKtor
+
+                    orderRequest.contents = order.contentToKtor()
+                    orderRequest.roomId = newId
+
                     OrderRequestCoroutines.update(
-                        orderRequest = orderRequestForPackaging.toKtor,
-                        contents = order.contentToKtor(),
-                        onResult = {
-                            if (it) {
-                                onNewId(newId)
-                            } else {
-                                sendEvent(context.getString(R.string.error_when_updating_the_order), SnackBarType.ERROR)
-                            }
-                        })
+                        orderRequest = orderRequest,
+                        onEvent = onEvent,
+                        onFilename = { onNewId(newId, it) }
+                    )
                 } else {
                     sendEvent(context.getString(R.string.error_when_creating_the_order), SnackBarType.ERROR)
                 }

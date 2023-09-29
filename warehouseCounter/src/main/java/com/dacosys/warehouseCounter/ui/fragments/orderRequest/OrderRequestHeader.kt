@@ -49,8 +49,11 @@ class OrderRequestHeader : Fragment() {
         if (arguments == null) return
 
         val id = requireArguments().getLong(ARG_ID)
+        val filename = requireArguments().getString(ARG_FILENAME) ?: ""
+
         OrderRequestCoroutines.getByIdAsKtor(
             id = id,
+            filename = filename,
             onResult = {
                 if (it != null) {
                     orderRequest = it
@@ -156,12 +159,14 @@ class OrderRequestHeader : Fragment() {
 
     companion object {
         const val ARG_ID = "id"
+        const val ARG_FILENAME = "filename"
 
-        fun newInstance(id: Long): OrderRequestHeader {
+        fun newInstance(id: Long, filename: String): OrderRequestHeader {
             val fragment = OrderRequestHeader()
 
             val args = Bundle()
             args.putLong(ARG_ID, id)
+            args.putString(ARG_FILENAME, filename)
             fragment.arguments = args
 
             return fragment
