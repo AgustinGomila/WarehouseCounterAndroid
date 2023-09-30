@@ -11,6 +11,8 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.text.InputType
@@ -742,8 +744,15 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         sync.resetSync()
     }
 
+    private val handler = Handler(Looper.getMainLooper())
+    private var delayedTask: Runnable? = null
+
     override fun onStop() {
         super.onStop()
+
+        if (delayedTask != null) {
+            handler.removeCallbacks(delayedTask!!)
+        }
 
         sync.stopSync()
 
@@ -769,16 +778,21 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         setHeader()
         setupViewPager()
 
+        delayedTask = Runnable { startSync() }
+        handler.postDelayed(delayedTask!!, 3000)
+    }
+
+    private fun startSync() {
         sync.onCompletedOrders { syncVm.setSyncCompleted(it) }
         sync.onNewOrders { syncVm.setSyncNew(it) }
         sync.onTimerTick { syncVm.setSyncTimer(it) }
+
+        sync.startSync()
 
         syncVm.syncCompletedOrders.observe(this) { if (it != null) onCompletedOrder() }
         syncVm.syncNewOrders.observe(this) { if (it != null) onNewOrder(it) }
         syncVm.syncTimer.observe(this) { if (it != null) onTimerTick(it) }
         syncVm.uploadImagesProgress.observe(this) { if (it != null) onUploadImagesProgress(it) }
-
-        sync.startSync()
     }
 
     private fun setHeader() {
