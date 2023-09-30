@@ -213,10 +213,6 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         rejectNewInstances = false
 
         Screen.closeKeyboard(this)
-
-        if (Statics.currentUserId > 0L) {
-            sync.startSync()
-        }
     }
 
     @Suppress("OVERRIDE_DEPRECATION")
@@ -760,7 +756,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     override fun onStart() {
         super.onStart()
 
-        if (Statics.currentUserId < 0L) {
+        if (Statics.currentUserId <= 0L) {
             if (settingsVm.urlPanel.isEmpty()) {
                 showSnackBar(getString(R.string.server_is_not_configured), ERROR)
                 setupInitConfig()
@@ -781,6 +777,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         syncVm.syncNewOrders.observe(this) { if (it != null) onNewOrder(it) }
         syncVm.syncTimer.observe(this) { if (it != null) onTimerTick(it) }
         syncVm.uploadImagesProgress.observe(this) { if (it != null) onUploadImagesProgress(it) }
+
+        sync.startSync()
     }
 
     private fun setHeader() {

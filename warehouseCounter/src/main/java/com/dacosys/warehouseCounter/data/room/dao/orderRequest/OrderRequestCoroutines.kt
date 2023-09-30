@@ -123,7 +123,6 @@ object OrderRequestCoroutines {
             orderRequest.filename = filename
 
             val orJson = json.encodeToString(OrderRequestKtor.serializer(), orderRequest)
-            Log.i(tag, orJson)
 
             update(orderRequest, orderRequest.contents) {
                 isOk = if (it) {
