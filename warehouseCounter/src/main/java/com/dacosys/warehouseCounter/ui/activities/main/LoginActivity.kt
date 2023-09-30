@@ -84,6 +84,7 @@ import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
+import io.github.cdimascio.dotenv.DotenvBuilder
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import org.json.JSONObject
 import java.lang.ref.WeakReference
@@ -847,16 +848,23 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             }
 
             R.id.action_trigger_scan -> {
-                /* For Debug */
-                // if (!settingsVm.clientEmail.contains("casapalm")) {
-                //     scannerCompleted(
-                //         """{"config":{"client_email":"administracion@casapalm.com.ar","client_password":"9827a"}}""".trimIndent()
-                //     )
-                // } else {
-                //     scannerCompleted(
-                //         """{"config":{"client_email":"miguel@dacosys.com","client_password":"sarasa123!!"}}""".trimIndent()
-                //     )
-                // }
+                if (Statics.TEST_MODE && BuildConfig.DEBUG) {
+                    val env = DotenvBuilder()
+                        .directory("/assets")
+                        .filename("env")
+                        .load()
+
+                    var username = env["CLIENT_EMAIL"]
+                    var password = env["CLIENT_PASSWORD"]
+
+                    if (settingsVm.clientEmail.contains(username)) {
+                        username = env["CLIENT_EMAIL_ALT"]
+                        password = env["CLIENT_PASSWORD_ALT"]
+                    }
+
+                    scannerCompleted("""{"config":{"client_email":"$username","client_password":"$password"}}""".trimIndent())
+                    return super.onOptionsItemSelected(item)
+                }
 
                 LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)

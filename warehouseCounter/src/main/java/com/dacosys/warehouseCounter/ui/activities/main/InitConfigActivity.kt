@@ -19,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
@@ -30,6 +31,7 @@ import com.dacosys.warehouseCounter.data.sync.ClientPackage
 import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.getConfigFromScannedCode
 import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.selectClientPackage
 import com.dacosys.warehouseCounter.databinding.InitConfigActivityBinding
+import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.scanners.LifecycleListener
@@ -42,6 +44,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import io.github.cdimascio.dotenv.DotenvBuilder
 import java.lang.ref.WeakReference
 import kotlin.concurrent.thread
 
@@ -429,12 +432,18 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
 
             R.id.action_trigger_scan -> {
-                //if (BuildConfig.DEBUG) {
-                //    scannerCompleted(
-                //        """{"config":{"client_email":"miguel@dacosys.com","client_password":"sarasa123!!"}}""".trimIndent()
-                //    )
-                //    return super.onOptionsItemSelected(item)
-                //}
+                if (Statics.TEST_MODE && BuildConfig.DEBUG) {
+                    val env = DotenvBuilder()
+                        .directory("/assets")
+                        .filename("env")
+                        .load()
+
+                    val username = env["CLIENT_EMAIL"]
+                    val password = env["CLIENT_PASSWORD"]
+
+                    scannerCompleted("""{"config":{"client_email":"$username","client_password":"$password"}}""".trimIndent())
+                    return super.onOptionsItemSelected(item)
+                }
 
                 LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
