@@ -153,8 +153,14 @@ class ItemDetailFragment : Fragment() {
             ViewItem(
                 id = it.itemId,
                 action = ViewItem.defaultAction,
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
-                onFinish = { if (it != null) fillPriceLayout(it.prices) }
+                onEvent = {
+                    if (it.snackBarType != SnackBarType.SUCCESS)
+                        showSnackBar(it.text, it.snackBarType)
+                },
+                onFinish = {
+                    if (it != null)
+                        fillPriceLayout(it.prices)
+                }
             ).execute()
         }
     }
@@ -225,11 +231,13 @@ class ItemDetailFragment : Fragment() {
         for ((index, p) in it.withIndex()) {
             if (index == 10) break
             if (p.active != 1) continue
+
             l[index].text = buildString {
                 append("$ ")
                 append(p.price)
             }
             l[index].visibility = VISIBLE
+
             d[index].text = p.itemPriceListDescription
             d[index].visibility = VISIBLE
         }

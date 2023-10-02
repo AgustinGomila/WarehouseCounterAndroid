@@ -325,11 +325,11 @@
                 android:singleLine="true"
                 android:text="@string/price"
                 android:textSize="12sp"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView1"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView1" android:textStyle="bold"/>
 
         <TextView
                 android:id="@+id/priceDescTextView1"
@@ -339,7 +339,7 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/list_price"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
@@ -354,11 +354,11 @@
                 android:singleLine="true"
                 android:text="@string/price"
                 android:textSize="12sp"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView2"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView2" android:textStyle="bold"/>
 
         <TextView
                 android:id="@+id/priceDescTextView2"
@@ -368,7 +368,7 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/list_price"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
@@ -383,11 +383,11 @@
                 android:singleLine="true"
                 android:text="@string/price"
                 android:textSize="12sp"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView3"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView3" android:textStyle="bold"/>
 
         <TextView
                 android:id="@+id/priceDescTextView3"
@@ -397,7 +397,7 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/list_price"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
@@ -412,11 +412,11 @@
                 android:singleLine="true"
                 android:text="@string/price"
                 android:textSize="12sp"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView4"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView4" android:textStyle="bold"/>
 
         <TextView
                 android:id="@+id/priceDescTextView4"
@@ -426,7 +426,7 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/list_price"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
@@ -441,11 +441,11 @@
                 android:singleLine="true"
                 android:text="@string/price"
                 android:textSize="12sp"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView5"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView5" android:textStyle="bold"/>
 
         <TextView
                 android:id="@+id/priceDescTextView5"
@@ -455,7 +455,7 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/list_price"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
@@ -470,11 +470,11 @@
                 android:singleLine="true"
                 android:text="@string/price"
                 android:textSize="12sp"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView6"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView6" android:textStyle="bold"/>
 
         <TextView
                 android:id="@+id/priceDescTextView6"
@@ -484,7 +484,7 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/list_price"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
@@ -499,11 +499,11 @@
                 android:singleLine="true"
                 android:text="@string/price"
                 android:textSize="12sp"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView7"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView7" android:textStyle="bold"/>
 
         <TextView
                 android:id="@+id/priceDescTextView7"
@@ -513,7 +513,7 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/list_price"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
@@ -528,11 +528,11 @@
                 android:singleLine="true"
                 android:text="@string/price"
                 android:textSize="12sp"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView8"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView8" android:textStyle="bold"/>
 
         <TextView
                 android:id="@+id/priceDescTextView8"
@@ -542,7 +542,7 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/list_price"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
@@ -557,11 +557,11 @@
                 android:singleLine="true"
                 android:text="@string/price"
                 android:textSize="12sp"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView9"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView9" android:textStyle="bold"/>
 
         <TextView
                 android:id="@+id/priceDescTextView9"
@@ -571,7 +571,7 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/list_price"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
@@ -586,11 +586,11 @@
                 android:singleLine="true"
                 android:text="@string/price"
                 android:textSize="12sp"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView10"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView10" android:textStyle="bold"/>
 
         <TextView
                 android:id="@+id/priceDescTextView10"
@@ -600,7 +600,7 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/list_price"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"

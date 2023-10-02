@@ -12,7 +12,7 @@ data class Item(
     @SerialName(EAN_KEY) var ean: String = "",
     @SerialName(EXTERNAL_ID_KEY) var externalId: String = "",
     @SerialName(ID_KEY) var id: Long = 0L,
-    @SerialName(ITEM_CATEGORY_ID_KEY) var itemCategoryId: Long = 0L,
+    @SerialName(ITEM_CATEGORY_ID_KEY) var itemCategoryId: Long? = null,
     @SerialName(LOT_ENABLED_KEY) var lotEnabled: Boolean = false,
     @SerialName(PRICE_KEY) var price: Double = 0.0,
     @SerialName(ROW_CREATION_DATE_KEY) var rowCreationDate: String = "",
@@ -32,7 +32,8 @@ data class Item(
         rowCreationDate = parcel.readString() ?: "",
         rowModificationDate = parcel.readString() ?: "",
         itemCategory = parcel.readParcelable(ItemCategory::class.java.classLoader),
-        prices = parcel.createTypedArrayList(Price) ?: listOf()
+
+        prices = parcel.createTypedArrayList(Price)?.toList() ?: listOf()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -41,12 +42,13 @@ data class Item(
         parcel.writeString(ean)
         parcel.writeString(externalId)
         parcel.writeLong(id)
-        parcel.writeLong(itemCategoryId)
+        parcel.writeValue(itemCategoryId)
         parcel.writeByte(if (lotEnabled) 1 else 0)
         parcel.writeDouble(price)
         parcel.writeString(rowCreationDate)
         parcel.writeString(rowModificationDate)
         parcel.writeParcelable(itemCategory, flags)
+
         parcel.writeTypedList(prices)
     }
 
@@ -66,8 +68,8 @@ data class Item(
         const val ROW_CREATION_DATE_KEY = "rowCreationDate"
         const val ROW_MODIFICATION_DATE_KEY = "rowModificationDate"
         const val ITEM_CATEGORY_KEY = "itemCategory"
-        const val PRICE_LIST_KEY = "prices"
 
+        const val PRICE_LIST_KEY = "itemPriceListContents"
         const val ITEM_LIST_KEY = "items"
 
         override fun createFromParcel(parcel: Parcel): Item {

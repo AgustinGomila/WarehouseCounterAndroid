@@ -20,6 +20,13 @@ GET {{server}}/v2/item/view?id=209315&expand=itemPriceListContents
 Authorization: Basic {{username}} {{password}}
 Accept: application/json
 
+
+# VIEW
+###
+GET {{server}}/v2/item/view?id=209493&expand=itemCategory,itemPriceListContents
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
 # CREATE
 ###
 POST {{server}}/v2/item/create

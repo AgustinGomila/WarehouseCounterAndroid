@@ -254,6 +254,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                     }
                 }
             } else {
+                fillPanel(ItemDetailFragment.newInstance(itemObj!!))
                 LifecycleListener.lockScanner(this, false)
             }
         }
