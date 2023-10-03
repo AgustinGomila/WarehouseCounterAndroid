@@ -91,7 +91,6 @@ data class Item(
         result = 31 * result + itemCategoryId.hashCode()
         result = 31 * result + (externalId?.hashCode() ?: 0)
         result = 31 * result + lotEnabled
-        result = 31 * result + itemCategoryStr.hashCode()
         result = 31 * result + itemStatus.hashCode()
         return result
     }

@@ -132,14 +132,6 @@ dependencies {
     // LeakCanary: debugImplementation because LeakCanary should only run in debug builds.
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
 
-    // Testing
-    testImplementation "junit:junit:$junitVersion"
-    testImplementation "androidx.arch.core:core-testing:$coreTestingVersion"
-    androidTestImplementation("androidx.test.espresso:espresso-core:$espressoVersion", {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
-    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
-
     // Constraint Layout
     // No update 2.0.1 (Bugs persist until 2.1.4),
     // Todas tienen un bug al finalizar una animación que no re-dibuja los fragmentos
@@ -157,6 +149,7 @@ dependencies {
     // Coroutines
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.7.2'
 
     // ImageControl
     implementation project(':imageControl')
@@ -231,6 +224,17 @@ dependencies {
 
     // .env Support
     implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+
+    // Faker for Test
+    implementation 'com.github.javafaker:javafaker:1.0.2'
+
+    // Testing
+    testImplementation "junit:junit:$junitVersion"
+    testImplementation "androidx.arch.core:core-testing:$coreTestingVersion"
+    androidTestImplementation("androidx.test.espresso:espresso-core:$espressoVersion", {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
 }
 
 repositories {
