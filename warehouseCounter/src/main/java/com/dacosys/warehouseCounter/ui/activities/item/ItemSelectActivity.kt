@@ -985,6 +985,11 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 sv.itemSearchByItemDescription = item.isChecked
             }
 
+            settingsRepository.itemSearchByItemExternalId.key.hashCode() -> {
+                filterFragment.setDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
+                sv.itemSearchByItemExternalId = item.isChecked
+            }
+
             else -> return super.onOptionsItemSelected(item)
         }
         return true

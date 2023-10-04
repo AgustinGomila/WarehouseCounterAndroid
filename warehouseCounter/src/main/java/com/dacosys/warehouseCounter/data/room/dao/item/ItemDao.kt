@@ -39,6 +39,9 @@ interface ItemDao {
     @Query(GET_EAN_CODES_QUERY)
     suspend fun getEanCodes(onlyActive: Int = 1): List<String>
 
+    @Query(GET_IDS_QUERY)
+    suspend fun getIds(onlyActive: Int = 1): List<Long>
+
     /**
      * Get by formatted query
      *
@@ -82,6 +85,9 @@ interface ItemDao {
         const val GET_EAN_CODES_QUERY =
             "SELECT ${Entry.TABLE_NAME}.${Entry.EAN} FROM ${Entry.TABLE_NAME} WHERE ${Entry.TABLE_NAME}.${Entry.ACTIVE} = :onlyActive ORDER BY ${Entry.TABLE_NAME}.${Entry.EAN}"
 
+        const val GET_IDS_QUERY =
+            "SELECT ${Entry.TABLE_NAME}.${Entry.ITEM_ID} FROM ${Entry.TABLE_NAME} WHERE ${Entry.TABLE_NAME}.${Entry.ACTIVE} = :onlyActive ORDER BY ${Entry.TABLE_NAME}.${Entry.ITEM_ID}"
+
         /**
          * Get a formatted query by ean, description or category
          *
@@ -104,21 +110,21 @@ interface ItemDao {
             if (ean.isNotEmpty()) {
                 where += "WHERE "
                 where += "${Entry.TABLE_NAME}.${Entry.EAN} LIKE ?"
-                args.add("${ean}%")
+                args.add("%$ean%")
                 condAdded = true
             }
 
             if (externalId.isNotEmpty()) {
                 where += "WHERE "
                 where += "${Entry.TABLE_NAME}.${Entry.EXTERNAL_ID} LIKE ?"
-                args.add("${externalId}%")
+                args.add("%$externalId%")
                 condAdded = true
             }
 
             if (description.isNotEmpty()) {
                 where += if (condAdded) " OR " else "WHERE "
                 where += "${Entry.TABLE_NAME}.${Entry.DESCRIPTION} LIKE ?"
-                args.add("${description}%")
+                args.add("%$description%")
                 condAdded = true
             }
 

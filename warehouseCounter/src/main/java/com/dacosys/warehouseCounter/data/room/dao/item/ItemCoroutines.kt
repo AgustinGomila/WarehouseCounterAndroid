@@ -100,6 +100,20 @@ object ItemCoroutines {
     }
 
     @Throws(Exception::class)
+    fun getIds(
+        onlyActive: Boolean = true,
+        onResult: (ArrayList<Long>) -> Unit = {},
+    ) = CoroutineScope(Job() + Dispatchers.IO).launch {
+        try {
+            val r = async { ArrayList(database.itemDao().getIds(if (onlyActive) 1 else 0)) }.await()
+            onResult(r)
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, e.message.toString())
+            onResult(ArrayList())
+        }
+    }
+
+    @Throws(Exception::class)
     fun add(
         item: Item,
         onResult: (Long?) -> Unit = {},

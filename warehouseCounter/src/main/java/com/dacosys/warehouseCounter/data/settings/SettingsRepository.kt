@@ -1074,7 +1074,8 @@ class SettingsRepository {
                 allSections,
                 sr.itemSearchByCategory,
                 sr.itemSearchByItemDescription,
-                sr.itemSearchByItemEan
+                sr.itemSearchByItemEan,
+                sr.itemSearchByItemExternalId
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.key }))

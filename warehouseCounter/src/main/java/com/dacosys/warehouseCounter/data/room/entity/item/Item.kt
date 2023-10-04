@@ -8,6 +8,7 @@ import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemStatus
 import com.dacosys.warehouseCounter.data.room.entity.item.ItemEntry as Entry
 
@@ -93,6 +94,22 @@ data class Item(
         result = 31 * result + lotEnabled
         result = 31 * result + itemStatus.hashCode()
         return result
+    }
+
+    fun toOrderRequestContent(codeRead: String): OrderRequestContent {
+        return OrderRequestContent(
+            codeRead = codeRead,
+            ean = ean,
+            externalId = externalId,
+            itemActive = active == 1,
+            itemCategoryId = itemCategoryId,
+            itemDescription = description,
+            itemId = itemId,
+            lotEnabled = lotEnabled == 1,
+            price = price?.toDouble() ?: 0.0,
+            qtyCollected = 0.0,
+            qtyRequested = 0.0
+        )
     }
 
     companion object CREATOR : Parcelable.Creator<Item> {

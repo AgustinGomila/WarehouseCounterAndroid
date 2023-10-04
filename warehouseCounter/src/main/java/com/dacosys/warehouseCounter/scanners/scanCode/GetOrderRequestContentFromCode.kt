@@ -6,7 +6,6 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.misc.Statics
@@ -19,6 +18,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item as ItemKtor
 
 class GetOrderRequestContentFromCode(
     private var scannedCode: String,
@@ -79,63 +79,87 @@ class GetOrderRequestContentFromCode(
                     }
             }
 
-            ItemCoroutines.getByQuery(code) {
-                val itemObj = it.firstOrNull()
+            GetResultFromCode(
+                code = code,
+                searchItemId = true,
+                searchItemCode = false,
+                searchItemEan = true,
+                searchItemUrl = true,
+                useLike = false,
+                onFinish = {
+                    val res = when (val tList = it.typedObject) {
+                        is java.util.ArrayList<*> -> {
+                            tList.firstOrNull()
+                        }
 
-                if (itemObj != null) {
-                    onFinish(getCheckCodeResult(item = itemObj, id = itemObj.itemId, code = code))
-                    return@getByQuery
-                }
+                        is OrderRequestContent -> {
+                            tList
+                        }
 
-                ItemCodeCoroutines.getByCode(code) { icList ->
-                    itemCode = icList.firstOrNull()
-
-                    val tempItemId = itemCode?.itemId
-                    if (tempItemId != null) {
-                        // Buscar de nuevo dentro del adaptador del control
-                        for (x in 0 until count) {
-                            val item = list[x]
-                            if (item.itemId == tempItemId) {
-                                onFinish(GetFromCodeResult(item, itemCode))
-                                return@getByCode
-                            }
+                        else -> {
+                            // No existe el ítem, agregar como Desconocido si la configuración lo permite
+                            addUnknownItem(code)
+                            return@GetResultFromCode
                         }
                     }
 
-                    if (settingsVm.allowUnknownCodes) {
-                        // Item desconocido, agregar al base de datos
-                        val item = Item(
-                            description = context.getString(R.string.unknown_item), ean = code
-                        )
-
-                        ItemCoroutines.add(item) { id ->
-                            if (id != null) {
-                                onFinish(getCheckCodeResult(item = item, id = id, code = code))
-                            } else {
-                                onFinish(GetFromCodeResult())
-                                sendEvent(
-                                    context.getString(R.string.error_attempting_to_add_item_to_database),
-                                    SnackBarType.ERROR
-                                )
-
-                            }
-                        }
-                    } else {
-                        onFinish(GetFromCodeResult())
-                        sendEvent(
-                            SnackBarEventData(
-                                "${context.getString(R.string.unknown_item)}: $code",
-                                SnackBarType.INFO
-                            )
-                        )
-                    }
-                }
-            }
+                    // Devolver el ítem
+                    val itemKtor = res as ItemKtor
+                    getItemFromListOrAdd(itemKtor)
+                })
         } catch (ex: Exception) {
             onFinish(GetFromCodeResult())
             sendEvent(ex.message.toString(), SnackBarType.ERROR)
             Log.e(tag, ex.message ?: "")
         }
+    }
+
+    private fun addUnknownItem(code: String) {
+        if (settingsVm.allowUnknownCodes) {
+
+            // Item desconocido, agregar al base de datos
+            val item = Item(description = context.getString(R.string.unknown_item), ean = code)
+
+            ItemCoroutines.add(item) { id ->
+                if (id != null) {
+                    onFinish(getCheckCodeResult(item = item, id = id, code = code))
+                } else {
+                    onFinish(GetFromCodeResult())
+                    sendEvent(
+                        context.getString(R.string.error_attempting_to_add_item_to_database),
+                        SnackBarType.ERROR
+                    )
+
+                }
+            }
+        } else {
+            onFinish(GetFromCodeResult())
+            sendEvent(
+                SnackBarEventData(
+                    "${context.getString(R.string.unknown_item)}: $code",
+                    SnackBarType.INFO
+                )
+            )
+        }
+    }
+
+    private fun getItemFromListOrAdd(itemKtor: ItemKtor) {
+        // Buscar de nuevo dentro del adaptador del control
+        for (x in 0 until list.count()) {
+            val item = list[x]
+            if (item.itemId == itemKtor.id) {
+                // Ya está en el adaptador, devolver el ítem
+                onFinish(GetFromCodeResult(item, itemCode))
+                return
+            }
+        }
+
+        // No está en el adaptador, devolver el ítem ya convertido
+        onFinish(
+            GetFromCodeResult(
+                itemKtor.toOrderRequestContent(scannedCode), itemCode
+            )
+        )
     }
 
     private fun getCheckCodeResult(item: Item, id: Long, code: String): GetFromCodeResult {

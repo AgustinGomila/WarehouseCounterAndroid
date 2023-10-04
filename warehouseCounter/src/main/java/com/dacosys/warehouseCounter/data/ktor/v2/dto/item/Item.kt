@@ -2,8 +2,10 @@ package com.dacosys.warehouseCounter.data.ktor.v2.dto.item
 
 import android.os.Parcel
 import android.os.Parcelable
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import com.dacosys.warehouseCounter.data.room.entity.item.Item as ItemRoom
 
 @Serializable
 data class Item(
@@ -35,6 +37,39 @@ data class Item(
 
         prices = parcel.createTypedArrayList(Price)?.toList() ?: listOf()
     )
+
+    fun toRoom(): ItemRoom {
+        return ItemRoom(
+            active = if (active) 1 else 0,
+            description = description,
+            ean = ean,
+            externalId = externalId,
+            itemId = id,
+            itemCategoryId = itemCategoryId ?: 0L,
+            lotEnabled = if (lotEnabled) 1 else 0,
+            price = price.toFloat(),
+            itemCategoryStr = itemCategory?.description ?: "",
+        )
+    }
+
+    fun toOrderRequestContent(scannedCode: String): OrderRequestContent {
+        return OrderRequestContent(
+            codeRead = scannedCode,
+            ean = ean,
+            externalId = externalId,
+            itemActive = active,
+            itemCategoryId = itemCategoryId,
+            itemDescription = description,
+            itemId = id,
+            lotActive = lotEnabled,
+            lotCode = "",
+            lotEnabled = lotEnabled,
+            lotId = 0L,
+            price = price,
+            qtyCollected = 0.0,
+            qtyRequested = 0.0,
+        )
+    }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeByte(if (active) 1 else 0)

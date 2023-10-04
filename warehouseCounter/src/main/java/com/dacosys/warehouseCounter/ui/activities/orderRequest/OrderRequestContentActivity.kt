@@ -1499,6 +1499,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private val menuItemManualCode = 999002
     private val menuItemRandomOnListL = 999003
     private val menuRegexItem = 999004
+    private val menuItemRandomUrlId = 999005
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -1513,6 +1514,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
             menu.add(Menu.NONE, menuRegexItem, Menu.NONE, "Regex")
+            menu.add(Menu.NONE, menuItemRandomUrlId, Menu.NONE, "Item Id desde Url")
         }
 
         if (menu is MenuBuilder) {
@@ -1578,6 +1580,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
             menuRegexItem -> {
                 scannerCompleted("0SM20220721092826007792261002857001038858")
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomUrlId -> {
+                ItemCoroutines.getIds(true) {
+                    if (it.any()) scannerCompleted(
+                        "/free/item/view?id=${it[Random().nextInt(it.count())]}"
+                    )
+                }
                 return super.onOptionsItemSelected(item)
             }
         }

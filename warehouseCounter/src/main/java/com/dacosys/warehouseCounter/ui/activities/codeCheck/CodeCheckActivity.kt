@@ -1,16 +1,21 @@
 package com.dacosys.warehouseCounter.ui.activities.codeCheck
 
 import android.Manifest
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
+import android.text.InputType
 import android.util.Log
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
+import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
@@ -18,6 +23,7 @@ import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.databinding.CodeCheckActivityBinding
+import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
@@ -28,6 +34,8 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import java.util.*
 
 class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
@@ -143,8 +151,16 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
+        if (BuildConfig.DEBUG || Statics.TEST_MODE) {
+            menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
+            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
+        }
+
         return true
     }
+
+    private val menuItemRandomIt = 999001
+    private val menuItemManualCode = 999002
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
@@ -168,9 +184,64 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                 return super.onOptionsItemSelected(item)
             }
 
+            menuItemRandomIt -> {
+                ItemCoroutines.getEanCodes(true) {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemManualCode -> {
+                enterCode()
+                return super.onOptionsItemSelected(item)
+            }
+
             else -> {
                 return super.onOptionsItemSelected(item)
             }
+        }
+    }
+
+    private fun enterCode() {
+        runOnUiThread {
+            var alertDialog: AlertDialog? = null
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(getString(R.string.enter_code))
+
+            val inputLayout = TextInputLayout(this)
+            inputLayout.endIconMode = TextInputLayout.END_ICON_CLEAR_TEXT
+
+            val input = TextInputEditText(this)
+            input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS
+            input.isFocusable = true
+            input.isFocusableInTouchMode = true
+            input.setOnKeyListener { _, keyCode, event ->
+                if (event.action == KeyEvent.ACTION_DOWN) {
+                    when (keyCode) {
+                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                            if (alertDialog != null) {
+                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
+                                    .performClick()
+                            }
+                        }
+                    }
+                }
+                false
+            }
+
+            inputLayout.addView(input)
+            builder.setView(inputLayout)
+            builder.setPositiveButton(R.string.accept) { _, _ ->
+                scannerCompleted(input.text.toString())
+            }
+            builder.setNegativeButton(R.string.cancel, null)
+            alertDialog = builder.create()
+
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            alertDialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+            alertDialog.show()
+            input.requestFocus()
         }
     }
 
