@@ -22,6 +22,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.Label
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.Barcode
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.template.ViewBarcodeLabelTemplate
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.itemCategory.ItemCategoryCoroutines
@@ -101,6 +102,16 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
 
     private fun saveSharedPreferences() {
         settingsVm.printerQty = qty
+
+        val currentTemplate = template
+        if (currentTemplate != null) {
+            when (currentTemplate.barcodeLabelType) {
+                BarcodeLabelType.item -> settingsVm.defaultItemTemplateId = currentTemplate.templateId
+                BarcodeLabelType.warehouseArea -> settingsVm.defaultWaTemplateId = currentTemplate.templateId
+                BarcodeLabelType.rack -> settingsVm.defaultRackTemplateId = currentTemplate.templateId
+                BarcodeLabelType.order -> settingsVm.defaultOrderTemplateId = currentTemplate.templateId
+            }
+        }
     }
 
     override fun onDetach() {

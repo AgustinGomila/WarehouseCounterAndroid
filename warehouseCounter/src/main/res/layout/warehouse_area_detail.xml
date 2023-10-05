@@ -26,14 +26,14 @@
             android:maxLines="2"
             android:minLines="1"
             android:text="@string/description"
-            android:textSize="18sp"
-            app:autoSizeMaxTextSize="18sp"
-            app:autoSizeMinTextSize="12dp"
+            android:textSize="20sp"
+            app:autoSizeMaxTextSize="24sp"
+            app:autoSizeMinTextSize="14dp"
             app:autoSizeStepGranularity="1sp"
             app:autoSizeTextType="uniform"
             app:layout_constraintEnd_toStartOf="@+id/guideline800"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent" android:textStyle="bold"/>
 
     <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline800"
@@ -46,14 +46,13 @@
             android:id="@+id/acronymAutoResizeTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="1dp"
             android:layout_marginTop="2dp"
             android:layout_marginEnd="2dp"
             android:text="@string/acronym"
-            android:textSize="18sp"
+            android:textSize="20sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/guideline800"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent" app:autoSizeMaxTextSize="24sp" app:autoSizeMinTextSize="14sp"/>
 
     <TextView
             android:id="@+id/idTextView"
@@ -72,13 +71,14 @@
             android:id="@+id/idAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:layout_marginEnd="1dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             android:text="@string/id"
             app:layout_constraintEnd_toStartOf="@+id/guideline500"
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/idTextView"/>
+            app:layout_constraintTop_toBottomOf="@+id/idTextView" android:textSize="18sp"
+            app:autoSizeMaxTextSize="22sp" app:autoSizeMinTextSize="12sp"/>
 
     <TextView
             android:id="@+id/extIdTextView"
@@ -97,12 +97,13 @@
             android:id="@+id/extIdAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="1dp"
-            android:layout_marginEnd="2dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             android:text="@string/external_id"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/guideline500"
-            app:layout_constraintTop_toBottomOf="@+id/extIdTextView"/>
+            app:layout_constraintTop_toBottomOf="@+id/extIdTextView" android:textSize="18sp"
+            app:autoSizeMaxTextSize="22sp" app:autoSizeMinTextSize="12sp"/>
 
     <View
             android:id="@+id/dividerInternal1"
@@ -133,11 +134,12 @@
             android:id="@+id/warehouseAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:layout_marginEnd="2dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             android:text="@string/warehouse"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/warehouseTextView"/>
+            app:layout_constraintTop_toBottomOf="@+id/warehouseTextView" android:textSize="18sp"
+            app:autoSizeMaxTextSize="22sp" app:autoSizeMinTextSize="12sp"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

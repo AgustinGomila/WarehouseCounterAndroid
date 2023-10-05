@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -19,6 +20,7 @@ import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
@@ -43,6 +45,7 @@ import com.dacosys.warehouseCounter.ui.fragments.item.ItemDetailFragment
 import com.dacosys.warehouseCounter.ui.fragments.location.RackDetailFragment
 import com.dacosys.warehouseCounter.ui.fragments.location.WarehouseAreaDetailFragment
 import com.dacosys.warehouseCounter.ui.fragments.order.OrderDetailFragment
+import com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
@@ -59,6 +62,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     private var rejectNewInstances = false
 
     private var currentFragment: Fragment? = null
+    private lateinit var printLabelFragment: PrintLabelFragment
 
     override fun onDestroy() {
         destroyLocals()
@@ -85,12 +89,19 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
+
+        var tempCode = ""
         if (savedInstanceState != null) {
-            binding.codeEditText.setText(
-                savedInstanceState.getString(ARG_CODE), TextView.BufferType.EDITABLE
-            )
+            tempCode = savedInstanceState.getString(ARG_CODE) ?: ""
+        } else {
+            val extras = intent.extras
+            if (extras != null) {
+                tempCode = extras.getString(ARG_CODE) ?: ""
+            }
         }
 
+        binding.codeEditText.setText(tempCode, TextView.BufferType.EDITABLE)
         binding.codeEditText.setOnEditorActionListener { _, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_DONE || event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
                 fillHexTextView()
@@ -99,16 +110,39 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                 false
             }
         }
-
-        if (savedInstanceState == null) {
-            clearControls()
-        } else {
-            fillHexTextView()
-        }
-
         binding.codeEditText.requestFocus()
 
         Screen.setupUI(binding.root, this)
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        fillHexTextView()
+    }
+
+    private fun setupPrintLabelFragment(templateId: Long, typesId: ArrayList<Long>) {
+        if (isFinishing) return
+
+        runOnUiThread {
+            binding.printFragment.visibility = View.VISIBLE
+
+            printLabelFragment =
+                PrintLabelFragment.Builder()
+                    .setTemplateTypeIdList(typesId)
+                    .setTemplateId(templateId)
+                    .setQty(settingsVm.printerQty)
+                    .build()
+            supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
+        }
+    }
+
+    private fun hidePrintLabelFragment() {
+        if (isFinishing) return
+
+        runOnUiThread {
+            binding.printFragment.visibility = View.GONE
+        }
     }
 
     private fun fillPanel(fragment: Fragment?) {
@@ -309,6 +343,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
     private fun clearControls() {
         fillPanel(null)
+        hidePrintLabelFragment()
         binding.infoTextView.setText("", TextView.BufferType.EDITABLE)
     }
 
@@ -364,6 +399,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
                     else -> {
                         fillPanel(null)
+                        hidePrintLabelFragment()
                         binding.infoTextView.setText(
                             R.string.the_code_does_not_belong_to_any_iem_in_the_database, TextView.BufferType.EDITABLE
                         )
@@ -376,6 +412,11 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     private fun fillOrderPanel(r: OrderResponse) {
         runOnUiThread {
             fillPanel(OrderDetailFragment.newInstance(r))
+            setupPrintLabelFragment(
+                templateId = settingsVm.defaultOrderTemplateId,
+                typesId = arrayListOf(BarcodeLabelType.order.id)
+            )
+
             binding.infoTextView.setText(
                 R.string.the_code_belongs_to_an_order, TextView.BufferType.EDITABLE
             )
@@ -385,6 +426,11 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     private fun fillRackPanel(r: Rack) {
         runOnUiThread {
             fillPanel(RackDetailFragment.newInstance(r))
+            setupPrintLabelFragment(
+                templateId = settingsVm.defaultRackTemplateId,
+                typesId = arrayListOf(BarcodeLabelType.rack.id)
+            )
+
             binding.infoTextView.setText(
                 R.string.the_code_belongs_to_an_rack, TextView.BufferType.EDITABLE
             )
@@ -394,6 +440,11 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     private fun fillWarehouseAreaPanel(r: WarehouseArea) {
         runOnUiThread {
             fillPanel(WarehouseAreaDetailFragment.newInstance(r))
+            setupPrintLabelFragment(
+                templateId = settingsVm.defaultWaTemplateId,
+                typesId = arrayListOf(BarcodeLabelType.warehouseArea.id)
+            )
+
             binding.infoTextView.setText(
                 R.string.the_code_belongs_to_an_area, TextView.BufferType.EDITABLE
             )
@@ -403,6 +454,11 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     private fun fillItemPanel(itemRoom: Item) {
         runOnUiThread {
             fillPanel(ItemDetailFragment.newInstance(itemRoom))
+            setupPrintLabelFragment(
+                templateId = settingsVm.defaultItemTemplateId,
+                typesId = arrayListOf(BarcodeLabelType.item.id)
+            )
+
             binding.infoTextView.setText(
                 R.string.the_code_belongs_to_an_item, TextView.BufferType.EDITABLE
             )

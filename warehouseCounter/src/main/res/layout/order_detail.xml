@@ -33,10 +33,10 @@
                 android:maxLines="1"
                 android:minLines="1"
                 android:text="@string/description"
-                android:textSize="18sp"
+                android:textSize="20sp"
                 android:textStyle="bold"
-                app:autoSizeMaxTextSize="18sp"
-                app:autoSizeMinTextSize="10sp"
+                app:autoSizeMaxTextSize="24sp"
+                app:autoSizeMinTextSize="14sp"
                 app:autoSizeStepGranularity="1sp"
                 app:autoSizeTextType="uniform"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -51,9 +51,9 @@
                 android:maxLines="2"
                 android:minLines="1"
                 android:text="@string/client"
-                android:textSize="14sp"
-                app:autoSizeMaxTextSize="18sp"
-                app:autoSizeMinTextSize="10sp"
+                android:textSize="18sp"
+                app:autoSizeMaxTextSize="22sp"
+                app:autoSizeMinTextSize="12sp"
                 app:autoSizeStepGranularity="1sp"
                 app:autoSizeTextType="uniform"
                 app:layout_constraintStart_toStartOf="parent"
@@ -67,7 +67,8 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/descriptionAutoResizeTextView"
                 app:layout_constraintStart_toStartOf="@+id/guideline1" android:layout_marginEnd="2dp"
-                android:layout_marginStart="2dp"/>
+                android:layout_marginStart="2dp" android:textSize="18sp" app:autoSizeMaxTextSize="22sp"
+                app:autoSizeMinTextSize="12sp"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -77,7 +78,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/topLayout">
+            app:layout_constraintTop_toBottomOf="@+id/topLayout" android:layout_marginTop="8dp">
 
         <androidx.constraintlayout.widget.Guideline
                 android:id="@+id/guideline2"
@@ -95,7 +96,8 @@
                 android:text="@string/id"
                 app:layout_constraintEnd_toStartOf="@+id/guideline2"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/idTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/idTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
 
         <TextView
                 android:id="@+id/idTextView"
@@ -119,7 +121,8 @@
                 android:text="@string/external_id"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/idAutoResizeTextView"
-                app:layout_constraintTop_toBottomOf="@+id/extIdTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/extIdTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
 
         <TextView
                 android:id="@+id/extIdTextView"
@@ -141,7 +144,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/idLayout">
+            app:layout_constraintTop_toBottomOf="@+id/idLayout" android:layout_marginTop="8dp">
 
         <androidx.constraintlayout.widget.Guideline
                 android:id="@+id/guideline4"
@@ -184,7 +187,8 @@
                 android:text="@string/status"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="@+id/guideline4"
-                app:layout_constraintTop_toBottomOf="@+id/statusTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/statusTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
 
         <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/orderTypeAutoResizeTextView"
@@ -195,7 +199,8 @@
                 android:text="@string/order_request_type"
                 app:layout_constraintEnd_toStartOf="@+id/guideline4"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/orderTypeTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/orderTypeTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
 
         <TextView
                 android:id="@+id/statusTextView"
@@ -217,7 +222,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/categoryPriceLayout">
+            app:layout_constraintTop_toBottomOf="@+id/categoryPriceLayout" android:layout_marginTop="8dp">
 
         <View
                 android:id="@+id/dividerInternal3"
@@ -261,7 +266,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelineItemCode500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/startDateTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/startDateTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
 
         <TextView
                 android:id="@+id/finishDateTextView"
@@ -285,7 +291,8 @@
                 android:text="@string/finish_date"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="@+id/guidelineItemCode500"
-                app:layout_constraintTop_toBottomOf="@+id/finishDateTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/finishDateTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
         <TextView
                 android:id="@+id/receivedDateTextView"
                 android:layout_width="wrap_content"
@@ -308,7 +315,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelineItemCode500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/receivedDateTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/receivedDateTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
         <TextView
                 android:id="@+id/processedDateTextView"
                 android:layout_width="wrap_content"
@@ -330,7 +338,8 @@
                 android:text="@string/processed_date"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="@+id/guidelineItemCode500"
-                app:layout_constraintTop_toBottomOf="@+id/processedDateTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/processedDateTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

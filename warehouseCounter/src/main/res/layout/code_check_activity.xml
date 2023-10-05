@@ -24,10 +24,10 @@
     <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/top_appbar" android:id="@+id/mainLayout">
+            app:layout_constraintTop_toBottomOf="@+id/top_appbar" android:id="@+id/mainLayout"
+            app:layout_constraintBottom_toBottomOf="parent">
 
         <EditText
                 android:id="@+id/editText3"
@@ -125,22 +125,45 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="1.0"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/textInputLayout"/>
+                app:layout_constraintTop_toBottomOf="@+id/textInputLayout" android:paddingTop="8dp"
+                android:paddingBottom="8dp" android:paddingEnd="8dp" android:paddingStart="8dp"/>
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/fragmentLayout"
+        <ScrollView
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:layout_marginStart="1dp"
-                android:layout_marginTop="1dp"
-                android:layout_marginEnd="1dp"
-                android:layout_marginBottom="1dp"
-                android:background="@drawable/listview_border"
-                android:padding="2dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/infoTextView"/>
+                app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/infoTextView"
+                app:layout_constraintBottom_toTopOf="@+id/panelPrint" android:layout_marginBottom="8dp"
+                android:layout_marginTop="8dp">
+            <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/fragmentLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/layout_thin_border"
+                    android:padding="2dp"
+            />
+        </ScrollView>
+        <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/panelPrint"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="parent" android:layout_marginEnd="1dp"
+                app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginStart="1dp" android:layout_marginBottom="1dp">
+
+            <androidx.fragment.app.FragmentContainerView
+                    android:id="@+id/printFragment"
+                    android:name="com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:layout="@layout/print_label_fragment" android:visibility="gone"
+                    android:layout_marginTop="1dp" android:layout_marginStart="1dp" android:layout_marginEnd="1dp"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 

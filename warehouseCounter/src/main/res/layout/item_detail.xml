@@ -27,10 +27,10 @@
                 android:maxLines="1"
                 android:minLines="1"
                 android:text="@string/ean"
-                android:textSize="18sp"
+                android:textSize="20sp"
                 android:textStyle="bold"
-                app:autoSizeMaxTextSize="18sp"
-                app:autoSizeMinTextSize="10sp"
+                app:autoSizeMaxTextSize="24sp"
+                app:autoSizeMinTextSize="14sp"
                 app:autoSizeStepGranularity="1sp"
                 app:autoSizeTextType="uniform"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -46,9 +46,9 @@
                 android:maxLines="2"
                 android:minLines="1"
                 android:text="@string/description"
-                android:textSize="14sp"
-                app:autoSizeMaxTextSize="18sp"
-                app:autoSizeMinTextSize="10sp"
+                android:textSize="18sp"
+                app:autoSizeMaxTextSize="22sp"
+                app:autoSizeMinTextSize="12sp"
                 app:autoSizeStepGranularity="1sp"
                 app:autoSizeTextType="uniform"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -63,7 +63,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/topLayout">
+            app:layout_constraintTop_toBottomOf="@+id/topLayout" android:layout_marginTop="8dp">
 
         <androidx.constraintlayout.widget.Guideline
                 android:id="@+id/guideline2"
@@ -81,7 +81,8 @@
                 android:text="@string/id"
                 app:layout_constraintEnd_toStartOf="@+id/guideline2"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/idTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/idTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
 
         <TextView
                 android:id="@+id/idTextView"
@@ -105,7 +106,8 @@
                 android:text="@string/external_id"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/idAutoResizeTextView"
-                app:layout_constraintTop_toBottomOf="@+id/extIdTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/extIdTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
 
         <TextView
                 android:id="@+id/extIdTextView"
@@ -127,7 +129,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/idLayout">
+            app:layout_constraintTop_toBottomOf="@+id/idLayout" android:layout_marginTop="8dp">
 
         <androidx.constraintlayout.widget.Guideline
                 android:id="@+id/guideline4"
@@ -170,7 +172,8 @@
                 android:text="@string/price"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="@+id/guideline4"
-                app:layout_constraintTop_toBottomOf="@+id/priceTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/priceTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
 
         <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/categoryAutoResizeTextView"
@@ -181,7 +184,8 @@
                 android:text="@string/category"
                 app:layout_constraintEnd_toStartOf="@+id/guideline4"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/categoryTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/categoryTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
 
         <TextView
                 android:id="@+id/priceTextView"
@@ -203,7 +207,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/categoryPriceLayout">
+            app:layout_constraintTop_toBottomOf="@+id/categoryPriceLayout" android:layout_marginTop="8dp">
 
         <View
                 android:id="@+id/dividerInternal3"
@@ -247,7 +251,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelineItemCode500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/codeTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/codeTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
 
         <TextView
                 android:id="@+id/qtyTextView"
@@ -271,7 +276,8 @@
                 android:text="@string/qty"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="@+id/guidelineItemCode500"
-                app:layout_constraintTop_toBottomOf="@+id/qtyTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/qtyTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="20sp" app:autoSizeMinTextSize="12sp"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -281,7 +287,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/itemCodeConstraintLayout">
+            app:layout_constraintTop_toBottomOf="@+id/itemCodeConstraintLayout" android:layout_marginTop="8dp">
 
         <View
                 android:id="@+id/dividerInternal2"
@@ -323,12 +329,13 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/price"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView1" android:textStyle="bold"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView1" android:textStyle="bold"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceDescTextView1"
@@ -342,7 +349,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/priceListTitleTextView"/>
+                app:layout_constraintTop_toBottomOf="@+id/priceListTitleTextView" android:textSize="16sp"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceListTextView2"
@@ -352,12 +360,13 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/price"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView2" android:textStyle="bold"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView2" android:textStyle="bold"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceDescTextView2"
@@ -371,7 +380,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView1"/>
+                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView1" android:textSize="16sp"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceListTextView3"
@@ -381,12 +391,13 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/price"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView3" android:textStyle="bold"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView3" android:textStyle="bold"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceDescTextView3"
@@ -400,7 +411,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView2"/>
+                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView2" android:textSize="16sp"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceListTextView4"
@@ -410,12 +422,13 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/price"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView4" android:textStyle="bold"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView4" android:textStyle="bold"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceDescTextView4"
@@ -429,7 +442,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView3"/>
+                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView3" android:textSize="16sp"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceListTextView5"
@@ -439,12 +453,13 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/price"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView5" android:textStyle="bold"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView5" android:textStyle="bold"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceDescTextView5"
@@ -458,7 +473,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView4"/>
+                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView4" android:textSize="16sp"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceListTextView6"
@@ -468,12 +484,13 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/price"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView6" android:textStyle="bold"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView6" android:textStyle="bold"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceDescTextView6"
@@ -487,7 +504,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView5"/>
+                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView5" android:textSize="16sp"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceListTextView7"
@@ -497,12 +515,13 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/price"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView7" android:textStyle="bold"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView7" android:textStyle="bold"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceDescTextView7"
@@ -516,7 +535,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView6"/>
+                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView6" android:textSize="16sp"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceListTextView8"
@@ -526,12 +546,13 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/price"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView8" android:textStyle="bold"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView8" android:textStyle="bold"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceDescTextView8"
@@ -545,7 +566,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView7"/>
+                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView7" android:textSize="16sp"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceListTextView9"
@@ -555,12 +577,13 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/price"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView9" android:textStyle="bold"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView9" android:textStyle="bold"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceDescTextView9"
@@ -574,7 +597,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView8"/>
+                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView8" android:textSize="16sp"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceListTextView10"
@@ -584,12 +608,13 @@
                 android:layout_marginEnd="2dp"
                 android:singleLine="true"
                 android:text="@string/price"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="@+id/guidelinePriceList500"
-                app:layout_constraintTop_toTopOf="@+id/priceDescTextView10" android:textStyle="bold"/>
+                app:layout_constraintTop_toTopOf="@+id/priceDescTextView10" android:textStyle="bold"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
 
         <TextView
                 android:id="@+id/priceDescTextView10"
@@ -603,7 +628,8 @@
                 app:layout_constraintEnd_toStartOf="@+id/guidelinePriceList500"
                 app:layout_constraintHorizontal_bias="0.411"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView9"/>
+                app:layout_constraintTop_toBottomOf="@+id/priceDescTextView9" android:textSize="16sp"
+                app:autoSizeMaxTextSize="18sp" app:autoSizeMinTextSize="10sp"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
