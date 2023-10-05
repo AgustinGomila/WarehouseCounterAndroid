@@ -42,6 +42,7 @@ import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companio
 import com.dacosys.warehouseCounter.ui.fragments.item.ItemDetailFragment
 import com.dacosys.warehouseCounter.ui.fragments.location.RackDetailFragment
 import com.dacosys.warehouseCounter.ui.fragments.location.WarehouseAreaDetailFragment
+import com.dacosys.warehouseCounter.ui.fragments.order.OrderDetailFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
@@ -361,22 +362,6 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                         }
                     }
 
-                    r is ItemKtor -> {
-                        fillItemPanel(r.toRoom())
-                    }
-
-                    r is WarehouseArea -> {
-                        fillWarehouseAreaPanel(r)
-                    }
-
-                    r is Rack -> {
-                        fillRackPanel(r)
-                    }
-
-                    r is OrderResponse -> {
-                        fillOrderPanel(r)
-                    }
-
                     else -> {
                         fillPanel(null)
                         binding.infoTextView.setText(
@@ -390,7 +375,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
     private fun fillOrderPanel(r: OrderResponse) {
         runOnUiThread {
-            // fillPanel(OrderDetailFragment.newInstance(r))
+            fillPanel(OrderDetailFragment.newInstance(r))
             binding.infoTextView.setText(
                 R.string.the_code_belongs_to_an_order, TextView.BufferType.EDITABLE
             )

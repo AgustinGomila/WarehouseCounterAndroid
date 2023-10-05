@@ -158,8 +158,8 @@ class ItemDetailFragment : Fragment() {
                         showSnackBar(it.text, it.snackBarType)
                 },
                 onFinish = {
-                    if (it != null)
-                        fillPriceLayout(it.prices)
+                    val prices = it?.prices ?: listOf()
+                    fillPriceLayout(prices)
                 }
             ).execute()
         }

@@ -20,7 +20,7 @@ data class Item(
     @SerialName(ROW_CREATION_DATE_KEY) var rowCreationDate: String = "",
     @SerialName(ROW_MODIFICATION_DATE_KEY) var rowModificationDate: String = "",
     @SerialName(ITEM_CATEGORY_KEY) var itemCategory: ItemCategory? = null,
-    @SerialName(PRICE_LIST_KEY) var prices: List<Price> = listOf(),
+    @SerialName(PRICE_LIST_KEY) var prices: List<Price>? = null,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         active = parcel.readByte() != 0.toByte(),

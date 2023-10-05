@@ -182,26 +182,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
-
-        LifecycleListener.lockScanner(this, true)
-        LifecycleListener.hideWindow(this)
-
-        try {
-            /*
-            runOnUiThread {
-                val checkCodeTask = CodeRead()
-                checkCodeTask.addParams(this, scanCode)
-                checkCodeTask.execute()
-            }
-            */
-        } catch (ex: Exception) {
-            showSnackBar(ex.message.toString(), ERROR)
-            ErrorLog.writeLog(this, tag, ex.message.toString())
-        } finally {
-            // Unless is blocked, unlock the partial
-            LifecycleListener.lockScanner(this, false)
-        }
+        launchCodeReadActivity(scanCode)
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -398,12 +379,13 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         startActivity(intent)
     }
 
-    private fun launchCodeReadActivity() {
+    private fun launchCodeReadActivity(code: String = "") {
         if (rejectNewInstances) return
         rejectNewInstances = true
 
         val intent = Intent(context, CodeCheckActivity::class.java)
         intent.putExtra(CodeCheckActivity.ARG_TITLE, getString(R.string.code_read))
+        intent.putExtra(CodeCheckActivity.ARG_CODE, code)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
         startActivity(intent)
     }

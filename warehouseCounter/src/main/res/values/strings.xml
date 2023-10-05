@@ -840,4 +840,8 @@
     <string name="warehouse_area_detail">Detalle del área</string>
     <string name="searching_item_codes">Buscando códigos de ítems…</string>
     <string name="the_code_belongs_to_an_order">El código pertenece a un pedido</string>
+    <string name="hex">Hex</string>
+    <string name="start_date">Iniciado</string>
+    <string name="received_date">Recibido</string>
+    <string name="processed_date">Procesado</string>
 </resources>
