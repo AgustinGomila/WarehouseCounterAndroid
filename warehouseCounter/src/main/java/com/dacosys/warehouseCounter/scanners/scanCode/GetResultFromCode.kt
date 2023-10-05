@@ -5,12 +5,13 @@ import android.util.Log
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCode
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.GetItem
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.GetItem.Companion.defaultAction
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.ViewItem
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.ViewItemCode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.ViewOrder
@@ -28,9 +29,46 @@ class GetResultFromCode(
     private var searchWarehouseAreaId: Boolean = false,
     private var searchRackId: Boolean = false,
     private var searchOrder: Boolean = false,
-    private var useLike: Boolean = true,
+    private var useLike: Boolean = false,
     private var onFinish: (GetFromCodeResult) -> Unit
 ) {
+    companion object {
+        private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
+
+        const val PREFIX_RACK = "#RK#"
+        const val PREFIX_WA = "#WA#"
+        const val PREFIX_ITEM = "#IT#"
+        const val PREFIX_ORDER = "#ORD#"
+        const val PREFIX_ITEM_URL = "item/view?id="
+
+        const val FORMULA_RACK = """${PREFIX_RACK}(\d+)#"""
+        const val FORMULA_WA = """${PREFIX_WA}(\d+)#"""
+        const val FORMULA_ITEM = """${PREFIX_ITEM}(\d+)#"""
+        const val FORMULA_ORDER = """${PREFIX_ORDER}(\d+)#"""
+        const val FORMULA_ITEM_URL = """${PREFIX_ITEM_URL}(\d+)"""
+
+        fun searchString(origin: String, formula: String, position: Int): String {
+            val rx = Regex(formula)
+            val matches = rx.matchEntire(origin)
+
+            if (matches != null) {
+                if (matches.groups.size >= position && matches.groups[position]?.value.toString()
+                        .isNotEmpty()
+                ) {
+                    try {
+                        return matches.groupValues[position]
+                    } catch (ex: Exception) {
+                        ex.printStackTrace()
+                        val res =
+                            "Error doing regex.\r\n formula $formula\r\n string $origin\r\n${ex.message}"
+                        Log.e(tag, res)
+                    }
+                }
+            }
+            return ""
+        }
+    }
+
     private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     data class GetFromCodeResult(var typedObject: Any?)
@@ -41,13 +79,11 @@ class GetResultFromCode(
 
     private fun onItemIdResult(r: Item?) {
         searchItemId = false
-        if (isFounded) {
-            return
-        }
+        if (getIsFounded()) return
 
         if (r != null || !taskPending()) {
             if (r != null) {
-                isFounded = true
+                setIsFounded()
                 playSoundNotification(true)
             } else {
                 playSoundNotification(false)
@@ -56,15 +92,13 @@ class GetResultFromCode(
         }
     }
 
-    private fun onItemCodeResult(r: Item?) {
+    private fun onItemCodeResult(r: ItemCode?) {
         searchItemCode = false
-        if (isFounded) {
-            return
-        }
+        if (getIsFounded()) return
 
         if (r != null || !taskPending()) {
             if (r != null) {
-                isFounded = true
+                setIsFounded()
                 playSoundNotification(true)
             } else {
                 playSoundNotification(false)
@@ -75,13 +109,11 @@ class GetResultFromCode(
 
     private fun onItemEanResult(r: Item?) {
         searchItemEan = false
-        if (isFounded) {
-            return
-        }
+        if (getIsFounded()) return
 
         if (r != null || !taskPending()) {
             if (r != null) {
-                isFounded = true
+                setIsFounded()
                 playSoundNotification(true)
             } else {
                 playSoundNotification(false)
@@ -92,13 +124,11 @@ class GetResultFromCode(
 
     private fun onItemByUrlResult(r: Item?) {
         searchItemUrl = false
-        if (isFounded) {
-            return
-        }
+        if (getIsFounded()) return
 
         if (r != null || !taskPending()) {
             if (r != null) {
-                isFounded = true
+                setIsFounded()
                 playSoundNotification(true)
             } else {
                 playSoundNotification(false)
@@ -109,13 +139,11 @@ class GetResultFromCode(
 
     private fun onWarehouseAreaResult(r: WarehouseArea?) {
         searchWarehouseAreaId = false
-        if (isFounded) {
-            return
-        }
+        if (getIsFounded()) return
 
         if (r != null || !taskPending()) {
             if (r != null) {
-                isFounded = true
+                setIsFounded()
                 playSoundNotification(true)
             } else {
                 playSoundNotification(false)
@@ -126,13 +154,11 @@ class GetResultFromCode(
 
     private fun onRackResult(r: Rack?) {
         searchRackId = false
-        if (isFounded) {
-            return
-        }
+        if (getIsFounded()) return
 
         if (r != null || !taskPending()) {
             if (r != null) {
-                isFounded = true
+                setIsFounded()
                 playSoundNotification(true)
             } else {
                 playSoundNotification(false)
@@ -143,13 +169,11 @@ class GetResultFromCode(
 
     private fun onOrderResult(r: OrderResponse?) {
         searchOrder = false
-        if (isFounded) {
-            return
-        }
+        if (getIsFounded()) return
 
         if (r != null || !taskPending()) {
             if (r != null) {
-                isFounded = true
+                setIsFounded()
                 playSoundNotification(true)
             } else {
                 playSoundNotification(false)
@@ -173,41 +197,20 @@ class GetResultFromCode(
         }
     }
 
-    private fun searchString(origin: String, formula: String, position: Int): String {
-        //  ex @"#WA#{0:00000}#"
-        val rx = Regex(formula)
-        val matches = rx.matchEntire(origin)
+    @get:Synchronized
+    private var isFounded2: Boolean = false
 
-        if (matches != null) {
-            if (matches.groups.size >= position && matches.groups[position]?.value.toString()
-                    .isNotEmpty()
-            ) {
-                try {
-                    return matches.groupValues[position]
-                } catch (ex: Exception) {
-                    ex.printStackTrace()
-                    val res =
-                        "Error doing regex.\r\n formula $formula\r\n string $origin\r\n${ex.message}"
-                    Log.e(tag, res)
-                }
-            }
-        }
-        return ""
+    @Synchronized
+    private fun getIsFounded(): Boolean {
+        return isFounded2
     }
 
-    private val prefixRack = "#RK#"
-    private val prefixWa = "#WA#"
-    private val prefixItem = "#IT#"
-    private val prefixOrder = "#ORD#"
-    private val prefixItemUrl = "item/view?id="
+    @Synchronized
+    private fun setIsFounded() {
+        isFounded2 = true
+    }
 
-    private val formulaRack = """${prefixRack}(\d+)#"""
-    private val formulaWa = """${prefixWa}(\d+)#"""
-    private val formulaItem = """${prefixItem}(\d+)#"""
-    private val formulaOrder = """${prefixOrder}(\d+)#"""
-    private val formulaItemUrl = """${prefixItemUrl}(\d+)"""
 
-    private var isFounded = false
     private fun taskPending(): Boolean {
         return searchWarehouseAreaId || searchRackId || searchItemId || searchItemCode || searchItemEan || searchItemUrl || searchOrder
     }
@@ -229,7 +232,7 @@ class GetResultFromCode(
 
     init {
         // Reducir búsquedas innecesarias
-        if (code.startsWith(prefixRack) && searchRackId) {
+        if (code.startsWith(PREFIX_RACK) && searchRackId) {
             searchWarehouseAreaId = false
             searchRackId = true
             searchItemId = false
@@ -237,7 +240,7 @@ class GetResultFromCode(
             searchItemEan = false
             searchItemUrl = false
             searchOrder = false
-        } else if (code.startsWith(prefixWa) && searchWarehouseAreaId) {
+        } else if (code.startsWith(PREFIX_WA) && searchWarehouseAreaId) {
             searchWarehouseAreaId = true
             searchRackId = false
             searchItemId = false
@@ -245,7 +248,7 @@ class GetResultFromCode(
             searchItemEan = false
             searchItemUrl = false
             searchOrder = false
-        } else if (code.startsWith(prefixOrder) && searchOrder) {
+        } else if (code.startsWith(PREFIX_ORDER) && searchOrder) {
             searchWarehouseAreaId = false
             searchRackId = false
             searchItemId = false
@@ -253,7 +256,7 @@ class GetResultFromCode(
             searchItemEan = false
             searchItemUrl = false
             searchOrder = true
-        } else if (code.startsWith(prefixItem) && searchItemId) {
+        } else if (code.startsWith(PREFIX_ITEM) && searchItemId) {
             searchWarehouseAreaId = false
             searchRackId = false
             searchItemId = true
@@ -261,7 +264,7 @@ class GetResultFromCode(
             searchItemEan = false
             searchItemUrl = false
             searchOrder = false
-        } else if (code.contains(prefixItemUrl) && searchItemUrl) {
+        } else if (code.contains(PREFIX_ITEM_URL) && searchItemUrl) {
             searchWarehouseAreaId = false
             searchRackId = false
             searchItemId = false
@@ -281,32 +284,32 @@ class GetResultFromCode(
         for (c in defaultPriority.sortedBy { it.pos }) {
             if (!c.active) continue
 
-            if (c.codeType == CodeType.itemId && searchItemId && code.startsWith(prefixItem, true)) {
+            if (c.codeType == CodeType.itemId && searchItemId && code.startsWith(PREFIX_ITEM, true)) {
                 getItem(code)
-            } else if (c.codeType == CodeType.itemId && searchItemUrl && code.contains(prefixItemUrl, true)) {
+            } else if (c.codeType == CodeType.itemId && searchItemUrl && code.contains(PREFIX_ITEM_URL, true)) {
                 getItemByUrl(code)
             } else if (c.codeType == CodeType.ean && searchItemEan) {
                 getItemByEan(code)
+            } else if (c.codeType == CodeType.itemCode && searchItemCode) {
+                getItemByItemCode(code)
             }
-            // } else if (c.codeType == CodeType.itemCode && searchItemCode) {
-            //     getItemByItemCode(code)
         }
 
-        if (searchOrder && code.startsWith(prefixOrder, true)) {
+        if (searchOrder && code.startsWith(PREFIX_ORDER, true)) {
             getOrder(code)
         }
 
-        if (searchRackId && code.startsWith(prefixRack, true)) {
+        if (searchRackId && code.startsWith(PREFIX_RACK, true)) {
             getRacks(code)
         }
 
-        if (searchWarehouseAreaId && code.startsWith(prefixWa, true)) {
+        if (searchWarehouseAreaId && code.startsWith(PREFIX_WA, true)) {
             getWarehouseAreas(code)
         }
     }
 
     private fun getItem(code: String) {
-        val match: String = searchString(code, formulaItem, 1)
+        val match: String = searchString(code, FORMULA_ITEM, 1)
         if (match.isNotEmpty()) {
             val id: Long
             try {
@@ -340,19 +343,10 @@ class GetResultFromCode(
 
             if (id > 0) {
                 thread {
-                    GetItem(
-                        action = defaultAction,
-                        filter = arrayListOf(
-                            ApiFilterParam(
-                                columnName = ApiFilterParam.EXTENSION_ITEM_CODE,
-                                value = code,
-                                conditional = if (useLike) ACTION_OPERATOR_LIKE else ""
-                            )
-                        ),
-                        onEvent = { },
+                    ViewItemCode(
+                        id = id,
                         onFinish = {
-                            if (it.any()) onItemCodeResult(it.first())
-                            else getItemByCodeLocal(code)
+                            onItemCodeResult(it)
                         }).execute()
                 }
             }
@@ -385,7 +379,7 @@ class GetResultFromCode(
             if (id > 0) {
                 thread {
                     GetItem(
-                        action = defaultAction,
+                        action = GetItem.defaultAction,
                         filter = arrayListOf(
                             ApiFilterParam(
                                 columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
@@ -427,7 +421,7 @@ class GetResultFromCode(
     }
 
     private fun getOrder(code: String) {
-        val match: String = searchString(code, formulaOrder, 1)
+        val match: String = searchString(code, FORMULA_ORDER, 1)
         if (match.isNotEmpty()) {
             val id: Long
             try {
@@ -450,7 +444,7 @@ class GetResultFromCode(
     }
 
     private fun getWarehouseAreas(code: String) {
-        val match: String = searchString(code, formulaWa, 1)
+        val match: String = searchString(code, FORMULA_WA, 1)
         if (match.isNotEmpty()) {
             val id: Long
             try {
@@ -473,7 +467,7 @@ class GetResultFromCode(
     }
 
     private fun getRacks(code: String) {
-        val match: String = searchString(code, formulaRack, 1)
+        val match: String = searchString(code, FORMULA_RACK, 1)
         if (match.isNotEmpty()) {
             val id: Long
             try {

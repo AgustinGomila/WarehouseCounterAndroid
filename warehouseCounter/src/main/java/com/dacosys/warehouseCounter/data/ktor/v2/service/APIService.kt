@@ -7,6 +7,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplat
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.database.DatabaseData
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCode
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCodePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCodeResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
@@ -118,5 +119,16 @@ interface APIService {
         filter: ArrayList<ApiFilterParam>,
         pagination: ApiPaginationParam,
         callback: (APIResponse<List<OrderLocation>>) -> Unit
+    )
+
+    suspend fun getItemCode(
+        filter: ArrayList<ApiFilterParam>,
+        action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
+        callback: (APIResponse<ListResponse<ItemCode>>) -> Unit
+    )
+
+    suspend fun viewItemCode(
+        id: Long, action: ArrayList<ApiActionParam>, callback: (APIResponse<ItemCode>) -> Unit
     )
 }

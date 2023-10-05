@@ -33,23 +33,27 @@ data class ApiFilterParam(
 
         const val EXTENSION_ID = "id"
 
+        const val EXTENSION_STATUS_ID = "status_id"
+
         const val EXTENSION_ITEM_CATEGORY_ID = "item.item_category_id"
-        const val EXTENSION_ITEM_CODE = "item_code"
         const val EXTENSION_ITEM_DESCRIPTION = "item.description"
         const val EXTENSION_ITEM_EAN = "ean"
         const val EXTENSION_ITEM_EXTERNAL_ID = "item.external_id"
 
-        const val EXTENSION_ITEM_ID = "item_id"
+        const val EXTENSION_LOCATION_AREA_ID = "warehouse_area_id"
+        const val EXTENSION_LOCATION_RACK_ID = "rack_id"
 
         const val EXTENSION_ORDER_ORDER_ID = "id"
         const val EXTENSION_ORDER_DESCRIPTION = "description"
         const val EXTENSION_ORDER_EXTERNAL_ID = "external_id"
 
-        const val EXTENSION_STATUS_ID = "status_id"
-
         const val EXTENSION_ORDER_LOCATION_AREA_ID = "order_location.warehouse_area_id"
         const val EXTENSION_ORDER_LOCATION_ORDER_ID = "order_location.order_id"
         const val EXTENSION_ORDER_LOCATION_RACK_ID = "order_location.rack_id"
-        const val EXTENSION_ORDER_LOCATION_WAREHOUSE_ID = "order_location.warehouse_id"
+        const val EXTENSION_ORDER_LOCATION_EAN = "item.ean"
+        const val EXTENSION_ORDER_LOCATION_ITEM_ID = "item_id"
+        const val EXTENSION_ORDER_LOCATION_ITEM_DESCRIPTION = "item.description"
+        const val EXTENSION_ORDER_LOCATION_ITEM_EXTERNAL_ID = "item.external_id"
+        const val EXTENSION_ORDER_LOCATION_EXTERNAL_ID = "order.external_id"
     }
 }

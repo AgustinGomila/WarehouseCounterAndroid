@@ -52,6 +52,9 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsReposi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategory
@@ -63,7 +66,7 @@ import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.GetItemFromCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemRecyclerAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -83,6 +86,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.util.*
 import kotlin.concurrent.thread
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item as ItemKtor
 
 class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener, ItemRecyclerAdapter.CheckedChangedListener,
@@ -482,7 +486,6 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             val orientation = resources.configuration.orientation
             when {
                 orientation == Configuration.ORIENTATION_PORTRAIT && !printQtyIsFocused -> {
-                    panelBottomIsExpanded = false
                     panelTopIsExpanded = false
                     setPanels()
                 }
@@ -675,10 +678,10 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         // Limpiamos los ítems marcados
         checkedIdArray.clear()
 
-        val itemEan = filterFragment.itemEan.trim()
-        val itemDescription = filterFragment.description.trim()
-        val externalId = filterFragment.itemExternalId.trim()
-        val itemCategory = filterFragment.itemCategory
+        val itemEan = filterFragment.getItemEan().trim()
+        val itemDescription = filterFragment.getDescription().trim()
+        val externalId = filterFragment.getItemExternalId().trim()
+        val itemCategory = filterFragment.getItemCategory()
 
         if (itemEan.isEmpty() && externalId.isEmpty() && itemDescription.isEmpty() && itemCategory == null) {
             fillAdapter(arrayListOf())
@@ -691,7 +694,8 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 ean = itemEan,
                 externalId = externalId,
                 description = itemDescription,
-                itemCategoryId = itemCategory?.itemCategoryId
+                itemCategoryId = itemCategory?.itemCategoryId,
+                useLike = true
             ) {
                 fillAdapter(it)
             }
@@ -812,12 +816,14 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         LifecycleListener.lockScanner(this, true)
 
-        GetItemFromCode(
-            scannedCode = scanCode,
-            list = adapter?.fullList ?: ArrayList(),
-            onEvent = { showSnackBar(it.text, it.snackBarType) },
-            onFinish = { onCheckCodeEnded(it) },
-        ).execute()
+        GetResultFromCode(
+            code = scanCode,
+            searchItemId = true,
+            searchItemCode = true,
+            searchItemEan = true,
+            searchItemUrl = true,
+            onFinish = { onCheckCodeEnded(it) }
+        )
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -834,9 +840,14 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         finish()
     }
 
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
-    private val menuItemRandomOnListL = 999003
+    private val menuItemManualCode = 999001
+    private val menuItemRandomEan = 999002
+    private val menuItemRandomIt = 999003
+    private val menuItemRandomItUrl = 999004
+    private val menuItemRandomOnListL = 999005
+    private val menuItemRandomOrder = 999006
+    private val menuItemRandomRack = 999007
+    private val menuItemRandomWa = 999008
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -863,8 +874,13 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
+            menu.add(Menu.NONE, menuItemRandomEan, Menu.NONE, "Random EAN")
+            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item ID")
+            menu.add(Menu.NONE, menuItemRandomItUrl, Menu.NONE, "Random item ID URL")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
+            menu.add(Menu.NONE, menuItemRandomOrder, Menu.NONE, "Random order")
+            menu.add(Menu.NONE, menuItemRandomRack, Menu.NONE, "Random rack")
+            menu.add(Menu.NONE, menuItemRandomWa, Menu.NONE, "Random area")
         }
 
         if (menu is MenuBuilder) {
@@ -942,10 +958,45 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
                 return super.onOptionsItemSelected(item)
             }
 
-            menuItemRandomIt -> {
+            menuItemRandomEan -> {
                 ItemCoroutines.getEanCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomIt -> {
+                ItemCoroutines.getIds(true) {
+                    if (it.any()) scannerCompleted("${GetResultFromCode.PREFIX_ITEM}${it[Random().nextInt(it.count())]}#")
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomItUrl -> {
+                ItemCoroutines.getIds(true) {
+                    if (it.any()) scannerCompleted("${GetResultFromCode.PREFIX_ITEM_URL}${it[Random().nextInt(it.count())]}")
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomRack -> {
+                GetRack(onFinish = {
+                    if (it.any()) scannerCompleted("${GetResultFromCode.PREFIX_RACK}${it[Random().nextInt(it.count())].id}#")
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomWa -> {
+                GetWarehouseArea(onFinish = {
+                    if (it.any()) scannerCompleted("${GetResultFromCode.PREFIX_WA}${it[Random().nextInt(it.count())].id}#")
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomOrder -> {
+                GetOrder(onFinish = {
+                    if (it.any()) scannerCompleted("${GetResultFromCode.PREFIX_ORDER}${it[Random().nextInt(it.count())].id}#")
+                }).execute()
                 return super.onOptionsItemSelected(item)
             }
 
@@ -1038,20 +1089,30 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    private fun onCheckCodeEnded(it: GetItemFromCode.GetFromCodeResult) {
+    private fun onCheckCodeEnded(it: GetResultFromCode.GetFromCodeResult) {
         LifecycleListener.lockScanner(this, false)
+        val r = it.typedObject
+        when {
+            r is ArrayList<*> && r.any() -> {
+                if (r.first() is ItemKtor) {
+                    val itemKtor = r.first() as ItemKtor
+                    val item = itemKtor.toRoom()
 
-        val item: Item = it.item ?: return
-        val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION
+                    val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION
 
-        if (pos != NO_POSITION) {
-            adapter?.selectItem(item)
-        } else {
-            filterFragment.itemExternalId = item.ean
-            thread {
-                completeList = arrayListOf(item)
-                checkedIdArray.clear()
-                fillAdapter(completeList)
+                    if (pos != NO_POSITION) {
+                        adapter?.selectItem(item)
+                    } else {
+                        runOnUiThread {
+                            filterFragment.setItemEan(item.ean)
+                            thread {
+                                completeList = arrayListOf(item)
+                                checkedIdArray.clear()
+                                fillAdapter(completeList)
+                            }
+                        }
+                    }
+                }
             }
         }
     }

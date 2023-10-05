@@ -44,9 +44,12 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewRack
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.MoveOrder
-import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.misc.Statics
@@ -55,7 +58,13 @@ import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_ORDER
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_RACK
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_WA
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ORDER
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_RACK
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_WA
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.searchString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -438,7 +447,6 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
             val orientation = resources.configuration.orientation
             when {
                 orientation == Configuration.ORIENTATION_PORTRAIT && !printQtyIsFocused -> {
-                    panelBottomIsExpanded = false
                     panelTopIsExpanded = false
                     setPanels()
                 }
@@ -688,7 +696,6 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
 
             GetOrder(
                 filter = filter,
-                action = GetOrder.defaultAction,
                 onEvent = { if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
                     fillAdapter(ArrayList(it))
@@ -806,44 +813,58 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         }
 
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
-        LifecycleListener.lockScanner(this, true)
 
-        // Buscar por ubicación de destino o pedido
-        GetResultFromCode(
-            code = scanCode,
-            searchOrder = true,
-            searchRackId = true,
-            searchWarehouseAreaId = true,
-            onFinish = {
-
-                LifecycleListener.lockScanner(this, false)
-
-                val tList = it.typedObject ?: return@GetResultFromCode
-                val res = if (tList is ArrayList<*>) {
-                    tList.firstOrNull()
-                } else return@GetResultFromCode
-
-                when (res) {
-                    is OrderResponse -> fillAdapter(arrayListOf(res))
-
-                    is WarehouseArea -> {
-                        destinationHeader.setDestination(res)
-                        if (!panelTopIsExpanded) {
-                            panelTopIsExpanded = true
-                            setPanels()
-                        }
-                    }
-
-                    is Rack -> {
-                        destinationHeader.setDestination(res)
-                        if (!panelTopIsExpanded) {
-                            panelTopIsExpanded = true
-                            setPanels()
-                        }
-                    }
+        when {
+            scanCode.startsWith(PREFIX_ORDER) -> {
+                runOnUiThread {
+                    filterFragment.setOrderExternalId("")
+                    filterFragment.setOrderId(searchString(scanCode, FORMULA_ORDER, 1))
+                    getOrders()
                 }
             }
-        )
+
+            scanCode.startsWith(PREFIX_WA) -> {
+                val id = searchString(scanCode, FORMULA_WA, 1).toLongOrNull() ?: return
+                ViewWarehouseArea(
+                    id = id,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it == null) return@ViewWarehouseArea
+                        runOnUiThread {
+                            destinationHeader.setDestination(it)
+                            if (!panelTopIsExpanded) {
+                                panelTopIsExpanded = true
+                                setPanels()
+                            }
+                        }
+                    }).execute()
+            }
+
+            scanCode.startsWith(PREFIX_RACK) -> {
+                val id = searchString(scanCode, FORMULA_RACK, 1).toLongOrNull() ?: return
+                ViewRack(
+                    id = id,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it == null) return@ViewRack
+                        runOnUiThread {
+                            destinationHeader.setDestination(it)
+                            if (!panelTopIsExpanded) {
+                                panelTopIsExpanded = true
+                                setPanels()
+                            }
+                        }
+                    }).execute()
+            }
+
+            else -> {
+                runOnUiThread {
+                    filterFragment.setOrderId("")
+                    filterFragment.setOrderExternalId(scanCode)
+                    getOrders()
+                }
+            }
+        }
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -860,9 +881,12 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         finish()
     }
 
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
+    private val menuItemManualCode = 999001
+    private val menuItemRandomExternalId = 999002
     private val menuItemRandomOnListL = 999003
+    private val menuItemRandomOrder = 999004
+    private val menuItemRandomRack = 999005
+    private val menuItemRandomWa = 999006
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -874,8 +898,11 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
 
         if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
+            menu.add(Menu.NONE, menuItemRandomExternalId, Menu.NONE, "Random external order id")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
+            menu.add(Menu.NONE, menuItemRandomOrder, Menu.NONE, "Random order")
+            menu.add(Menu.NONE, menuItemRandomRack, Menu.NONE, "Random rack")
+            menu.add(Menu.NONE, menuItemRandomWa, Menu.NONE, "Random area")
         }
 
         if (menu is MenuBuilder) {
@@ -948,15 +975,36 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
 
             menuItemRandomOnListL -> {
                 val codes: ArrayList<String> = ArrayList()
-                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.externalId }
+                (adapter?.fullList ?: ArrayList()).mapTo(codes) { "$PREFIX_ORDER${it.id}#" }
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
 
-            menuItemRandomIt -> {
-                ItemCoroutines.getEanCodes(true) {
-                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
-                }
+            menuItemRandomExternalId -> {
+                GetOrder(onFinish = {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())].externalId)
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomOrder -> {
+                GetOrder(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_ORDER${it[Random().nextInt(it.count())].id}#")
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomRack -> {
+                GetRack(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_RACK${it[Random().nextInt(it.count())].id}#")
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomWa -> {
+                GetWarehouseArea(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_WA${it[Random().nextInt(it.count())].id}#")
+                }).execute()
                 return super.onOptionsItemSelected(item)
             }
 

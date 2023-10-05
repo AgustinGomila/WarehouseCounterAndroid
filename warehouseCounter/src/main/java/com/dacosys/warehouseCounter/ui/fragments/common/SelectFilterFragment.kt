@@ -22,7 +22,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_OPERATOR_IN
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_OPERATOR_LIKE
 import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.data.settings.Preference
@@ -41,19 +40,135 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
      */
     constructor() : this(Builder())
 
-    var description: String
+    private var description: String
 
-    var itemExternalId: String
-    var itemEan: String
-    var itemCategory: ItemCategory?
+    @Suppress("unused")
+    fun setDescription(description: String) {
+        this.description = description
+        refreshViews()
+    }
 
-    var orderId: String
-    var orderExternalId: String
+    @Suppress("unused")
+    fun getDescription(): String {
+        return description
+    }
 
-    var warehouse: Warehouse?
-    var warehouseArea: WarehouseArea?
-    var rack: Rack?
-    var onlyActive: Boolean
+    private var itemExternalId: String
+
+    @Suppress("unused")
+    fun setItemExternalId(itemExternalId: String) {
+        this.itemExternalId = itemExternalId
+        refreshViews()
+    }
+
+    @Suppress("unused")
+    fun getItemExternalId(): String {
+        return itemExternalId
+    }
+
+    private var itemEan: String
+
+    @Suppress("unused")
+    fun setItemEan(itemEan: String) {
+        this.itemEan = itemEan
+        refreshViews()
+    }
+
+    @Suppress("unused")
+    fun getItemEan(): String {
+        return itemEan
+    }
+
+    private var itemCategory: ItemCategory?
+
+    @Suppress("unused")
+    fun setItemCategory(itemCategory: ItemCategory?) {
+        this.itemCategory = itemCategory
+        refreshViews()
+    }
+
+    @Suppress("unused")
+    fun getItemCategory(): ItemCategory? {
+        return itemCategory
+    }
+
+    private var orderId: String
+
+    @Suppress("unused")
+    fun setOrderId(orderId: String) {
+        this.orderId = orderId
+        refreshViews()
+    }
+
+    @Suppress("unused")
+    fun getOrderId(): String {
+        return orderId
+    }
+
+    private var orderExternalId: String
+
+    @Suppress("unused")
+    fun setOrderExternalId(orderExternalId: String) {
+        this.orderExternalId = orderExternalId
+        refreshViews()
+    }
+
+    @Suppress("unused")
+    fun getOrderExternalId(): String {
+        return orderExternalId
+    }
+
+    private var warehouse: Warehouse?
+
+    @Suppress("unused")
+    fun setWarehouse(warehouse: Warehouse?) {
+        this.warehouse = warehouse
+        refreshViews()
+    }
+
+    @Suppress("unused")
+    fun getWarehouse(): Warehouse? {
+        return warehouse
+    }
+
+    private var warehouseArea: WarehouseArea?
+
+    @Suppress("unused")
+    fun setWarehouseArea(warehouseArea: WarehouseArea?) {
+        this.warehouseArea = warehouseArea
+        refreshViews()
+    }
+
+    @Suppress("unused")
+    fun getWarehouseArea(): WarehouseArea? {
+        return warehouseArea
+    }
+
+    private var rack: Rack?
+
+    @Suppress("unused")
+    fun setRack(rack: Rack?) {
+        this.rack = rack
+        refreshViews()
+    }
+
+    @Suppress("unused")
+    fun getRack(): Rack? {
+        return rack
+    }
+
+    private var onlyActive: Boolean
+
+    @Suppress("unused")
+    fun setOnlyActive(onlyActive: Boolean) {
+        this.onlyActive = onlyActive
+        refreshViews()
+    }
+
+    @Suppress("unused")
+    fun getOnlyActive(): Boolean {
+        return onlyActive
+    }
 
     private var searchByItemExternalId: Boolean
     private var pSearchByItemExternalId: Preference? = null
@@ -108,10 +223,8 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             externalId: String,
             description: String,
             ean: String,
-            itemCategory: ItemCategory?,
             orderId: String,
             orderExternalId: String,
-            warehouse: Warehouse?,
             warehouseArea: WarehouseArea?,
             rack: Rack?,
             onlyActive: Boolean,
@@ -523,10 +636,8 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             externalId = itemExternalId,
             description = description,
             ean = itemEan,
-            itemCategory = itemCategory,
             orderId = orderId,
             orderExternalId = orderExternalId,
-            warehouse = warehouse,
             warehouseArea = warehouseArea,
             rack = rack,
             onlyActive = onlyActive
@@ -568,11 +679,9 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     private fun setOrderLocationTexts() {
         setExternalIdText()
         setEanText()
-        setCategoryText()
         setDescriptionText()
         setOrderIdText()
         setOrderExternalIdText()
-        setWarehouseText()
         setAreaText()
         setRackText()
         binding.onlyActiveCheckBox.isChecked = onlyActive
@@ -711,6 +820,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     }
 
     // region Visibility functions
+    @Suppress("unused")
     fun getVisibleFilters(): ArrayList<Preference> {
         val r: ArrayList<Preference> = ArrayList()
 
@@ -856,21 +966,10 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         return itemExternalId.isNotEmpty() ||
                 description.isNotEmpty() ||
                 itemEan.isNotEmpty() ||
-                itemCategory != null ||
                 orderId.isNotEmpty() ||
                 orderExternalId.isNotEmpty() ||
-                warehouse != null ||
                 warehouseArea != null ||
                 rack != null
-    }
-
-    @Suppress("MemberVisibilityCanBePrivate")
-    fun filterIdIn(id: Long): ApiFilterParam {
-        return ApiFilterParam(
-            columnName = ApiFilterParam.EXTENSION_ID,
-            value = id.toString(),
-            conditional = ACTION_OPERATOR_IN
-        )
     }
 
     @Suppress("MemberVisibilityCanBePrivate")
@@ -878,6 +977,16 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         get() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ITEM_EXTERNAL_ID,
+                value = itemExternalId,
+                conditional = ACTION_OPERATOR_LIKE
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val filterOrderLocationItemExternalId: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_EXTERNAL_ID,
                 value = itemExternalId,
                 conditional = ACTION_OPERATOR_LIKE
             )
@@ -894,10 +1003,30 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         }
 
     @Suppress("MemberVisibilityCanBePrivate")
+    val filterOrderLocationItemDescription: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_ITEM_DESCRIPTION,
+                value = description,
+                conditional = ACTION_OPERATOR_LIKE
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
     val filterItemEan: ApiFilterParam
         get() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
+                value = itemEan,
+                conditional = ACTION_OPERATOR_LIKE
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val filterOrderLocationItemEan: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_EAN,
                 value = itemEan,
                 conditional = ACTION_OPERATOR_LIKE
             )
@@ -941,6 +1070,16 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         }
 
     @Suppress("MemberVisibilityCanBePrivate")
+    val filterOrderLocationExternalId: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_EXTERNAL_ID,
+                value = orderExternalId,
+                conditional = ACTION_OPERATOR_LIKE
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
     val filterOrderDescription: ApiFilterParam
         get() {
             return ApiFilterParam(
@@ -951,16 +1090,25 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         }
 
     @Suppress("MemberVisibilityCanBePrivate")
-    val filterWarehouse: ApiFilterParam
+    val filterLocationWarehouseArea: ApiFilterParam
         get() {
             return ApiFilterParam(
-                columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_WAREHOUSE_ID,
-                value = warehouse?.id.toString()
+                columnName = ApiFilterParam.EXTENSION_LOCATION_AREA_ID,
+                value = warehouseArea?.id.toString()
             )
         }
 
     @Suppress("MemberVisibilityCanBePrivate")
-    val filterWarehouseArea: ApiFilterParam
+    val filterLocationRack: ApiFilterParam
+        get() {
+            return ApiFilterParam(
+                columnName = ApiFilterParam.EXTENSION_LOCATION_RACK_ID,
+                value = rack?.id.toString()
+            )
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val filterOrderLocationWarehouseArea: ApiFilterParam
         get() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_AREA_ID,
@@ -969,7 +1117,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         }
 
     @Suppress("MemberVisibilityCanBePrivate")
-    val filterRack: ApiFilterParam
+    val filterOrderLocationRack: ApiFilterParam
         get() {
             return ApiFilterParam(
                 columnName = ApiFilterParam.EXTENSION_ORDER_LOCATION_RACK_ID,
@@ -977,6 +1125,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             )
         }
 
+    @Suppress("unused")
     fun getFilters(): ArrayList<ApiFilterParam> {
         return when (requireActivity()) {
             is OnFilterLocationChangedListener -> getLocationFilters()
@@ -991,15 +1140,13 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         val filter: ArrayList<ApiFilterParam> = arrayListOf()
 
         if (validOrderLocationFilter()) {
-            if (itemExternalId.isNotEmpty()) filter.add(filterItemExternalId)
-            if (description.isNotEmpty()) filter.add(filterItemDescription)
-            if (itemEan.isNotEmpty()) filter.add(filterItemEan)
-            if (itemCategory != null) filter.add(filterItemCategory)
+            if (itemExternalId.isNotEmpty()) filter.add(filterOrderLocationItemExternalId)
+            if (description.isNotEmpty()) filter.add(filterOrderLocationItemDescription)
+            if (itemEan.isNotEmpty()) filter.add(filterOrderLocationItemEan)
             if (orderId.isNotEmpty()) filter.add(filterOrderLocationId)
-            if (orderExternalId.isNotEmpty()) filter.add(filterOrderExternalId)
-            if (warehouse != null) filter.add(filterWarehouse)
-            if (warehouseArea != null) filter.add(filterWarehouseArea)
-            if (rack != null) filter.add(filterRack)
+            if (orderExternalId.isNotEmpty()) filter.add(filterOrderLocationExternalId)
+            if (warehouseArea != null) filter.add(filterOrderLocationWarehouseArea)
+            if (rack != null) filter.add(filterOrderLocationRack)
         }
         return filter
     }
@@ -1031,9 +1178,8 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         val filter: ArrayList<ApiFilterParam> = arrayListOf()
 
         if (validLocationFilter()) {
-            if (warehouse != null) filter.add(filterWarehouse)
-            if (warehouseArea != null) filter.add(filterWarehouseArea)
-            if (rack != null) filter.add(filterRack)
+            if (warehouseArea != null) filter.add(filterLocationWarehouseArea)
+            if (rack != null) filter.add(filterLocationRack)
         }
         return filter
     }

@@ -49,7 +49,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetOrderBarcode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
-import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.pendingLabel.PendingLabelCoroutines
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
@@ -59,7 +58,9 @@ import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_ORDER
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ORDER
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.searchString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -478,7 +479,6 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             val orientation = resources.configuration.orientation
             when {
                 orientation == Configuration.ORIENTATION_PORTRAIT && !printQtyIsFocused -> {
-                    panelBottomIsExpanded = false
                     panelTopIsExpanded = false
                     setPanels()
                 }
@@ -726,7 +726,6 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
             GetOrder(
                 filter = filter,
-                action = GetOrder.defaultAction,
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
                     fillAdapter(ArrayList(it))
@@ -835,7 +834,6 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun scannerCompleted(scanCode: String) {
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
@@ -846,22 +844,24 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
 
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
-        LifecycleListener.lockScanner(this, true)
 
-        // Buscar por ubicación
-        GetResultFromCode(
-            code = scanCode,
-            searchOrder = true,
-            onFinish = {
-
-                LifecycleListener.lockScanner(this, false)
-
-                val tList = it.typedObject ?: return@GetResultFromCode
-                if (tList is ArrayList<*> && tList.firstOrNull() is OrderResponse) {
-                    fillAdapter(tList as ArrayList<OrderResponse>)
-                } else return@GetResultFromCode
+        when {
+            scanCode.startsWith(PREFIX_ORDER) -> {
+                runOnUiThread {
+                    filterFragment.setOrderExternalId("")
+                    filterFragment.setOrderId(searchString(scanCode, FORMULA_ORDER, 1))
+                    getOrders()
+                }
             }
-        )
+
+            else -> {
+                runOnUiThread {
+                    filterFragment.setOrderId("")
+                    filterFragment.setOrderExternalId(scanCode)
+                    getOrders()
+                }
+            }
+        }
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -878,9 +878,10 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         finish()
     }
 
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
+    private val menuItemManualCode = 999001
+    private val menuItemRandomExternalId = 999002
     private val menuItemRandomOnListL = 999003
+    private val menuItemRandomOrder = 999004
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -892,8 +893,9 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
         if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
+            menu.add(Menu.NONE, menuItemRandomExternalId, Menu.NONE, "Random external order id")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
+            menu.add(Menu.NONE, menuItemRandomOrder, Menu.NONE, "Random order")
         }
 
         if (menu is MenuBuilder) {
@@ -966,15 +968,22 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
             menuItemRandomOnListL -> {
                 val codes: ArrayList<String> = ArrayList()
-                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.externalId }
+                (adapter?.fullList ?: ArrayList()).mapTo(codes) { "$PREFIX_ORDER${it.id}#" }
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
 
-            menuItemRandomIt -> {
-                ItemCoroutines.getEanCodes(true) {
-                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
-                }
+            menuItemRandomExternalId -> {
+                GetOrder(onFinish = {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())].externalId)
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomOrder -> {
+                GetOrder(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_ORDER${it[Random().nextInt(it.count())].id}#")
+                }).execute()
                 return super.onOptionsItemSelected(item)
             }
 

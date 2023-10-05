@@ -617,11 +617,6 @@ class SettingsRepository {
         description = context.getString(R.string.order_location_search_by_order_external_id),
         default = false
     )
-    var orderLocationSearchByWarehouse = Preference(
-        key = "order_location_search_by_warehouse",
-        description = context.getString(R.string.order_location_search_by_warehouse),
-        default = false
-    )
     var orderLocationSearchByArea = Preference(
         key = "order_location_search_by_area",
         description = context.getString(R.string.order_location_search_by_area),
@@ -898,7 +893,6 @@ class SettingsRepository {
 
                 sr.orderLocationSearchByOrderId,
                 sr.orderLocationSearchByOrderExtId,
-                sr.orderLocationSearchByWarehouse,
                 sr.orderLocationSearchByArea,
                 sr.orderLocationSearchByRack,
                 sr.orderLocationSearchByItemDescription,
@@ -1043,7 +1037,6 @@ class SettingsRepository {
                 allSections,
                 sr.orderLocationSearchByOrderId,
                 sr.orderLocationSearchByOrderExtId,
-                sr.orderLocationSearchByWarehouse,
                 sr.orderLocationSearchByArea,
                 sr.orderLocationSearchByRack,
                 sr.orderLocationSearchByItemDescription,

@@ -530,12 +530,6 @@ class SettingsViewModel : ViewModel() {
             settingsRepository.orderLocationSearchByOrderExtId.value = value
         }
 
-    var orderLocationSearchByWarehouse: Boolean
-        get() = settingsRepository.orderLocationSearchByWarehouse.value as Boolean
-        set(value) {
-            settingsRepository.orderLocationSearchByWarehouse.value = value
-        }
-
     var orderLocationSearchByArea: Boolean
         get() = settingsRepository.orderLocationSearchByArea.value as Boolean
         set(value) {

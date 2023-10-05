@@ -42,6 +42,11 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderStatus
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.ViewItem
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewRack
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.UpdateOrder
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
@@ -53,7 +58,16 @@ import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_ITEM
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_ORDER
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_RACK
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_WA
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ITEM
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ITEM_URL
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ORDER
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_RACK
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_WA
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.searchString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -742,26 +756,88 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
 
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
-        LifecycleListener.lockScanner(this, true)
 
-        // Buscar por ubicación de destino o pedido
-        GetResultFromCode(
-            code = scanCode,
-            searchOrder = true,
-            onFinish = {
-
-                LifecycleListener.lockScanner(this, false)
-
-                val tList = it.typedObject ?: return@GetResultFromCode
-                val res = if (tList is ArrayList<*>) {
-                    tList.firstOrNull()
-                } else return@GetResultFromCode
-
-                when (res) {
-                    is OrderResponse -> fillAdapter(arrayListOf(res))
+        when {
+            scanCode.startsWith(PREFIX_ORDER) -> {
+                runOnUiThread {
+                    filterFragment.setOrderExternalId("")
+                    filterFragment.setOrderId(searchString(scanCode, FORMULA_ORDER, 1))
+                    getOrders()
                 }
             }
-        )
+
+            scanCode.startsWith(PREFIX_ITEM) -> {
+                val id = searchString(scanCode, FORMULA_ITEM, 1).toLongOrNull() ?: return
+                ViewItem(
+                    id = id,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it == null) return@ViewItem
+                        runOnUiThread {
+                            filterFragment.setItemEan(it.ean)
+                            getOrders()
+                        }
+                    }).execute()
+            }
+
+            scanCode.contains(PREFIX_ITEM_URL) -> {
+                val id = scanCode.substringAfterLast(PREFIX_ITEM_URL).toLongOrNull() ?: return
+                ViewItem(
+                    id = id,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it == null) return@ViewItem
+                        runOnUiThread {
+                            filterFragment.setItemEan(it.ean)
+                            getOrders()
+                        }
+                    }).execute()
+            }
+
+            scanCode.startsWith(PREFIX_WA) -> {
+                val id = searchString(scanCode, FORMULA_WA, 1).toLongOrNull() ?: return
+                ViewWarehouseArea(
+                    id = id,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it == null) return@ViewWarehouseArea
+                        runOnUiThread {
+                            filterFragment.setWarehouse(null)
+                            filterFragment.setRack(null)
+                            filterFragment.setWarehouseArea(it)
+                            getOrders()
+                        }
+                    }).execute()
+            }
+
+            scanCode.startsWith(PREFIX_RACK) -> {
+                val id = searchString(scanCode, FORMULA_RACK, 1).toLongOrNull() ?: return
+                ViewRack(
+                    id = id,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it == null) return@ViewRack
+                        runOnUiThread {
+                            filterFragment.setWarehouse(null)
+                            filterFragment.setWarehouseArea(null)
+                            filterFragment.setRack(it)
+                            getOrders()
+                        }
+                    }).execute()
+            }
+
+            else -> {
+                runOnUiThread {
+                    if (settingsVm.orderLocationSearchByOrderExtId) {
+                        filterFragment.setOrderId("")
+                        filterFragment.setOrderExternalId(scanCode)
+                    } else {
+                        filterFragment.setItemEan(scanCode)
+                    }
+                    getOrders()
+                }
+            }
+        }
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -778,9 +854,14 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         finish()
     }
 
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
-    private val menuItemRandomOnListL = 999003
+    private val menuItemManualCode = 999001
+    private val menuItemRandomEan = 999002
+    private val menuItemRandomIt = 999003
+    private val menuItemRandomItUrl = 999004
+    private val menuItemRandomOnListL = 999005
+    private val menuItemRandomOrder = 999006
+    private val menuItemRandomRack = 999007
+    private val menuItemRandomWa = 999008
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -792,8 +873,13 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
         if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
+            menu.add(Menu.NONE, menuItemRandomEan, Menu.NONE, "Random EAN")
+            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item ID")
+            menu.add(Menu.NONE, menuItemRandomItUrl, Menu.NONE, "Random item ID URL")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
+            menu.add(Menu.NONE, menuItemRandomOrder, Menu.NONE, "Random order")
+            menu.add(Menu.NONE, menuItemRandomRack, Menu.NONE, "Random rack")
+            menu.add(Menu.NONE, menuItemRandomWa, Menu.NONE, "Random area")
         }
 
         if (menu is MenuBuilder) {
@@ -867,15 +953,50 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
             menuItemRandomOnListL -> {
                 val codes: ArrayList<String> = ArrayList()
-                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.externalId }
+                (adapter?.fullList ?: ArrayList()).mapTo(codes) { "$PREFIX_ORDER${it.id}#" }
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
 
-            menuItemRandomIt -> {
+            menuItemRandomEan -> {
                 ItemCoroutines.getEanCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomIt -> {
+                ItemCoroutines.getIds(true) {
+                    if (it.any()) scannerCompleted("$PREFIX_ITEM${it[Random().nextInt(it.count())]}#")
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomItUrl -> {
+                ItemCoroutines.getIds(true) {
+                    if (it.any()) scannerCompleted("$PREFIX_ITEM_URL${it[Random().nextInt(it.count())]}")
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomRack -> {
+                GetRack(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_RACK${it[Random().nextInt(it.count())].id}#")
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomWa -> {
+                GetWarehouseArea(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_WA${it[Random().nextInt(it.count())].id}#")
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomOrder -> {
+                GetOrder(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_ORDER${it[Random().nextInt(it.count())].id}#")
+                }).execute()
                 return super.onOptionsItemSelected(item)
             }
 
@@ -911,11 +1032,6 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             settingsRepository.orderLocationSearchByOrderExtId.key.hashCode() -> {
                 filterFragment.setOrderExtIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.orderLocationSearchByOrderExtId = item.isChecked
-            }
-
-            settingsRepository.orderLocationSearchByWarehouse.key.hashCode() -> {
-                filterFragment.setWarehouseVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByWarehouse = item.isChecked
             }
 
             settingsRepository.orderLocationSearchByArea.key.hashCode() -> {

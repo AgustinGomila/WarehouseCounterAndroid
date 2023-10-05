@@ -102,6 +102,7 @@ interface ItemDao {
             description: String = "",
             externalId: String = "",
             itemCategoryId: Long? = null,
+            useLike: Boolean = false
         ): SimpleSQLiteQuery {
             var where = String()
             val args: MutableList<Any> = ArrayList()
@@ -110,21 +111,21 @@ interface ItemDao {
             if (ean.isNotEmpty()) {
                 where += "WHERE "
                 where += "${Entry.TABLE_NAME}.${Entry.EAN} LIKE ?"
-                args.add("%$ean%")
+                args.add("${if (useLike) "%" else ""}$ean${if (useLike) "%" else ""}")
                 condAdded = true
             }
 
             if (externalId.isNotEmpty()) {
                 where += "WHERE "
                 where += "${Entry.TABLE_NAME}.${Entry.EXTERNAL_ID} LIKE ?"
-                args.add("%$externalId%")
+                args.add("${if (useLike) "%" else ""}$externalId${if (useLike) "%" else ""}")
                 condAdded = true
             }
 
             if (description.isNotEmpty()) {
                 where += if (condAdded) " OR " else "WHERE "
                 where += "${Entry.TABLE_NAME}.${Entry.DESCRIPTION} LIKE ?"
-                args.add("%$description%")
+                args.add("${if (useLike) "%" else ""}$description${if (useLike) "%" else ""}")
                 condAdded = true
             }
 

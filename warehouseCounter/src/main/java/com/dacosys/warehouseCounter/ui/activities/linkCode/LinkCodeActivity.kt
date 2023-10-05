@@ -69,7 +69,7 @@ import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.GetItemFromCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemRecyclerAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -87,6 +87,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.util.*
 import kotlin.concurrent.thread
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item as ItemKtor
 
 class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener,
     ItemRecyclerAdapter.SelectedItemChangedListener, ItemRecyclerAdapter.CheckedChangedListener,
@@ -162,12 +163,14 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
         LifecycleListener.lockScanner(this, true)
 
-        GetItemFromCode(
-            scannedCode = scanCode,
-            list = adapter?.fullList ?: ArrayList(),
-            onEvent = { showSnackBar(it.text, it.snackBarType) },
-            onFinish = { onCheckCodeEnded(it) },
-        ).execute()
+        GetResultFromCode(
+            code = scanCode,
+            searchItemId = true,
+            searchItemCode = true,
+            searchItemEan = true,
+            searchItemUrl = true,
+            onFinish = { onCheckCodeEnded(scanCode, it) }
+        )
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -886,9 +889,11 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }, 20)
     }
 
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
-    private val menuItemRandomOnListL = 999003
+    private val menuItemManualCode = 999001
+    private val menuItemRandomEan = 999002
+    private val menuItemRandomIt = 999003
+    private val menuItemRandomItUrl = 999004
+    private val menuItemRandomOnListL = 999005
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -915,7 +920,9 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
         if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
+            menu.add(Menu.NONE, menuItemRandomEan, Menu.NONE, "Random EAN")
+            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item ID")
+            menu.add(Menu.NONE, menuItemRandomItUrl, Menu.NONE, "Random item ID URL")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
         }
 
@@ -994,9 +1001,23 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 return super.onOptionsItemSelected(item)
             }
 
-            menuItemRandomIt -> {
+            menuItemRandomEan -> {
                 ItemCoroutines.getEanCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomIt -> {
+                ItemCoroutines.getIds(true) {
+                    if (it.any()) scannerCompleted("${GetResultFromCode.PREFIX_ITEM}${it[Random().nextInt(it.count())]}#")
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomItUrl -> {
+                ItemCoroutines.getIds(true) {
+                    if (it.any()) scannerCompleted("${GetResultFromCode.PREFIX_ITEM_URL}${it[Random().nextInt(it.count())]}")
                 }
                 return super.onOptionsItemSelected(item)
             }
@@ -1089,10 +1110,10 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         // Limpiamos los ítems marcados
         checkedIdArray.clear()
 
-        val itemEan = filterFragment.itemEan.trim()
-        val itemDescription = filterFragment.description.trim()
-        val externalId = filterFragment.itemExternalId.trim()
-        val itemCategory = filterFragment.itemCategory
+        val itemEan = filterFragment.getItemEan().trim()
+        val itemDescription = filterFragment.getDescription().trim()
+        val externalId = filterFragment.getItemExternalId().trim()
+        val itemCategory = filterFragment.getItemCategory()
 
         if (itemEan.isEmpty() && externalId.isEmpty() && itemDescription.isEmpty() && itemCategory == null) {
             fillAdapter(arrayListOf())
@@ -1262,33 +1283,45 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         Handler(Looper.getMainLooper()).postDelayed({ getItems() }, 200)
     }
 
-    private fun onCheckCodeEnded(it: GetItemFromCode.GetFromCodeResult) {
+    private fun onCheckCodeEnded(scannedCode: String, it: GetResultFromCode.GetFromCodeResult) {
         LifecycleListener.lockScanner(this, false)
 
-        val item: Item? = it.item
-        val scannedCode: String = it.scannedCode
+        val r: Any? = it.typedObject
 
-        if (item != null) {
-            val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION
-            if (pos != NO_POSITION) {
-                adapter?.selectItem(item)
-            } else {
-                filterFragment.itemExternalId = item.ean
-                thread {
-                    completeList = arrayListOf(item)
-                    checkedIdArray.clear()
-                    fillAdapter(completeList)
+        if (r != null && r is ArrayList<*> && r.any()) {
+            if (r.first() is ItemKtor) {
+                val itemKtor = r.first() as ItemKtor
+                val item = itemKtor.toRoom()
+
+                val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION
+
+                if (pos != NO_POSITION) {
+                    adapter?.selectItem(item)
+                } else {
+                    runOnUiThread {
+                        filterFragment.setItemEan(item.ean)
+                        thread {
+                            completeList = arrayListOf(item)
+                            checkedIdArray.clear()
+                            fillAdapter(completeList)
+                        }
+                    }
                 }
             }
-        } else {
-            runOnUiThread {
-                binding.codeEditText.setText(scannedCode, TextView.BufferType.EDITABLE)
-                binding.codeEditText.dispatchKeyEvent(
-                    KeyEvent(
-                        0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER, 0
-                    )
+            return
+        }
+
+        runOnUiThread {
+            binding.codeEditText.setText(scannedCode, TextView.BufferType.EDITABLE)
+            binding.codeEditText.dispatchKeyEvent(
+                KeyEvent(
+                    0,
+                    0,
+                    KeyEvent.ACTION_DOWN,
+                    KeyEvent.KEYCODE_ENTER,
+                    0
                 )
-            }
+            )
         }
     }
 

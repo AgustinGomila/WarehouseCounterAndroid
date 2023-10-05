@@ -60,10 +60,11 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetRackBarcode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetWarehouseAreaBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouseArea
-import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.ItemPrintLabelActivityTopPanelCollapsedBinding
 import com.dacosys.warehouseCounter.misc.Statics
@@ -72,7 +73,11 @@ import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_RACK
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_WA
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_RACK
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_WA
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.searchString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.location.LocationAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -465,7 +470,6 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             val orientation = resources.configuration.orientation
             when {
                 orientation == Configuration.ORIENTATION_PORTRAIT && !printQtyIsFocused -> {
-                    panelBottomIsExpanded = false
                     panelTopIsExpanded = false
                     setPanels()
                 }
@@ -662,14 +666,13 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         try {
             Log.d(tag, "Selecting locations...")
 
-            val rack = filterFragment.rack
-            val wa = filterFragment.warehouseArea
-            val w = filterFragment.warehouse
+            val rack = filterFragment.getRack()
+            val wa = filterFragment.getWarehouseArea()
+            val w = filterFragment.getWarehouse()
 
             if (rack != null) {
                 ViewRack(
                     id = rack.locationId,
-                    action = ViewRack.defaultAction,
                     onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                     onFinish = {
                         val list: ArrayList<Location> = arrayListOf()
@@ -680,7 +683,6 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             } else if (wa != null) {
                 ViewWarehouseArea(
                     id = wa.locationId,
-                    action = ViewWarehouseArea.defaultAction,
                     onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                     onFinish = {
                         val list: ArrayList<Location> = arrayListOf()
@@ -691,7 +693,6 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             } else if (w != null) {
                 ViewWarehouse(
                     id = w.locationId,
-                    action = ViewWarehouse.defaultAction,
                     onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                     onFinish = {
                         val list: ArrayList<Location> = arrayListOf()
@@ -726,6 +727,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                     .recyclerView(binding.recyclerView)
                     .fullList(completeList)
                     .checkedHashArray(checkedHashArray)
+                    .visibleStatus(arrayListOf(LocationType.RACK, LocationType.WAREHOUSE_AREA, LocationType.WAREHOUSE))
                     .multiSelect(multiSelect)
                     .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
                     .showImages(`val` = showImages, listener = { showImages = it })
@@ -807,7 +809,6 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun scannerCompleted(scanCode: String) {
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
@@ -818,23 +819,40 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         }
 
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
-        LifecycleListener.lockScanner(this, true)
 
-        // Buscar por ubicación
-        GetResultFromCode(
-            code = scanCode,
-            searchWarehouseAreaId = true,
-            searchRackId = true,
-            onFinish = {
-
-                LifecycleListener.lockScanner(this, false)
-
-                val tList = it.typedObject ?: return@GetResultFromCode
-                if (tList is ArrayList<*> && tList.firstOrNull() is Location) {
-                    fillAdapter(tList as ArrayList<Location>)
-                } else return@GetResultFromCode
+        when {
+            scanCode.startsWith(PREFIX_WA) -> {
+                val id = searchString(scanCode, FORMULA_WA, 1).toLongOrNull() ?: return
+                ViewWarehouseArea(
+                    id = id,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it == null) return@ViewWarehouseArea
+                        runOnUiThread {
+                            filterFragment.setRack(null)
+                            filterFragment.setWarehouse(null)
+                            filterFragment.setWarehouseArea(it)
+                            getLocations()
+                        }
+                    }).execute()
             }
-        )
+
+            scanCode.startsWith(PREFIX_RACK) -> {
+                val id = searchString(scanCode, FORMULA_RACK, 1).toLongOrNull() ?: return
+                ViewRack(
+                    id = id,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it == null) return@ViewRack
+                        runOnUiThread {
+                            filterFragment.setWarehouseArea(null)
+                            filterFragment.setWarehouse(null)
+                            filterFragment.setRack(it)
+                            getLocations()
+                        }
+                    }).execute()
+            }
+        }
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -851,9 +869,10 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         finish()
     }
 
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
-    private val menuItemRandomOnListL = 999003
+    private val menuItemManualCode = 999001
+    private val menuItemRandomOnListL = 999002
+    private val menuItemRandomRack = 999003
+    private val menuItemRandomWa = 999004
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -880,8 +899,9 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
         if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
+            menu.add(Menu.NONE, menuItemRandomRack, Menu.NONE, "Random rack")
+            menu.add(Menu.NONE, menuItemRandomWa, Menu.NONE, "Random area")
         }
 
         if (menu is MenuBuilder) {
@@ -954,15 +974,29 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
             menuItemRandomOnListL -> {
                 val codes: ArrayList<String> = ArrayList()
-                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.locationExternalId }
+                (adapter?.fullList ?: ArrayList()).mapTo(codes) {
+                    when (it.locationType) {
+                        LocationType.WAREHOUSE_AREA -> "${PREFIX_WA}${it.locationId}#"
+                        LocationType.RACK -> "${PREFIX_RACK}${it.locationId}#"
+                        else -> ""
+                    }
+                }
+
                 if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
                 return super.onOptionsItemSelected(item)
             }
 
-            menuItemRandomIt -> {
-                ItemCoroutines.getEanCodes(true) {
-                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
-                }
+            menuItemRandomRack -> {
+                GetRack(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_RACK${it[Random().nextInt(it.count())].id}#")
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomWa -> {
+                GetWarehouseArea(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_WA${it[Random().nextInt(it.count())].id}#")
+                }).execute()
                 return super.onOptionsItemSelected(item)
             }
 

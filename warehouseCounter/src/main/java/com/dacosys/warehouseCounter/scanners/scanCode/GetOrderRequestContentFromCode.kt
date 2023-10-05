@@ -82,7 +82,7 @@ class GetOrderRequestContentFromCode(
             GetResultFromCode(
                 code = code,
                 searchItemId = true,
-                searchItemCode = false,
+                searchItemCode = true,
                 searchItemEan = true,
                 searchItemUrl = true,
                 useLike = false,

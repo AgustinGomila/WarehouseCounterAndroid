@@ -39,12 +39,16 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderLocation
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.ViewItem
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewRack
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.orderLocation.GetOrderLocation
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.databinding.OrderLocationActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
@@ -53,6 +57,16 @@ import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_ITEM
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_ORDER
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_RACK
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_WA
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ITEM
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ITEM_URL
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ORDER
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_RACK
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_WA
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.searchString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.orderLocation.OrderLocationRecyclerAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -150,10 +164,8 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     private var filterExternalId: String = ""
     private var filterDescription: String = ""
     private var filterEan: String = ""
-    private var filterItemCategory: ItemCategory? = null
     private var filterOrderId: String = ""
     private var filterOrderExternalId: String = ""
-    private var filterWarehouse: Warehouse? = null
     private var filterWarehouseArea: WarehouseArea? = null
     private var filterRack: Rack? = null
     private var filterOnlyActive: Boolean = true
@@ -184,10 +196,8 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         b.putString("filterCode", filterExternalId)
         b.putString("filterDescription", filterDescription)
         b.putString("filterEan", filterEan)
-        b.putParcelable("filterItemCategory", filterItemCategory)
         b.putString("filterOrderId", filterOrderId)
         b.putString("filterOrderExternalId", filterOrderExternalId)
-        b.putParcelable("filterWarehouse", filterWarehouse)
         b.putParcelable("filterWarehouseArea", filterWarehouseArea)
         b.putParcelable("filterRack", filterRack)
         b.putBoolean("filterOnlyActive", filterOnlyActive)
@@ -215,10 +225,8 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         filterExternalId = b.getString("filterCode") ?: ""
         filterDescription = b.getString("filterDescription") ?: ""
         filterEan = b.getString("filterEan") ?: ""
-        filterItemCategory = b.parcelable("filterItemCategory")
         filterOrderId = b.getString("filterOrderId") ?: ""
         filterOrderExternalId = b.getString("filterOrderExternalId") ?: ""
-        filterWarehouse = b.parcelable("filterWarehouse")
         filterWarehouseArea = b.parcelable("filterWarehouseArea")
         filterRack = b.parcelable("filterRack")
         filterOnlyActive = b.getBoolean("filterOnlyActive")
@@ -325,16 +333,13 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 .searchByItemEan(sv.orderLocationSearchByItemEan, sr.orderLocationSearchByItemEan)
                 .searchByOrderId(sv.orderLocationSearchByOrderId, sr.orderLocationSearchByOrderId)
                 .searchByOrderExtId(sv.orderLocationSearchByOrderExtId, sr.orderLocationSearchByOrderExtId)
-                .searchByWarehouse(sv.orderLocationSearchByWarehouse, sr.orderLocationSearchByWarehouse)
                 .searchByArea(sv.orderLocationSearchByArea, sr.orderLocationSearchByArea)
                 .searchByRack(sv.orderLocationSearchByRack, sr.orderLocationSearchByRack)
                 .itemExternalId(filterExternalId)
                 .itemDescription(filterDescription)
                 .itemEan(filterEan)
-                .itemCategory(filterItemCategory)
                 .orderId(filterOrderId)
                 .orderExternalId(filterOrderExternalId)
-                .warehouse(filterWarehouse)
                 .warehouseArea(filterWarehouseArea)
                 .rack(filterRack)
                 .onlyActive(filterOnlyActive)
@@ -678,8 +683,6 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
-
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
             val res = context.getString(R.string.invalid_code)
@@ -688,8 +691,89 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
             return
         }
 
-        filterFragment.itemEan = scanCode
-        getItems()
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
+
+        when {
+            scanCode.startsWith(PREFIX_ORDER) -> {
+                runOnUiThread {
+                    filterFragment.setOrderExternalId("")
+                    filterFragment.setOrderId(searchString(scanCode, FORMULA_ORDER, 1))
+                    getItems()
+                }
+            }
+
+            scanCode.startsWith(PREFIX_ITEM) -> {
+                val id = searchString(scanCode, FORMULA_ITEM, 1).toLongOrNull() ?: return
+                ViewItem(
+                    id = id,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it == null) return@ViewItem
+                        runOnUiThread {
+                            filterFragment.setItemEan(it.ean)
+                            getItems()
+                        }
+                    }).execute()
+            }
+
+            scanCode.contains(PREFIX_ITEM_URL) -> {
+                val id = scanCode.substringAfterLast(PREFIX_ITEM_URL).toLongOrNull() ?: return
+                ViewItem(
+                    id = id,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it == null) return@ViewItem
+                        runOnUiThread {
+                            filterFragment.setItemEan(it.ean)
+                            getItems()
+                        }
+                    }).execute()
+            }
+
+            scanCode.startsWith(PREFIX_WA) -> {
+                val id = searchString(scanCode, FORMULA_WA, 1).toLongOrNull() ?: return
+                ViewWarehouseArea(
+                    id = id,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it == null) return@ViewWarehouseArea
+                        runOnUiThread {
+                            filterFragment.setWarehouse(null)
+                            filterFragment.setRack(null)
+                            filterFragment.setWarehouseArea(it)
+                            getItems()
+                        }
+                    }).execute()
+            }
+
+            scanCode.startsWith(PREFIX_RACK) -> {
+                val id = searchString(scanCode, FORMULA_RACK, 1).toLongOrNull() ?: return
+                ViewRack(
+                    id = id,
+                    onEvent = { showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it == null) return@ViewRack
+                        runOnUiThread {
+                            filterFragment.setWarehouse(null)
+                            filterFragment.setWarehouseArea(null)
+                            filterFragment.setRack(it)
+                            getItems()
+                        }
+                    }).execute()
+            }
+
+            else -> {
+                runOnUiThread {
+                    if (settingsVm.orderLocationSearchByOrderExtId) {
+                        filterFragment.setOrderId("")
+                        filterFragment.setOrderExternalId(scanCode)
+                    } else {
+                        filterFragment.setItemEan(scanCode)
+                    }
+                    getItems()
+                }
+            }
+        }
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -706,9 +790,14 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         finish()
     }
 
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
-    private val menuItemRandomOnListL = 999003
+    private val menuItemManualCode = 999001
+    private val menuItemRandomEan = 999002
+    private val menuItemRandomIt = 999003
+    private val menuItemRandomItUrl = 999004
+    private val menuItemRandomOnListL = 999005
+    private val menuItemRandomOrder = 999006
+    private val menuItemRandomRack = 999007
+    private val menuItemRandomWa = 999008
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -720,8 +809,13 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
         if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
+            menu.add(Menu.NONE, menuItemRandomEan, Menu.NONE, "Random EAN")
+            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item ID")
+            menu.add(Menu.NONE, menuItemRandomItUrl, Menu.NONE, "Random item ID URL")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
+            menu.add(Menu.NONE, menuItemRandomOrder, Menu.NONE, "Random order")
+            menu.add(Menu.NONE, menuItemRandomRack, Menu.NONE, "Random rack")
+            menu.add(Menu.NONE, menuItemRandomWa, Menu.NONE, "Random area")
         }
 
         if (menu is MenuBuilder) {
@@ -799,10 +893,45 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 return super.onOptionsItemSelected(item)
             }
 
-            menuItemRandomIt -> {
+            menuItemRandomEan -> {
                 ItemCoroutines.getEanCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomIt -> {
+                ItemCoroutines.getIds(true) {
+                    if (it.any()) scannerCompleted("$PREFIX_ITEM${it[Random().nextInt(it.count())]}#")
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomItUrl -> {
+                ItemCoroutines.getIds(true) {
+                    if (it.any()) scannerCompleted("$PREFIX_ITEM_URL${it[Random().nextInt(it.count())]}")
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomRack -> {
+                GetRack(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_RACK${it[Random().nextInt(it.count())].id}#")
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomWa -> {
+                GetWarehouseArea(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_WA${it[Random().nextInt(it.count())].id}#")
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomOrder -> {
+                GetOrder(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_ORDER${it[Random().nextInt(it.count())].id}#")
+                }).execute()
                 return super.onOptionsItemSelected(item)
             }
 
@@ -840,11 +969,6 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 sv.orderLocationSearchByOrderExtId = item.isChecked
             }
 
-            settingsRepository.orderLocationSearchByWarehouse.key.hashCode() -> {
-                filterFragment.setWarehouseVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByWarehouse = item.isChecked
-            }
-
             settingsRepository.orderLocationSearchByArea.key.hashCode() -> {
                 filterFragment.setAreaVisibility(if (item.isChecked) View.VISIBLE else GONE)
                 sv.orderLocationSearchByArea = item.isChecked
@@ -864,10 +988,8 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         externalId: String,
         description: String,
         ean: String,
-        itemCategory: ItemCategory?,
         orderId: String,
         orderExternalId: String,
-        warehouse: Warehouse?,
         warehouseArea: WarehouseArea?,
         rack: Rack?,
         onlyActive: Boolean
@@ -875,10 +997,8 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         filterExternalId = externalId
         filterDescription = description
         filterEan = ean
-        filterItemCategory = itemCategory
         filterOrderId = orderId
         filterOrderExternalId = orderExternalId
-        filterWarehouse = warehouse
         filterWarehouseArea = warehouseArea
         filterRack = rack
         filterOnlyActive = onlyActive

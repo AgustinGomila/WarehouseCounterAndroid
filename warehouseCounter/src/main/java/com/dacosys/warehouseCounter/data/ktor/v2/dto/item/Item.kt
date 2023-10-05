@@ -12,7 +12,7 @@ data class Item(
     @SerialName(ACTIVE_KEY) var active: Boolean = false,
     @SerialName(DESCRIPTION_KEY) var description: String = "",
     @SerialName(EAN_KEY) var ean: String = "",
-    @SerialName(EXTERNAL_ID_KEY) var externalId: String = "",
+    @SerialName(EXTERNAL_ID_KEY) var externalId: String? = null,
     @SerialName(ID_KEY) var id: Long = 0L,
     @SerialName(ITEM_CATEGORY_ID_KEY) var itemCategoryId: Long? = null,
     @SerialName(LOT_ENABLED_KEY) var lotEnabled: Boolean = false,

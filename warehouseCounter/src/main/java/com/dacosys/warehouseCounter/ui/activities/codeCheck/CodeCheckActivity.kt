@@ -15,21 +15,33 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
-import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.databinding.CodeCheckActivityBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ITEM
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ITEM_URL
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ORDER
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_RACK
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_WA
 import com.dacosys.warehouseCounter.ui.fragments.item.ItemDetailFragment
+import com.dacosys.warehouseCounter.ui.fragments.location.RackDetailFragment
+import com.dacosys.warehouseCounter.ui.fragments.location.WarehouseAreaDetailFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
@@ -37,6 +49,7 @@ import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.util.*
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item as ItemKtor
 
 class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
 
@@ -44,7 +57,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
     private var rejectNewInstances = false
 
-    private var currentFragment: androidx.fragment.app.Fragment? = null
+    private var currentFragment: Fragment? = null
 
     override fun onDestroy() {
         destroyLocals()
@@ -97,15 +110,15 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         Screen.setupUI(binding.root, this)
     }
 
-    private fun fillPanel(fragment: androidx.fragment.app.Fragment?) {
+    private fun fillPanel(fragment: Fragment?) {
         if (isFinishing) return
 
-        var newFragment: androidx.fragment.app.Fragment? = null
+        var newFragment: Fragment? = null
         if (fragment != null) {
             newFragment = fragment
         }
 
-        var oldFragment: androidx.fragment.app.Fragment? = null
+        var oldFragment: Fragment? = null
         if (currentFragment != null) {
             oldFragment = currentFragment
         }
@@ -153,14 +166,24 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
+            menu.add(Menu.NONE, menuItemRandomEan, Menu.NONE, "Random EAN")
+            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item ID")
+            menu.add(Menu.NONE, menuItemRandomItUrl, Menu.NONE, "Random item ID URL")
+            menu.add(Menu.NONE, menuItemRandomOrder, Menu.NONE, "Random order")
+            menu.add(Menu.NONE, menuItemRandomRack, Menu.NONE, "Random rack")
+            menu.add(Menu.NONE, menuItemRandomWa, Menu.NONE, "Random area")
         }
 
         return true
     }
 
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
+    private val menuItemManualCode = 999001
+    private val menuItemRandomEan = 999002
+    private val menuItemRandomIt = 999003
+    private val menuItemRandomItUrl = 999004
+    private val menuItemRandomOrder = 999005
+    private val menuItemRandomRack = 999006
+    private val menuItemRandomWa = 999007
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
@@ -184,10 +207,45 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                 return super.onOptionsItemSelected(item)
             }
 
-            menuItemRandomIt -> {
+            menuItemRandomEan -> {
                 ItemCoroutines.getEanCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomIt -> {
+                ItemCoroutines.getIds(true) {
+                    if (it.any()) scannerCompleted("$PREFIX_ITEM${it[Random().nextInt(it.count())]}#")
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomItUrl -> {
+                ItemCoroutines.getIds(true) {
+                    if (it.any()) scannerCompleted("$PREFIX_ITEM_URL${it[Random().nextInt(it.count())]}")
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomRack -> {
+                GetRack(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_RACK${it[Random().nextInt(it.count())].id}#")
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomWa -> {
+                GetWarehouseArea(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_WA${it[Random().nextInt(it.count())].id}#")
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomOrder -> {
+                GetOrder(onFinish = {
+                    if (it.any()) scannerCompleted("$PREFIX_ORDER${it[Random().nextInt(it.count())].id}#")
+                }).execute()
                 return super.onOptionsItemSelected(item)
             }
 
@@ -220,8 +278,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                     when (keyCode) {
                         KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
                             if (alertDialog != null) {
-                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
-                                    .performClick()
+                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
                             }
                         }
                     }
@@ -280,54 +337,90 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         LifecycleListener.lockScanner(this, true)
 
-        var itemObj: Item? = null
-        var itemCode: ItemCode? = null
-
-        ItemCoroutines.getByQuery(scannedCode) {
-            if (it.size > 0) itemObj = it.first()
-
-            if (itemObj == null) {
-                // ¿No está? Buscar en la tabla item_code de la base de datos
-                ItemCodeCoroutines.getByCode(scannedCode) { it2 ->
-                    if (it2.size > 0) itemCode = it2.first()
-
-                    try {
-                        when {
-                            itemObj != null -> {
-                                fillPanel(ItemDetailFragment.newInstance(itemObj!!))
-                                binding.infoTextView.setText(
-                                    R.string.the_code_belongs_to_an_item,
-                                    TextView.BufferType.EDITABLE
-                                )
-                            }
-
-                            itemCode != null -> {
-                                fillPanel(ItemDetailFragment.newInstance(itemCode!!))
-                                binding.infoTextView.setText(
-                                    R.string.the_code_belongs_to_an_item_code,
-                                    TextView.BufferType.EDITABLE
-                                )
-                            }
-
-                            else -> {
-                                fillPanel(null)
-                                binding.infoTextView.setText(
-                                    R.string.the_code_does_not_belong_to_any_iem_in_the_database,
-                                    TextView.BufferType.EDITABLE
-                                )
-                            }
+        GetResultFromCode(code = scannedCode,
+            searchItemId = true,
+            searchItemCode = true,
+            searchItemEan = true,
+            searchItemUrl = true,
+            searchWarehouseAreaId = true,
+            searchRackId = true,
+            searchOrder = true,
+            onFinish = {
+                val r = it.typedObject
+                when {
+                    r is ArrayList<*> && r.any() -> {
+                        if (r.first() is ItemKtor) {
+                            val itemKtor = r.first() as ItemKtor
+                            fillItemPanel(itemKtor.toRoom())
+                        } else if (r.first() is WarehouseArea) {
+                            fillWarehouseAreaPanel(r.first() as WarehouseArea)
+                        } else if (r.first() is Rack) {
+                            fillRackPanel(r.first() as Rack)
+                        } else if (r.first() is OrderResponse) {
+                            fillOrderPanel(r.first() as OrderResponse)
                         }
-                    } catch (ex: Exception) {
-                        showSnackBar(ex.message.toString(), ERROR)
-                        ErrorLog.writeLog(this, tag, ex.message.toString())
-                    } finally {
-                        LifecycleListener.lockScanner(this, false)
+                    }
+
+                    r is ItemKtor -> {
+                        fillItemPanel(r.toRoom())
+                    }
+
+                    r is WarehouseArea -> {
+                        fillWarehouseAreaPanel(r)
+                    }
+
+                    r is Rack -> {
+                        fillRackPanel(r)
+                    }
+
+                    r is OrderResponse -> {
+                        fillOrderPanel(r)
+                    }
+
+                    else -> {
+                        fillPanel(null)
+                        binding.infoTextView.setText(
+                            R.string.the_code_does_not_belong_to_any_iem_in_the_database, TextView.BufferType.EDITABLE
+                        )
                     }
                 }
-            } else {
-                fillPanel(ItemDetailFragment.newInstance(itemObj!!))
                 LifecycleListener.lockScanner(this, false)
-            }
+            })
+    }
+
+    private fun fillOrderPanel(r: OrderResponse) {
+        runOnUiThread {
+            // fillPanel(OrderDetailFragment.newInstance(r))
+            binding.infoTextView.setText(
+                R.string.the_code_belongs_to_an_order, TextView.BufferType.EDITABLE
+            )
+        }
+    }
+
+    private fun fillRackPanel(r: Rack) {
+        runOnUiThread {
+            fillPanel(RackDetailFragment.newInstance(r))
+            binding.infoTextView.setText(
+                R.string.the_code_belongs_to_an_rack, TextView.BufferType.EDITABLE
+            )
+        }
+    }
+
+    private fun fillWarehouseAreaPanel(r: WarehouseArea) {
+        runOnUiThread {
+            fillPanel(WarehouseAreaDetailFragment.newInstance(r))
+            binding.infoTextView.setText(
+                R.string.the_code_belongs_to_an_area, TextView.BufferType.EDITABLE
+            )
+        }
+    }
+
+    private fun fillItemPanel(itemRoom: Item) {
+        runOnUiThread {
+            fillPanel(ItemDetailFragment.newInstance(itemRoom))
+            binding.infoTextView.setText(
+                R.string.the_code_belongs_to_an_item, TextView.BufferType.EDITABLE
+            )
         }
     }
 
@@ -345,11 +438,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     override fun scannerCompleted(scanCode: String) {
         runOnUiThread {
             binding.codeEditText.setText(scanCode)
-            binding.codeEditText.dispatchKeyEvent(
-                KeyEvent(
-                    0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER, 0
-                )
-            )
+            fillHexTextView()
         }
     }
 

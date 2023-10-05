@@ -41,7 +41,6 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Location
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.LocationType
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Status
 import com.dacosys.warehouseCounter.databinding.LocationRowBinding
 import com.dacosys.warehouseCounter.databinding.LocationRowExpandedBinding
 import com.dacosys.warehouseCounter.misc.objects.table.Table
@@ -62,7 +61,7 @@ class LocationAdapter private constructor(builder: Builder) :
     private var showCheckBoxesChanged: (Boolean) -> Unit = { }
     private var showImages: Boolean = false
     private var showImagesChanged: (Boolean) -> Unit = { }
-    private var visibleStatus: ArrayList<Status> = ArrayList()
+    private var visibleStatus: ArrayList<LocationType> = ArrayList()
     private var filterOptions: FilterOptions = FilterOptions()
 
     // Este Listener debe usarse para los cambios de cantidad o de ítems marcados de la lista,
@@ -479,7 +478,7 @@ class LocationAdapter private constructor(builder: Builder) :
     }
 
     private fun mustBeVisible(it: Location): Boolean {
-        return it.locationType == LocationType.RACK || it.locationStatus in visibleStatus
+        return it.locationType in visibleStatus
     }
 
     override fun getFilter(): Filter {
@@ -765,19 +764,19 @@ class LocationAdapter private constructor(builder: Builder) :
         dataSetChangedListener?.onDataSetChanged()
     }
 
-    fun addVisibleStatus(status: Status) {
+    fun addVisibleStatus(status: LocationType) {
         if (visibleStatus.contains(status)) return
         visibleStatus.add(status)
 
         refreshFilter()
     }
 
-    fun removeVisibleStatus(status: Status) {
+    fun removeVisibleStatus(status: LocationType) {
         if (!visibleStatus.contains(status)) return
         visibleStatus.remove(status)
 
         // Quitamos los ítems con el estado seleccionado de la lista marcados.
-        val uncheckedItems = ArrayList(fullList.mapNotNull { if (it.locationStatus == status) it.hashCode else null })
+        val uncheckedItems = ArrayList(fullList.mapNotNull { if (it.locationType == status) it.hashCode else null })
         checkedHashArray.removeAll(uncheckedItems.toSet())
 
         refreshFilter()
@@ -1231,13 +1230,6 @@ class LocationAdapter private constructor(builder: Builder) :
         addPhotoRequiredListener = builder.addPhotoRequiredListener
         albumViewRequiredListener = builder.albumViewRequiredListener
 
-        // TODO: Dummy status list, FIX Later
-        if (visibleStatus.isEmpty()) {
-            for (i in 0..19) {
-                visibleStatus.add(Status(i.toLong(), """${context.getString(R.string.status)} $i"""))
-            }
-        }
-
         // Configuramos variables de estilo que se van a reutilizar.
         setupColors()
 
@@ -1298,7 +1290,7 @@ class LocationAdapter private constructor(builder: Builder) :
         internal var showCheckBoxesChanged: (Boolean) -> Unit = { }
         internal var showImages: Boolean = false
         internal var showImagesChanged: (Boolean) -> Unit = { }
-        internal var visibleStatus: ArrayList<Status> = ArrayList()
+        internal var visibleStatus: ArrayList<LocationType> = ArrayList()
         internal var filterOptions: FilterOptions = FilterOptions()
 
         internal var dataSetChangedListener: DataSetChangedListener? = null
@@ -1348,7 +1340,7 @@ class LocationAdapter private constructor(builder: Builder) :
         }
 
         @Suppress("unused")
-        fun visibleStatus(`val`: ArrayList<Status>): Builder {
+        fun visibleStatus(`val`: ArrayList<LocationType>): Builder {
             visibleStatus = `val`
             return this
         }

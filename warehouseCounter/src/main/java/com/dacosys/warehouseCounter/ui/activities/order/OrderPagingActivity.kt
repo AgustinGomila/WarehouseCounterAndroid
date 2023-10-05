@@ -357,7 +357,6 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
             val orientation = resources.configuration.orientation
             when {
                 orientation == Configuration.ORIENTATION_PORTRAIT && !printQtyIsFocused -> {
-                    panelBottomIsExpanded = false
                     panelTopIsExpanded = false
                     setPanels()
                 }

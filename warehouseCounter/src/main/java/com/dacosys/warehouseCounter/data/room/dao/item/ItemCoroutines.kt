@@ -66,6 +66,7 @@ object ItemCoroutines {
         externalId: String = "",
         description: String = "",
         itemCategoryId: Long? = null,
+        useLike: Boolean = false,
         onResult: (ArrayList<Item>) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
@@ -74,7 +75,8 @@ object ItemCoroutines {
                     ean = ean,
                     externalId = externalId,
                     description = description,
-                    itemCategoryId = itemCategoryId
+                    itemCategoryId = itemCategoryId,
+                    useLike = useLike
                 )
                 ArrayList(database.itemDao().getByQuery(query))
             }.await()

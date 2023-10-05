@@ -54,6 +54,7 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.scanCode.GetOrderRequestContentFromCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.ui.activities.common.EnterCodeActivity
 import com.dacosys.warehouseCounter.ui.activities.common.MultiplierSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.common.QtySelectorActivity
@@ -1387,17 +1388,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val fullList = adapter?.fullList ?: ArrayList()
 
         ItemRegex.tryToRegex(scanCode) { it ->
-            if (!it.any()) {
-                // No coincide con los Regex de la DB, lo
-                // usamos como un código corriente.
-                code = scanCode
-            } else {
+            if (it.any()) {
                 // region Regex Founded
                 if (it.count() > 1) {
                     // Mostrar advertencia.
-                    showSnackBar(
-                        getString(R.string.there_are_multiple_regex_matches), INFO
-                    )
+                    showSnackBar(getString(R.string.there_are_multiple_regex_matches), INFO)
                 }
 
                 // Utilizamos la primera coincidencia
@@ -1411,9 +1406,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                         scannedCode = regexRes.ean,
                         list = fullList,
                         onEvent = { showSnackBar(it.text, it.snackBarType) },
-                        onFinish = { onCheckCodeEnded(it) },
+                        onFinish = {
+                            onCheckCodeEnded(it)
+                        },
                     ).execute()
-
                     return@tryToRegex
                 }
 
@@ -1424,8 +1420,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 // Mostrar advertencia.
                 showSnackBar("Cantidad nula en Regex", INFO)
                 code = regexRes.ean
-
-                // endregion Regex Founded
+            } else {
+                // No coincide con los Regex de la DB, lo
+                // usamos como un código corriente.
+                code = scanCode
             }
 
             if (divided) {
@@ -1440,10 +1438,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 scannedCode = code,
                 list = fullList,
                 onEvent = { it2 -> showSnackBar(it2.text, it2.snackBarType) },
-                onFinish = { onCheckCodeEnded(it) },
+                onFinish = {
+                    onCheckCodeEnded(it)
+                },
             ).execute()
-
-            gentlyReturn()
         }
     }
 
@@ -1470,7 +1468,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun onCheckCodeEnded(it: GetOrderRequestContentFromCode.GetFromCodeResult) {
-        val orc = it.orc ?: return
+        val orc = it.orc
+        if (rejectNewInstances || orc == null) {
+            gentlyReturn()
+            return
+        }
+
         itemCode = it.itemCode
 
         // El código fue chequeado, se agrega y se selecciona en la lista
@@ -1492,14 +1495,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         Handler(mainLooper).postDelayed({
             setQty(orc)
         }, 250)
-        gentlyReturn()
     }
 
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
-    private val menuItemRandomOnListL = 999003
-    private val menuRegexItem = 999004
-    private val menuItemRandomUrlId = 999005
+    private val menuItemManualCode = 999001
+    private val menuItemRandomEan = 999002
+    private val menuItemRandomIt = 999003
+    private val menuItemRandomItUrl = 999004
+    private val menuItemRandomOnListL = 999005
+    private val menuRegexItem = 999006
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -1511,10 +1514,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
+            menu.add(Menu.NONE, menuItemRandomEan, Menu.NONE, "Random EAN")
+            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item ID")
+            menu.add(Menu.NONE, menuItemRandomItUrl, Menu.NONE, "Random item ID URL")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
             menu.add(Menu.NONE, menuRegexItem, Menu.NONE, "Regex")
-            menu.add(Menu.NONE, menuItemRandomUrlId, Menu.NONE, "Item Id desde Url")
         }
 
         if (menu is MenuBuilder) {
@@ -1583,11 +1587,16 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 return super.onOptionsItemSelected(item)
             }
 
-            menuItemRandomUrlId -> {
+            menuItemRandomItUrl -> {
                 ItemCoroutines.getIds(true) {
-                    if (it.any()) scannerCompleted(
-                        "/free/item/view?id=${it[Random().nextInt(it.count())]}"
-                    )
+                    if (it.any()) scannerCompleted("${GetResultFromCode.PREFIX_ITEM_URL}${it[Random().nextInt(it.count())]}")
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomEan -> {
+                ItemCoroutines.getEanCodes(true) {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
                 return super.onOptionsItemSelected(item)
             }

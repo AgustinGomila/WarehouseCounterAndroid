@@ -8,6 +8,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplat
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.database.DatabaseData
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCode
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCodePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCodeResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
@@ -20,6 +21,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderUpdatePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.BARCODE_LABEL_TEMPLATE_PATH
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ITEM_CODE_PATH
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ITEM_PATH
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ORDER_PACKAGE_PATH
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ORDER_PATH
@@ -493,6 +495,50 @@ class APIServiceImpl : APIService {
             filter = filter,
             pagination = pagination,
             callback = callback
+        )
+    }
+
+    /**
+     * Get a [ListResponse]<[ItemCode]> through a callback
+     *
+     * @param filter List of filters
+     * @param action List of parameters
+     * @param pagination Pagination
+     * @param callback [APIResponse] of desired list of objects
+     *
+     * [Manual](http://manual.dacosys.com/warehouse_counter/software/API/v2/item-code/)
+     * [index GET](http://localhost:8002/v2/item-code/)
+     */
+    override suspend fun getItemCode(
+        filter: ArrayList<ApiFilterParam>,
+        action: ArrayList<ApiActionParam>,
+        pagination: ApiPaginationParam,
+        callback: (APIResponse<ListResponse<ItemCode>>) -> Unit,
+    ) {
+        apiRequest.getListOf<ItemCode>(
+            objPath = ITEM_CODE_PATH,
+            listName = ItemCode.ITEM_CODES_LIST_KEY,
+            action = action,
+            filter = filter,
+            pagination = pagination,
+            callback = callback
+        )
+    }
+
+    /**
+     * View a [ItemCode] by ID
+     *
+     * @param id Object ID.
+     * @param action List of parameters.
+     * @param callback [APIResponse] of [ItemCode].
+     */
+    override suspend fun viewItemCode(
+        id: Long,
+        action: ArrayList<ApiActionParam>,
+        callback: (APIResponse<ItemCode>) -> Unit
+    ) {
+        apiRequest.view<ItemCode>(
+            objPath = ITEM_PATH, id = id, action = action, callback = callback
         )
     }
 }

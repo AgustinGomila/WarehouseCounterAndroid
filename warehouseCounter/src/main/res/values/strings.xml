@@ -296,6 +296,8 @@
         configuración de los paquetes de software que tiene disponibles.
     </string>
     <string name="the_code_belongs_to_an_item">El código pertence a un ítem</string>
+    <string name="the_code_belongs_to_an_rack">El código pertence a un rack</string>
+    <string name="the_code_belongs_to_an_area">El código pertence a un área</string>
     <string name="the_code_belongs_to_an_item_code">El código pertence a una cantidad de ítems</string>
     <string name="the_code_does_not_belong_to_any_iem_in_the_database">El código no pertenece a ningún ítem en la base
         de datos
@@ -832,4 +834,10 @@
     <string name="_0_users">%s usuarios</string>
     <string name="database_status">Estado de la base de datos</string>
     <string name="no_name">Sin nombre</string>
+    <string name="levels">Niveles</string>
+    <string name="acronym">Acrónimo</string>
+    <string name="rack_detail">Detalle del rack</string>
+    <string name="warehouse_area_detail">Detalle del área</string>
+    <string name="searching_item_codes">Buscando códigos de ítems…</string>
+    <string name="the_code_belongs_to_an_order">El código pertenece a un pedido</string>
 </resources>
