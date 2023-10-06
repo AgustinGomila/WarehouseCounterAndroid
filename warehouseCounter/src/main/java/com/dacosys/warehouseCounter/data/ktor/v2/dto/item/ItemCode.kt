@@ -4,6 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode as ItemCodeRoom
 
 @Serializable
 data class ItemCode(
@@ -57,5 +58,14 @@ data class ItemCode(
 
     override fun describeContents(): Int {
         return 0
+    }
+
+    fun toItemCodeRoom(): ItemCodeRoom {
+        return ItemCodeRoom(
+            id = id ?: 0L,
+            itemId = itemId,
+            code = code,
+            qty = qty
+        )
     }
 }

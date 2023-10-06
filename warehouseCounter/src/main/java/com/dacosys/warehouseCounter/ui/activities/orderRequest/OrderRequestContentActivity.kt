@@ -54,6 +54,7 @@ import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.scanCode.GetOrderRequestContentFromCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetOrderRequestContentFromCode.OrderRequestContentResult
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.ui.activities.common.EnterCodeActivity
 import com.dacosys.warehouseCounter.ui.activities.common.MultiplierSelectActivity
@@ -1389,7 +1390,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         ItemRegex.tryToRegex(scanCode) { it ->
             if (it.any()) {
-                // region Regex Founded
                 if (it.count() > 1) {
                     // Mostrar advertencia.
                     showSnackBar(getString(R.string.there_are_multiple_regex_matches), INFO)
@@ -1403,11 +1403,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 // Si la cantidad no es NULL proseguimos con el Regex
                 if (regexRes.qty != null) {
                     GetOrderRequestContentFromCode(
-                        scannedCode = regexRes.ean,
+                        code = regexRes.ean,
                         list = fullList,
                         onEvent = { showSnackBar(it.text, it.snackBarType) },
                         onFinish = {
-                            onCheckCodeEnded(it)
+                            onGetOrderRequestContentFromCodeEnded(it)
                         },
                     ).execute()
                     return@tryToRegex
@@ -1435,11 +1435,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
 
             GetOrderRequestContentFromCode(
-                scannedCode = code,
+                code = code,
                 list = fullList,
                 onEvent = { it2 -> showSnackBar(it2.text, it2.snackBarType) },
                 onFinish = {
-                    onCheckCodeEnded(it)
+                    onGetOrderRequestContentFromCodeEnded(it)
                 },
             ).execute()
         }
@@ -1467,7 +1467,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         showDialogForItemDescription(orc)
     }
 
-    private fun onCheckCodeEnded(it: GetOrderRequestContentFromCode.GetFromCodeResult) {
+    private fun onGetOrderRequestContentFromCodeEnded(it: OrderRequestContentResult) {
         val orc = it.orc
         if (rejectNewInstances || orc == null) {
             gentlyReturn()
@@ -1541,15 +1541,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
 
             R.id.action_trigger_scan -> {
-                /*
-                val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321"
-                val s = Random().ints(10, 0, source.length)
-                    .asSequence()
-                    .map(source::get)
-                    .joinToString("")
-                scannerCompleted(s)
-                return super.onOptionsItemSelected(item)
-                */
+                if (BuildConfig.DEBUG || Statics.TEST_MODE) {
+                    val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                    val shuffledSource = source.toList().shuffled(Random(System.currentTimeMillis()))
+                    val s = shuffledSource.take(10).joinToString("")
+                    scannerCompleted(s)
+                    return super.onOptionsItemSelected(item)
+                }
+
                 LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }

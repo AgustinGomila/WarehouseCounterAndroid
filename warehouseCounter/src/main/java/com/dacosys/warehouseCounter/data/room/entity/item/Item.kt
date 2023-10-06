@@ -10,6 +10,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemStatus
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item as ItemKtor
 import com.dacosys.warehouseCounter.data.room.entity.item.ItemEntry as Entry
 
 @Entity(
@@ -109,6 +110,19 @@ data class Item(
             price = price?.toDouble() ?: 0.0,
             qtyCollected = 0.0,
             qtyRequested = 0.0
+        )
+    }
+
+    fun toKtor(): ItemKtor {
+        return ItemKtor(
+            active = active == 1,
+            description = description,
+            ean = ean,
+            externalId = externalId,
+            id = itemId,
+            itemCategoryId = itemCategoryId,
+            lotEnabled = lotEnabled == 1,
+            price = price?.toDouble() ?: 0.0,
         )
     }
 

@@ -45,7 +45,21 @@ class GetResultFromCode(
         const val FORMULA_WA = """${PREFIX_WA}(\d+)#"""
         const val FORMULA_ITEM = """${PREFIX_ITEM}(\d+)#"""
         const val FORMULA_ORDER = """${PREFIX_ORDER}(\d+)#"""
-        const val FORMULA_ITEM_URL = """${PREFIX_ITEM_URL}(\d+)"""
+
+        fun playSoundNotification(success: Boolean) {
+            try {
+                val mp = MediaPlayer.create(
+                    context,
+                    when {
+                        success -> R.raw.scan_success
+                        else -> R.raw.scan_fail
+                    }
+                )
+                mp.start()
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+        }
 
         fun searchString(origin: String, formula: String, position: Int): String {
             val rx = Regex(formula)
@@ -72,6 +86,288 @@ class GetResultFromCode(
     private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     data class GetFromCodeResult(var typedObject: Any?)
+
+    @get:Synchronized
+    private var isFounded2: Boolean = false
+
+    @Synchronized
+    private fun getIsFounded(): Boolean {
+        return isFounded2
+    }
+
+    @Synchronized
+    private fun setIsFounded() {
+        isFounded2 = true
+    }
+
+
+    private fun taskPending(): Boolean {
+        return searchWarehouseAreaId || searchRackId || searchItemId || searchItemCode || searchItemEan || searchItemUrl || searchOrder
+    }
+
+    data class CodePriority(
+        val codeType: CodeType,
+        val active: Boolean,
+        val pos: Int,
+    )
+
+    private val defaultPriority: ArrayList<CodePriority>
+        get() {
+            val t: ArrayList<CodePriority> = ArrayList()
+            t.add(CodePriority(CodeType.itemId, true, 1))
+            t.add(CodePriority(CodeType.ean, true, 2))
+            t.add(CodePriority(CodeType.itemCode, true, 3))
+            return t
+        }
+
+    init {
+        // Reducir búsquedas innecesarias
+        if (code.startsWith(PREFIX_RACK) && searchRackId) {
+            searchRackId = true
+            searchItemCode = false
+            searchItemEan = false
+            searchItemId = false
+            searchItemUrl = false
+            searchOrder = false
+            searchWarehouseAreaId = false
+        } else if (code.startsWith(PREFIX_WA) && searchWarehouseAreaId) {
+            searchWarehouseAreaId = true
+            searchItemCode = false
+            searchItemEan = false
+            searchItemId = false
+            searchItemUrl = false
+            searchOrder = false
+            searchRackId = false
+        } else if (code.startsWith(PREFIX_ORDER) && searchOrder) {
+            searchOrder = true
+            searchItemCode = false
+            searchItemEan = false
+            searchItemId = false
+            searchItemUrl = false
+            searchRackId = false
+            searchWarehouseAreaId = false
+        } else if (code.startsWith(PREFIX_ITEM) && searchItemId) {
+            searchItemId = true
+            searchItemCode = false
+            searchItemEan = false
+            searchItemUrl = false
+            searchOrder = false
+            searchRackId = false
+            searchWarehouseAreaId = false
+        } else if (code.contains(PREFIX_ITEM_URL) && searchItemUrl) {
+            searchItemUrl = true
+            searchItemCode = false
+            searchItemEan = false
+            searchItemId = false
+            searchOrder = false
+            searchRackId = false
+            searchWarehouseAreaId = false
+        } else {
+            // Solo se usan con prefijo
+            searchItemId = false
+            searchItemUrl = false
+            searchOrder = false
+            searchRackId = false
+            searchWarehouseAreaId = false
+        }
+
+        for (c in defaultPriority.sortedBy { it.pos }) {
+            if (!c.active) continue
+
+            if (c.codeType == CodeType.itemId && searchItemId && code.startsWith(PREFIX_ITEM, true)) {
+                getItem(code)
+            } else if (c.codeType == CodeType.itemId && searchItemUrl && code.contains(PREFIX_ITEM_URL, true)) {
+                getItemByUrl(code)
+            } else if (c.codeType == CodeType.ean && searchItemEan) {
+                getItemByEan(code)
+            } else if (c.codeType == CodeType.itemCode && searchItemCode) {
+                getItemByItemCode(code)
+            }
+        }
+
+        if (searchOrder && code.startsWith(PREFIX_ORDER, true)) {
+            getOrder(code)
+        }
+
+        if (searchRackId && code.startsWith(PREFIX_RACK, true)) {
+            getRacks(code)
+        }
+
+        if (searchWarehouseAreaId && code.startsWith(PREFIX_WA, true)) {
+            getWarehouseAreas(code)
+        }
+    }
+
+    private fun getItem(code: String) {
+        val match: String = searchString(code, FORMULA_ITEM, 1)
+        if (match.isNotEmpty()) {
+            val id: Long
+            try {
+                id = match.toLong()
+            } catch (ex: NumberFormatException) {
+                Log.i(tag, "Could not parse: $ex")
+                return
+            }
+
+            if (id > 0) {
+                thread {
+                    ViewItem(
+                        id = id,
+                        onFinish = {
+                            onItemIdResult(it)
+                        }).execute()
+                }
+            }
+        }
+    }
+
+    private fun getItemByItemCode(code: String) {
+        if (code.isNotEmpty()) {
+            val id: Long
+            try {
+                id = code.toLong()
+            } catch (ex: NumberFormatException) {
+                Log.i(tag, "Could not parse: $ex")
+                return
+            }
+
+            if (id > 0) {
+                thread {
+                    ViewItemCode(
+                        id = id,
+                        action = ViewItemCode.defaultAction,
+                        onFinish = {
+                            onItemCodeResult(it)
+                        }).execute()
+                }
+            }
+        }
+    }
+
+    private fun getItemByEanLocal(code: String) {
+        ItemCoroutines.getByQuery(
+            ean = code
+        ) {
+            if (it.any()) {
+                val r = it.first().toKtor()
+                sendMessage(GetFromCodeResult(r))
+            } else {
+                sendMessage(GetFromCodeResult(null))
+            }
+        }
+    }
+
+    private fun getItemByEan(code: String) {
+        if (code.isNotEmpty()) {
+            thread {
+                GetItem(
+                    filter = arrayListOf(
+                        ApiFilterParam(
+                            columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
+                            value = code,
+                            conditional = if (useLike) ACTION_OPERATOR_LIKE else ""
+                        )
+                    ),
+                    onEvent = { },
+                    onFinish = {
+                        if (it.any()) onItemEanResult(it.first())
+                        else getItemByEanLocal(code)
+                    }).execute()
+            }
+        }
+    }
+
+    private fun getItemByUrl(code: String) {
+        val match: String = code.substringAfterLast("?id=")
+        if (match.isNotEmpty()) {
+            val id: Long
+            try {
+                id = match.toLong()
+            } catch (ex: NumberFormatException) {
+                Log.i(tag, "Could not parse: $ex")
+                return
+            }
+
+            if (id > 0) {
+                thread {
+                    ViewItem(
+                        id = id,
+                        onFinish = {
+                            onItemByUrlResult(it)
+                        }).execute()
+                }
+            }
+        }
+    }
+
+    private fun getOrder(code: String) {
+        val match: String = searchString(code, FORMULA_ORDER, 1)
+        if (match.isNotEmpty()) {
+            val id: Long
+            try {
+                id = match.toLong()
+            } catch (ex: NumberFormatException) {
+                Log.i(tag, "Could not parse: $ex")
+                return
+            }
+
+            if (id > 0) {
+                thread {
+                    ViewOrder(
+                        id = id,
+                        onFinish = {
+                            onOrderResult(it)
+                        }).execute()
+                }
+            }
+        }
+    }
+
+    private fun getWarehouseAreas(code: String) {
+        val match: String = searchString(code, FORMULA_WA, 1)
+        if (match.isNotEmpty()) {
+            val id: Long
+            try {
+                id = match.toLong()
+            } catch (ex: NumberFormatException) {
+                Log.i(tag, "Could not parse: $ex")
+                return
+            }
+
+            if (id > 0) {
+                thread {
+                    ViewWarehouseArea(
+                        id = id,
+                        onFinish = {
+                            onWarehouseAreaResult(it)
+                        }).execute()
+                }
+            }
+        }
+    }
+
+    private fun getRacks(code: String) {
+        val match: String = searchString(code, FORMULA_RACK, 1)
+        if (match.isNotEmpty()) {
+            val id: Long
+            try {
+                id = match.toLong()
+            } catch (ex: NumberFormatException) {
+                Log.i(tag, "Could not parse: $ex")
+                return
+            }
+
+            if (id > 0) {
+                thread {
+                    ViewRack(
+                        id = id,
+                        onFinish = {
+                            onRackResult(it)
+                        }).execute()
+                }
+            }
+        }
+    }
 
     private fun sendMessage(r: GetFromCodeResult) {
         onFinish(r)
@@ -179,313 +475,6 @@ class GetResultFromCode(
                 playSoundNotification(false)
             }
             sendMessage(GetFromCodeResult(r?.let { arrayListOf(it) }))
-        }
-    }
-
-    private fun playSoundNotification(success: Boolean) {
-        try {
-            val mp = MediaPlayer.create(
-                context,
-                when {
-                    success -> R.raw.scan_success
-                    else -> R.raw.scan_fail
-                }
-            )
-            mp.start()
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-        }
-    }
-
-    @get:Synchronized
-    private var isFounded2: Boolean = false
-
-    @Synchronized
-    private fun getIsFounded(): Boolean {
-        return isFounded2
-    }
-
-    @Synchronized
-    private fun setIsFounded() {
-        isFounded2 = true
-    }
-
-
-    private fun taskPending(): Boolean {
-        return searchWarehouseAreaId || searchRackId || searchItemId || searchItemCode || searchItemEan || searchItemUrl || searchOrder
-    }
-
-    data class CodePriority(
-        val codeType: CodeType,
-        val active: Boolean,
-        val pos: Int,
-    )
-
-    private val defaultPriority: ArrayList<CodePriority>
-        get() {
-            val t: ArrayList<CodePriority> = ArrayList()
-            t.add(CodePriority(CodeType.itemId, true, 1))
-            t.add(CodePriority(CodeType.ean, true, 2))
-            t.add(CodePriority(CodeType.itemCode, true, 3))
-            return t
-        }
-
-    init {
-        // Reducir búsquedas innecesarias
-        if (code.startsWith(PREFIX_RACK) && searchRackId) {
-            searchWarehouseAreaId = false
-            searchRackId = true
-            searchItemId = false
-            searchItemCode = false
-            searchItemEan = false
-            searchItemUrl = false
-            searchOrder = false
-        } else if (code.startsWith(PREFIX_WA) && searchWarehouseAreaId) {
-            searchWarehouseAreaId = true
-            searchRackId = false
-            searchItemId = false
-            searchItemCode = false
-            searchItemEan = false
-            searchItemUrl = false
-            searchOrder = false
-        } else if (code.startsWith(PREFIX_ORDER) && searchOrder) {
-            searchWarehouseAreaId = false
-            searchRackId = false
-            searchItemId = false
-            searchItemCode = false
-            searchItemEan = false
-            searchItemUrl = false
-            searchOrder = true
-        } else if (code.startsWith(PREFIX_ITEM) && searchItemId) {
-            searchWarehouseAreaId = false
-            searchRackId = false
-            searchItemId = true
-            searchItemCode = false
-            searchItemEan = false
-            searchItemUrl = false
-            searchOrder = false
-        } else if (code.contains(PREFIX_ITEM_URL) && searchItemUrl) {
-            searchWarehouseAreaId = false
-            searchRackId = false
-            searchItemId = false
-            searchItemCode = false
-            searchItemEan = false
-            searchItemUrl = true
-            searchOrder = false
-        } else {
-            // Solo se usan con prefijo
-            searchWarehouseAreaId = false
-            searchRackId = false
-            searchItemId = false
-            searchItemUrl = false
-            searchOrder = false
-        }
-
-        for (c in defaultPriority.sortedBy { it.pos }) {
-            if (!c.active) continue
-
-            if (c.codeType == CodeType.itemId && searchItemId && code.startsWith(PREFIX_ITEM, true)) {
-                getItem(code)
-            } else if (c.codeType == CodeType.itemId && searchItemUrl && code.contains(PREFIX_ITEM_URL, true)) {
-                getItemByUrl(code)
-            } else if (c.codeType == CodeType.ean && searchItemEan) {
-                getItemByEan(code)
-            } else if (c.codeType == CodeType.itemCode && searchItemCode) {
-                getItemByItemCode(code)
-            }
-        }
-
-        if (searchOrder && code.startsWith(PREFIX_ORDER, true)) {
-            getOrder(code)
-        }
-
-        if (searchRackId && code.startsWith(PREFIX_RACK, true)) {
-            getRacks(code)
-        }
-
-        if (searchWarehouseAreaId && code.startsWith(PREFIX_WA, true)) {
-            getWarehouseAreas(code)
-        }
-    }
-
-    private fun getItem(code: String) {
-        val match: String = searchString(code, FORMULA_ITEM, 1)
-        if (match.isNotEmpty()) {
-            val id: Long
-            try {
-                id = match.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
-
-            if (id > 0) {
-                thread {
-                    ViewItem(
-                        id = id,
-                        onFinish = {
-                            onItemIdResult(it)
-                        }).execute()
-                }
-            }
-        }
-    }
-
-    private fun getItemByItemCode(code: String) {
-        if (code.isNotEmpty()) {
-            val id: Long
-            try {
-                id = code.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
-
-            if (id > 0) {
-                thread {
-                    ViewItemCode(
-                        id = id,
-                        onFinish = {
-                            onItemCodeResult(it)
-                        }).execute()
-                }
-            }
-        }
-    }
-
-    private fun getItemByCodeLocal(code: String) {
-        ItemCoroutines.getByQuery(
-            ean = code
-        ) {
-            if (it.any()) {
-                val r = it.first().toOrderRequestContent(code)
-                sendMessage(GetFromCodeResult(r))
-            } else {
-                sendMessage(GetFromCodeResult(null))
-            }
-        }
-    }
-
-    private fun getItemByEan(code: String) {
-        if (code.isNotEmpty()) {
-            val id: Long
-            try {
-                id = code.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
-
-            if (id > 0) {
-                thread {
-                    GetItem(
-                        action = GetItem.defaultAction,
-                        filter = arrayListOf(
-                            ApiFilterParam(
-                                columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
-                                value = code,
-                                conditional = if (useLike) ACTION_OPERATOR_LIKE else ""
-                            )
-                        ),
-                        onEvent = { },
-                        onFinish = {
-                            if (it.any()) onItemEanResult(it.first())
-                            else getItemByCodeLocal(code)
-                        }).execute()
-                }
-            }
-        }
-    }
-
-    private fun getItemByUrl(code: String) {
-        val match: String = code.substringAfterLast("?id=")
-        if (match.isNotEmpty()) {
-            val id: Long
-            try {
-                id = match.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
-
-            if (id > 0) {
-                thread {
-                    ViewItem(
-                        id = id,
-                        onFinish = {
-                            onItemByUrlResult(it)
-                        }).execute()
-                }
-            }
-        }
-    }
-
-    private fun getOrder(code: String) {
-        val match: String = searchString(code, FORMULA_ORDER, 1)
-        if (match.isNotEmpty()) {
-            val id: Long
-            try {
-                id = match.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
-
-            if (id > 0) {
-                thread {
-                    ViewOrder(
-                        id = id,
-                        onFinish = {
-                            onOrderResult(it)
-                        }).execute()
-                }
-            }
-        }
-    }
-
-    private fun getWarehouseAreas(code: String) {
-        val match: String = searchString(code, FORMULA_WA, 1)
-        if (match.isNotEmpty()) {
-            val id: Long
-            try {
-                id = match.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
-
-            if (id > 0) {
-                thread {
-                    ViewWarehouseArea(
-                        id = id,
-                        onFinish = {
-                            onWarehouseAreaResult(it)
-                        }).execute()
-                }
-            }
-        }
-    }
-
-    private fun getRacks(code: String) {
-        val match: String = searchString(code, FORMULA_RACK, 1)
-        if (match.isNotEmpty()) {
-            val id: Long
-            try {
-                id = match.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
-
-            if (id > 0) {
-                thread {
-                    ViewRack(
-                        id = id,
-                        onFinish = {
-                            onRackResult(it)
-                        }).execute()
-                }
-            }
         }
     }
 }
