@@ -8,7 +8,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
-import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
+import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegex
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_ITEM
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ITEM
@@ -25,7 +25,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item as ItemKtor
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCode as ItemCodeKtor
 
 class GetOrderRequestContentFromCode(
     private val code: String,
@@ -35,10 +34,21 @@ class GetOrderRequestContentFromCode(
 ) {
     private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
-    data class OrderRequestContentResult(var orc: OrderRequestContent? = null, var itemCode: ItemCode? = null)
+    private var orc: OrderRequestContent? = null
 
-    private var itemCode: ItemCode? = null
+    /** Un valor para qty positivo puede provenir de ItemCode o de RegexResult, si no está definido es NULL */
+    private var qty: Double? = null
+
+    /** Lot proviene de RegexResult si es positiva la búsqueda */
+    private var lot: String? = null
+
     private var count: Int = 0
+
+    data class OrderRequestContentResult(
+        var orc: OrderRequestContent? = null,
+        var qty: Double? = null,
+        var lot: String? = null
+    )
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
@@ -69,18 +79,15 @@ class GetOrderRequestContentFromCode(
                 searchItemCode = true,
                 searchItemEan = true,
                 searchItemUrl = true,
+                searchItemRegex = true,
                 useLike = false,
                 onFinish = {
-                    val itemResult = it.typedObject
-                    if (itemResult is java.util.ArrayList<*>) {
-                        val item = itemResult.firstOrNull() ?: return@GetResultFromCode
-                        if (item is ItemKtor) {
-                            getItemFromListOrAdd(item)
-                        } else if (item is ItemCodeKtor) {
-                            val itemKtor = item.item ?: return@GetResultFromCode
-                            itemCode = item.toItemCodeRoom()
-                            getItemFromListOrAdd(itemKtor)
-                        }
+                    if (it.item != null) {
+                        val item = it.item as ItemKtor
+                        qty = it.qty
+                        lot = it.lot
+
+                        getItemFromListOrAdd(item)
                     } else {
                         // No existe el ítem, agregar como Desconocido si la configuración lo permite
                         addUnknownItem()
@@ -92,7 +99,7 @@ class GetOrderRequestContentFromCode(
             Log.e(tag, ex.message ?: "")
 
             playSoundNotification(false)
-            onFinish(OrderRequestContentResult())
+            sendFinish()
         }
     }
 
@@ -104,17 +111,20 @@ class GetOrderRequestContentFromCode(
         var searchItemCode = true
         var searchItemEan = true
         val searchItemUrl: Boolean
+        var searchItemRegex = true
 
         if (code.startsWith(PREFIX_ITEM)) {
             searchItemId = true
             searchItemCode = false
             searchItemEan = false
             searchItemUrl = false
+            searchItemRegex = false
         } else if (code.contains(PREFIX_ITEM_URL)) {
             searchItemId = false
             searchItemCode = false
             searchItemEan = false
             searchItemUrl = true
+            searchItemRegex = false
         } else {
             // Solo se usan con prefijo
             searchItemId = false
@@ -125,6 +135,8 @@ class GetOrderRequestContentFromCode(
 
         if (searchItemEan && isEanInTheList()) return true
 
+        if (searchItemRegex && isItemRegexInTheList()) return true
+
         if (searchItemCode && isItemCodeInTheList()) return true
 
         return false
@@ -133,7 +145,8 @@ class GetOrderRequestContentFromCode(
     private fun isEanInTheList(): Boolean {
         (0 until count).map { list[it] }
             .filter { it.ean == code }.forEach { it2 ->
-                onFinish(OrderRequestContentResult(it2, itemCode))
+                orc = it2
+                sendFinish()
                 return true
             }
 
@@ -167,7 +180,8 @@ class GetOrderRequestContentFromCode(
 
         (0 until count).map { list[it] }
             .filter { it.itemId == id }.forEach { it2 ->
-                onFinish(OrderRequestContentResult(it2, itemCode))
+                orc = it2
+                sendFinish()
                 return true
             }
 
@@ -190,11 +204,15 @@ class GetOrderRequestContentFromCode(
     private fun isItemCodeInTheList(): Boolean {
         setProcessState(false)
 
+        var tempItemId: Long? = null
+        var tempQty: Double? = null
+
         ItemCodeCoroutines.getByCode(
             code = code,
             onResult = {
                 if (it.any()) {
-                    itemCode = it.first()
+                    tempItemId = it.first().itemId
+                    tempQty = it.first().qty
                 }
                 setProcessState(true)
             }
@@ -207,11 +225,48 @@ class GetOrderRequestContentFromCode(
             }
         }
 
-        val tempItemCode = itemCode ?: return false
+        if (tempItemId == null) return false
 
         (0 until count).map { list[it] }
-            .filter { it.itemId == tempItemCode.itemId }.forEach { it2 ->
-                onFinish(OrderRequestContentResult(it2, itemCode))
+            .filter { it.itemId == tempItemId }.forEach { it2 ->
+                orc = it2
+                qty = tempQty
+                sendFinish()
+                return true
+            }
+
+        return false
+    }
+
+    private fun isItemRegexInTheList(): Boolean {
+        var tempLot: String? = null
+        var tempEan: String? = null
+        var tempQty: Double? = null
+
+        ItemRegex.tryToRegex(code) {
+            if (it.any()) {
+                tempLot = it.first().lot
+                tempEan = it.first().ean
+                tempQty = it.first().qty?.toDouble()
+            }
+            setProcessState(true)
+        }
+
+        val startTime = System.currentTimeMillis()
+        while (!getProcessState()) {
+            if (System.currentTimeMillis() - startTime == (settingsVm.connectionTimeout * 1000).toLong()) {
+                setProcessState(true)
+            }
+        }
+
+        if (tempEan == null) return false
+
+        (0 until count).map { list[it] }
+            .filter { it.ean == tempEan }.forEach { it2 ->
+                orc = it2
+                qty = tempQty
+                lot = tempLot
+                sendFinish()
                 return true
             }
 
@@ -227,7 +282,7 @@ class GetOrderRequestContentFromCode(
                 sendEvent(res, SnackBarType.ERROR)
                 Log.e(tag, res)
 
-                onFinish(OrderRequestContentResult())
+                sendFinish()
                 return false
             }
         }
@@ -238,7 +293,7 @@ class GetOrderRequestContentFromCode(
             sendEvent(res, SnackBarType.ERROR)
             Log.e(tag, res)
 
-            onFinish(OrderRequestContentResult())
+            sendFinish()
             return false
         }
 
@@ -254,17 +309,18 @@ class GetOrderRequestContentFromCode(
             ItemCoroutines.add(item) { id ->
                 if (id != null) {
                     playSoundNotification(true)
-                    onFinish(getOrderRequestContentResult(item = item, id = id))
+                    orc = getOrderRequestContent(item = item, id = id)
+                    sendFinish()
                 } else {
                     playSoundNotification(false)
                     sendEvent(context.getString(R.string.error_attempting_to_add_item_to_database), SnackBarType.ERROR)
-                    onFinish(OrderRequestContentResult())
+                    sendFinish()
                 }
             }
         } else {
             playSoundNotification(false)
             sendEvent("${context.getString(R.string.unknown_item)}: $code", SnackBarType.INFO)
-            onFinish(OrderRequestContentResult())
+            sendFinish()
         }
     }
 
@@ -274,32 +330,31 @@ class GetOrderRequestContentFromCode(
             val item = list[x]
             if (item.itemId == itemKtor.id) {
                 // Ya está en el adaptador, devolver el ítem
-                onFinish(OrderRequestContentResult(item, itemCode))
+                orc = item
+                sendFinish()
                 return
             }
         }
 
         // No está en el adaptador, devolver el ítem ya convertido
-        onFinish(OrderRequestContentResult(itemKtor.toOrderRequestContent(code), itemCode))
+        orc = itemKtor.toOrderRequestContent(code)
+        sendFinish()
     }
 
-    private fun getOrderRequestContentResult(item: Item, id: Long): OrderRequestContentResult {
-        return OrderRequestContentResult(
-            orc = OrderRequestContent().apply {
-                codeRead = code
-                itemId = id
-                itemDescription = item.description
-                ean = item.ean
-                price = item.price?.toDouble()
-                itemActive = item.active == 1
-                externalId = item.externalId
-                itemCategoryId = item.itemCategoryId
-                lotEnabled = item.lotEnabled == 1
-                qtyCollected = 0.toDouble()
-                qtyRequested = 0.toDouble()
-            },
-            itemCode = itemCode
-        )
+    private fun getOrderRequestContent(item: Item, id: Long): OrderRequestContent {
+        return OrderRequestContent().apply {
+            codeRead = code
+            itemId = id
+            itemDescription = item.description
+            ean = item.ean
+            price = item.price?.toDouble()
+            itemActive = item.active == 1
+            externalId = item.externalId
+            itemCategoryId = item.itemCategoryId
+            lotEnabled = item.lotEnabled == 1
+            qtyCollected = 0.toDouble()
+            qtyRequested = 0.toDouble()
+        }
     }
 
     private fun sendEvent(msg: String, type: SnackBarType) {
@@ -309,5 +364,9 @@ class GetOrderRequestContentFromCode(
 
     private fun sendEvent(event: SnackBarEventData) {
         onEvent(event)
+    }
+
+    private fun sendFinish() {
+        onFinish(OrderRequestContentResult(orc, qty, lot))
     }
 }

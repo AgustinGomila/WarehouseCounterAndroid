@@ -1283,28 +1283,24 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         Handler(Looper.getMainLooper()).postDelayed({ getItems() }, 200)
     }
 
-    private fun onCheckCodeEnded(scannedCode: String, it: GetResultFromCode.GetFromCodeResult) {
+    private fun onCheckCodeEnded(scannedCode: String, it: GetResultFromCode.CodeResult) {
         LifecycleListener.lockScanner(this, false)
 
-        val r: Any? = it.typedObject
+        val r: Any? = it.item
 
-        if (r != null && r is ArrayList<*> && r.any()) {
-            if (r.first() is ItemKtor) {
-                val itemKtor = r.first() as ItemKtor
-                val item = itemKtor.toRoom()
+        if (r != null && r is ItemKtor) {
+            val item = r.toRoom()
+            val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION
 
-                val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION
-
-                if (pos != NO_POSITION) {
-                    adapter?.selectItem(item)
-                } else {
-                    runOnUiThread {
-                        filterFragment.setItemEan(item.ean)
-                        thread {
-                            completeList = arrayListOf(item)
-                            checkedIdArray.clear()
-                            fillAdapter(completeList)
-                        }
+            if (pos != NO_POSITION) {
+                adapter?.selectItem(item)
+            } else {
+                runOnUiThread {
+                    filterFragment.setItemEan(item.ean)
+                    thread {
+                        completeList = arrayListOf(item)
+                        checkedIdArray.clear()
+                        fillAdapter(completeList)
                     }
                 }
             }

@@ -207,6 +207,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             menu.add(Menu.NONE, menuItemRandomOrder, Menu.NONE, "Random order")
             menu.add(Menu.NONE, menuItemRandomRack, Menu.NONE, "Random rack")
             menu.add(Menu.NONE, menuItemRandomWa, Menu.NONE, "Random area")
+            menu.add(Menu.NONE, menuRegexItem, Menu.NONE, "Regex")
         }
 
         return true
@@ -219,6 +220,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     private val menuItemRandomOrder = 999005
     private val menuItemRandomRack = 999006
     private val menuItemRandomWa = 999007
+    private val menuRegexItem = 999008
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
@@ -281,6 +283,11 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                 GetOrder(onFinish = {
                     if (it.any()) scannerCompleted("$PREFIX_ORDER${it[Random().nextInt(it.count())].id}#")
                 }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuRegexItem -> {
+                scannerCompleted("0SM20220721092826007792261002857001038858")
                 return super.onOptionsItemSelected(item)
             }
 
@@ -378,25 +385,16 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             searchItemCode = true,
             searchItemEan = true,
             searchItemUrl = true,
+            searchItemRegex = true,
             searchWarehouseAreaId = true,
             searchRackId = true,
             searchOrder = true,
             onFinish = {
-                val r = it.typedObject
-                when {
-                    r is ArrayList<*> && r.any() -> {
-                        if (r.first() is ItemKtor) {
-                            val itemKtor = r.first() as ItemKtor
-                            fillItemPanel(itemKtor.toRoom())
-                        } else if (r.first() is WarehouseArea) {
-                            fillWarehouseAreaPanel(r.first() as WarehouseArea)
-                        } else if (r.first() is Rack) {
-                            fillRackPanel(r.first() as Rack)
-                        } else if (r.first() is OrderResponse) {
-                            fillOrderPanel(r.first() as OrderResponse)
-                        }
-                    }
-
+                when (val r = it.item) {
+                    is ItemKtor -> fillItemPanel(r.toRoom())
+                    is WarehouseArea -> fillWarehouseAreaPanel(r)
+                    is Rack -> fillRackPanel(r)
+                    is OrderResponse -> fillOrderPanel(r)
                     else -> {
                         fillPanel(null)
                         hidePrintLabelFragment()

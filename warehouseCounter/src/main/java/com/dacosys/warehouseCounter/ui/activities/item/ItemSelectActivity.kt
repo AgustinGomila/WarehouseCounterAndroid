@@ -1089,29 +1089,23 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    private fun onCheckCodeEnded(it: GetResultFromCode.GetFromCodeResult) {
+    private fun onCheckCodeEnded(it: GetResultFromCode.CodeResult) {
         LifecycleListener.lockScanner(this, false)
-        val r = it.typedObject
-        when {
-            r is ArrayList<*> && r.any() -> {
-                if (r.first() is ItemKtor) {
-                    val itemKtor = r.first() as ItemKtor
-                    val item = itemKtor.toRoom()
+        val r = it.item
+        if (r !is ItemKtor) return
 
-                    val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION
+        val item = r.toRoom()
+        val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION
 
-                    if (pos != NO_POSITION) {
-                        adapter?.selectItem(item)
-                    } else {
-                        runOnUiThread {
-                            filterFragment.setItemEan(item.ean)
-                            thread {
-                                completeList = arrayListOf(item)
-                                checkedIdArray.clear()
-                                fillAdapter(completeList)
-                            }
-                        }
-                    }
+        if (pos != NO_POSITION) {
+            adapter?.selectItem(item)
+        } else {
+            runOnUiThread {
+                filterFragment.setItemEan(item.ean)
+                thread {
+                    completeList = arrayListOf(item)
+                    checkedIdArray.clear()
+                    fillAdapter(completeList)
                 }
             }
         }

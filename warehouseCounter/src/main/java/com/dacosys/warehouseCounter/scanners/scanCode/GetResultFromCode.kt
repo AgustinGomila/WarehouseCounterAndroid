@@ -18,6 +18,8 @@ import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.ViewOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_OPERATOR_LIKE
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegex
+import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegex.Companion.RegexResult
 import kotlin.concurrent.thread
 
 class GetResultFromCode(
@@ -26,11 +28,12 @@ class GetResultFromCode(
     private var searchItemCode: Boolean = false,
     private var searchItemEan: Boolean = false,
     private var searchItemUrl: Boolean = false,
+    private var searchItemRegex: Boolean = false,
     private var searchWarehouseAreaId: Boolean = false,
     private var searchRackId: Boolean = false,
     private var searchOrder: Boolean = false,
     private var useLike: Boolean = false,
-    private var onFinish: (GetFromCodeResult) -> Unit
+    private var onFinish: (CodeResult) -> Unit
 ) {
     companion object {
         private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
@@ -85,7 +88,7 @@ class GetResultFromCode(
 
     private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
-    data class GetFromCodeResult(var typedObject: Any?)
+    data class CodeResult(var item: Any? = null, var qty: Double? = null, var lot: String? = null)
 
     @get:Synchronized
     private var isFounded2: Boolean = false
@@ -102,7 +105,14 @@ class GetResultFromCode(
 
 
     private fun taskPending(): Boolean {
-        return searchWarehouseAreaId || searchRackId || searchItemId || searchItemCode || searchItemEan || searchItemUrl || searchOrder
+        return searchItemCode ||
+                searchItemEan ||
+                searchItemId ||
+                searchItemRegex ||
+                searchItemUrl ||
+                searchOrder ||
+                searchRackId ||
+                searchWarehouseAreaId
     }
 
     data class CodePriority(
@@ -117,6 +127,7 @@ class GetResultFromCode(
             t.add(CodePriority(CodeType.itemId, true, 1))
             t.add(CodePriority(CodeType.ean, true, 2))
             t.add(CodePriority(CodeType.itemCode, true, 3))
+            t.add(CodePriority(CodeType.itemRegex, true, 4))
             return t
         }
 
@@ -127,6 +138,7 @@ class GetResultFromCode(
             searchItemCode = false
             searchItemEan = false
             searchItemId = false
+            searchItemRegex = false
             searchItemUrl = false
             searchOrder = false
             searchWarehouseAreaId = false
@@ -135,6 +147,7 @@ class GetResultFromCode(
             searchItemCode = false
             searchItemEan = false
             searchItemId = false
+            searchItemRegex = false
             searchItemUrl = false
             searchOrder = false
             searchRackId = false
@@ -143,6 +156,7 @@ class GetResultFromCode(
             searchItemCode = false
             searchItemEan = false
             searchItemId = false
+            searchItemRegex = false
             searchItemUrl = false
             searchRackId = false
             searchWarehouseAreaId = false
@@ -150,6 +164,7 @@ class GetResultFromCode(
             searchItemId = true
             searchItemCode = false
             searchItemEan = false
+            searchItemRegex = false
             searchItemUrl = false
             searchOrder = false
             searchRackId = false
@@ -159,6 +174,7 @@ class GetResultFromCode(
             searchItemCode = false
             searchItemEan = false
             searchItemId = false
+            searchItemRegex = false
             searchOrder = false
             searchRackId = false
             searchWarehouseAreaId = false
@@ -182,6 +198,8 @@ class GetResultFromCode(
                 getItemByEan(code)
             } else if (c.codeType == CodeType.itemCode && searchItemCode) {
                 getItemByItemCode(code)
+            } else if (c.codeType == CodeType.itemRegex && searchItemRegex) {
+                getItemByItemRegex(code)
             }
         }
 
@@ -223,6 +241,34 @@ class GetResultFromCode(
 
     private fun getItemByItemCode(code: String) {
         if (code.isNotEmpty()) {
+
+            getItemCodeByCode(code) {
+                if (it != null) {
+                    val itemId = it.itemId
+                    val qty = it.qty
+
+                    if (itemId != null && qty != null) {
+                        getItemById(itemId, qty)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun getItemById(id: Long, qty: Double?) {
+        if (id > 0) {
+            thread {
+                ViewItem(
+                    id = id,
+                    onFinish = {
+                        onItemCodeResult(it, qty)
+                    }).execute()
+            }
+        }
+    }
+
+    private fun getItemCodeByCode(code: String, onItemCodeResult: (ItemCode?) -> Unit) {
+        if (code.isNotEmpty()) {
             val id: Long
             try {
                 id = code.toLong()
@@ -236,23 +282,63 @@ class GetResultFromCode(
                     ViewItemCode(
                         id = id,
                         action = ViewItemCode.defaultAction,
-                        onFinish = {
-                            onItemCodeResult(it)
-                        }).execute()
+                        onFinish = onItemCodeResult
+                    ).execute()
                 }
             }
         }
     }
 
-    private fun getItemByEanLocal(code: String) {
+    private fun getItemByItemRegex(code: String) {
+        ItemRegex.tryToRegex(code) {
+            if (it.any()) {
+                if (it.count() > 1) {
+                    Log.i(tag, "Existen múltiples coincidencias Regex")
+                }
+
+                val regexRes = it.firstOrNull() ?: return@tryToRegex
+
+                // Si la cantidad no es NULL proseguimos con el Regex
+                if (regexRes.qty != null) {
+                    getItemByItemRegex(regexRes)
+                    return@tryToRegex
+                }
+
+                // Qty NULL →
+                //    Actualizar el código escaneado y proseguir como
+                //    un código corriente pero advertir sobre el error.
+
+                // Mostrar advertencia.
+                Log.e(tag, "Cantidad nula en Regex")
+            }
+        }
+    }
+
+    private fun getItemByItemRegex(regexRes: RegexResult) {
+        thread {
+            GetItem(
+                filter = arrayListOf(
+                    ApiFilterParam(
+                        columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
+                        value = regexRes.ean,
+                        conditional = if (useLike) ACTION_OPERATOR_LIKE else ""
+                    )
+                ),
+                onEvent = { },
+                onFinish = {
+                    if (it.any()) onItemRegexResult(it.first(), regexRes)
+                    else getItemByItemRegexLocal(regexRes)
+                }).execute()
+        }
+    }
+
+    private fun getItemByItemRegexLocal(regexRes: RegexResult) {
         ItemCoroutines.getByQuery(
-            ean = code
+            ean = regexRes.ean
         ) {
             if (it.any()) {
                 val r = it.first().toKtor()
-                sendMessage(GetFromCodeResult(r))
-            } else {
-                sendMessage(GetFromCodeResult(null))
+                sendFinish(CodeResult(item = r, qty = regexRes.qty?.toDouble(), lot = regexRes.lot))
             }
         }
     }
@@ -273,6 +359,17 @@ class GetResultFromCode(
                         if (it.any()) onItemEanResult(it.first())
                         else getItemByEanLocal(code)
                     }).execute()
+            }
+        }
+    }
+
+    private fun getItemByEanLocal(code: String) {
+        ItemCoroutines.getByQuery(
+            ean = code
+        ) {
+            if (it.any()) {
+                val r = it.first().toKtor()
+                sendFinish(CodeResult(item = r))
             }
         }
     }
@@ -369,7 +466,7 @@ class GetResultFromCode(
         }
     }
 
-    private fun sendMessage(r: GetFromCodeResult) {
+    private fun sendFinish(r: CodeResult) {
         onFinish(r)
     }
 
@@ -384,11 +481,11 @@ class GetResultFromCode(
             } else {
                 playSoundNotification(false)
             }
-            sendMessage(GetFromCodeResult(r?.let { arrayListOf(it) }))
+            sendFinish(CodeResult(item = r))
         }
     }
 
-    private fun onItemCodeResult(r: ItemCode?) {
+    private fun onItemCodeResult(r: Item?, qty: Double?) {
         searchItemCode = false
         if (getIsFounded()) return
 
@@ -399,7 +496,7 @@ class GetResultFromCode(
             } else {
                 playSoundNotification(false)
             }
-            sendMessage(GetFromCodeResult(r?.let { arrayListOf(it) }))
+            sendFinish(CodeResult(item = r, qty = qty))
         }
     }
 
@@ -414,7 +511,7 @@ class GetResultFromCode(
             } else {
                 playSoundNotification(false)
             }
-            sendMessage(GetFromCodeResult(r?.let { arrayListOf(it) }))
+            sendFinish(CodeResult(item = r))
         }
     }
 
@@ -429,7 +526,22 @@ class GetResultFromCode(
             } else {
                 playSoundNotification(false)
             }
-            sendMessage(GetFromCodeResult(r?.let { arrayListOf(it) }))
+            sendFinish(CodeResult(item = r))
+        }
+    }
+
+    private fun onItemRegexResult(r: Item?, regexRes: RegexResult) {
+        searchItemRegex = false
+        if (getIsFounded()) return
+
+        if (r != null || !taskPending()) {
+            if (r != null) {
+                setIsFounded()
+                playSoundNotification(true)
+            } else {
+                playSoundNotification(false)
+            }
+            sendFinish(CodeResult(item = r, qty = regexRes.qty?.toDouble(), lot = regexRes.lot))
         }
     }
 
@@ -444,7 +556,7 @@ class GetResultFromCode(
             } else {
                 playSoundNotification(false)
             }
-            sendMessage(GetFromCodeResult(r?.let { arrayListOf(it) }))
+            sendFinish(CodeResult(r))
         }
     }
 
@@ -459,7 +571,7 @@ class GetResultFromCode(
             } else {
                 playSoundNotification(false)
             }
-            sendMessage(GetFromCodeResult(r?.let { arrayListOf(it) }))
+            sendFinish(CodeResult(r))
         }
     }
 
@@ -474,7 +586,7 @@ class GetResultFromCode(
             } else {
                 playSoundNotification(false)
             }
-            sendMessage(GetFromCodeResult(r?.let { arrayListOf(it) }))
+            sendFinish(CodeResult(r))
         }
     }
 }

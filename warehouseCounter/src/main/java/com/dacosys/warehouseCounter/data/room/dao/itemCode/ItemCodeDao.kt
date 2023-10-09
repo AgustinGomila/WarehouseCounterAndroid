@@ -17,6 +17,9 @@ interface ItemCodeDao {
     @Query("SELECT * FROM ${Entry.TABLE_NAME}")
     suspend fun getAll(): List<ItemCode>
 
+    @Query("SELECT ${Entry.CODE} FROM ${Entry.TABLE_NAME}")
+    suspend fun getAllCodes(): List<String>
+
     @Query("SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.CODE} LIKE :code AND ${Entry.QTY} > 0 ORDER BY ${Entry.CODE}")
     suspend fun getByCode(code: String): List<ItemCode>
 

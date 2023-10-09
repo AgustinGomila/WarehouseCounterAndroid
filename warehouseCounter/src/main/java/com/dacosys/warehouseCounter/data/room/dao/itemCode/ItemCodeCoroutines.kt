@@ -21,6 +21,19 @@ object ItemCodeCoroutines {
     }
 
     @Throws(Exception::class)
+    fun getAllCodes(
+        onResult: (ArrayList<String>) -> Unit = {},
+    ) = CoroutineScope(Job() + Dispatchers.IO).launch {
+        try {
+            val r = async { ArrayList(database.itemCodeDao().getAllCodes()) }.await()
+            onResult(r)
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, e.message.toString())
+            onResult(ArrayList())
+        }
+    }
+
+    @Throws(Exception::class)
     fun getByItemId(
         itemId: Long,
         onResult: (ArrayList<ItemCode>) -> Unit = {},

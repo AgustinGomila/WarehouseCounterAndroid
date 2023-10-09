@@ -38,10 +38,9 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.LogCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
-import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
-import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegex
 import com.dacosys.warehouseCounter.databinding.OrderRequestActivityBothPanelsCollapsedBinding
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.DATE_FORMAT
@@ -100,7 +99,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var id: Long = 0L
     private var filename: String = ""
 
-    private var itemCode: ItemCode? = null
     private var completeList: ArrayList<OrderRequestContent> = ArrayList()
     private var checkedIdArray: ArrayList<Long> = ArrayList()
     private var isNew: Boolean = false
@@ -185,8 +183,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         b.putString(ARG_FILENAME, filename)
         b.putBoolean(ARG_IS_NEW, isNew)
 
-        b.putParcelable("itemCode", itemCode)
-
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
         b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
 
@@ -195,19 +191,18 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         b.putBoolean("divided", divided)
         b.putBoolean("dividedBlock", dividedBlock)
 
-        b.putParcelable("lastRegexResult", lastRegexResult)
+        if (tempQty != null) b.putDouble("tempQty", tempQty!!)
+        if (tempLot != null) b.putString("tempLot", tempLot)
 
         // Guardar en Room la orden
         saveTempOrder()
     }
 
     private fun loadBundleValues(b: Bundle) {
-        // region Recuperar el título de la ventana
+        // Recuperar el título de la ventana
         val t1 = b.getString(ARG_TITLE)
         if (!t1.isNullOrEmpty()) tempTitle = t1
-        // endregion
 
-        itemCode = b.parcelable("itemCode")
         checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
         lastSelected = b.parcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
@@ -226,7 +221,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
         panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
 
-        lastRegexResult = b.parcelable("lastRegexResult")
+        if (b.containsKey("tempQty")) tempQty = b.getDouble("tempQty")
+        if (b.containsKey("tempLot")) tempLot = b.getString("tempLot")
     }
 
     private fun loadExtraBundleValues(extras: Bundle) {
@@ -878,8 +874,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
     private fun setQtyManually(orc: OrderRequestContent) {
-        val multi = if (itemCode == null) settingsVm.scanMultiplier
-        else itemCode?.qty ?: 0
+        val multi =
+            if (tempQty == null) settingsVm.scanMultiplier
+            else tempQty ?: 0
 
         qtySelectorDialog(
             orc = orc,
@@ -1304,24 +1301,24 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         total: Boolean = false,
     ) {
         if (orc == null || qty <= 0 && !manualAdd) {
-            lastRegexResult = null
+            tempQty = null
+            tempLot = null
             return
         }
 
         /**
          * 1. En caso de un agregado manual, venimos del selector de cantidades y ya está aplicado el multiplicador.
          * 2. En caso de un ItemCode, utilizar su multiplicador interno de código.
+         * 3. En caso de un ItemRegex usar el multiplicador de la configuración.
          * 3. En caso contrario utilizar el multiplicador de la configuración.
          */
 
-        //
-        //
         val multi: Long = when {
             manualAdd -> 1L
             else -> {
-                when (itemCode) {
+                when (tempQty) {
                     null -> settingsVm.scanMultiplier.toLong()
-                    else -> itemCode?.qty?.toLong() ?: 0
+                    else -> tempQty?.toLong() ?: 0
                 }
             }
         }
@@ -1330,21 +1327,22 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val itemId = orc.itemId ?: 0L
         val tempOrc = adapter?.fullList?.firstOrNull { it.itemId == itemId } ?: return
 
-        val tempQty: Double = if (!total) {
+        val multipliedQty: Double = if (!total) {
             qty * multi + (tempOrc.qtyCollected ?: 0.toDouble())
         } else {
             qty * multi
         }
 
-        if (tempQty <= 0) {
+        if (multipliedQty <= 0) {
             removeItem {
                 allowClicks = true
-                lastRegexResult = null
+                tempQty = null
+                tempLot = null
             }
             return
         }
 
-        adapter?.updateQtyCollected(tempOrc, tempQty)
+        adapter?.updateQtyCollected(tempOrc, multipliedQty)
 
         // Unless is blocked, unlock the partial
         if (!partialBlock) {
@@ -1377,72 +1375,33 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         checkLotEnabled(tempOrc)
     }
 
-    // Este flag lo vamos a usar para saber si estamos tratando con un Regex
-    private var lastRegexResult: ItemRegex.Companion.RegexResult? = null
+    private var tempQty: Double? = null
+    private var tempLot: String? = null
 
     override fun scannerCompleted(scanCode: String) {
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
         LifecycleListener.lockScanner(this, true)
 
-        var code: String
+        var code: String = scanCode
         val fullList = adapter?.fullList ?: ArrayList()
 
-        ItemRegex.tryToRegex(scanCode) { it ->
-            if (it.any()) {
-                if (it.count() > 1) {
-                    // Mostrar advertencia.
-                    showSnackBar(getString(R.string.there_are_multiple_regex_matches), INFO)
-                }
-
-                // Utilizamos la primera coincidencia
-                val regexRes = it.firstOrNull()
-                lastRegexResult = regexRes
-                if (regexRes == null) return@tryToRegex
-
-                // Si la cantidad no es NULL proseguimos con el Regex
-                if (regexRes.qty != null) {
-                    GetOrderRequestContentFromCode(
-                        code = regexRes.ean,
-                        list = fullList,
-                        onEvent = { showSnackBar(it.text, it.snackBarType) },
-                        onFinish = {
-                            onGetOrderRequestContentFromCodeEnded(it)
-                        },
-                    ).execute()
-                    return@tryToRegex
-                }
-
-                // Qty NULL →
-                //    Actualizar el código escaneado y proseguir como
-                //    un código corriente pero advertir sobre el error.
-
-                // Mostrar advertencia.
-                showSnackBar("Cantidad nula en Regex", INFO)
-                code = regexRes.ean
-            } else {
-                // No coincide con los Regex de la DB, lo
-                // usamos como un código corriente.
-                code = scanCode
+        if (divided) {
+            val splitCode = scanCode.split(settingsVm.divisionChar.toRegex())
+                .dropLastWhile { it2 -> it2.isEmpty() }
+            if (splitCode.any()) {
+                code = splitCode.toTypedArray()[0]
             }
-
-            if (divided) {
-                val splitCode = scanCode.split(settingsVm.divisionChar.toRegex())
-                    .dropLastWhile { it2 -> it2.isEmpty() }
-                if (splitCode.any()) {
-                    code = splitCode.toTypedArray()[0]
-                }
-            }
-
-            GetOrderRequestContentFromCode(
-                code = code,
-                list = fullList,
-                onEvent = { it2 -> showSnackBar(it2.text, it2.snackBarType) },
-                onFinish = {
-                    onGetOrderRequestContentFromCodeEnded(it)
-                },
-            ).execute()
         }
+
+        GetOrderRequestContentFromCode(
+            code = code,
+            list = fullList,
+            onEvent = { it2 -> showSnackBar(it2.text, it2.snackBarType) },
+            onFinish = {
+                onGetOrderRequestContentFromCodeEnded(it)
+            },
+        ).execute()
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -1474,16 +1433,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             return
         }
 
-        itemCode = it.itemCode
+        tempQty = it.qty
+        tempLot = it.lot
 
         // El código fue chequeado, se agrega y se selecciona en la lista
         runOnUiThread { adapter?.add(arrayListOf(orc)) }
 
         // Definir las cantidades según el modo de ingreso actual
         if (binding.requiredDescCheckBox.isChecked &&
-            orc.itemDescription == context.getString(
-                R.string.unknown_item
-            )
+            orc.itemDescription == context.getString(R.string.unknown_item)
         ) {
             // En primer lugar, agregamos la descripción ya que es obligatoria.
             // Esta función, si la descripción es válida, continuará con setQty
@@ -1503,6 +1461,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private val menuItemRandomItUrl = 999004
     private val menuItemRandomOnListL = 999005
     private val menuRegexItem = 999006
+    private val menuItemRandomItemCode = 999007
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -1519,6 +1478,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             menu.add(Menu.NONE, menuItemRandomItUrl, Menu.NONE, "Random item ID URL")
             menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
             menu.add(Menu.NONE, menuRegexItem, Menu.NONE, "Regex")
+            menu.add(Menu.NONE, menuItemRandomItemCode, Menu.NONE, "Random Item Code")
         }
 
         if (menu is MenuBuilder) {
@@ -1576,11 +1536,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 return super.onOptionsItemSelected(item)
             }
 
-            menuItemManualCode -> {
-                enterCode()
-                return super.onOptionsItemSelected(item)
-            }
-
             menuRegexItem -> {
                 scannerCompleted("0SM20220721092826007792261002857001038858")
                 return super.onOptionsItemSelected(item)
@@ -1597,6 +1552,18 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 ItemCoroutines.getEanCodes(true) {
                     if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
                 }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomItemCode -> {
+                ItemCodeCoroutines.getAllCodes {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemManualCode -> {
+                enterCode()
                 return super.onOptionsItemSelected(item)
             }
         }
@@ -1647,19 +1614,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun setQty(orc: OrderRequestContent) {
-        if (lastRegexResult != null) {
-            val qty = lastRegexResult?.qty?.toDouble()
-            if (qty == null) showSnackBar(
-                getString(R.string.null_quantity_in_regex), ERROR
-            )
+        if (tempLot != null) {
+            if (tempQty == null) showSnackBar(getString(R.string.null_quantity_in_regex), ERROR)
+        }
 
-            setQtyCollected(orc = orc, qty = qty ?: 1.toDouble())
+        if (partial || partialBlock) {
+            setQtyManually(orc)
         } else {
-            if (partial || partialBlock) {
-                setQtyManually(orc)
-            } else {
-                setQtyCollected(orc = orc, qty = 1.toDouble())
-            }
+            setQtyCollected(orc = orc, qty = 1.toDouble())
         }
     }
 
@@ -1668,9 +1630,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val itemId = orc.itemId ?: 0
         if (itemId <= 0 || orc.lotEnabled != true) return
 
-        val lotIdStr = lastRegexResult?.lot ?: orc.lotId?.toString() ?: ""
+        val lotIdStr = tempLot ?: orc.lotId?.toString() ?: ""
         if (lotIdStr.isNotEmpty()) {
-            lastRegexResult = null
+
+            // Ya no lo necesitamos
+            tempLot = null
+
             setLotCode(orc = orc, lotCode = lotIdStr)
         } else {
             lotCodeDialog(orc)

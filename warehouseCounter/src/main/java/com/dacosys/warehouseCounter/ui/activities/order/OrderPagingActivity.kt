@@ -627,7 +627,6 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun scannerCompleted(scanCode: String) {
         // Nada que hacer, volver
         if (scanCode.trim().isEmpty()) {
@@ -648,10 +647,10 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
 
                 LifecycleListener.lockScanner(this, false)
 
-                val tList = it.typedObject ?: return@GetResultFromCode
-                if (tList is ArrayList<*> && tList.firstOrNull() is OrderResponse) {
+                val item = it.item ?: return@GetResultFromCode
+                if (item is OrderResponse) {
                     lifecycleScope.launch {
-                        pagingAdapter.submitData(PagingData.from(tList as ArrayList<OrderResponse>))
+                        pagingAdapter.submitData(PagingData.from(arrayListOf(item)))
                     }
                 } else return@GetResultFromCode
             })

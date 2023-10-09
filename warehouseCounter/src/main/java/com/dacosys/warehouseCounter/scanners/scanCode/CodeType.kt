@@ -61,6 +61,7 @@ class CodeType : Parcelable {
         var order: CodeType = CodeType(5, "order", "Pedido")
         var warehouseArea: CodeType = CodeType(6, "warehouse_area", "Área")
         var rack: CodeType = CodeType(7, "rack", "Rack")
+        var itemRegex: CodeType = CodeType(8, "item_regex", "Regex de ítem")
 
         fun getAll(): ArrayList<CodeType> {
             val allSections = ArrayList<CodeType>()
@@ -69,9 +70,10 @@ class CodeType : Parcelable {
                 ean,
                 itemCode,
                 itemId,
+                itemRegex,
                 order,
+                rack,
                 warehouseArea,
-                rack
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it.id }))
