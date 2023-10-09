@@ -11,7 +11,6 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import kotlinx.coroutines.*
 import java.io.UnsupportedEncodingException
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest as OrderRequestKtor
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent as OrderRequestContentKtor
 
 object OrderRequestCoroutines {
 
@@ -70,14 +69,13 @@ object OrderRequestCoroutines {
     @Throws(Exception::class)
     private fun update(
         orderRequest: OrderRequestKtor,
-        contents: List<OrderRequestContentKtor>,
         onResult: (Boolean) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
             async {
                 val id = orderRequest.roomId ?: 0L
                 if (id != 0L) {
-                    val newContent = contents.map { it.toRoom(id) }.toList()
+                    val newContent = orderRequest.contents.map { it.toRoom(id) }.toList()
                     val orRoom = orderRequest.toRoom
 
                     database.orderRequestDao().update(
@@ -124,7 +122,7 @@ object OrderRequestCoroutines {
 
             val orJson = json.encodeToString(OrderRequestKtor.serializer(), orderRequest)
 
-            update(orderRequest, orderRequest.contents) {
+            update(orderRequest) {
                 isOk = if (it) {
                     if (writeJsonToFile(
                             filename = filename,
