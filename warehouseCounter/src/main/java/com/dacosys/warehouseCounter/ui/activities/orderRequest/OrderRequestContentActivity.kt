@@ -232,8 +232,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         isNew = extras.getBoolean(ARG_IS_NEW)
         id = extras.getLong(ARG_ID)
         filename = extras.getString(ARG_FILENAME) ?: ""
-
-        loadDefaultValues()
     }
 
     private fun loadOrderRequest() {
@@ -310,6 +308,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             // Inicializar la actividad. EXTRAS: Parámetros que recibe la actividad
             val extras = intent.extras
             if (extras != null) loadExtraBundleValues(extras)
+            loadDefaultValues()
         }
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
@@ -1308,8 +1307,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         /**
          * 1. En caso de un agregado manual, venimos del selector de cantidades y ya está aplicado el multiplicador.
-         * 2. En caso de un ItemCode, utilizar su multiplicador interno de código.
-         * 3. En caso de un ItemRegex usar el multiplicador de la configuración.
+         * 2. En caso de un ItemCode o ItemRegex, utilizar su multiplicador interno de código.
          * 3. En caso contrario utilizar el multiplicador de la configuración.
          */
 
@@ -1614,9 +1612,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun setQty(orc: OrderRequestContent) {
-        if (tempLot != null) {
-            if (tempQty == null) showSnackBar(getString(R.string.null_quantity_in_regex), ERROR)
-        }
+        if (tempLot != null && tempQty == null) showSnackBar(getString(R.string.null_quantity_in_regex), ERROR)
 
         if (partial || partialBlock) {
             setQtyManually(orc)
