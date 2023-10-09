@@ -101,7 +101,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private var completeList: ArrayList<OrderRequestContent> = ArrayList()
     private var checkedIdArray: ArrayList<Long> = ArrayList()
-    private var isNew: Boolean = false
 
     private var partial = true
     private var partialBlock = true
@@ -181,7 +180,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         b.putLong(ARG_ID, id)
         b.putString(ARG_FILENAME, filename)
-        b.putBoolean(ARG_IS_NEW, isNew)
 
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
         b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
@@ -208,7 +206,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
 
-        isNew = b.getBoolean(ARG_IS_NEW)
         id = b.getLong(ARG_ID)
         filename = b.getString(ARG_FILENAME) ?: ""
 
@@ -229,7 +226,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val t1 = extras.getString(ARG_TITLE)
         if (!t1.isNullOrEmpty()) tempTitle = t1
 
-        isNew = extras.getBoolean(ARG_IS_NEW)
         id = extras.getLong(ARG_ID)
         filename = extras.getString(ARG_FILENAME) ?: ""
     }
@@ -1704,7 +1700,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         const val ARG_TITLE = "title"
         const val ARG_ID = "id"
         const val ARG_FILENAME = "filename"
-        const val ARG_IS_NEW = "isNew"
 
         fun equals(a: Any?, b: Any?): Boolean {
             return a != null && a == b

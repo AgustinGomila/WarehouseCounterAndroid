@@ -566,7 +566,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         val id = order.roomId ?: return
         if (id == 0L) return
 
-        launchOrderRequestContentActivity(id, filename, false)
+        launchOrderRequestContentActivity(id, filename)
     }
 
     private fun addOrderRequest(client: Client?, description: String, orderRequestType: OrderRequestType) {
@@ -577,18 +577,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             onEvent = { showSnackBar(it.text, it.snackBarType) },
             onNewId = { newId, filename ->
                 if (newId != 0L) {
-                    launchOrderRequestContentActivity(newId, filename, true)
+                    launchOrderRequestContentActivity(newId, filename)
                 }
             }
         )
-    }
-
-    private fun launchOrderRequestContentActivity(id: Long, filename: String, isNew: Boolean) {
-        val intent = Intent(context, OrderRequestContentActivity::class.java)
-        intent.putExtra(OrderRequestContentActivity.ARG_ID, id)
-        intent.putExtra(OrderRequestContentActivity.ARG_FILENAME, filename)
-        intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, isNew)
-        startActivity(intent)
     }
 
     private fun repackOrder(order: OrderResponse) {
@@ -596,13 +588,16 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             order = order,
             onEvent = { showSnackBar(it.text, it.snackBarType) },
             onNewId = { newId, filename ->
-                val intent = Intent(context, OrderRequestContentActivity::class.java)
-                intent.putExtra(OrderRequestContentActivity.ARG_ID, newId)
-                intent.putExtra(OrderRequestContentActivity.ARG_FILENAME, filename)
-                intent.putExtra(OrderRequestContentActivity.ARG_IS_NEW, false)
-                startActivity(intent)
+                launchOrderRequestContentActivity(newId, filename)
             }
         )
+    }
+
+    private fun launchOrderRequestContentActivity(id: Long, filename: String) {
+        val intent = Intent(context, OrderRequestContentActivity::class.java)
+        intent.putExtra(OrderRequestContentActivity.ARG_ID, id)
+        intent.putExtra(OrderRequestContentActivity.ARG_FILENAME, filename)
+        startActivity(intent)
     }
 
     private fun configApp() {
