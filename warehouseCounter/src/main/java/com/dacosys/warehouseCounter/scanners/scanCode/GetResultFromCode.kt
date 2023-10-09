@@ -24,14 +24,14 @@ import kotlin.concurrent.thread
 
 class GetResultFromCode(
     code: String,
-    private var searchItemId: Boolean = false,
     private var searchItemCode: Boolean = false,
     private var searchItemEan: Boolean = false,
-    private var searchItemUrl: Boolean = false,
+    private var searchItemId: Boolean = false,
     private var searchItemRegex: Boolean = false,
-    private var searchWarehouseAreaId: Boolean = false,
-    private var searchRackId: Boolean = false,
+    private var searchItemUrl: Boolean = false,
     private var searchOrder: Boolean = false,
+    private var searchRackId: Boolean = false,
+    private var searchWarehouseAreaId: Boolean = false,
     private var useLike: Boolean = false,
     private var onFinish: (CodeResult) -> Unit
 ) {

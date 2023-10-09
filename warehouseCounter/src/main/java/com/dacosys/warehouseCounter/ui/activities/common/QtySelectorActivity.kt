@@ -327,9 +327,8 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {

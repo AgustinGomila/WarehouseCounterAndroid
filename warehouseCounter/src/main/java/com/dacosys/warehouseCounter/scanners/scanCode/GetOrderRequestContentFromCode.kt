@@ -75,11 +75,11 @@ class GetOrderRequestContentFromCode(
 
             GetResultFromCode(
                 code = code,
-                searchItemId = true,
                 searchItemCode = true,
                 searchItemEan = true,
-                searchItemUrl = true,
+                searchItemId = true,
                 searchItemRegex = true,
+                searchItemUrl = true,
                 useLike = false,
                 onFinish = {
                     if (it.item != null) {

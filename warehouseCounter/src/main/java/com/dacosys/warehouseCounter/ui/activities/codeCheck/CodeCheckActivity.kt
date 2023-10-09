@@ -380,15 +380,16 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         LifecycleListener.lockScanner(this, true)
 
-        GetResultFromCode(code = scannedCode,
-            searchItemId = true,
+        GetResultFromCode(
+            code = scannedCode,
             searchItemCode = true,
             searchItemEan = true,
-            searchItemUrl = true,
+            searchItemId = true,
             searchItemRegex = true,
-            searchWarehouseAreaId = true,
-            searchRackId = true,
+            searchItemUrl = true,
             searchOrder = true,
+            searchRackId = true,
+            searchWarehouseAreaId = true,
             onFinish = {
                 when (val r = it.item) {
                     is ItemKtor -> fillItemPanel(r.toRoom())
@@ -469,9 +470,8 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {

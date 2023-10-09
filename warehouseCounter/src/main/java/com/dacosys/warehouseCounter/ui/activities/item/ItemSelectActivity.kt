@@ -821,6 +821,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             searchItemId = true,
             searchItemCode = true,
             searchItemEan = true,
+            searchItemRegex = true,
             searchItemUrl = true,
             onFinish = { onCheckCodeEnded(it) }
         )

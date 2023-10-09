@@ -145,9 +145,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) LifecycleListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
@@ -165,9 +164,10 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
         GetResultFromCode(
             code = scanCode,
-            searchItemId = true,
             searchItemCode = true,
             searchItemEan = true,
+            searchItemId = true,
+            searchItemRegex = true,
             searchItemUrl = true,
             onFinish = { onCheckCodeEnded(scanCode, it) }
         )
