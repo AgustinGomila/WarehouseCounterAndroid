@@ -104,6 +104,17 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
     @get:Synchronized
     private var isSending = false
+
+    @Synchronized
+    private fun getSendingState(): Boolean {
+        return isSending
+    }
+
+    @Synchronized
+    private fun setSendingState(state: Boolean) {
+        isSending = state
+    }
+
     private fun onCompletedOrder() {
         sendCompletedOrders(
             onFinish = {
@@ -115,14 +126,13 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private fun sendCompletedOrders(onFinish: (Int) -> Unit) {
         val orders = getCompletedOrders()
 
-        if (!isSending && orders.isNotEmpty() && settingsVm.autoSend) {
-            isSending = true
+        if (!getSendingState() && orders.isNotEmpty() && settingsVm.autoSend) {
+            setSendingState(true)
 
             runOnUiThread {
                 SendOrder(
                     orders = orders,
                     onEvent = {
-                        isSending = it.snackBarType !in SnackBarType.getFinish()
                         if (it.snackBarType == SUCCESS) {
                             onFinish(0)
                         } else {
@@ -130,6 +140,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
                         }
                     },
                     onFinish = {
+                        setSendingState(false)
                         PendingLabelCoroutines.add(it)
                         if (settingsVm.autoPrint) {
                             printOrderLabels(it)

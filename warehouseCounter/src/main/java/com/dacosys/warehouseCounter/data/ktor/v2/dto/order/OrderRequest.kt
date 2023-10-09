@@ -171,26 +171,31 @@ data class OrderRequest(
 
         other as OrderRequest
 
-        return orderRequestId == other.orderRequestId
+        if (clientId != other.clientId) return false
+        if (completed != other.completed) return false
+        if (description != other.description) return false
+        if (externalId != other.externalId) return false
+        if (orderRequestId != other.orderRequestId) return false
+        if (orderTypeId != other.orderTypeId) return false
+        if (userId != other.userId) return false
+        if (zone != other.zone) return false
+        if (roomId != other.roomId) return false
+        if (filename != other.filename) return false
+
+        return true
     }
 
     override fun hashCode(): Int {
-        var result = orderRequestId?.hashCode() ?: 0
-        result = 31 * result + externalId.hashCode()
-        result = 31 * result + (creationDate?.hashCode() ?: 0)
-        result = 31 * result + description.hashCode()
-        result = 31 * result + zone.hashCode()
-        result = 31 * result + (orderTypeId?.hashCode() ?: 0)
-        result = 31 * result + orderTypeDescription.hashCode()
-        result = 31 * result + (resultDiffQty?.hashCode() ?: 0)
-        result = 31 * result + (resultDiffProduct?.hashCode() ?: 0)
-        result = 31 * result + (resultAllowDiff?.hashCode() ?: 0)
-        result = 31 * result + (resultAllowMod?.hashCode() ?: 0)
+        var result = clientId?.hashCode() ?: 0
         result = 31 * result + (completed?.hashCode() ?: 0)
-        result = 31 * result + (startDate?.hashCode() ?: 0)
-        result = 31 * result + (finishDate?.hashCode() ?: 0)
-        result = 31 * result + (clientId?.hashCode() ?: 0)
+        result = 31 * result + description.hashCode()
+        result = 31 * result + externalId.hashCode()
+        result = 31 * result + (orderRequestId?.hashCode() ?: 0)
+        result = 31 * result + (orderTypeId?.hashCode() ?: 0)
         result = 31 * result + (userId?.hashCode() ?: 0)
+        result = 31 * result + zone.hashCode()
+        result = 31 * result + (roomId?.hashCode() ?: 0)
+        result = 31 * result + filename.hashCode()
         return result
     }
 

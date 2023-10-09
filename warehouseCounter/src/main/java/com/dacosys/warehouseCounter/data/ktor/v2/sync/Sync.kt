@@ -157,6 +157,7 @@ class Sync private constructor(builder: Builder) {
 
                 GetOrder(
                     filter = filter,
+                    action = GetOrder.defaultAction,
                     onEvent = { },
                     onFinish = {
                         onPendingOrdersReceived(

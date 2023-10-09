@@ -35,7 +35,7 @@ class GetRack(
                 return arrayListOf(
                     ApiActionParam(
                         action = ACTION_EXPAND, extension = setOf(
-                            EXTENSION_STATUS
+                            EXTENSION_WAREHOUSE_AREA
                         )
                     )
                 )
@@ -43,7 +43,7 @@ class GetRack(
 
         /** Valid extensions and actions for this function */
         const val ACTION_EXPAND = "expand"
-        const val EXTENSION_STATUS = "status"
+        const val EXTENSION_WAREHOUSE_AREA = "warehouseArea"
     }
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)

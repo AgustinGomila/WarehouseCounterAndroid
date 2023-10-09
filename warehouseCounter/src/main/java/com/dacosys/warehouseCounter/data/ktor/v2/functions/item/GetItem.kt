@@ -35,7 +35,7 @@ class GetItem(
                 return arrayListOf(
                     ApiActionParam(
                         action = ACTION_EXPAND, extension = setOf(
-                            EXTENSION_STATUS
+                            EXTENSION_ITEM_CATEGORY, EXTENSION_ITEM_PRICE_LIST_CONTENTS
                         )
                     )
                 )
@@ -43,7 +43,8 @@ class GetItem(
 
         /** Valid extensions and actions for this function */
         const val ACTION_EXPAND = "expand"
-        const val EXTENSION_STATUS = "status"
+        const val EXTENSION_ITEM_CATEGORY = "itemCategory"
+        const val EXTENSION_ITEM_PRICE_LIST_CONTENTS = "itemPriceListContents"
     }
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
