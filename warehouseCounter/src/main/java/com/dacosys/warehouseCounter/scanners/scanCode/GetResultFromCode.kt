@@ -3,6 +3,7 @@ package com.dacosys.warehouseCounter.scanners.scanCode
 import android.media.MediaPlayer
 import android.util.Log
 import com.dacosys.warehouseCounter.R
+import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCode
@@ -11,30 +12,90 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.GetItem
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.ViewItem
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.ViewItemCode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.GetItemCode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.ViewOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.ACTION_OPERATOR_LIKE
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegex
 import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegex.Companion.RegexResult
 import kotlin.concurrent.thread
 
-class GetResultFromCode(
-    code: String,
-    private var searchItemCode: Boolean = false,
-    private var searchItemEan: Boolean = false,
-    private var searchItemId: Boolean = false,
-    private var searchItemRegex: Boolean = false,
-    private var searchItemUrl: Boolean = false,
-    private var searchOrder: Boolean = false,
-    private var searchRackId: Boolean = false,
-    private var searchWarehouseAreaId: Boolean = false,
-    private var useLike: Boolean = false,
+class GetResultFromCode private constructor(builder: Builder) {
+
+    private var code: String
+    private var searchItemCode: Boolean
+    private var searchItemEan: Boolean
+    private var searchItemId: Boolean
+    private var searchItemRegex: Boolean
+    private var searchItemUrl: Boolean
+    private var searchOrder: Boolean
+    private var searchOrderExternalId: Boolean
+    private var searchRackId: Boolean
+    private var searchWarehouseAreaId: Boolean
+    private var useLike: Boolean
     private var onFinish: (CodeResult) -> Unit
-) {
+
+    class Builder {
+        fun build(): GetResultFromCode {
+            return GetResultFromCode(this)
+        }
+
+        internal var code: String = ""
+        internal var searchItemCode: Boolean = false
+        internal var searchItemEan: Boolean = false
+        internal var searchItemId: Boolean = false
+        internal var searchItemRegex: Boolean = false
+        internal var searchItemUrl: Boolean = false
+        internal var searchOrder: Boolean = false
+        internal var searchOrderExternalId: Boolean = false
+        internal var searchRackId: Boolean = false
+        internal var searchWarehouseAreaId: Boolean = false
+        internal var useLike: Boolean = false
+        internal var onFinish: (CodeResult) -> Unit = {}
+
+        @Suppress("unused")
+        fun withCode(code: String) = apply { this.code = code }
+
+        @Suppress("unused")
+        fun searchItemCode() = apply { searchItemCode = true }
+
+        @Suppress("unused")
+        fun searchItemEan() = apply { searchItemEan = true }
+
+        @Suppress("unused")
+        fun searchItemId() = apply { searchItemId = true }
+
+        @Suppress("unused")
+        fun searchItemRegex() = apply { searchItemRegex = true }
+
+        @Suppress("unused")
+        fun searchItemUrl() = apply { searchItemUrl = true }
+
+        @Suppress("unused")
+        fun searchOrder() = apply { searchOrder = true }
+
+        @Suppress("unused")
+        fun searchOrderExternalId() = apply { searchOrderExternalId = true }
+
+        @Suppress("unused")
+        fun searchRackId() = apply { searchRackId = true }
+
+        @Suppress("unused")
+        fun searchWarehouseAreaId() = apply { searchWarehouseAreaId = true }
+
+        @Suppress("unused")
+        fun useLike() = apply { useLike = true }
+
+        @Suppress("unused")
+        fun onFinish(callback: (CodeResult) -> Unit) = apply { onFinish = callback }
+    }
+
+
     companion object {
         private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
@@ -91,16 +152,16 @@ class GetResultFromCode(
     data class CodeResult(var item: Any? = null, var qty: Double? = null, var lot: String? = null)
 
     @get:Synchronized
-    private var isFounded2: Boolean = false
+    private var isFounded: Boolean = false
 
     @Synchronized
     private fun getIsFounded(): Boolean {
-        return isFounded2
+        return isFounded
     }
 
     @Synchronized
     private fun setIsFounded() {
-        isFounded2 = true
+        isFounded = true
     }
 
 
@@ -111,6 +172,7 @@ class GetResultFromCode(
                 searchItemRegex ||
                 searchItemUrl ||
                 searchOrder ||
+                searchOrderExternalId ||
                 searchRackId ||
                 searchWarehouseAreaId
     }
@@ -132,6 +194,23 @@ class GetResultFromCode(
         }
 
     init {
+        this.code = builder.code
+        this.searchItemCode = builder.searchItemCode
+        this.searchItemEan = builder.searchItemEan
+        this.searchItemId = builder.searchItemId
+        this.searchItemRegex = builder.searchItemRegex
+        this.searchItemUrl = builder.searchItemUrl
+        this.searchOrder = builder.searchOrder
+        this.searchOrderExternalId = builder.searchOrderExternalId
+        this.searchRackId = builder.searchRackId
+        this.searchWarehouseAreaId = builder.searchWarehouseAreaId
+        this.useLike = builder.useLike
+        this.onFinish = builder.onFinish
+
+        execute()
+    }
+
+    private fun execute() {
         // Reducir búsquedas innecesarias
         if (code.startsWith(PREFIX_RACK) && searchRackId) {
             searchRackId = true
@@ -141,6 +220,7 @@ class GetResultFromCode(
             searchItemRegex = false
             searchItemUrl = false
             searchOrder = false
+            searchOrderExternalId = false
             searchWarehouseAreaId = false
         } else if (code.startsWith(PREFIX_WA) && searchWarehouseAreaId) {
             searchWarehouseAreaId = true
@@ -150,6 +230,7 @@ class GetResultFromCode(
             searchItemRegex = false
             searchItemUrl = false
             searchOrder = false
+            searchOrderExternalId = false
             searchRackId = false
         } else if (code.startsWith(PREFIX_ORDER) && searchOrder) {
             searchOrder = true
@@ -158,6 +239,7 @@ class GetResultFromCode(
             searchItemId = false
             searchItemRegex = false
             searchItemUrl = false
+            searchOrderExternalId = false
             searchRackId = false
             searchWarehouseAreaId = false
         } else if (code.startsWith(PREFIX_ITEM) && searchItemId) {
@@ -167,6 +249,7 @@ class GetResultFromCode(
             searchItemRegex = false
             searchItemUrl = false
             searchOrder = false
+            searchOrderExternalId = false
             searchRackId = false
             searchWarehouseAreaId = false
         } else if (code.contains(PREFIX_ITEM_URL) && searchItemUrl) {
@@ -176,6 +259,7 @@ class GetResultFromCode(
             searchItemId = false
             searchItemRegex = false
             searchOrder = false
+            searchOrderExternalId = false
             searchRackId = false
             searchWarehouseAreaId = false
         } else {
@@ -191,20 +275,24 @@ class GetResultFromCode(
             if (!c.active) continue
 
             if (c.codeType == CodeType.itemId && searchItemId && code.startsWith(PREFIX_ITEM, true)) {
-                getItem(code)
+                tryToGetItemById(code)
             } else if (c.codeType == CodeType.itemId && searchItemUrl && code.contains(PREFIX_ITEM_URL, true)) {
-                getItemByUrl(code)
+                tryToGetItemByUrl(code)
             } else if (c.codeType == CodeType.ean && searchItemEan) {
-                getItemByEan(code)
+                tryToGetItemByEan(code)
             } else if (c.codeType == CodeType.itemCode && searchItemCode) {
-                getItemByItemCode(code)
+                tryToGetItemCode(code)
             } else if (c.codeType == CodeType.itemRegex && searchItemRegex) {
-                getItemByItemRegex(code)
+                tryToGetItemRegex(code)
             }
         }
 
         if (searchOrder && code.startsWith(PREFIX_ORDER, true)) {
             getOrder(code)
+        }
+
+        if (searchOrderExternalId) {
+            getOrderByExternalId(code)
         }
 
         if (searchRackId && code.startsWith(PREFIX_RACK, true)) {
@@ -214,255 +302,301 @@ class GetResultFromCode(
         if (searchWarehouseAreaId && code.startsWith(PREFIX_WA, true)) {
             getWarehouseAreas(code)
         }
-    }
 
-    private fun getItem(code: String) {
-        val match: String = searchString(code, FORMULA_ITEM, 1)
-        if (match.isNotEmpty()) {
-            val id: Long
-            try {
-                id = match.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
-
-            if (id > 0) {
-                thread {
-                    ViewItem(
-                        id = id,
-                        onFinish = {
-                            onItemIdResult(it)
-                        }).execute()
-                }
+        val startTime = System.currentTimeMillis()
+        while (taskPending()) {
+            if (System.currentTimeMillis() - startTime == (WarehouseCounterApp.settingsVm.connectionTimeout * 1000).toLong()) {
+                sendFinish(CodeResult())
+                break
             }
         }
     }
 
-    private fun getItemByItemCode(code: String) {
-        if (code.isNotEmpty()) {
-
-            getItemCodeByCode(code) {
-                if (it != null) {
-                    val itemId = it.itemId
-                    val qty = it.qty
-
-                    if (itemId != null && qty != null) {
-                        getItemById(itemId, qty)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun getItemById(id: Long, qty: Double?) {
-        if (id > 0) {
-            thread {
-                ViewItem(
-                    id = id,
-                    onFinish = {
-                        onItemCodeResult(it, qty)
-                    }).execute()
-            }
-        }
-    }
-
-    private fun getItemCodeByCode(code: String, onItemCodeResult: (ItemCode?) -> Unit) {
-        if (code.isNotEmpty()) {
-            val id: Long
-            try {
-                id = code.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
-
-            if (id > 0) {
-                thread {
-                    ViewItemCode(
-                        id = id,
-                        action = ViewItemCode.defaultAction,
-                        onFinish = onItemCodeResult
-                    ).execute()
-                }
-            }
-        }
-    }
-
-    private fun getItemByItemRegex(code: String) {
-        ItemRegex.tryToRegex(code) {
-            if (it.any()) {
-                if (it.count() > 1) {
-                    Log.i(tag, "Existen múltiples coincidencias Regex")
-                }
-
-                val regexRes = it.firstOrNull() ?: return@tryToRegex
-
-                // Si la cantidad no es NULL proseguimos con el Regex
-                if (regexRes.qty != null) {
-                    getItemByItemRegex(regexRes)
-                    return@tryToRegex
-                }
-
-                // Qty NULL →
-                //    Actualizar el código escaneado y proseguir como
-                //    un código corriente pero advertir sobre el error.
-
-                // Mostrar advertencia.
-                Log.e(tag, "Cantidad nula en Regex")
-            }
-        }
-    }
-
-    private fun getItemByItemRegex(regexRes: RegexResult) {
+    private fun tryToGetItemById(code: String) {
         thread {
-            GetItem(
-                filter = arrayListOf(
-                    ApiFilterParam(
-                        columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
-                        value = regexRes.ean,
-                        conditional = if (useLike) ACTION_OPERATOR_LIKE else ""
-                    )
-                ),
-                onEvent = { },
-                onFinish = {
-                    if (it.any()) onItemRegexResult(it.first(), regexRes)
-                    else getItemByItemRegexLocal(regexRes)
-                }).execute()
+            val match: String = searchString(code, FORMULA_ITEM, 1)
+            if (match.isNotEmpty()) {
+                val id: Long
+                try {
+                    id = match.toLong()
+                } catch (ex: NumberFormatException) {
+                    Log.i(tag, "Could not parse: $ex")
+                    searchItemId = false
+                    return@thread
+                }
+
+                if (id > 0) {
+                    getItemById(id) {
+                        sendFinish(it)
+                    }
+                } else searchItemId = false
+            } else searchItemId = false
         }
     }
 
-    private fun getItemByItemRegexLocal(regexRes: RegexResult) {
+    private fun getItemById(id: Long, onFinish: (CodeResult) -> Unit) {
+        ItemCoroutines.getById(
+            itemId = id
+        ) {
+            if (it != null) {
+                onItemIdResult(it.toKtor(), onFinish)
+            } else {
+                getItemByIdFromApi(id, onFinish)
+            }
+        }
+    }
+
+    private fun getItemByIdFromApi(id: Long, onFinish: (CodeResult) -> Unit) {
+        ViewItem(
+            id = id,
+            onFinish = { onItemIdResult(it, onFinish) }
+        ).execute()
+    }
+
+    private fun tryToGetItemCode(code: String) {
+        if (code.isNotEmpty()) {
+            thread {
+                getItemCode(code) {
+                    sendFinish(it)
+                }
+            }
+        } else searchItemCode = false
+    }
+
+    private fun getItemCode(code: String, onFinish: (CodeResult) -> Unit) {
+        ItemCodeCoroutines.getByCode(
+            code = code
+        ) { codes ->
+            if (codes.any()) {
+                val itemCode = codes.first()
+                val itemId = itemCode.itemId
+                if (itemId != null) {
+                    ItemCoroutines.getById(
+                        itemId = itemId
+                    ) { item ->
+                        if (item != null) {
+                            val itemCodeKtor = itemCode.toKtor()
+                            itemCodeKtor.item = item.toKtor()
+                            onItemCodeResult(itemCodeKtor, onFinish)
+                        } else searchItemCode = false
+                    }
+                } else searchItemCode = false
+            } else {
+                getItemCodeFromApi(code, onFinish)
+            }
+        }
+    }
+
+    private fun getItemCodeFromApi(code: String, onFinish: (CodeResult) -> Unit) {
+        GetItemCode(
+            action = GetItemCode.defaultAction,
+            filter = arrayListOf(
+                ApiFilterParam(
+                    columnName = ApiFilterParam.EXTENSION_ITEM_CODE_CODE,
+                    value = code,
+                    conditional = if (useLike) ACTION_OPERATOR_LIKE else ""
+                )
+            ),
+            onEvent = { },
+            onFinish = { itemCodes ->
+                onItemCodeResult(itemCodes.firstOrNull(), onFinish)
+            }
+        ).execute()
+    }
+
+    private fun tryToGetItemRegex(code: String) {
+        thread {
+            ItemRegex.tryToRegex(code) {
+                if (it.any()) {
+                    if (it.count() > 1) Log.i(tag, "Existen múltiples coincidencias Regex")
+                    val regexRes = it.firstOrNull()
+                    if (regexRes == null) {
+                        searchItemRegex = false
+                        return@tryToRegex
+                    }
+                    if (regexRes.qty != null) {
+                        getItemByItemRegex(regexRes) { codeResult ->
+                            sendFinish(codeResult)
+                        }
+                    } else {
+                        searchItemRegex = false
+                        Log.e(tag, "Cantidad nula en Regex")
+                    }
+                } else searchItemRegex = false
+            }
+        }
+    }
+
+    private fun getItemByItemRegex(regexRes: RegexResult, onFinish: (CodeResult) -> Unit) {
         ItemCoroutines.getByQuery(
             ean = regexRes.ean
         ) {
             if (it.any()) {
-                val r = it.first().toKtor()
-                sendFinish(CodeResult(item = r, qty = regexRes.qty?.toDouble(), lot = regexRes.lot))
-            }
-        }
-    }
-
-    private fun getItemByEan(code: String) {
-        if (code.isNotEmpty()) {
-            thread {
+                onItemRegexResult(it.first().toKtor(), regexRes, onFinish)
+            } else {
                 GetItem(
                     filter = arrayListOf(
                         ApiFilterParam(
                             columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
-                            value = code,
+                            value = regexRes.ean,
                             conditional = if (useLike) ACTION_OPERATOR_LIKE else ""
                         )
                     ),
                     onEvent = { },
-                    onFinish = {
-                        if (it.any()) onItemEanResult(it.first())
-                        else getItemByEanLocal(code)
+                    onFinish = { items ->
+                        if (items.any()) onItemRegexResult(items.first(), regexRes, onFinish)
+                        else searchItemRegex = false
                     }).execute()
             }
         }
     }
 
-    private fun getItemByEanLocal(code: String) {
+    private fun tryToGetItemByEan(code: String) {
+        if (code.isNotEmpty()) {
+            thread {
+                getItemByEan(code) {
+                    sendFinish(it)
+                }
+            }
+        } else searchItemEan = false
+    }
+
+    private fun getItemByEan(code: String, onFinish: (CodeResult) -> Unit) {
         ItemCoroutines.getByQuery(
             ean = code
         ) {
             if (it.any()) {
-                val r = it.first().toKtor()
-                sendFinish(CodeResult(item = r))
+                onItemEanResult(it.first().toKtor(), onFinish)
+            } else {
+                getItemByEanFromApi(code, onFinish)
             }
         }
     }
 
-    private fun getItemByUrl(code: String) {
-        val match: String = code.substringAfterLast("?id=")
-        if (match.isNotEmpty()) {
-            val id: Long
-            try {
-                id = match.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
+    private fun getItemByEanFromApi(code: String, onFinish: (CodeResult) -> Unit) {
+        GetItem(
+            filter = arrayListOf(
+                ApiFilterParam(
+                    columnName = ApiFilterParam.EXTENSION_ITEM_EAN,
+                    value = code,
+                    conditional = if (useLike) ACTION_OPERATOR_LIKE else ""
+                )
+            ),
+            onEvent = { },
+            onFinish = { items ->
+                onItemEanResult(items.firstOrNull(), onFinish)
+            }).execute()
+    }
 
-            if (id > 0) {
-                thread {
-                    ViewItem(
-                        id = id,
-                        onFinish = {
-                            onItemByUrlResult(it)
-                        }).execute()
+    private fun tryToGetItemByUrl(code: String) {
+        thread {
+            val match: String = code.substringAfterLast("?id=")
+            if (match.isNotEmpty()) {
+                val id: Long
+                try {
+                    id = match.toLong()
+                } catch (ex: NumberFormatException) {
+                    Log.i(tag, "Could not parse: $ex")
+                    searchItemUrl = false
+                    return@thread
                 }
-            }
+
+                if (id > 0) {
+                    getItemById(id) {
+                        sendFinish(it)
+                    }
+                } else searchItemUrl = false
+            } else searchItemUrl = false
         }
     }
 
     private fun getOrder(code: String) {
-        val match: String = searchString(code, FORMULA_ORDER, 1)
-        if (match.isNotEmpty()) {
-            val id: Long
-            try {
-                id = match.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
+        thread {
+            val match: String = searchString(code, FORMULA_ORDER, 1)
+            if (match.isNotEmpty()) {
+                val id: Long
+                try {
+                    id = match.toLong()
+                } catch (ex: NumberFormatException) {
+                    Log.i(tag, "Could not parse: $ex")
+                    searchOrder = false
+                    return@thread
+                }
 
-            if (id > 0) {
-                thread {
+                if (id > 0) {
                     ViewOrder(
                         id = id,
                         onFinish = {
                             onOrderResult(it)
                         }).execute()
-                }
-            }
+                } else searchOrder = false
+            } else searchOrder = false
+        }
+    }
+
+    private fun getOrderByExternalId(code: String) {
+        thread {
+            if (code.isNotEmpty()) {
+                GetOrder(
+                    filter = arrayListOf(
+                        ApiFilterParam(
+                            columnName = ApiFilterParam.EXTENSION_ORDER_EXTERNAL_ID,
+                            value = code,
+                            conditional = ACTION_OPERATOR_LIKE
+                        )
+                    ),
+                    onFinish = {
+                        onOrderResult(it.firstOrNull())
+                    }).execute()
+            } else searchOrderExternalId = false
         }
     }
 
     private fun getWarehouseAreas(code: String) {
-        val match: String = searchString(code, FORMULA_WA, 1)
-        if (match.isNotEmpty()) {
-            val id: Long
-            try {
-                id = match.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
+        thread {
+            val match: String = searchString(code, FORMULA_WA, 1)
+            if (match.isNotEmpty()) {
+                val id: Long
+                try {
+                    id = match.toLong()
+                } catch (ex: NumberFormatException) {
+                    Log.i(tag, "Could not parse: $ex")
+                    searchWarehouseAreaId = false
+                    return@thread
+                }
 
-            if (id > 0) {
-                thread {
+                if (id > 0) {
                     ViewWarehouseArea(
                         id = id,
                         onFinish = {
                             onWarehouseAreaResult(it)
                         }).execute()
-                }
-            }
+                } else searchWarehouseAreaId = false
+            } else searchWarehouseAreaId = false
         }
     }
 
     private fun getRacks(code: String) {
-        val match: String = searchString(code, FORMULA_RACK, 1)
-        if (match.isNotEmpty()) {
-            val id: Long
-            try {
-                id = match.toLong()
-            } catch (ex: NumberFormatException) {
-                Log.i(tag, "Could not parse: $ex")
-                return
-            }
+        thread {
+            val match: String = searchString(code, FORMULA_RACK, 1)
+            if (match.isNotEmpty()) {
+                val id: Long
+                try {
+                    id = match.toLong()
+                } catch (ex: NumberFormatException) {
+                    Log.i(tag, "Could not parse: $ex")
+                    searchRackId = false
+                    return@thread
+                }
 
-            if (id > 0) {
-                thread {
+                if (id > 0) {
                     ViewRack(
                         id = id,
                         onFinish = {
                             onRackResult(it)
                         }).execute()
-                }
-            }
+                } else searchRackId = false
+            } else searchRackId = false
         }
     }
 
@@ -470,52 +604,8 @@ class GetResultFromCode(
         onFinish(r)
     }
 
-    private fun onItemIdResult(r: Item?) {
+    private fun onItemIdResult(r: Item?, onFinish: (CodeResult) -> Unit) {
         searchItemId = false
-        if (getIsFounded()) return
-
-        if (r != null || !taskPending()) {
-            if (r != null) {
-                setIsFounded()
-                playSoundNotification(true)
-            } else {
-                playSoundNotification(false)
-            }
-            sendFinish(CodeResult(item = r))
-        }
-    }
-
-    private fun onItemCodeResult(r: Item?, qty: Double?) {
-        searchItemCode = false
-        if (getIsFounded()) return
-
-        if (r != null || !taskPending()) {
-            if (r != null) {
-                setIsFounded()
-                playSoundNotification(true)
-            } else {
-                playSoundNotification(false)
-            }
-            sendFinish(CodeResult(item = r, qty = qty))
-        }
-    }
-
-    private fun onItemEanResult(r: Item?) {
-        searchItemEan = false
-        if (getIsFounded()) return
-
-        if (r != null || !taskPending()) {
-            if (r != null) {
-                setIsFounded()
-                playSoundNotification(true)
-            } else {
-                playSoundNotification(false)
-            }
-            sendFinish(CodeResult(item = r))
-        }
-    }
-
-    private fun onItemByUrlResult(r: Item?) {
         searchItemUrl = false
         if (getIsFounded()) return
 
@@ -526,11 +616,47 @@ class GetResultFromCode(
             } else {
                 playSoundNotification(false)
             }
-            sendFinish(CodeResult(item = r))
+            onFinish(CodeResult(item = r))
         }
     }
 
-    private fun onItemRegexResult(r: Item?, regexRes: RegexResult) {
+    private fun onItemCodeResult(r: ItemCode?, onFinish: (CodeResult) -> Unit) {
+        searchItemCode = false
+        if (getIsFounded()) return
+
+        if (r != null || !taskPending()) {
+            var item: Item? = null
+            var qty: Double? = null
+
+            if (r != null) {
+                item = r.item
+                qty = r.qty
+
+                setIsFounded()
+                playSoundNotification(true)
+            } else {
+                playSoundNotification(false)
+            }
+            onFinish(CodeResult(item = item, qty = qty))
+        }
+    }
+
+    private fun onItemEanResult(r: Item?, onFinish: (CodeResult) -> Unit) {
+        searchItemEan = false
+        if (getIsFounded()) return
+
+        if (r != null || !taskPending()) {
+            if (r != null) {
+                setIsFounded()
+                playSoundNotification(true)
+            } else {
+                playSoundNotification(false)
+            }
+            onFinish(CodeResult(item = r))
+        }
+    }
+
+    private fun onItemRegexResult(r: Item?, regexRes: RegexResult, onFinish: (CodeResult) -> Unit) {
         searchItemRegex = false
         if (getIsFounded()) return
 
@@ -541,7 +667,7 @@ class GetResultFromCode(
             } else {
                 playSoundNotification(false)
             }
-            sendFinish(CodeResult(item = r, qty = regexRes.qty?.toDouble(), lot = regexRes.lot))
+            onFinish(CodeResult(item = r, qty = regexRes.qty?.toDouble(), lot = regexRes.lot))
         }
     }
 
@@ -576,6 +702,7 @@ class GetResultFromCode(
     }
 
     private fun onOrderResult(r: OrderResponse?) {
+        searchOrderExternalId = false
         searchOrder = false
         if (getIsFounded()) return
 

@@ -20,10 +20,18 @@ import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetItemBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetOrderBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetRackBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetWarehouseAreaBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.GetItemCode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
@@ -55,13 +63,15 @@ import com.google.android.material.textfield.TextInputLayout
 import java.util.*
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item as ItemKtor
 
-class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
+class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener,
+    PrintLabelFragment.FragmentListener {
 
     private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     private var rejectNewInstances = false
 
     private var currentFragment: Fragment? = null
+    private var currentItem: Any? = null
     private lateinit var printLabelFragment: PrintLabelFragment
 
     override fun onDestroy() {
@@ -145,7 +155,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         }
     }
 
-    private fun fillPanel(fragment: Fragment?) {
+    private fun setPanelFragment(fragment: Fragment?) {
         if (isFinishing) return
 
         var newFragment: Fragment? = null
@@ -201,13 +211,15 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         if (BuildConfig.DEBUG || Statics.TEST_MODE) {
             menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomEan, Menu.NONE, "Random EAN")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item ID")
-            menu.add(Menu.NONE, menuItemRandomItUrl, Menu.NONE, "Random item ID URL")
+            menu.add(Menu.NONE, menuItemRandomEan, Menu.NONE, "Random ean")
+            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item id")
+            menu.add(Menu.NONE, menuItemRandomItUrl, Menu.NONE, "Random item id url")
             menu.add(Menu.NONE, menuItemRandomOrder, Menu.NONE, "Random order")
             menu.add(Menu.NONE, menuItemRandomRack, Menu.NONE, "Random rack")
             menu.add(Menu.NONE, menuItemRandomWa, Menu.NONE, "Random area")
             menu.add(Menu.NONE, menuRegexItem, Menu.NONE, "Regex")
+            menu.add(Menu.NONE, menuItemRandomItemCode, Menu.NONE, "Random item code")
+            menu.add(Menu.NONE, menuItemRandomExternalId, Menu.NONE, "Random external id")
         }
 
         return true
@@ -221,6 +233,8 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     private val menuItemRandomRack = 999006
     private val menuItemRandomWa = 999007
     private val menuRegexItem = 999008
+    private val menuItemRandomItemCode = 999009
+    private val menuItemRandomExternalId = 999010
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
@@ -282,6 +296,20 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             menuItemRandomOrder -> {
                 GetOrder(onFinish = {
                     if (it.any()) scannerCompleted("$PREFIX_ORDER${it[Random().nextInt(it.count())].id}#")
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomExternalId -> {
+                GetOrder(onFinish = {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())].externalId)
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomItemCode -> {
+                GetItemCode(onFinish = {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())].code)
                 }).execute()
                 return super.onOptionsItemSelected(item)
             }
@@ -349,9 +377,14 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     }
 
     private fun clearControls() {
-        fillPanel(null)
+        currentItem = null
+        setPanelFragment(null)
+
         hidePrintLabelFragment()
-        binding.infoTextView.setText("", TextView.BufferType.EDITABLE)
+
+        runOnUiThread {
+            binding.infoTextView.setText("", TextView.BufferType.EDITABLE)
+        }
     }
 
     private fun fillHexTextView() {
@@ -380,37 +413,51 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         LifecycleListener.lockScanner(this, true)
 
-        GetResultFromCode(
-            code = scannedCode,
-            searchItemCode = true,
-            searchItemEan = true,
-            searchItemId = true,
-            searchItemRegex = true,
-            searchItemUrl = true,
-            searchOrder = true,
-            searchRackId = true,
-            searchWarehouseAreaId = true,
-            onFinish = {
-                when (val r = it.item) {
-                    is ItemKtor -> fillItemPanel(r.toRoom())
-                    is WarehouseArea -> fillWarehouseAreaPanel(r)
-                    is Rack -> fillRackPanel(r)
-                    is OrderResponse -> fillOrderPanel(r)
-                    else -> {
-                        fillPanel(null)
-                        hidePrintLabelFragment()
-                        binding.infoTextView.setText(
-                            R.string.the_code_does_not_belong_to_any_iem_in_the_database, TextView.BufferType.EDITABLE
-                        )
-                    }
-                }
+        GetResultFromCode.Builder()
+            .withCode(scannedCode)
+            .searchItemCode()
+            .searchItemEan()
+            .searchItemId()
+            .searchItemRegex()
+            .searchItemUrl()
+            .searchOrder()
+            .searchOrderExternalId()
+            .searchRackId()
+            .searchWarehouseAreaId()
+            .onFinish {
                 LifecycleListener.lockScanner(this, false)
-            })
+                proceedByResult(it)
+            }
+            .build()
+    }
+
+    private fun proceedByResult(it: GetResultFromCode.CodeResult) {
+        when (val r = it.item) {
+            is ItemKtor -> fillItemPanel(r.toRoom())
+            is WarehouseArea -> fillWarehouseAreaPanel(r)
+            is Rack -> fillRackPanel(r)
+            is OrderResponse -> fillOrderPanel(r)
+            else -> {
+                currentItem = null
+                setPanelFragment(null)
+
+                hidePrintLabelFragment()
+
+                runOnUiThread {
+                    binding.infoTextView.setText(
+                        R.string.the_code_does_not_belong_to_any_iem_in_the_database,
+                        TextView.BufferType.EDITABLE
+                    )
+                }
+            }
+        }
     }
 
     private fun fillOrderPanel(r: OrderResponse) {
         runOnUiThread {
-            fillPanel(OrderDetailFragment.newInstance(r))
+            currentItem = r
+            setPanelFragment(OrderDetailFragment.newInstance(r))
+
             setupPrintLabelFragment(
                 templateId = settingsVm.defaultOrderTemplateId,
                 typesId = arrayListOf(BarcodeLabelType.order.id)
@@ -424,7 +471,9 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
     private fun fillRackPanel(r: Rack) {
         runOnUiThread {
-            fillPanel(RackDetailFragment.newInstance(r))
+            currentItem = r
+            setPanelFragment(RackDetailFragment.newInstance(r))
+
             setupPrintLabelFragment(
                 templateId = settingsVm.defaultRackTemplateId,
                 typesId = arrayListOf(BarcodeLabelType.rack.id)
@@ -438,7 +487,9 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
     private fun fillWarehouseAreaPanel(r: WarehouseArea) {
         runOnUiThread {
-            fillPanel(WarehouseAreaDetailFragment.newInstance(r))
+            currentItem = r
+            setPanelFragment(WarehouseAreaDetailFragment.newInstance(r))
+
             setupPrintLabelFragment(
                 templateId = settingsVm.defaultWaTemplateId,
                 typesId = arrayListOf(BarcodeLabelType.warehouseArea.id)
@@ -452,7 +503,9 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
     private fun fillItemPanel(itemRoom: Item) {
         runOnUiThread {
-            fillPanel(ItemDetailFragment.newInstance(itemRoom))
+            currentItem = itemRoom
+            setPanelFragment(ItemDetailFragment.newInstance(itemRoom))
+
             setupPrintLabelFragment(
                 templateId = settingsVm.defaultItemTemplateId,
                 typesId = arrayListOf(BarcodeLabelType.item.id)
@@ -509,6 +562,89 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     override fun onReadCompleted(scanCode: String) {
         scannerCompleted(scanCode)
     }
+
+    override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {}
+
+    override fun onPrintRequested(printer: String, qty: Int) {
+        val tempObj = currentItem ?: return
+        val template = printLabelFragment.template ?: return
+
+        when (tempObj) {
+            is Item -> {
+                GetItemBarcode(
+                    param = BarcodeParam(
+                        idList = arrayListOf(tempObj.itemId),
+                        templateId = template.templateId,
+                        printOps = PrintOps.getPrintOps()
+                    ),
+                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it.any()) {
+                            printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
+                        } else {
+                            showSnackBar(getString(R.string.there_are_no_labels_to_print), ERROR)
+                        }
+                    }
+                ).execute()
+            }
+
+            is OrderResponse -> {
+                GetOrderBarcode(
+                    param = BarcodeParam(
+                        idList = arrayListOf(tempObj.id),
+                        templateId = template.templateId,
+                        printOps = PrintOps.getPrintOps()
+                    ),
+                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it.any()) {
+                            printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
+                        } else {
+                            showSnackBar(getString(R.string.there_are_no_labels_to_print), ERROR)
+                        }
+                    }
+                ).execute()
+            }
+
+            is WarehouseArea -> {
+                GetWarehouseAreaBarcode(
+                    param = BarcodeParam(
+                        idList = arrayListOf(tempObj.id),
+                        templateId = template.templateId,
+                        printOps = PrintOps.getPrintOps()
+                    ),
+                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it.any()) {
+                            printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
+                        } else {
+                            showSnackBar(getString(R.string.there_are_no_labels_to_print), ERROR)
+                        }
+                    }
+                ).execute()
+            }
+
+            is Rack -> {
+                GetRackBarcode(
+                    param = BarcodeParam(
+                        idList = arrayListOf(tempObj.id),
+                        templateId = template.templateId,
+                        printOps = PrintOps.getPrintOps()
+                    ),
+                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                    onFinish = {
+                        if (it.any()) {
+                            printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
+                        } else {
+                            showSnackBar(getString(R.string.there_are_no_labels_to_print), ERROR)
+                        }
+                    }
+                ).execute()
+            }
+        }
+    }
+
+    override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {}
 
     //endregion READERS Reception
 }

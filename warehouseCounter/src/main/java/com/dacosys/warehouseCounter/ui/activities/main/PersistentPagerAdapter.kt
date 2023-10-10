@@ -9,7 +9,7 @@ import androidx.fragment.app.FragmentPagerAdapter
 @Suppress("UNCHECKED_CAST")
 abstract class PersistentPagerAdapter<T : Fragment?>(
     fragmentManager: FragmentManager?,
-) : FragmentPagerAdapter(fragmentManager!!) {
+) : FragmentPagerAdapter(fragmentManager!!, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
     private val registeredFragments = SparseArray<T>()
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
         val fragment = super.instantiateItem(container, position) as T

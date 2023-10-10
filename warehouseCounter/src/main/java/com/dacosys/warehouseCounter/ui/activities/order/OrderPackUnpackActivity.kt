@@ -42,11 +42,8 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderStatus
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.ViewItem
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewRack
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.UpdateOrder
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
@@ -58,16 +55,12 @@ import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_ITEM
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_ORDER
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_RACK
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_WA
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ITEM
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ITEM_URL
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ORDER
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_RACK
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_WA
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.searchString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -757,78 +750,27 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
-        when {
-            scanCode.startsWith(PREFIX_ORDER) -> {
+        GetResultFromCode.Builder()
+            .withCode(scanCode)
+            .searchOrder()
+            .searchOrderExternalId()
+            .onFinish { proceedByResult(it, scanCode) }
+            .build()
+    }
+
+    private fun proceedByResult(it: GetResultFromCode.CodeResult, scanCode: String) {
+        when (val itemObj = it.item) {
+            is OrderResponse -> {
                 runOnUiThread {
-                    filterFragment.setOrderExternalId("")
-                    filterFragment.setOrderId(searchString(scanCode, FORMULA_ORDER, 1))
-                    getOrders()
+                    filterFragment.setOrderExternalId(itemObj.externalId)
+                    filterFragment.setOrderId(itemObj.id.toString())
+                    fillAdapter(arrayListOf(itemObj))
                 }
-            }
-
-            scanCode.startsWith(PREFIX_ITEM) -> {
-                val id = searchString(scanCode, FORMULA_ITEM, 1).toLongOrNull() ?: return
-                ViewItem(
-                    id = id,
-                    onEvent = { showSnackBar(it.text, it.snackBarType) },
-                    onFinish = {
-                        if (it == null) return@ViewItem
-                        runOnUiThread {
-                            filterFragment.setItemEan(it.ean)
-                            getOrders()
-                        }
-                    }).execute()
-            }
-
-            scanCode.contains(PREFIX_ITEM_URL) -> {
-                val id = scanCode.substringAfterLast(PREFIX_ITEM_URL).toLongOrNull() ?: return
-                ViewItem(
-                    id = id,
-                    onEvent = { showSnackBar(it.text, it.snackBarType) },
-                    onFinish = {
-                        if (it == null) return@ViewItem
-                        runOnUiThread {
-                            filterFragment.setItemEan(it.ean)
-                            getOrders()
-                        }
-                    }).execute()
-            }
-
-            scanCode.startsWith(PREFIX_WA) -> {
-                val id = searchString(scanCode, FORMULA_WA, 1).toLongOrNull() ?: return
-                ViewWarehouseArea(
-                    id = id,
-                    onEvent = { showSnackBar(it.text, it.snackBarType) },
-                    onFinish = {
-                        if (it == null) return@ViewWarehouseArea
-                        runOnUiThread {
-                            filterFragment.setWarehouse(null)
-                            filterFragment.setRack(null)
-                            filterFragment.setWarehouseArea(it)
-                            getOrders()
-                        }
-                    }).execute()
-            }
-
-            scanCode.startsWith(PREFIX_RACK) -> {
-                val id = searchString(scanCode, FORMULA_RACK, 1).toLongOrNull() ?: return
-                ViewRack(
-                    id = id,
-                    onEvent = { showSnackBar(it.text, it.snackBarType) },
-                    onFinish = {
-                        if (it == null) return@ViewRack
-                        runOnUiThread {
-                            filterFragment.setWarehouse(null)
-                            filterFragment.setWarehouseArea(null)
-                            filterFragment.setRack(it)
-                            getOrders()
-                        }
-                    }).execute()
             }
 
             else -> {
                 runOnUiThread {
-                    if (settingsVm.orderLocationSearchByOrderExtId) {
+                    if (settingsVm.orderSearchByOrderExtId) {
                         filterFragment.setOrderId("")
                         filterFragment.setOrderExternalId(scanCode)
                     } else {
@@ -890,7 +832,7 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         binding.topAppbar.overflowIcon = drawable
 
         // Opciones de visibilidad del menú
-        val allControls = SettingsRepository.getAllSelectOrderLocationVisibleControls()
+        val allControls = SettingsRepository.getAllSelectOrderVisibleControls()
         val visibleFilters = filterFragment.getVisibleFilters()
         allControls.forEach { p ->
             menu.add(0, p.key.hashCode(), menu.size(), p.description)
@@ -1009,39 +951,19 @@ class OrderPackUnpackActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         item.isChecked = !item.isChecked
         val sv = settingsVm
         when (id) {
-            settingsRepository.orderLocationSearchByItemDescription.key.hashCode() -> {
-                filterFragment.setDescriptionVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByItemDescription = item.isChecked
-            }
-
-            settingsRepository.orderLocationSearchByItemEan.key.hashCode() -> {
-                filterFragment.setEanVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByItemEan = item.isChecked
-            }
-
-            settingsRepository.orderLocationSearchByItemCode.key.hashCode() -> {
-                filterFragment.setCodeVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByItemCode = item.isChecked
-            }
-
-            settingsRepository.orderLocationSearchByOrderId.key.hashCode() -> {
+            settingsRepository.orderSearchByOrderId.key.hashCode() -> {
                 filterFragment.setOrderIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByOrderId = item.isChecked
+                sv.orderSearchByOrderId = item.isChecked
             }
 
-            settingsRepository.orderLocationSearchByOrderExtId.key.hashCode() -> {
+            settingsRepository.orderSearchByOrderExtId.key.hashCode() -> {
                 filterFragment.setOrderExtIdVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByOrderExtId = item.isChecked
+                sv.orderSearchByOrderExtId = item.isChecked
             }
 
-            settingsRepository.orderLocationSearchByArea.key.hashCode() -> {
+            settingsRepository.orderSearchByOrderDescription.key.hashCode() -> {
                 filterFragment.setAreaVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByArea = item.isChecked
-            }
-
-            settingsRepository.orderLocationSearchByRack.key.hashCode() -> {
-                filterFragment.setRackVisibility(if (item.isChecked) View.VISIBLE else GONE)
-                sv.orderLocationSearchByRack = item.isChecked
+                sv.orderSearchByOrderDescription = item.isChecked
             }
 
             else -> return super.onOptionsItemSelected(item)

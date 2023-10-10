@@ -6,6 +6,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCode as ItemCodeKtor
 import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCodeEntry as Entry
 
 @Entity(
@@ -40,6 +41,15 @@ data class ItemCode(
 
     override fun describeContents(): Int {
         return 0
+    }
+
+    fun toKtor(): ItemCodeKtor {
+        return ItemCodeKtor(
+            id = id,
+            itemId = itemId,
+            code = code ?: "",
+            qty = qty
+        )
     }
 
     companion object CREATOR : Parcelable.Creator<ItemCode> {

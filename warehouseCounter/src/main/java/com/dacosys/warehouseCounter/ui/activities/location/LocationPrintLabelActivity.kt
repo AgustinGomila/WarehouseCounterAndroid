@@ -73,11 +73,9 @@ import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_RACK
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_WA
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_RACK
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_WA
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.searchString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.location.LocationAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -819,37 +817,29 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
-        when {
-            scanCode.startsWith(PREFIX_WA) -> {
-                val id = searchString(scanCode, FORMULA_WA, 1).toLongOrNull() ?: return
-                ViewWarehouseArea(
-                    id = id,
-                    onEvent = { showSnackBar(it.text, it.snackBarType) },
-                    onFinish = {
-                        if (it == null) return@ViewWarehouseArea
-                        runOnUiThread {
-                            filterFragment.setRack(null)
-                            filterFragment.setWarehouse(null)
-                            filterFragment.setWarehouseArea(it)
-                            getLocations()
-                        }
-                    }).execute()
-            }
+        GetResultFromCode.Builder()
+            .withCode(scanCode)
+            .searchRackId()
+            .searchWarehouseAreaId()
+            .onFinish { proceedByResult(it) }
+            .build()
+    }
 
-            scanCode.startsWith(PREFIX_RACK) -> {
-                val id = searchString(scanCode, FORMULA_RACK, 1).toLongOrNull() ?: return
-                ViewRack(
-                    id = id,
-                    onEvent = { showSnackBar(it.text, it.snackBarType) },
-                    onFinish = {
-                        if (it == null) return@ViewRack
-                        runOnUiThread {
-                            filterFragment.setWarehouseArea(null)
-                            filterFragment.setWarehouse(null)
-                            filterFragment.setRack(it)
-                            getLocations()
-                        }
-                    }).execute()
+    private fun proceedByResult(it: GetResultFromCode.CodeResult) {
+        val itemObj = it.item
+        if (itemObj is WarehouseArea) {
+            runOnUiThread {
+                filterFragment.setRack(null)
+                filterFragment.setWarehouse(null)
+                filterFragment.setWarehouseArea(itemObj)
+                getLocations()
+            }
+        } else if (itemObj is Rack) {
+            runOnUiThread {
+                filterFragment.setWarehouseArea(null)
+                filterFragment.setWarehouse(null)
+                filterFragment.setRack(itemObj)
+                getLocations()
             }
         }
     }
@@ -1138,7 +1128,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 onFinish = {
                     printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
                 }
-            )
+            ).execute()
         } else if (was.any()) {
             val ids = ArrayList(was.map { it.locationId })
             GetWarehouseAreaBarcode(
@@ -1151,7 +1141,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 onFinish = {
                     printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
                 }
-            )
+            ).execute()
         }
     }
 
@@ -1192,7 +1182,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         }
     }
 
-    // region READERS Reception
+// region READERS Reception
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -1206,7 +1196,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     override fun onReadCompleted(scanCode: String) {
         scannerCompleted(scanCode)
     }
-    //endregion READERS Reception
+//endregion READERS Reception
 
     //region ImageControl
     override fun onAddPhotoRequired(tableId: Int, itemId: Long, description: String) {
@@ -1315,7 +1305,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
         showPhotoAlbum()
     }
-    //endregion ImageControl
+//endregion ImageControl
 
     companion object {
         const val ARG_TITLE = "title"

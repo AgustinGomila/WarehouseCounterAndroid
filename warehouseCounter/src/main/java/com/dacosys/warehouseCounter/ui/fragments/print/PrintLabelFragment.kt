@@ -24,13 +24,8 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.Barcode
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.template.ViewBarcodeLabelTemplate
-import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.data.room.dao.itemCategory.ItemCategoryCoroutines
-import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.databinding.PrintLabelFragmentBinding
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
-import com.dacosys.warehouseCounter.misc.UTCDataTime
 import com.dacosys.warehouseCounter.printer.Printer
 import com.dacosys.warehouseCounter.ui.activities.barcodeLabel.TemplateSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity
@@ -42,7 +37,6 @@ import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.views.CounterHandler
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import java.util.*
 
 /**
  * A simple [Fragment] subclass.
@@ -441,9 +435,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
             onFinish(false)
             return
         }
-
         val sendThis = labelArray.joinToString(lineSeparator) { it.body }
-
         sendToPrinter(sendThis, onFinish)
     }
 
@@ -453,57 +445,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
             onFinish(false)
             return
         }
-
         val sendThis = labelArray.joinToString(lineSeparator) { it.body }
-
-        sendToPrinter(sendThis, onFinish)
-    }
-
-    fun printItemById(itemIdArray: ArrayList<Long>, onFinish: (Boolean) -> Unit) {
-        if (itemIdArray.isEmpty()) {
-            showSnackBar(getString(R.string.you_must_select_at_least_one_item), SnackBarType.ERROR)
-            onFinish(false)
-            return
-        }
-
-        val items: ArrayList<Item> = ArrayList()
-        var isDone = false
-        for ((index, id) in itemIdArray.withIndex()) {
-            ItemCoroutines.getById(id) {
-                if (it != null) items.add(it)
-                isDone = index == itemIdArray.lastIndex
-            }
-        }
-
-        var startTime = System.currentTimeMillis()
-        while (!isDone) {
-            if (System.currentTimeMillis() - startTime == (settingsVm.connectionTimeout * 1000).toLong()) {
-                isDone = true
-            }
-        }
-
-        if (items.isEmpty()) {
-            showSnackBar(getString(R.string.you_must_select_at_least_one_item), SnackBarType.ERROR)
-            onFinish(false)
-            return
-        }
-
-        var sendThis = ""
-        isDone = false
-        for ((index, item) in items.withIndex()) {
-            getLabel(item) {
-                sendThis += it
-                isDone = index == items.lastIndex
-            }
-        }
-
-        startTime = System.currentTimeMillis()
-        while (!isDone) {
-            if (System.currentTimeMillis() - startTime == (settingsVm.connectionTimeout * 1000).toLong()) {
-                isDone = true
-            }
-        }
-
         sendToPrinter(sendThis, onFinish)
     }
 
@@ -516,58 +458,6 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
             qty = qty,
             onFinish = onFinish
         )
-    }
-
-    private fun getLabel(item: Item, onFinished: (String) -> Unit = {}) {
-        val ean: String = item.ean
-        var itemCategoryStr: String
-        var description: String
-        var price: String
-
-        ItemCategoryCoroutines.getById(item.itemCategoryId) {
-            itemCategoryStr = ""
-            if (it != null) {
-                if (it.parentStr.isNotEmpty()) {
-                    "${it.parentStr} - ${it.description}"
-                } else {
-                    it.description
-                }
-            }
-
-            description = item.description.uppercase(Locale.getDefault())
-            price = Statics.roundToString(item.price ?: 0f, 2)
-
-            // Trim contents
-            if (description.length > 18) {
-                description = description.substring(0, 21)
-            }
-
-            if (itemCategoryStr.length > 35) {
-                itemCategoryStr = itemCategoryStr.substring(0, 60)
-            }
-
-            if (price.length > 35) {
-                price = price.substring(0, 60)
-            }
-
-            val template = getString(R.string.wc_barcode_label_default)
-            onFinished(
-                String.format(
-                    template,
-                    ean,
-                    normalizeStrings(description),
-                    normalizeStrings(itemCategoryStr),
-                    normalizeStrings(price),
-                    UTCDataTime.getUTCDateTimeAsString()
-                )
-            )
-        }
-    }
-
-    private fun normalizeStrings(name: String): String {
-        return name.replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o')
-            .replace('ú', 'u').replace('ñ', 'n').replace('Á', 'A').replace('É', 'E')
-            .replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U').replace('Ñ', 'N')
     }
 
     private fun setPrinterText() {

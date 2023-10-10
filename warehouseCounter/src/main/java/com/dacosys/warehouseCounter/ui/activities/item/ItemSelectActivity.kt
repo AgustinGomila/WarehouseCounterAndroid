@@ -52,6 +52,9 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsReposi
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeParam
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.PrintOps
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetItemBarcode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
@@ -816,15 +819,18 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
         LifecycleListener.lockScanner(this, true)
 
-        GetResultFromCode(
-            code = scanCode,
-            searchItemId = true,
-            searchItemCode = true,
-            searchItemEan = true,
-            searchItemRegex = true,
-            searchItemUrl = true,
-            onFinish = { onCheckCodeEnded(it) }
-        )
+        GetResultFromCode.Builder()
+            .withCode(scanCode)
+            .searchItemId()
+            .searchItemCode()
+            .searchItemEan()
+            .searchItemRegex()
+            .searchItemUrl()
+            .onFinish {
+                LifecycleListener.lockScanner(this, false)
+                proceedByResult(it)
+            }
+            .build()
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -1090,8 +1096,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    private fun onCheckCodeEnded(it: GetResultFromCode.CodeResult) {
-        LifecycleListener.lockScanner(this, false)
+    private fun proceedByResult(it: GetResultFromCode.CodeResult) {
         val r = it.item
         if (r !is ItemKtor) return
 
@@ -1121,16 +1126,24 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     override fun onPrintRequested(printer: String, qty: Int) {
         val itemArray = adapter?.selectedItems() ?: arrayListOf()
+        val template = printLabelFragment.template ?: return
 
         if (!itemArray.any()) {
             showSnackBar(getString(R.string.you_must_select_at_least_one_item), ERROR)
             return
         }
 
-        printLabelFragment.printItemById(
-            itemIdArray = ArrayList(itemArray.map { it.itemId }),
-            onFinish = { }
-        )
+        GetItemBarcode(
+            param = BarcodeParam(
+                idList = ArrayList(itemArray.map { it.itemId }),
+                templateId = template.templateId,
+                printOps = PrintOps.getPrintOps()
+            ),
+            onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+            onFinish = {
+                printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
+            }
+        ).execute()
     }
 
     override fun onQtyTextViewFocusChanged(hasFocus: Boolean) {

@@ -73,33 +73,34 @@ class GetOrderRequestContentFromCode(
                 return@withContext
             }
 
-            GetResultFromCode(
-                code = code,
-                searchItemCode = true,
-                searchItemEan = true,
-                searchItemId = true,
-                searchItemRegex = true,
-                searchItemUrl = true,
-                useLike = false,
-                onFinish = {
-                    if (it.item != null) {
-                        val item = it.item as ItemKtor
-                        qty = it.qty
-                        lot = it.lot
-
-                        getItemFromListOrAdd(item)
-                    } else {
-                        // No existe el ítem, agregar como Desconocido si la configuración lo permite
-                        addUnknownItem()
-                        return@GetResultFromCode
-                    }
-                })
+            GetResultFromCode.Builder()
+                .withCode(code)
+                .searchItemCode()
+                .searchItemEan()
+                .searchItemId()
+                .searchItemRegex()
+                .searchItemUrl()
+                .onFinish { proceedByResult(it) }
+                .build()
         } catch (ex: Exception) {
             sendEvent(ex.message.toString(), SnackBarType.ERROR)
             Log.e(tag, ex.message ?: "")
 
             playSoundNotification(false)
             sendFinish()
+        }
+    }
+
+    private fun proceedByResult(it: GetResultFromCode.CodeResult) {
+        if (it.item != null) {
+            val item = it.item as ItemKtor
+            qty = it.qty
+            lot = it.lot
+
+            getItemFromListOrAdd(item)
+        } else {
+            // No existe el ítem, agregar como Desconocido si la configuración lo permite
+            addUnknownItem()
         }
     }
 

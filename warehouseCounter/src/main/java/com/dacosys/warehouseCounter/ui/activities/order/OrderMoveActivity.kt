@@ -46,8 +46,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewRack
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.ViewWarehouseArea
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.GetOrder
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.MoveOrder
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
@@ -58,13 +56,10 @@ import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_ORDER
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_RACK
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_WA
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ORDER
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_RACK
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_WA
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.searchString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -813,53 +808,52 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
 
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
-        when {
-            scanCode.startsWith(PREFIX_ORDER) -> {
+        GetResultFromCode.Builder()
+            .withCode(scanCode)
+            .searchOrder()
+            .searchOrderExternalId()
+            .searchRackId()
+            .searchWarehouseAreaId()
+            .onFinish { proceedByResult(it, scanCode) }
+            .build()
+    }
+
+    private fun proceedByResult(it: GetResultFromCode.CodeResult, scanCode: String) {
+        when (val itemObj = it.item) {
+            is OrderResponse -> {
+                filterFragment.setOrderExternalId(itemObj.externalId)
+                filterFragment.setOrderId(itemObj.id.toString())
+                fillAdapter(arrayListOf(itemObj))
+            }
+
+            is WarehouseArea -> {
                 runOnUiThread {
-                    filterFragment.setOrderExternalId("")
-                    filterFragment.setOrderId(searchString(scanCode, FORMULA_ORDER, 1))
-                    getOrders()
+                    destinationHeader.setDestination(itemObj)
+                    if (!panelTopIsExpanded) {
+                        panelTopIsExpanded = true
+                        setPanels()
+                    }
                 }
             }
 
-            scanCode.startsWith(PREFIX_WA) -> {
-                val id = searchString(scanCode, FORMULA_WA, 1).toLongOrNull() ?: return
-                ViewWarehouseArea(
-                    id = id,
-                    onEvent = { showSnackBar(it.text, it.snackBarType) },
-                    onFinish = {
-                        if (it == null) return@ViewWarehouseArea
-                        runOnUiThread {
-                            destinationHeader.setDestination(it)
-                            if (!panelTopIsExpanded) {
-                                panelTopIsExpanded = true
-                                setPanels()
-                            }
-                        }
-                    }).execute()
-            }
-
-            scanCode.startsWith(PREFIX_RACK) -> {
-                val id = searchString(scanCode, FORMULA_RACK, 1).toLongOrNull() ?: return
-                ViewRack(
-                    id = id,
-                    onEvent = { showSnackBar(it.text, it.snackBarType) },
-                    onFinish = {
-                        if (it == null) return@ViewRack
-                        runOnUiThread {
-                            destinationHeader.setDestination(it)
-                            if (!panelTopIsExpanded) {
-                                panelTopIsExpanded = true
-                                setPanels()
-                            }
-                        }
-                    }).execute()
+            is Rack -> {
+                runOnUiThread {
+                    destinationHeader.setDestination(itemObj)
+                    if (!panelTopIsExpanded) {
+                        panelTopIsExpanded = true
+                        setPanels()
+                    }
+                }
             }
 
             else -> {
                 runOnUiThread {
-                    filterFragment.setOrderId("")
-                    filterFragment.setOrderExternalId(scanCode)
+                    if (settingsVm.orderSearchByOrderExtId) {
+                        filterFragment.setOrderId("")
+                        filterFragment.setOrderExternalId(scanCode)
+                    } else {
+                        filterFragment.setItemEan(scanCode)
+                    }
                     getOrders()
                 }
             }
@@ -1116,7 +1110,7 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         }
     }
 
-    // region READERS Reception
+// region READERS Reception
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -1130,7 +1124,7 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
     override fun onReadCompleted(scanCode: String) {
         scannerCompleted(scanCode)
     }
-    //endregion READERS Reception
+//endregion READERS Reception
 
     companion object {
         const val ARG_TITLE = "title"

@@ -638,21 +638,24 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
         LifecycleListener.lockScanner(this, true)
 
-        // Buscar por ubicación
-        GetResultFromCode(
-            code = scanCode,
-            searchOrder = true,
-            onFinish = {
-
+        GetResultFromCode.Builder()
+            .withCode(scanCode)
+            .searchOrder()
+            .searchOrderExternalId()
+            .onFinish {
                 LifecycleListener.lockScanner(this, false)
+                proceedByResult(it)
+            }
+            .build()
+    }
 
-                val item = it.item ?: return@GetResultFromCode
-                if (item is OrderResponse) {
-                    lifecycleScope.launch {
-                        pagingAdapter.submitData(PagingData.from(arrayListOf(item)))
-                    }
-                } else return@GetResultFromCode
-            })
+    private fun proceedByResult(it: GetResultFromCode.CodeResult) {
+        val item = it.item ?: return
+        if (item is OrderResponse) {
+            lifecycleScope.launch {
+                pagingAdapter.submitData(PagingData.from(arrayListOf(item)))
+            }
+        }
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {

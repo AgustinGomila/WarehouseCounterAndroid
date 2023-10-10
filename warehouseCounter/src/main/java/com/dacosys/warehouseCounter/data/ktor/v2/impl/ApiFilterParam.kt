@@ -35,6 +35,8 @@ data class ApiFilterParam(
 
         const val EXTENSION_STATUS_ID = "status_id"
 
+        const val EXTENSION_ITEM_CODE_CODE = "code"
+
         const val EXTENSION_ITEM_CATEGORY_ID = "item.item_category_id"
         const val EXTENSION_ITEM_DESCRIPTION = "item.description"
         const val EXTENSION_ITEM_EAN = "ean"

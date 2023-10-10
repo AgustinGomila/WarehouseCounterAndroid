@@ -162,15 +162,18 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
         LifecycleListener.lockScanner(this, true)
 
-        GetResultFromCode(
-            code = scanCode,
-            searchItemCode = true,
-            searchItemEan = true,
-            searchItemId = true,
-            searchItemRegex = true,
-            searchItemUrl = true,
-            onFinish = { onCheckCodeEnded(scanCode, it) }
-        )
+        GetResultFromCode.Builder()
+            .withCode(scanCode)
+            .searchItemCode()
+            .searchItemEan()
+            .searchItemId()
+            .searchItemRegex()
+            .searchItemUrl()
+            .onFinish {
+                LifecycleListener.lockScanner(this, false)
+                proceedByResult(it, scanCode)
+            }
+            .build()
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
@@ -1283,11 +1286,8 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         Handler(Looper.getMainLooper()).postDelayed({ getItems() }, 200)
     }
 
-    private fun onCheckCodeEnded(scannedCode: String, it: GetResultFromCode.CodeResult) {
-        LifecycleListener.lockScanner(this, false)
-
+    private fun proceedByResult(it: GetResultFromCode.CodeResult, scannedCode: String) {
         val r: Any? = it.item
-
         if (r != null && r is ItemKtor) {
             val item = r.toRoom()
             val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION

@@ -37,6 +37,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.GetItemCode
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.LogCoroutines
@@ -1550,9 +1551,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             }
 
             menuItemRandomItemCode -> {
-                ItemCodeCoroutines.getAllCodes {
-                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
-                }
+                GetItemCode(onFinish = {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())].code)
+                }).execute()
                 return super.onOptionsItemSelected(item)
             }
 

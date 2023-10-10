@@ -58,9 +58,8 @@ import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_ORDER
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ORDER
-import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.searchString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SearchTextFragment
@@ -844,19 +843,32 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
 
-        when {
-            scanCode.startsWith(PREFIX_ORDER) -> {
+        GetResultFromCode.Builder()
+            .withCode(scanCode)
+            .searchOrder()
+            .searchOrderExternalId()
+            .onFinish { proceedByResult(it, scanCode) }
+            .build()
+    }
+
+    private fun proceedByResult(it: GetResultFromCode.CodeResult, scanCode: String) {
+        when (val itemObj = it.item) {
+            is OrderResponse -> {
                 runOnUiThread {
-                    filterFragment.setOrderExternalId("")
-                    filterFragment.setOrderId(searchString(scanCode, FORMULA_ORDER, 1))
-                    getOrders()
+                    filterFragment.setOrderExternalId(itemObj.externalId)
+                    filterFragment.setOrderId(itemObj.id.toString())
+                    fillAdapter(arrayListOf(itemObj))
                 }
             }
 
             else -> {
                 runOnUiThread {
-                    filterFragment.setOrderId("")
-                    filterFragment.setOrderExternalId(scanCode)
+                    if (settingsVm.orderSearchByOrderExtId) {
+                        filterFragment.setOrderId("")
+                        filterFragment.setOrderExternalId(scanCode)
+                    } else {
+                        filterFragment.setItemEan(scanCode)
+                    }
                     getOrders()
                 }
             }
