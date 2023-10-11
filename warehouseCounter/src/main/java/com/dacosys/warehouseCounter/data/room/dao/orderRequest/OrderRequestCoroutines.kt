@@ -5,6 +5,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.generateFilename
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeJsonToFile
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.room.database.WcTempDatabase.Companion.database
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.OrderRequest
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
@@ -32,17 +33,19 @@ object OrderRequestCoroutines {
     @Throws(Exception::class)
     fun getByIdAsKtor(
         id: Long,
+        content: List<OrderRequestContent> = listOf(),
         filename: String,
         onResult: (OrderRequestKtor?) -> Unit = {},
     ) = CoroutineScope(Job() + Dispatchers.IO).launch {
         try {
             val r = async { database.orderRequestDao().getById(id)?.toKtor }.await()
-            r?.roomId = id
-            r?.filename = filename
-
             if (r != null) {
-                val rc =
+                val rc = content.ifEmpty {
                     async { database.orderRequestContentDao().getByOrderId(id).map { it.toKtor } }.await()
+                }
+
+                r.roomId = id
+                r.filename = filename
                 r.contents = rc
             }
             onResult(r)

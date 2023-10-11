@@ -94,8 +94,8 @@ import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
+import java.io.File
 import kotlin.concurrent.thread
-import kotlin.io.path.Path
 
 
 class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFragment.ButtonClickedListener {
@@ -562,7 +562,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         }
 
     private fun loadOrderFromFile(filename: String) {
-        val order = OrderRequest(Path(completePendingPath, filename).toString())
+        val order = OrderRequest(File(completePendingPath, filename).toString())
         val id = order.roomId ?: return
         if (id == 0L) return
 

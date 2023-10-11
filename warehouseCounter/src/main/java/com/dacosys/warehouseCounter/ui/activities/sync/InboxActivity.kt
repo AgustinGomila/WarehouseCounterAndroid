@@ -43,8 +43,8 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import java.io.File
 import kotlin.concurrent.thread
-import kotlin.io.path.Path
 
 class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     OrderRequestAdapter.DataSetChangedListener {
@@ -344,11 +344,18 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
 
     private fun showDetail() {
         val filename = currentItem?.filename ?: return
+        val path: String
+        try {
+            path = File(completePendingPath, filename).toString()
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            return
+        }
 
         val intent = Intent(context, OrderRequestDetailActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
         intent.putExtra(OrderRequestDetailActivity.ARG_ID, currentItem?.roomId)
-        intent.putExtra(OrderRequestDetailActivity.ARG_FILENAME, Path(completePendingPath, filename).toString())
+        intent.putExtra(OrderRequestDetailActivity.ARG_FILENAME, path)
         startActivity(intent)
     }
 

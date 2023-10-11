@@ -158,13 +158,9 @@ class GetResultFromCode private constructor(builder: Builder) {
 
         fun playSoundNotification(success: Boolean) {
             try {
-                val mp = MediaPlayer.create(
-                    context,
-                    when {
-                        success -> R.raw.scan_success
-                        else -> R.raw.scan_fail
-                    }
-                )
+                val resId = if (success) R.raw.scan_success else R.raw.scan_fail
+                val mp = MediaPlayer.create(context, resId)
+                mp.setOnCompletionListener { mp.release() }
                 mp.start()
             } catch (ex: Exception) {
                 ex.printStackTrace()

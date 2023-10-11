@@ -3,6 +3,7 @@ package com.dacosys.warehouseCounter.data.ktor.v2.sync
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedOrders
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getPendingJsonOrders
@@ -164,7 +165,6 @@ class Sync private constructor(builder: Builder) {
                             remoteOrders = it,
                             onPendingOrders = onNewOrders
                         )
-                        setSyncNewOrderStatus(DownloadStatus.NOT_RUNNING)
                     }
                 ).execute()
 
@@ -188,20 +188,29 @@ class Sync private constructor(builder: Builder) {
         isProcessDone = state
     }
 
+    @set:Synchronized
+    var ordersToUpdate: ArrayList<OrderRequest> = arrayListOf()
+
+    @set:Synchronized
+    var ordersToRemove: ArrayList<OrderRequest> = arrayListOf()
+
+    @set:Synchronized
+    var ordersToAdd: ArrayList<OrderResponse> = arrayListOf()
+
     private fun onPendingOrdersReceived(
         remoteOrders: ArrayList<OrderResponse>,
         onPendingOrders: (ArrayList<OrderRequest>) -> Unit = {}
     ) {
-        val ordersToAdd: ArrayList<OrderResponse> = arrayListOf()
-        val ordersToRemove: ArrayList<OrderRequest> = arrayListOf()
-        val ordersToUpdate: ArrayList<OrderRequest> = arrayListOf()
+        ordersToAdd.clear()
+        ordersToRemove.clear()
+        ordersToUpdate.clear()
 
         if (remoteOrders.isNotEmpty()) {
 
+            setProcessState(false)
+
             val localOrders = getLocalOrders()
             val localJsonPendingOrders = getPendingJsonOrders()
-
-            setProcessState(false)
 
             for ((index, remoteOrder) in remoteOrders.withIndex()) {
 
@@ -213,24 +222,21 @@ class Sync private constructor(builder: Builder) {
 
                         OrderRequestCoroutines.getByIdAsKtor(
                             id = localOrder.id,
+                            content = remoteOrder.contentToKtor(),
                             filename = filename,
                             onResult = { order ->
                                 if (order != null) {
-                                    if (remoteOrder.completed.toBooleanStrict()) {
-                                        ordersToRemove.add(order)
-                                    } else {
-                                        order.contents = remoteOrder.contentToKtor()
-                                        ordersToUpdate.add(order)
-                                    }
+                                    if (order.completed == true) ordersToRemove.add(order)
+                                    else ordersToUpdate.add(order)
                                 }
-                                setProcessState(index == remoteOrders.lastIndex)
+                                if (index == remoteOrders.lastIndex) setProcessState(true)
                             })
                     } else {
-                        setProcessState(index == remoteOrders.lastIndex)
+                        if (index == remoteOrders.lastIndex) setProcessState(true)
                     }
                 } else {
                     ordersToAdd.add(remoteOrder)
-                    setProcessState(index == remoteOrders.lastIndex)
+                    if (index == remoteOrders.lastIndex) setProcessState(true)
                 }
             }
 
@@ -242,37 +248,56 @@ class Sync private constructor(builder: Builder) {
             }
         }
 
-        val tempRemove: ArrayList<OrderRequest> = ArrayList(ordersToRemove)
-        if (tempRemove.isNotEmpty()) {
+        if (ordersToRemove.any()) {
+            val tempRemove = ArrayList(ordersToRemove)
             synchronized(tempRemove) {
-                removeOrders(tempRemove)
+                if (tempRemove.isNotEmpty()) {
+                    removeOrders(tempRemove)
+                }
             }
         }
 
-        val tempUpdate: ArrayList<OrderRequest> = ArrayList(ordersToUpdate)
-        if (tempUpdate.isNotEmpty()) {
+        if (ordersToUpdate.any()) {
+            val tempUpdate = ArrayList(ordersToUpdate)
             synchronized(tempUpdate) {
-                updateOrders(tempUpdate)
+                if (tempUpdate.isNotEmpty()) {
+                    updateOrders(tempUpdate)
+                }
             }
         }
 
-        val tempAdd: ArrayList<OrderResponse> = ArrayList(ordersToAdd)
-        if (tempAdd.isEmpty()) {
+        if (ordersToAdd.any()) {
+            val tempAdd = ArrayList(ordersToAdd)
+            synchronized(tempAdd) {
+                if (tempAdd.isEmpty()) {
+                    onPendingOrders(arrayListOf())
+                    setSyncNewOrderStatus(DownloadStatus.NOT_RUNNING)
+                } else {
+                    addOrders(
+                        toAdd = tempAdd,
+                        onResult = {
+                            onPendingOrders(it)
+                            setSyncNewOrderStatus(DownloadStatus.NOT_RUNNING)
+                        }
+                    )
+                }
+            }
+        } else {
             onPendingOrders(arrayListOf())
-            return
-        }
-
-        synchronized(tempAdd) {
-            addOrders(toAdd = tempAdd, onResult = onPendingOrders)
+            setSyncNewOrderStatus(DownloadStatus.NOT_RUNNING)
         }
     }
 
-    private fun getLocalOrders(): List<OrderRequestRoom> {
+    @set:Synchronized
+    var tempLocalOrders: ArrayList<OrderRequestRoom> = arrayListOf()
+
+    private fun getLocalOrders(): ArrayList<OrderRequestRoom> {
         setProcessState(false)
-        var localOrders: List<OrderRequestRoom> = listOf()
+
+        tempLocalOrders.clear()
 
         OrderRequestCoroutines.getAll {
-            localOrders = it
+            tempLocalOrders = ArrayList(it)
             setProcessState(true)
         }
         val startTime = System.currentTimeMillis()
@@ -282,15 +307,19 @@ class Sync private constructor(builder: Builder) {
             }
         }
 
-        return localOrders
+        return tempLocalOrders
     }
+
+    @set:Synchronized
+    var tempNewOrders: ArrayList<OrderRequest> = arrayListOf()
 
     private fun addOrders(
         toAdd: ArrayList<OrderResponse>,
         onResult: (ArrayList<OrderRequest>) -> Unit
     ) {
         setProcessState(false)
-        val newOrderList: ArrayList<OrderRequest> = arrayListOf()
+
+        tempNewOrders.clear()
 
         for ((index, order) in toAdd.withIndex()) {
 
@@ -306,11 +335,11 @@ class Sync private constructor(builder: Builder) {
                             id = newId,
                             filename = filename,
                             onResult = { newOrder ->
-                                if (newOrder != null) newOrderList.add(newOrder)
-                                setProcessState(index == toAdd.lastIndex)
+                                if (newOrder != null) tempNewOrders.add(newOrder)
+                                if (index == toAdd.lastIndex) setProcessState(true)
                             })
                     } else {
-                        setProcessState(index == toAdd.lastIndex)
+                        if (index == toAdd.lastIndex) setProcessState(true)
                     }
                 })
         }
@@ -322,7 +351,7 @@ class Sync private constructor(builder: Builder) {
             }
         }
 
-        onResult(newOrderList)
+        onResult(tempNewOrders)
     }
 
     private fun removeOrders(toRemove: ArrayList<OrderRequest>) {
@@ -345,7 +374,14 @@ class Sync private constructor(builder: Builder) {
 
     private fun updateOrders(toUpdate: ArrayList<OrderRequest>) {
         for (order in toUpdate) {
-            Log.d(tag, "Updating order: ${order.roomId} / ${order.orderRequestId} / ${order.filename}")
+
+            if (BuildConfig.DEBUG) {
+                val orderRoomId = order.roomId.toString()
+                val orderRequestId = order.orderRequestId.toString()
+                val orderFilename = order.filename
+                Log.d(tag, "Updating order: $orderRoomId / $orderRequestId / $orderFilename")
+            }
+
             OrderRequestCoroutines.update(
                 orderRequest = order,
                 onEvent = { },

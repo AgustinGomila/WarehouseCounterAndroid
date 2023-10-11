@@ -89,26 +89,22 @@
                     app:layout_constraintTop_toBottomOf="@+id/editText3"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/textInputLayout"
+        <ScrollView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="2dp"
-                android:layout_marginEnd="2dp"
-                android:hint="@string/hex_value"
-                app:layout_constraintEnd_toStartOf="@+id/guidelineMain"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/codeTextInputLayout"
-                app:passwordToggleEnabled="false">
+                android:id="@+id/hexScrollView" app:layout_constraintEnd_toStartOf="@+id/guidelineMain"
+                app:layout_constraintHeight_max="60sp">
 
             <TextView
                     android:id="@+id/hexTextView"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_marginLeft="2dp"
                     android:layout_marginRight="2dp"
                     android:maxLines="10"
-                    android:textSize="18sp"
+                    android:textSize="16sp"
                     app:layout_constraintHorizontal_bias="0.0"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintRight_toRightOf="parent"
@@ -116,8 +112,8 @@
                     tools:layout_conversion_absoluteHeight="21dp"
                     tools:layout_conversion_absoluteWidth="320dp"
                     tools:layout_conversion_absoluteX="16dp"
-                    tools:layout_conversion_absoluteY="69dp"/>
-        </com.google.android.material.textfield.TextInputLayout>
+                    tools:layout_conversion_absoluteY="69dp" android:textStyle="italic" android:hint="@string/hex"/>
+        </ScrollView>
 
         <TextView
                 android:id="@+id/infoTextView"

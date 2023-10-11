@@ -454,32 +454,46 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     private fun setHeaderDbInfo() {
         runOnUiThread {
             binding.dbInfoLayout.visibility = VISIBLE
+        }
 
-            ItemCoroutines.count {
+        ItemCoroutines.count {
+            runOnUiThread {
                 binding.dbItemsTextView.text =
                     String.format(getString(R.string._0_items), it.toString())
             }
-            ItemCategoryCoroutines.count {
+        }
+        ItemCategoryCoroutines.count {
+            runOnUiThread {
                 binding.dbCategoriesTextView.text =
                     String.format(getString(R.string._0_categories), it.toString())
             }
-            ClientCoroutines.count {
+        }
+        ClientCoroutines.count {
+            runOnUiThread {
                 binding.dbClientsTextView.text =
                     String.format(getString(R.string._0_clients), it.toString())
             }
-            ItemCodeCoroutines.count {
+        }
+        ItemCodeCoroutines.count {
+            runOnUiThread {
                 binding.dbItemCodesTextView.text =
                     String.format(getString(R.string._0_item_codes), it.toString())
             }
-            ItemRegexCoroutines.count {
+        }
+        ItemRegexCoroutines.count {
+            runOnUiThread {
                 binding.dbItemRegexTextView.text =
                     String.format(getString(R.string._0_item_regexs), it.toString())
             }
-            LotCoroutines.count {
+        }
+        LotCoroutines.count {
+            runOnUiThread {
                 binding.dbLotTextView.text =
                     String.format(getString(R.string._0_lots), it.toString())
             }
-            UserCoroutines.count {
+        }
+        UserCoroutines.count {
+            runOnUiThread {
                 binding.dbUserTextView.text =
                     String.format(getString(R.string._0_users), it.toString())
             }

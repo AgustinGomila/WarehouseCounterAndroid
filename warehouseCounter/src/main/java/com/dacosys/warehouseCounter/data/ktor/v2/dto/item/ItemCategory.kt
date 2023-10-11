@@ -10,7 +10,7 @@ data class ItemCategory(
     @SerialName(ACTIVE_KEY) var active: Boolean = false,
     @SerialName(DESCRIPTION_KEY) var description: String = "",
     @SerialName(EXTERNAL_ID_KEY) var externalId: String = "",
-    @SerialName(PARENT_ID_KEY) var parentId: Long = 0L,
+    @SerialName(PARENT_ID_KEY) var parentId: Long? = null,
     @SerialName(ID_KEY) var id: Long = 0L,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
@@ -25,7 +25,7 @@ data class ItemCategory(
         parcel.writeByte(if (active) 1 else 0)
         parcel.writeString(description)
         parcel.writeString(externalId)
-        parcel.writeLong(parentId)
+        parcel.writeValue(parentId)
         parcel.writeLong(id)
     }
 

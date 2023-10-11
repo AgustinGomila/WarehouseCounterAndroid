@@ -54,7 +54,6 @@ import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.io.File
 import java.io.UnsupportedEncodingException
 import kotlin.concurrent.thread
-import kotlin.io.path.Path
 
 class OutboxActivity : AppCompatActivity() {
 
@@ -262,7 +261,7 @@ class OutboxActivity : AppCompatActivity() {
         val intent = Intent(context, OrderRequestDetailActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
         intent.putExtra(OrderRequestDetailActivity.ARG_ID, currentItem?.roomId)
-        intent.putExtra(OrderRequestDetailActivity.ARG_FILENAME, Path(completeCompletedPath, filename).toString())
+        intent.putExtra(OrderRequestDetailActivity.ARG_FILENAME, File(completeCompletedPath, filename).toString())
         startActivity(intent)
     }
 
@@ -379,7 +378,7 @@ class OutboxActivity : AppCompatActivity() {
     private fun removeSelected(toRemove: ArrayList<OrderRequest>) {
         var isOk = true
         for (i in toRemove) {
-            val filePath = Path(completeCompletedPath, i.filename)
+            val filePath = File(completeCompletedPath, i.filename)
             val fl = File(filePath.toString())
             isOk = !fl.delete()
             if (!isOk) break
@@ -454,8 +453,7 @@ class OutboxActivity : AppCompatActivity() {
         val path = getPendingPath()
         return if (writeToFile(directory = path, fileName = filename, data = value)) {
 
-            val completedPath = Path(completeCompletedPath, filename)
-            val fl = File(completedPath.toString())
+            val fl = File(completeCompletedPath, filename)
             fl.delete()
 
         } else {

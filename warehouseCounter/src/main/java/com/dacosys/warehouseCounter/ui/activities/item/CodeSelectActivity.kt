@@ -161,7 +161,8 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
             return@setOnTouchListener false
         }
         binding.autoCompleteTextView.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE || event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
+            val ev = event ?: return@setOnEditorActionListener false
+            if (actionId == EditorInfo.IME_ACTION_DONE || ev.keyCode == KeyEvent.KEYCODE_ENTER && ev.action == KeyEvent.ACTION_DOWN) {
                 if (currentText.length >= binding.autoCompleteTextView.threshold) {
                     code = binding.autoCompleteTextView.text!!.toString().trim()
                 }

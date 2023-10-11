@@ -144,7 +144,8 @@ class ItemCategorySelectActivity : AppCompatActivity(),
             return@setOnTouchListener false
         }
         binding.autoCompleteTextView.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE || event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
+            val ev = event ?: return@setOnEditorActionListener false
+            if (actionId == EditorInfo.IME_ACTION_DONE || ev.keyCode == KeyEvent.KEYCODE_ENTER && ev.action == KeyEvent.ACTION_DOWN) {
                 val adapter = binding.autoCompleteTextView.adapter
                 if (adapter is ItemCategoryAdapter) {
                     if (binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold) {

@@ -590,22 +590,20 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     // endregion
 
     private fun setSendButtonText() {
-        ItemCodeCoroutines.getToUpload {
-            runOnUiThread {
-                binding.sendButton.text = String.format(
-                    "%s%s(%s)",
-                    context.getString(R.string.send),
-                    lineSeparator,
-                    it.count()
-                )
+        Handler(Looper.getMainLooper()).postDelayed({
+            ItemCodeCoroutines.getToUpload {
+                runOnUiThread {
+                    binding.sendButton.text =
+                        String.format("%s%s(%s)", context.getString(R.string.send), lineSeparator, it.count())
+                }
             }
-        }
+        }, 250)
     }
 
     private fun sendDialog() {
         ItemCodeCoroutines.getToUpload {
             if (it.isNotEmpty()) {
-                sendItemCodes(it)
+                askForSendItemCodes(it)
             } else {
                 showSnackBar(
                     context.getString(R.string.there_are_no_item_codes_to_send), INFO
@@ -614,7 +612,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }
     }
 
-    private fun sendItemCodes(it: ArrayList<ItemCode>) {
+    private fun askForSendItemCodes(it: ArrayList<ItemCode>) {
         runOnUiThread {
             val alert = AlertDialog.Builder(this)
             alert.setTitle(getString(R.string.send_item_codes))
@@ -625,18 +623,22 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             alert.setNegativeButton(R.string.cancel, null)
             alert.setPositiveButton(R.string.ok) { _, _ ->
                 try {
-                    thread {
-                        SendItemCodeArray(
-                            payload = it,
-                            onEvent = { showSnackBar(it.text, it.snackBarType) },
-                            onFinish = { setSendButtonText() }
-                        ).execute()
-                    }
+                    sendItemCodes(it)
                 } catch (ex: Exception) {
                     ErrorLog.writeLog(this, tag, ex.message.toString())
                 }
             }
             alert.show()
+        }
+    }
+
+    private fun sendItemCodes(it: ArrayList<ItemCode>) {
+        thread {
+            SendItemCodeArray(
+                payload = it,
+                onEvent = { showSnackBar(it.text, it.snackBarType) },
+                onFinish = { setSendButtonText() }
+            ).execute()
         }
     }
 

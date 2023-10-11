@@ -113,7 +113,8 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         binding.codeEditText.setText(tempCode, TextView.BufferType.EDITABLE)
         binding.codeEditText.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE || event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
+            val ev = event ?: return@setOnEditorActionListener false
+            if (actionId == EditorInfo.IME_ACTION_DONE || ev.keyCode == KeyEvent.KEYCODE_ENTER && ev.action == KeyEvent.ACTION_DOWN) {
                 fillHexTextView()
                 true
             } else {
