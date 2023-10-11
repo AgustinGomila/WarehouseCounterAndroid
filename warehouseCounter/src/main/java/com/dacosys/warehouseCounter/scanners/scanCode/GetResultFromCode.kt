@@ -23,8 +23,15 @@ import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegex
 import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegex.Companion.RegexResult
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Builder
 import kotlin.concurrent.thread
 
+/**
+ * Clase que se encarga de analizar y buscar un código en fuentes locales y proporcionadas por la API.
+ * Puedes utilizar el Builder para configurar las opciones de búsqueda antes de realizar la búsqueda.
+ *
+ * @param builder Un objeto [Builder] que te permite configurar las opciones de búsqueda.
+ */
 class GetResultFromCode private constructor(builder: Builder) {
 
     private var code: String
@@ -41,6 +48,9 @@ class GetResultFromCode private constructor(builder: Builder) {
     private var onFinish: (CodeResult) -> Unit
 
     class Builder {
+        /**
+         * Construye la instancia de [GetResultFromCode] con la configuración actual.
+         */
         fun build(): GetResultFromCode {
             return GetResultFromCode(this)
         }
@@ -58,39 +68,75 @@ class GetResultFromCode private constructor(builder: Builder) {
         internal var useLike: Boolean = false
         internal var onFinish: (CodeResult) -> Unit = {}
 
+        /**
+         * Configura el código a buscar.
+         */
         @Suppress("unused")
         fun withCode(code: String) = apply { this.code = code }
 
+        /**
+         * Activa la búsqueda en el campo de código de ítem.
+         */
         @Suppress("unused")
         fun searchItemCode() = apply { searchItemCode = true }
 
+        /**
+         * Activa la búsqueda en el campo de código EAN de ítem.
+         */
         @Suppress("unused")
         fun searchItemEan() = apply { searchItemEan = true }
 
+        /**
+         * Activa la búsqueda de etiquetas con prefijo para ítems.
+         */
         @Suppress("unused")
         fun searchItemId() = apply { searchItemId = true }
 
+        /**
+         * Activa la búsqueda de etiquetas con Regex válidos para ítems.
+         */
         @Suppress("unused")
         fun searchItemRegex() = apply { searchItemRegex = true }
 
+        /**
+         * Activa la búsqueda de códigos con URL a la vista de ítems de la API.
+         */
         @Suppress("unused")
         fun searchItemUrl() = apply { searchItemUrl = true }
 
+        /**
+         * Activa la búsqueda de etiquetas con prefijo para pedidos.
+         */
         @Suppress("unused")
         fun searchOrder() = apply { searchOrder = true }
 
+        /**
+         * Activa la búsqueda de códigos externos de pedidos.
+         */
         @Suppress("unused")
         fun searchOrderExternalId() = apply { searchOrderExternalId = true }
 
+        /**
+         * Activa la búsqueda de etiquetas con prefijo para racks.
+         */
         @Suppress("unused")
         fun searchRackId() = apply { searchRackId = true }
 
+        /**
+         * Activa la búsqueda de etiquetas con prefijo para áreas.
+         */
         @Suppress("unused")
         fun searchWarehouseAreaId() = apply { searchWarehouseAreaId = true }
 
+        /**
+         * Activa la búsqueda utilizando operador LIKE (similitud).
+         */
         @Suppress("unused")
         fun useLike() = apply { useLike = true }
 
+        /**
+         * Configura un callback que se llama cuando se completa la búsqueda.
+         */
         @Suppress("unused")
         fun onFinish(callback: (CodeResult) -> Unit) = apply { onFinish = callback }
     }

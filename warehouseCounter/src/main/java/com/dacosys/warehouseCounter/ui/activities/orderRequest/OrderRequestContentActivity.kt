@@ -39,7 +39,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.GetItemCode
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.LogCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.databinding.OrderRequestActivityBothPanelsCollapsedBinding
@@ -1394,7 +1393,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             list = fullList,
             onEvent = { it2 -> showSnackBar(it2.text, it2.snackBarType) },
             onFinish = {
-                onGetOrderRequestContentFromCodeEnded(it)
+                proceedByContentResult(it)
             },
         ).execute()
     }
@@ -1421,7 +1420,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         showDialogForItemDescription(orc)
     }
 
-    private fun onGetOrderRequestContentFromCodeEnded(it: OrderRequestContentResult) {
+    private fun proceedByContentResult(it: OrderRequestContentResult) {
         val orc = it.orc
         if (rejectNewInstances || orc == null) {
             gentlyReturn()

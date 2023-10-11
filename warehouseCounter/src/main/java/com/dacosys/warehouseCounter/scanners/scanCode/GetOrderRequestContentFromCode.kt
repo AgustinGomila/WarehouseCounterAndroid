@@ -10,6 +10,7 @@ import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegex
 import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.scanners.scanCode.GetOrderRequestContentFromCode.OrderRequestContentResult
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.FORMULA_ITEM
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ITEM
 import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode.Companion.PREFIX_ITEM_URL
@@ -26,6 +27,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item as ItemKtor
 
+/**
+ * Esta clase se encarga de analizar y buscar un código escaneado en una lista dada y en diferentes fuentes de códigos
+ * de ítems.
+ * Luego, convierte el resultado devuelto en un [OrderRequestContent] existente o crea uno nuevo si la configuración lo permite.
+ *
+ * @param code El código a buscar en la lista y en las fuentes de códigos de ítems.
+ * @param list La lista de [OrderRequestContent] en la que se buscará el código.
+ * @param onEvent Un callback opcional para manejar eventos y notificaciones a lo largo del proceso de búsqueda.
+ * @param onFinish Un callback opcional que se llama cuando se completa la búsqueda y proporciona el resultado como [OrderRequestContentResult].
+ */
 class GetOrderRequestContentFromCode(
     private val code: String,
     private val list: ArrayList<OrderRequestContent>,
@@ -34,6 +45,9 @@ class GetOrderRequestContentFromCode(
 ) {
     private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
+    /**
+     * Resultado de la búsqueda o nuevo [OrderRequestContent]
+     */
     private var orc: OrderRequestContent? = null
 
     /** Un valor para qty positivo puede provenir de ItemCode o de RegexResult, si no está definido es NULL */
