@@ -134,7 +134,7 @@ dependencies {
 
     // Constraint Layout
     // No update 2.0.1 (Bugs persist until 2.1.4),
-    // Todas tienen un bug al finalizar una animación que no re-dibuja los fragmentos
+    // Todas tienen un bug al finalizar una animación que no re-dibuja los fragmentos anidados
     implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
 
     // Keyboard Visibility Library
@@ -147,9 +147,9 @@ dependencies {
     implementation 'com.loopj.android:android-async-http:1.4.11'
 
     // Coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.2'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.7.2'
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutines"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinxCoroutines"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:$kotlinxCoroutines"
 
     // ImageControl
     implementation project(':imageControl')
@@ -168,20 +168,20 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.preference:preference-ktx:1.2.1'
 
-    // Some AndroidX Libs
+    // AndroidX Libs
     implementation 'androidx.annotation:annotation:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.compose.animation:animation-core:1.6.0-alpha06'
+    implementation 'androidx.compose.animation:animation-core:1.6.0-alpha07'
 
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.percentlayout:percentlayout:1.0.0'
-    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'com.google.android.material:material:1.10.0'
 
     // SwipeR
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
 
     // Para ActivityResults
-    implementation 'androidx.activity:activity-ktx:1.8.0-rc01'
+    implementation 'androidx.activity:activity-ktx:1.8.0'
     implementation 'androidx.fragment:fragment-ktx:1.6.1'
 
     // Honeywell native driver
@@ -194,11 +194,11 @@ dependencies {
     api("androidx.room:room-runtime:$roomVersion")
     annotationProcessor("androidx.room:room-compiler:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
-    implementation('android.arch.persistence.room:runtime:1.1.1')
+    implementation("android.arch.persistence.room:runtime:$archPersistenceVersion")
     androidTestImplementation "androidx.room:room-testing:$roomVersion"
 
     // To use Kotlin annotation processing tool (kapt)
-    kapt("android.arch.persistence.room:compiler:1.1.1")
+    kapt("android.arch.persistence.room:compiler:$archPersistenceVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
 
     // KTor
@@ -210,20 +210,20 @@ dependencies {
     implementation "io.ktor:ktor-client-auth:$kTorVersion"
 
     // RecyclerView
-    implementation 'androidx.recyclerview:recyclerview:1.3.1'
+    implementation "androidx.recyclerview:recyclerview:$recyclerViewVersion"
 
     // KotlinX Serialization
-    runtimeOnly 'org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.5.1'
+    runtimeOnly "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:$kotlinxSerializationVersion"
 
     // Arrows
-    implementation "io.arrow-kt:arrow-core:1.1.3"
+    implementation "io.arrow-kt:arrow-core:$arrowVersion"
 
     // Paging3
-    implementation 'androidx.paging:paging-common-ktx:3.2.1'
-    implementation 'androidx.paging:paging-runtime-ktx:3.2.1'
+    implementation "androidx.paging:paging-common-ktx:$pagging3Version"
+    implementation "androidx.paging:paging-runtime-ktx:$pagging3Version"
 
     // ViewPager2
-    implementation 'androidx.viewpager2:viewpager2:1.0.0'
+    implementation "androidx.viewpager2:viewpager2:$viewPager2Version"
 
     // .env Support
     implementation 'io.github.cdimascio:dotenv-java:3.0.0'
