@@ -222,6 +222,9 @@ dependencies {
     implementation 'androidx.paging:paging-common-ktx:3.2.1'
     implementation 'androidx.paging:paging-runtime-ktx:3.2.1'
 
+    // ViewPager2
+    implementation 'androidx.viewpager2:viewpager2:1.0.0'
+
     // .env Support
     implementation 'io.github.cdimascio:dotenv-java:3.0.0'
 

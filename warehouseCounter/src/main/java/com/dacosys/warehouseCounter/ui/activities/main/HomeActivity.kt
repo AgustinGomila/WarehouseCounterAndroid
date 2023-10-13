@@ -34,7 +34,7 @@ import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
+import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.dacosys.imageControl.network.upload.UploadImagesProgress
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
@@ -91,6 +91,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
@@ -896,22 +897,20 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         }
 
     // region ViewPager
-    /**
-     * Construye el nombre apropiado para el fragmento en FragmentManager
-     */
-    private fun makeFragmentName(viewId: Long, id: Long): String {
-        return "android:switcher:$viewId:$id"
-    }
-
     private fun setTextButton(button: MainButton, newItems: Int) {
         val adapter = binding.buttonViewPager.adapter ?: return
         val itemId = (adapter as ViewPagerAdapter).getItemId(0)
 
-        val name = makeFragmentName(binding.buttonViewPager.id.toLong(), itemId)
-
-        /** Obtiene correctamente y de manera segura el fragmento ButtonPageFragment **/
-        val frag = supportFragmentManager.findFragmentByTag(name) as ButtonPageFragment
-        if (!frag.isAdded) return
+        val fragTag = "f$itemId"
+        val frag = supportFragmentManager.findFragmentByTag(fragTag)
+        if (frag !is ButtonPageFragment) {
+            Log.e(this.tag, "Can't get the Page fragment: $fragTag")
+            return
+        }
+        if (!frag.isAdded) {
+            Log.w(this.tag, "Page fragment was not added yet: $fragTag")
+            return
+        }
 
         runOnUiThread {
             frag.setButtonSubText(button, newItems.toString())
@@ -933,14 +932,15 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     private fun setupViewPager() {
-        val adapter = ViewPagerAdapter(supportFragmentManager)
+        val fragmentAdapter = ViewPagerAdapter(this)
         binding.buttonViewPager.offscreenPageLimit = 2
-        binding.buttonViewPager.adapter = adapter
+        binding.buttonViewPager.adapter = fragmentAdapter
+
+        TabLayoutMediator(binding.tabLayout, binding.buttonViewPager) { _, _ -> }.attach()
     }
 
-    internal inner class ViewPagerAdapter(fragmentManager: FragmentManager) :
-        PersistentPagerAdapter<ButtonPageFragment>(fragmentManager) {
-        override fun getItem(position: Int): Fragment {
+    private inner class ViewPagerAdapter(activity: AppCompatActivity) : FragmentStateAdapter(activity) {
+        override fun createFragment(position: Int): Fragment {
             val allButtons = MainButton.getAll()
             val firstPageButtons: ArrayList<MainButton> = ArrayList()
             val secPageButtons: ArrayList<MainButton> = ArrayList()
@@ -960,7 +960,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         }
 
         private val totalPages = 2
-        override fun getCount(): Int {
+        override fun getItemCount(): Int {
             return totalPages
         }
     }
