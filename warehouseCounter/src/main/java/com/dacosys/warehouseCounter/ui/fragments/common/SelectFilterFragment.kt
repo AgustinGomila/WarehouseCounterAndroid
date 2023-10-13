@@ -11,7 +11,6 @@ import android.view.View
 import android.view.View.OnFocusChangeListener
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.activity.result.contract.ActivityResultContracts
@@ -316,6 +315,122 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             loadSavedValues(savedInstanceState)
         }
 
+        return view
+    }
+
+    private val resultForAreaSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                warehouseArea = data.parcelable<WarehouseArea>(LocationSelectActivity.ARG_WAREHOUSE_AREA)
+                setAreaText()
+                onFilterChanged()
+            }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(requireActivity(), tag, ex)
+        }
+    }
+
+    private val resultForRackSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                rack = data.parcelable<Rack>(LocationSelectActivity.ARG_RACK)
+                setRackText()
+                onFilterChanged()
+            }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(requireActivity(), tag, ex)
+        }
+    }
+
+    private val resultForCategorySelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                itemCategory = data.parcelable(ItemCategorySelectActivity.ARG_ITEM_CATEGORY)
+                setCategoryText()
+                onFilterChanged()
+            }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(requireActivity(), tag, ex)
+        }
+    }
+
+    private val resultForWarehouseSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                warehouse = data.parcelable<Warehouse>(LocationSelectActivity.ARG_WAREHOUSE)
+                setWarehouseText()
+                onFilterChanged()
+            }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(requireActivity(), tag, ex)
+        }
+    }
+
+    private fun showKeyboard(editText: View) {
+        val inputMethodManager =
+            requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun enterText(title: String, text: String, hint: String, onResult: (String) -> Unit) {
+        with(requireContext()) {
+            val dialogView = LayoutInflater.from(this).inflate(R.layout.custom_dialog_layout, null)
+            val editText = dialogView.findViewById<EditText>(R.id.editText)
+            editText.setText(text)
+            editText.isFocusable = true
+            editText.isFocusableInTouchMode = true
+            editText.hint = hint
+            editText.onFocusChangeListener = OnFocusChangeListener { _, hasFocus ->
+                editText.post {
+                    if (hasFocus) {
+                        showKeyboard(editText)
+                    }
+                }
+            }
+
+            val dialog = AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setTitle(title)
+                .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
+                    val t = editText.text.toString()
+                    onResult.invoke(t)
+                    dialog.dismiss()
+                }
+                .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .create()
+
+            editText.setOnKeyListener { _, _, event ->
+                if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                    val t = editText.text.toString()
+                    onResult.invoke(t)
+                    dialog.dismiss()
+                    true
+                } else {
+                    false
+                }
+            }
+
+            dialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            dialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+            dialog.show()
+            editText.requestFocus()
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
         // ONLY ACTIVE
         binding.onlyActiveCheckBox.setOnCheckedChangeListener(null)
         binding.onlyActiveCheckBox.setOnCheckedChangeListener { _, isChecked ->
@@ -465,133 +580,8 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             onFilterChanged()
         }
 
-        return view
-    }
-
-    private val resultForAreaSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        val data = it?.data
-        try {
-            if (it?.resultCode == RESULT_OK && data != null) {
-                warehouseArea = data.parcelable<WarehouseArea>(LocationSelectActivity.ARG_WAREHOUSE_AREA)
-                setAreaText()
-                onFilterChanged()
-            }
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            ErrorLog.writeLog(requireActivity(), tag, ex)
-        }
-    }
-
-    private val resultForRackSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        val data = it?.data
-        try {
-            if (it?.resultCode == RESULT_OK && data != null) {
-                rack = data.parcelable<Rack>(LocationSelectActivity.ARG_RACK)
-                setRackText()
-                onFilterChanged()
-            }
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            ErrorLog.writeLog(requireActivity(), tag, ex)
-        }
-    }
-
-    private val resultForCategorySelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        val data = it?.data
-        try {
-            if (it?.resultCode == RESULT_OK && data != null) {
-                itemCategory = data.parcelable(ItemCategorySelectActivity.ARG_ITEM_CATEGORY)
-                setCategoryText()
-                onFilterChanged()
-            }
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            ErrorLog.writeLog(requireActivity(), tag, ex)
-        }
-    }
-
-    private val resultForWarehouseSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        val data = it?.data
-        try {
-            if (it?.resultCode == RESULT_OK && data != null) {
-                warehouse = data.parcelable<Warehouse>(LocationSelectActivity.ARG_WAREHOUSE)
-                setWarehouseText()
-                onFilterChanged()
-            }
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            ErrorLog.writeLog(requireActivity(), tag, ex)
-        }
-    }
-
-    private fun showKeyboard(editText: View) {
-        val inputMethodManager =
-            requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
-    }
-
-    private fun enterText(title: String, text: String, hint: String, onResult: (String) -> Unit) {
-        with(requireContext()) {
-            val dialogView = LayoutInflater.from(this).inflate(R.layout.custom_dialog_layout, null)
-            val editText = dialogView.findViewById<EditText>(R.id.editText)
-            editText.setText(text)
-            editText.isFocusable = true
-            editText.isFocusableInTouchMode = true
-            editText.hint = hint
-            editText.onFocusChangeListener = OnFocusChangeListener { _, hasFocus ->
-                editText.post {
-                    if (hasFocus) {
-                        showKeyboard(editText)
-                    }
-                }
-            }
-
-            val dialog = AlertDialog.Builder(this)
-                .setView(dialogView)
-                .setTitle(title)
-                .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
-                    val t = editText.text.toString()
-                    onResult.invoke(t)
-                    dialog.dismiss()
-                }
-                .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
-                    dialog.dismiss()
-                }
-                .create()
-
-            editText.setOnEditorActionListener { _, actionId, _ ->
-                if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    val t = editText.text.toString()
-                    onResult.invoke(t)
-                    dialog.dismiss()
-                    true
-                } else {
-                    false
-                }
-            }
-            editText.setOnKeyListener { _, keyCode, event ->
-                if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP) {
-                    val t = editText.text.toString()
-                    onResult.invoke(t)
-                    dialog.dismiss()
-                    true
-                } else {
-                    false
-                }
-            }
-
-            dialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
-            dialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
-            dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-            dialog.show()
-            editText.requestFocus()
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
         setVisibleFilters()
+
         refreshViews()
     }
 

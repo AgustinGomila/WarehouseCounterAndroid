@@ -45,10 +45,13 @@ class RackDetailFragment : DialogFragment() {
         savedInstanceState: Bundle?,
     ): View {
         _binding = RackDetailBinding.inflate(inflater, container, false)
-        val view = binding.root
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         fillControls()
-        return view
     }
 
     override fun onStart() {

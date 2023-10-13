@@ -75,9 +75,13 @@ class ItemDetailFragment : Fragment() {
             itemCode = savedInstanceState.parcelable(ARG_ITEM_CODE)
         }
 
-        fillControls()
-
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        fillControls()
     }
 
     private fun fillControls() {
@@ -166,6 +170,8 @@ class ItemDetailFragment : Fragment() {
     }
 
     private fun fillPriceLayout(it: List<Price>) {
+        if (_binding == null) return
+
         if (!it.any()) {
             binding.priceLayout.visibility = GONE
             return

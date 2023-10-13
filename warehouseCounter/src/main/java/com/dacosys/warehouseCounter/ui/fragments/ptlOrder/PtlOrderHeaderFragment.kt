@@ -172,18 +172,18 @@ class PtlOrderHeaderFragment private constructor(builder: Builder) : Fragment() 
             showLocationPanel = savedInstanceState.getBoolean("showLocationPanel")
         }
 
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
         setButtonPanelVisibility()
 
         binding.changeOrderButton.setOnClickListener { changeOrder() }
         TooltipCompat.setTooltipText(
             binding.changeOrderButton, getString(R.string.change_order)
         )
-
-        return view
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
 
         refreshViews()
     }

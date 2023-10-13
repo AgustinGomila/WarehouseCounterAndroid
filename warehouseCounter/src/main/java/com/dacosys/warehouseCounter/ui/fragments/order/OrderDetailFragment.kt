@@ -58,9 +58,13 @@ class OrderDetailFragment : Fragment() {
             order = savedInstanceState.parcelable(ARG_ORDER)
         }
 
-        fillControls()
-
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        fillControls()
     }
 
     private fun fillControls() {

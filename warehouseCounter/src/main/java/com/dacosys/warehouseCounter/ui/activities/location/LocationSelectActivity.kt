@@ -193,8 +193,8 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
             }
             return@setOnTouchListener false
         }
-        binding.warehouse.setOnEditorActionListener { _, keyCode, keyEvent ->
-            if (keyCode == EditorInfo.IME_ACTION_DONE || (keyEvent.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_UNKNOWN || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER))) {
+        binding.warehouse.setOnEditorActionListener { _, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 val adapter = binding.warehouse.adapter
                 if (adapter is WarehouseAdapter) {
                     if (binding.warehouse.text.trim().length >= binding.warehouse.threshold) {
@@ -275,8 +275,8 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
             }
             return@setOnTouchListener false
         }
-        binding.warehouseArea.setOnEditorActionListener { _, keyCode, keyEvent ->
-            if (keyCode == EditorInfo.IME_ACTION_DONE || (keyEvent.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_UNKNOWN || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER))) {
+        binding.warehouseArea.setOnEditorActionListener { _, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 val adapter = binding.warehouseArea.adapter
                 if (adapter is WarehouseAreaAdapter) {
                     if (binding.warehouseArea.text.trim().length >= binding.warehouseArea.threshold) {
@@ -359,8 +359,8 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
             }
             return@setOnTouchListener false
         }
-        binding.rackCode.setOnEditorActionListener { _, keyCode, keyEvent ->
-            if (keyCode == EditorInfo.IME_ACTION_DONE || (keyEvent.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_UNKNOWN || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER))) {
+        binding.rackCode.setOnEditorActionListener { _, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 val adapter = binding.rackCode.adapter
                 if (adapter is RackAdapter) {
                     if (binding.rackCode.text.trim().length >= binding.rackCode.threshold) {

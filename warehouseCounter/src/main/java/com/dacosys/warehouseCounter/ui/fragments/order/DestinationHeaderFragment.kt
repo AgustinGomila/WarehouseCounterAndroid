@@ -162,6 +162,12 @@ class DestinationHeaderFragment private constructor(builder: Builder) : Fragment
             loadBundleValues(savedInstanceState)
         }
 
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
         setButtonPanelVisibility()
 
         binding.changePositionButton.setOnClickListener { changePosition() }
@@ -171,8 +177,6 @@ class DestinationHeaderFragment private constructor(builder: Builder) : Fragment
         )
 
         setDestination(warehouseArea, rack)
-
-        return view
     }
 
     private fun setButtonPanelVisibility() {

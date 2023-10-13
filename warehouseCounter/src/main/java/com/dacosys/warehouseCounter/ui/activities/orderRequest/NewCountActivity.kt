@@ -150,22 +150,20 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
                 Screen.closeKeyboard(this)
             }
         }
-        binding.descEditText.setOnKeyListener { _, keyCode, keyEvent ->
-            if (keyEvent.action == KeyEvent.ACTION_UP && (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+        binding.descEditText.setOnKeyListener { _, _, event ->
+            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 attemptSetupNewCount()
                 true
             } else {
                 false
             }
         }
-        binding.descEditText.setOnEditorActionListener { _, actionId, _ ->
-            return@setOnEditorActionListener when (actionId) {
-                EditorInfo.IME_ACTION_DONE -> {
-                    binding.continueButton.performClick()
-                    true
-                }
-
-                else -> false
+        binding.descEditText.setOnEditorActionListener { _, actionId, event ->
+            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                binding.continueButton.performClick()
+                true
+            } else {
+                false
             }
         }
 

@@ -195,7 +195,11 @@ class UserSpinnerFragment : Fragment() {
         savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentSpinnerBinding.inflate(inflater, container, false)
-        val view = binding.root
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         binding.autoResizeTextView.visibility = View.GONE
         binding.fragmentSpinner.onItemSelectedListener =
@@ -217,8 +221,6 @@ class UserSpinnerFragment : Fragment() {
                     mCallback?.onItemSelected(null)
                 }
             }
-
-        return view
     }
 
     override fun onStart() {

@@ -10,6 +10,7 @@
                 android:inputType="textEmailAddress|textNoSuggestions"
                 android:key="client_email"
                 android:maxLines="1"
+                android:imeOptions="actionDone"
                 android:selectAllOnFocus="true"
                 android:singleLine="true"
                 android:title="@string/email"/>
@@ -20,6 +21,7 @@
                 android:inputType="textVisiblePassword"
                 android:key="client_password"
                 android:maxLines="1"
+                android:imeOptions="actionDone"
                 android:selectAllOnFocus="true"
                 android:singleLine="true"
                 android:title="@string/password"/>

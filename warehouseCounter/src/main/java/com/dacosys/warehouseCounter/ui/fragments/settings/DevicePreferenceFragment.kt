@@ -89,14 +89,14 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             .commit()
     }
 
-    private lateinit var v: View
+    private lateinit var currentView: View
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        v = super.onCreateView(inflater, container, savedInstanceState)
-        return v
+        currentView = super.onCreateView(inflater, container, savedInstanceState)
+        return currentView
     }
 
     override fun onGetBluetoothName(name: String) {
@@ -368,7 +368,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
-        makeText(v, text, snackBarType)
+        makeText(currentView, text, snackBarType)
     }
 
     // Esta preferencia se utiliza al recibir el nombre del dispositivo

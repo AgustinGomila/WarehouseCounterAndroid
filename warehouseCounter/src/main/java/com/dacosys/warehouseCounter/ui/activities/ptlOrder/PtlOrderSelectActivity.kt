@@ -203,15 +203,13 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             }
         })
         binding.searchEditText.setText(searchedText, TextView.BufferType.EDITABLE)
-        binding.searchEditText.setOnKeyListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        Screen.closeKeyboard(this)
-                    }
-                }
+        binding.searchEditText.setOnKeyListener { _, _, event ->
+            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                Screen.closeKeyboard(this)
+                true
+            } else {
+                false
             }
-            false
         }
         binding.searchEditText.setRawInputType(InputType.TYPE_CLASS_TEXT)
 
@@ -534,18 +532,13 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS
             input.isFocusable = true
             input.isFocusableInTouchMode = true
-            input.setOnKeyListener { _, keyCode, event ->
-                if (event.action == KeyEvent.ACTION_DOWN) {
-                    when (keyCode) {
-                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                            if (alertDialog != null) {
-                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
-                                    .performClick()
-                            }
-                        }
-                    }
+            input.setOnKeyListener { _, _, event ->
+                if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                    alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
+                    true
+                } else {
+                    false
                 }
-                false
             }
 
             inputLayout.addView(input)

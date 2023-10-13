@@ -113,8 +113,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         binding.codeEditText.setText(tempCode, TextView.BufferType.EDITABLE)
         binding.codeEditText.setOnEditorActionListener { _, actionId, event ->
-            val ev = event ?: return@setOnEditorActionListener false
-            if (actionId == EditorInfo.IME_ACTION_DONE || ev.keyCode == KeyEvent.KEYCODE_ENTER && ev.action == KeyEvent.ACTION_DOWN) {
+            if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 fillHexTextView()
                 true
             } else {
@@ -344,17 +343,13 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS
             input.isFocusable = true
             input.isFocusableInTouchMode = true
-            input.setOnKeyListener { _, keyCode, event ->
-                if (event.action == KeyEvent.ACTION_DOWN) {
-                    when (keyCode) {
-                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                            if (alertDialog != null) {
-                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
-                            }
-                        }
-                    }
+            input.setOnKeyListener { _, _, event ->
+                if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                    alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
+                    true
+                } else {
+                    false
                 }
-                false
             }
 
             inputLayout.addView(input)

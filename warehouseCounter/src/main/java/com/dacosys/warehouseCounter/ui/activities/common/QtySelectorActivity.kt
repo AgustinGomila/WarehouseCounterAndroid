@@ -179,15 +179,13 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         binding.qtyEditText.setText(
             currentValue.toString(), TextView.BufferType.EDITABLE
         )
-        binding.qtyEditText.setOnKeyListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        selectQty()
-                    }
-                }
+        binding.qtyEditText.setOnKeyListener { _, _, event ->
+            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                selectQty()
+                true
+            } else {
+                false
             }
-            false
         }
         // Cambia el modo del teclado en pantalla a tipo numérico
         // cuando este control lo necesita.

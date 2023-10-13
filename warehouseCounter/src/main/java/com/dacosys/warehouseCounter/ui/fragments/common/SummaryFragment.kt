@@ -40,6 +40,7 @@ class SummaryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         if (arguments != null) {
             firstLabel = requireArguments().getString(ARG_FIRST_LABEL) ?: ""
             secondLabel = requireArguments().getString(ARG_SECOND_LABEL) ?: ""
@@ -48,6 +49,7 @@ class SummaryFragment : Fragment() {
             second = requireArguments().getInt(ARG_SECOND)
             third = requireArguments().getInt(ARG_THIRD)
         }
+
         fill()
     }
 

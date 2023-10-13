@@ -210,6 +210,42 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
             loadBundleValues(savedInstanceState)
         }
 
+        return view
+    }
+
+    private val resultForTemplateSelect =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            val data = it?.data
+            try {
+                if (it?.resultCode == AppCompatActivity.RESULT_OK && data != null) {
+                    template = data.parcelable(TemplateSelectActivity.ARG_TEMPLATE)
+                    setTemplateText()
+                    sendMessage()
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            } finally {
+                rejectNewInstances = false
+            }
+        }
+
+    private fun setTemplateText() {
+        if (_binding == null) return
+
+        activity?.runOnUiThread {
+            if (template == null) {
+                binding.templateTextView.typeface = Typeface.DEFAULT
+                binding.templateTextView.text = getString(R.string.search_label_template_)
+            } else {
+                binding.templateTextView.typeface = Typeface.DEFAULT_BOLD
+                binding.templateTextView.text = template!!.description
+            }
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
         binding.printerTextView.setOnClickListener { configApp() }
 
         binding.templateTextView.setOnClickListener {
@@ -262,15 +298,13 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
             ) {
             }
         })
-        binding.qtyEditText.setOnKeyListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        binding.printButton.performClick()
-                    }
-                }
+        binding.qtyEditText.setOnKeyListener { _, _, event ->
+            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                binding.printButton.performClick()
+                true
+            } else {
+                false
             }
-            false
         }
         // Cambia el modo del teclado en pantalla a tipo numérico
         // cuando este control lo necesita.
@@ -306,42 +340,6 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
             requestPrint()
         }
 
-        return view
-    }
-
-    private val resultForTemplateSelect =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            val data = it?.data
-            try {
-                if (it?.resultCode == AppCompatActivity.RESULT_OK && data != null) {
-                    template = data.parcelable(TemplateSelectActivity.ARG_TEMPLATE)
-                    setTemplateText()
-                    sendMessage()
-                }
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-            } finally {
-                rejectNewInstances = false
-            }
-        }
-
-    private fun setTemplateText() {
-        if (_binding == null) return
-
-        activity?.runOnUiThread {
-            if (template == null) {
-                binding.templateTextView.typeface = Typeface.DEFAULT
-                binding.templateTextView.text = getString(R.string.search_label_template_)
-            } else {
-                binding.templateTextView.typeface = Typeface.DEFAULT_BOLD
-                binding.templateTextView.text = template!!.description
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
         loadPrinterPreferences()
 
         refreshViews()
@@ -365,17 +363,13 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
         input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         input.isFocusable = true
         input.isFocusableInTouchMode = true
-        input.setOnKeyListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        if (alertDialog != null) {
-                            alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
-                        }
-                    }
-                }
+        input.setOnKeyListener { _, _, event ->
+            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
+                true
+            } else {
+                false
             }
-            false
         }
 
         inputLayout.addView(input)

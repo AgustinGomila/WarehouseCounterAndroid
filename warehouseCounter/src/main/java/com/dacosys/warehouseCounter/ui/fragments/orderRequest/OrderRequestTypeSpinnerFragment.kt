@@ -83,7 +83,11 @@ class OrderRequestTypeSpinnerFragment private constructor(builder: Builder) : Fr
         savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentSpinnerBinding.inflate(inflater, container, false)
-        val view = binding.root
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         binding.fragmentSpinner.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
@@ -101,8 +105,6 @@ class OrderRequestTypeSpinnerFragment private constructor(builder: Builder) : Fr
                     callback?.onItemSelected(null)
                 }
             }
-
-        return view
     }
 
     // Se llama cuando el fragmento está visible ante el usuario.

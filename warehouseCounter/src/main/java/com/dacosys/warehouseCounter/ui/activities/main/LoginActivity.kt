@@ -404,8 +404,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         }
 
         binding.passwordEditText.setText(password, TextView.BufferType.EDITABLE)
-        binding.passwordEditText.setOnKeyListener { _, keyCode, keyEvent ->
-            if (keyEvent.action == KeyEvent.ACTION_UP && (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+        binding.passwordEditText.setOnKeyListener { _, _, event ->
+            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 binding.loginImageView.performClick()
                 true
             } else {
@@ -419,14 +419,12 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 Screen.closeKeyboard(this)
             }
         }
-        binding.passwordEditText.setOnEditorActionListener { _, actionId, _ ->
-            return@setOnEditorActionListener when (actionId) {
-                EditorInfo.IME_ACTION_DONE -> {
-                    binding.loginImageView.performClick()
-                    true
-                }
-
-                else -> false
+        binding.passwordEditText.setOnEditorActionListener { _, actionId, event ->
+            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                binding.loginImageView.performClick()
+                true
+            } else {
+                false
             }
         }
         binding.passwordEditText.requestFocus()
@@ -618,18 +616,13 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             input.isFocusable = true
             input.isFocusableInTouchMode = true
-            input.setOnKeyListener { _, keyCode, event ->
-                if (event.action == KeyEvent.ACTION_DOWN) {
-                    when (keyCode) {
-                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                            if (alertDialog != null) {
-                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
-                                    .performClick()
-                            }
-                        }
-                    }
+            input.setOnKeyListener { _, _, event ->
+                if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                    alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
+                    true
+                } else {
+                    false
                 }
-                false
             }
 
             inputLayout.addView(input)

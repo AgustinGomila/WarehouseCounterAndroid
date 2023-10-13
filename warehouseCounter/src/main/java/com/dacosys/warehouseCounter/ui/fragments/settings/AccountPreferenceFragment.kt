@@ -1,8 +1,12 @@
 package com.dacosys.warehouseCounter.ui.fragments.settings
 
 import android.os.Bundle
+import android.text.InputType
+import android.text.method.PasswordTransformationMethod
+import android.view.inputmethod.EditorInfo
 import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
+import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
@@ -61,7 +65,11 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
             bindPreferenceSummaryToValue(this, settingsRepository.clientPassword)
         }
 
-        val emailEditText = findPreference<Preference>(settingsRepository.clientEmail.key)
+        val emailEditText = findPreference<EditTextPreference>(settingsRepository.clientEmail.key)
+        emailEditText?.setOnBindEditTextListener { editText ->
+            editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS
+            editText.imeOptions = EditorInfo.IME_ACTION_DONE
+        }
         emailEditText?.setOnPreferenceChangeListener { preference, newValue ->
             if (alreadyAnsweredYes) {
                 preference.summary = newValue.toString()
@@ -77,7 +85,12 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
             }
         }
 
-        val passwordEditText = findPreference<Preference>(settingsRepository.clientPassword.key)
+        val passwordEditText = findPreference<EditTextPreference>(settingsRepository.clientPassword.key)
+        passwordEditText?.setOnBindEditTextListener { editText ->
+            editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            editText.transformationMethod = PasswordTransformationMethod.getInstance()
+            editText.imeOptions = EditorInfo.IME_ACTION_DONE
+        }
         passwordEditText?.setOnPreferenceChangeListener { preference, newValue ->
             if (alreadyAnsweredYes) {
                 preference.summary = newValue.toString()

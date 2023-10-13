@@ -140,8 +140,7 @@ class ClientSelectActivity : AppCompatActivity(),
             return@setOnTouchListener false
         }
         binding.autoCompleteTextView.setOnEditorActionListener { _, actionId, event ->
-            val ev = event ?: return@setOnEditorActionListener false
-            if (actionId == EditorInfo.IME_ACTION_DONE || ev.keyCode == KeyEvent.KEYCODE_ENTER && ev.action == KeyEvent.ACTION_DOWN) {
+            if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 val adapter = binding.autoCompleteTextView.adapter
                 if (adapter is ClientAdapter) {
                     if (binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold) {

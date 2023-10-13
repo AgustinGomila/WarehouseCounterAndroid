@@ -92,6 +92,12 @@ class CollectorTypeSpinnerFragment : Fragment() {
         // Llenar el binding.fragmentSpinner
         allCollectorType = CollectorType.getAll()
 
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
         binding.fragmentSpinner.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(
@@ -107,8 +113,6 @@ class CollectorTypeSpinnerFragment : Fragment() {
                     mCallback?.onItemSelected(null)
                 }
             }
-
-        return view
     }
 
     override fun onStart() {
