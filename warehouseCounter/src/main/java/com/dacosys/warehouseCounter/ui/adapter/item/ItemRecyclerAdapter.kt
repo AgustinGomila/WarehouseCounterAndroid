@@ -42,8 +42,8 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.databinding.ItemRowBinding
 import com.dacosys.warehouseCounter.databinding.ItemRowExpandedBinding
-import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.objects.table.Table
+import com.dacosys.warehouseCounter.misc.imageControl.Table
+import com.dacosys.warehouseCounter.misc.utils.NumberUtils.Companion.roundToString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
@@ -810,7 +810,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
 
             binding.descriptionTextView.text = item.description
             binding.eanTextView.text = item.ean
-            binding.priceCheckedTextView.text = String.format("$ %s", Statics.roundToString(item.price ?: 0F, 2))
+            binding.priceCheckedTextView.text = String.format("$ %s", roundToString(item.price ?: 0F, 2))
             binding.extIdCheckedTextView.text = item.externalId ?: 0.toString()
 
             // region Category

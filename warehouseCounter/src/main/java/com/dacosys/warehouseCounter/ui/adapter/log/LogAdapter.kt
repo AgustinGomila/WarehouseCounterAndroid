@@ -26,7 +26,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.LogStatus
 import com.dacosys.warehouseCounter.databinding.LogContentRowBinding
-import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.utils.NumberUtils.Companion.roundToString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
@@ -324,9 +324,9 @@ class LogAdapter private constructor(builder: Builder) :
             binding.descriptionAutoResizeTextView.text = logContent.itemDescription
             binding.eanAutoResizeTextView.text = logContent.itemCode
             binding.variationQtyTextView.text =
-                Statics.roundToString(logContent.variationQty ?: 0.toDouble(), settingsVm.decimalPlaces)
+                roundToString(logContent.variationQty ?: 0.toDouble(), settingsVm.decimalPlaces)
             binding.finalQtyTextView.text =
-                Statics.roundToString(logContent.finalQty ?: 0.toDouble(), settingsVm.decimalPlaces)
+                roundToString(logContent.finalQty ?: 0.toDouble(), settingsVm.decimalPlaces)
 
             setStyle(logContent, isSelected)
         }

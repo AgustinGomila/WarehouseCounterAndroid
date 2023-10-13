@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.misc.objects.collectorType
+package com.dacosys.warehouseCounter.scanners.collectorType
 
 import android.os.Parcel
 import android.os.Parcelable

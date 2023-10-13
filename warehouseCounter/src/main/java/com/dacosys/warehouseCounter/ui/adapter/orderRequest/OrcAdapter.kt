@@ -35,7 +35,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.databinding.OrcRowBinding
 import com.dacosys.warehouseCounter.databinding.OrcRowExpandedBinding
-import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.utils.NumberUtils.Companion.roundToString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -764,7 +764,7 @@ class OrcAdapter private constructor(builder: Builder) :
         val qtyRequested = content.qtyRequested ?: 0.0
         val decimalPlaces = 0
 
-        val res = "${itemCode}: ${Statics.roundToString(qtyRequested, decimalPlaces)}"
+        val res = "${itemCode}: ${roundToString(qtyRequested, decimalPlaces)}"
         showSnackBar(res, SnackBarType.ADD)
     }
 
@@ -899,9 +899,9 @@ class OrcAdapter private constructor(builder: Builder) :
             binding.eanTextView.text = content.ean
 
             binding.qtyCollectedTextView.text =
-                Statics.roundToString(content.qtyCollected ?: 0.toDouble(), settingsVm.decimalPlaces)
+                roundToString(content.qtyCollected ?: 0.toDouble(), settingsVm.decimalPlaces)
             binding.qtyRequestedTextView.text =
-                Statics.roundToString(content.qtyRequested ?: 0.toDouble(), settingsVm.decimalPlaces)
+                roundToString(content.qtyRequested ?: 0.toDouble(), settingsVm.decimalPlaces)
 
             binding.itemIdCheckedTextView.text =
                 when {
@@ -921,7 +921,7 @@ class OrcAdapter private constructor(builder: Builder) :
             } else {
                 binding.categoryConstraintLayout.visibility = VISIBLE
                 binding.categoryTextView.text = category.toString()
-                binding.priceTextView.text = String.format("$ %s", Statics.roundToString(price!!, 2))
+                binding.priceTextView.text = String.format("$ %s", roundToString(price!!, 2))
             }
 
             setStyle(content)
@@ -998,9 +998,9 @@ class OrcAdapter private constructor(builder: Builder) :
             binding.eanTextView.text = content.ean
 
             binding.qtyCollectedTextView.text =
-                Statics.roundToString(content.qtyCollected ?: 0.toDouble(), settingsVm.decimalPlaces)
+                roundToString(content.qtyCollected ?: 0.toDouble(), settingsVm.decimalPlaces)
             binding.qtyRequestedTextView.text =
-                Statics.roundToString(content.qtyRequested ?: 0.toDouble(), settingsVm.decimalPlaces)
+                roundToString(content.qtyRequested ?: 0.toDouble(), settingsVm.decimalPlaces)
 
             setStyle(content)
         }

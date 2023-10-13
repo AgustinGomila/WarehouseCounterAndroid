@@ -17,6 +17,7 @@ import com.dacosys.warehouseCounter.data.room.database.helper.FileHelper
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType
 import com.dacosys.warehouseCounter.data.sync.ClientPackage
+import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
@@ -179,7 +180,7 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
         }
 
         // Si ya está loggeado, deshabilitar estas opciones
-        if (Statics.isLogged) {
+        if (CurrentUser.isLogged) {
             passwordEditText?.isEnabled = false
             emailEditText?.isEnabled = false
             selectPackageButton?.isEnabled = false

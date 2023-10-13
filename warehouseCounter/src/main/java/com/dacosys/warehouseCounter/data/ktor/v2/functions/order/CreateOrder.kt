@@ -7,7 +7,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
-import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.utils.NetworkState
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +27,7 @@ class CreateOrder(
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
     fun execute() {
-        if (!Statics.isOnline()) {
+        if (!NetworkState.isOnline()) {
             sendEvent(context.getString(R.string.connection_error), SnackBarType.ERROR)
             return
         }

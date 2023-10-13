@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.isDigitsOnly
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
-import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
+import com.dacosys.warehouseCounter.scanners.collectorType.CollectorType
 import com.dacosys.warehouseCounter.scanners.honeywell.Honeywell
 import com.dacosys.warehouseCounter.scanners.honeywell.HoneywellNative
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra

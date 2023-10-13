@@ -23,6 +23,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.EXTENSION_ID
 import com.dacosys.warehouseCounter.data.ktor.v2.service.APIResponse
+import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -230,7 +231,7 @@ class ApiRequest {
 
             val response = httpClient.post {
                 basicAuth(
-                    username = Statics.currentUserName, password = Statics.currentPass
+                    username = CurrentUser.name, password = CurrentUser.password
                 )
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
@@ -278,7 +279,7 @@ class ApiRequest {
 
             val response = httpClient.post {
                 basicAuth(
-                    username = Statics.currentUserName, password = Statics.currentPass
+                    username = CurrentUser.name, password = CurrentUser.password
                 )
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
@@ -324,7 +325,7 @@ class ApiRequest {
 
             val response = httpClient.get {
                 basicAuth(
-                    username = Statics.currentUserName, password = Statics.currentPass
+                    username = CurrentUser.name, password = CurrentUser.password
                 )
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
@@ -383,7 +384,7 @@ class ApiRequest {
 
         val httpResponse = httpClient.get {
             basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
+                username = CurrentUser.name, password = CurrentUser.password
             )
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
@@ -449,7 +450,7 @@ class ApiRequest {
 
         val httpResponse = httpClient.get {
             basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
+                username = CurrentUser.name, password = CurrentUser.password
             )
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
@@ -494,7 +495,7 @@ class ApiRequest {
 
         val response = httpClient.post {
             basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
+                username = CurrentUser.name, password = CurrentUser.password
             )
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
@@ -538,7 +539,7 @@ class ApiRequest {
 
             val response = httpClient.post {
                 basicAuth(
-                    username = Statics.currentUserName, password = Statics.currentPass
+                    username = CurrentUser.name, password = CurrentUser.password
                 )
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
@@ -585,7 +586,7 @@ class ApiRequest {
 
             val response = httpClient.post {
                 basicAuth(
-                    username = Statics.currentUserName, password = Statics.currentPass
+                    username = CurrentUser.name, password = CurrentUser.password
                 )
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
@@ -646,7 +647,7 @@ class ApiRequest {
 
         val response = httpClient.put {
             basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
+                username = CurrentUser.name, password = CurrentUser.password
             )
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
@@ -706,7 +707,7 @@ class ApiRequest {
 
         val response = httpClient.get {
             basicAuth(
-                username = Statics.currentUserName, password = Statics.currentPass
+                username = CurrentUser.name, password = CurrentUser.password
             )
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP

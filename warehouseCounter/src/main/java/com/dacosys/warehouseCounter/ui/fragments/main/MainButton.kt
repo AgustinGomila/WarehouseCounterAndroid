@@ -1,6 +1,6 @@
 @file:Suppress("MemberVisibilityCanBePrivate")
 
-package com.dacosys.warehouseCounter.misc.objects.mainButton
+package com.dacosys.warehouseCounter.ui.fragments.main
 
 import android.os.Parcel
 import android.os.Parcelable

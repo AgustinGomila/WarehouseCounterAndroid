@@ -8,7 +8,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiActionParam
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiPaginationParam
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiPaginationParam.Companion.defaultPagination
-import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.utils.NetworkState
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
@@ -54,7 +54,7 @@ class GetOrder(
     private var r: ArrayList<OrderResponse> = ArrayList()
 
     fun execute() {
-        if (!Statics.isOnline()) {
+        if (!NetworkState.isOnline()) {
             sendEvent(context.getString(R.string.connection_error), SnackBarType.ERROR)
             return
         }

@@ -15,7 +15,7 @@ import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.databinding.ItemDetailBinding
-import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.utils.NumberUtils.Companion.roundToString
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
@@ -128,7 +128,7 @@ class ItemDetailFragment : Fragment() {
             binding.priceTextView.visibility = GONE
         } else {
             binding.priceAutoResizeTextView.text =
-                String.format("$ %s", Statics.roundToString(it.price ?: 0f, 2))
+                String.format("$ %s", roundToString(it.price ?: 0f, 2))
             binding.priceAutoResizeTextView.visibility = VISIBLE
             binding.priceTextView.visibility = VISIBLE
         }
@@ -141,7 +141,7 @@ class ItemDetailFragment : Fragment() {
             binding.codeTextView.visibility = VISIBLE
 
             binding.qtyAutoResizeTextView.text =
-                Statics.roundToString(itemCode?.qty ?: 0.0, settingsVm.decimalPlaces)
+                roundToString(itemCode?.qty ?: 0.0, settingsVm.decimalPlaces)
             binding.qtyAutoResizeTextView.visibility = VISIBLE
             binding.qtyTextView.visibility = VISIBLE
         } else {

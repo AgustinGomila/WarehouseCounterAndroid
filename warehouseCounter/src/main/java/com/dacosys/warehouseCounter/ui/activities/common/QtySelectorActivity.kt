@@ -19,9 +19,9 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.databinding.QtySelectorBinding
-import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.round
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.misc.utils.NumberUtils.Companion.round
+import com.dacosys.warehouseCounter.misc.utils.NumberUtils.Companion.roundToString
 import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
@@ -304,7 +304,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
         binding.totalTextView.text = String.format(
             "%s: %s",
             getString(R.string.total_qty),
-            Statics.roundToString(orc.qtyCollected!!, settingsVm.decimalPlaces)
+            roundToString(orc.qtyCollected!!, settingsVm.decimalPlaces)
         )
     }
 

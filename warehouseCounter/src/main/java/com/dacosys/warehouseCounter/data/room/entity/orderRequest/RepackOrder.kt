@@ -6,6 +6,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
+import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -37,7 +38,7 @@ class RepackOrder(
             resultDiffProduct = if (order.resultDiffProduct == true) 1 else 0,
             resultDiffQty = if (order.resultDiffQty == true) 1 else 0,
             startDate = order.startDate ?: currentDate,
-            userId = Statics.currentUserId,
+            userId = CurrentUser.userId,
         )
 
         OrderRequestCoroutines.add(

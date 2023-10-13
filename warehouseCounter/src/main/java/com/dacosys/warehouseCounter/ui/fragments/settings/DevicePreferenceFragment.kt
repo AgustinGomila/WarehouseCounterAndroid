@@ -31,8 +31,8 @@ import com.dacosys.warehouseCounter.data.settings.SettingsViewModel
 import com.dacosys.warehouseCounter.data.settings.custom.CollectorTypePreference
 import com.dacosys.warehouseCounter.data.settings.custom.DevicePreference
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.scanners.collectorType.CollectorType
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.rfid.RfidType
 import com.dacosys.warehouseCounter.scanners.vh75.Vh75Bt

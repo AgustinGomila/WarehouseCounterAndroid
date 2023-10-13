@@ -13,8 +13,8 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.room.dao.client.ClientCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.databinding.OrderRequestHeaderBinding
-import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
+import com.dacosys.warehouseCounter.misc.utils.NumberUtils.Companion.roundToString
 
 /**
  * A simple [Fragment] subclass.
@@ -126,18 +126,18 @@ class OrderRequestHeader : Fragment() {
             if (orderRequest.resultDiffProduct!!) {
                 resume += breakLine + String.format(
                     getString(R.string._product_differences),
-                    Statics.roundToString(unknownItems.toDouble(), settingsVm.decimalPlaces)
+                    roundToString(unknownItems.toDouble(), settingsVm.decimalPlaces)
                 )
             }
 
             if (orderRequest.resultDiffQty!!) {
                 resume += breakLine + String.format(
                     getString(R.string._quantity_differences),
-                    Statics.roundToString(diffQtyItems.toDouble(), settingsVm.decimalPlaces)
+                    roundToString(diffQtyItems.toDouble(), settingsVm.decimalPlaces)
                 )
                 resume += breakLine + String.format(
                     getString(R.string._item_differences),
-                    Statics.roundToString(totalItems.toDouble(), settingsVm.decimalPlaces)
+                    roundToString(totalItems.toDouble(), settingsVm.decimalPlaces)
                 )
             }
         }
@@ -150,7 +150,7 @@ class OrderRequestHeader : Fragment() {
 
         resume += breakLine + String.format(
             getString(R.string._total_counted),
-            Statics.roundToString(totalQtyCollected, settingsVm.decimalPlaces)
+            roundToString(totalQtyCollected, settingsVm.decimalPlaces)
         )
 
         binding.resumeTextView.text = resume.trim()

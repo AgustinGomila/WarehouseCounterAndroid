@@ -35,7 +35,7 @@ import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlContent
 import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlItem
 import com.dacosys.warehouseCounter.databinding.PtlItemRowBinding
 import com.dacosys.warehouseCounter.databinding.PtlItemRowExpandedBinding
-import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.utils.NumberUtils.Companion.roundToString
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -636,7 +636,7 @@ class PtlContentAdapter private constructor(builder: Builder) :
         val itemCode = content.item.firstOrNull()?.ean ?: context.getString(R.string.no_ean)
         val decimalPlaces = 0
 
-        val res = "${itemCode}: ${Statics.roundToString(content.qtyRequested, decimalPlaces)}"
+        val res = "${itemCode}: ${roundToString(content.qtyRequested, decimalPlaces)}"
 
         MakeText.makeText(recyclerView, res, SnackBarType.ADD)
     }
@@ -782,7 +782,7 @@ class PtlContentAdapter private constructor(builder: Builder) :
             binding.lotIdCheckedTextView.text = content.lotId?.toString()
             binding.extId2ConstraintLayout.visibility = View.VISIBLE
             binding.extId2TextView.text = item.externalId2
-            binding.priceTextView.text = String.format("$ %s", Statics.roundToString(item.price, 2))
+            binding.priceTextView.text = String.format("$ %s", roundToString(item.price, 2))
 
             setStyle(content)
         }

@@ -14,9 +14,11 @@ import com.dacosys.warehouseCounter.data.room.database.helper.DownloadStatus.CAN
 import com.dacosys.warehouseCounter.data.room.database.helper.DownloadStatus.CRASHED
 import com.dacosys.warehouseCounter.data.room.database.helper.DownloadStatus.FINISHED
 import com.dacosys.warehouseCounter.data.room.database.helper.DownloadStatus.STARTING
+import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
+import com.dacosys.warehouseCounter.misc.utils.NetworkState
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
@@ -123,7 +125,7 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
-        if (!Statics.isOnline()) {
+        if (!NetworkState.isOnline()) {
             mCallback.onDownloadDbTask(CANCELED)
             return@withContext
         }
@@ -300,7 +302,7 @@ class DownloadDb private constructor(builder: Builder) : DownloadFileTask.OnDown
         // enviar la información y después descargar la base de datos
         uploadStatus = ProgressStatus.unknown
 
-        if (Statics.currentUserId > 0) {
+        if (CurrentUser.userId > 0) {
             ItemCodeCoroutines.getToUpload {
                 try {
                     thread {

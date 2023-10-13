@@ -3,7 +3,7 @@ package com.dacosys.warehouseCounter.data.settings.custom
 import android.content.Context
 import android.util.AttributeSet
 import androidx.preference.ListPreference
-import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
+import com.dacosys.warehouseCounter.scanners.collectorType.CollectorType
 
 /**
  * Created by Agustin on 16/01/2017.

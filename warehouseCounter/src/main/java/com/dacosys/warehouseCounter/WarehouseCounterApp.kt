@@ -12,6 +12,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.sync.Sync
 import com.dacosys.warehouseCounter.data.ktor.v2.sync.SyncViewModel
 import com.dacosys.warehouseCounter.data.settings.SettingsRepository
 import com.dacosys.warehouseCounter.data.settings.SettingsViewModel
+import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.ui.adapter.order.OrderViewModel
@@ -116,8 +117,8 @@ class WarehouseCounterApp : Application(), KoinComponent {
                     basic {
                         credentials {
                             BasicAuthCredentials(
-                                username = Statics.currentUserName,
-                                password = String(Base64.decode(Statics.currentPass, Base64.DEFAULT))
+                                username = CurrentUser.name,
+                                password = String(Base64.decode(CurrentUser.password, Base64.DEFAULT))
                             )
                         }
                     }

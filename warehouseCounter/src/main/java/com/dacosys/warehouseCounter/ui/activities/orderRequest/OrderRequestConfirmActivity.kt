@@ -29,9 +29,9 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.databinding.OrderRequestConfirmActivityBinding
+import com.dacosys.warehouseCounter.misc.imageControl.Table
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
-import com.dacosys.warehouseCounter.misc.objects.table.Table
 import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrcAdapter
 import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderRequestHeader

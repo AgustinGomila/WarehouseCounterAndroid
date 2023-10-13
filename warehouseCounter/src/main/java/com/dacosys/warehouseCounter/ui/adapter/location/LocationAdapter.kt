@@ -43,7 +43,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Location
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.LocationType
 import com.dacosys.warehouseCounter.databinding.LocationRowBinding
 import com.dacosys.warehouseCounter.databinding.LocationRowExpandedBinding
-import com.dacosys.warehouseCounter.misc.objects.table.Table
+import com.dacosys.warehouseCounter.misc.imageControl.Table
 import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha

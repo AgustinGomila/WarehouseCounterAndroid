@@ -13,7 +13,8 @@ import com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl.Companion.v
 import com.dacosys.warehouseCounter.data.ktor.v1.service.RequestResult
 import com.dacosys.warehouseCounter.data.ktor.v1.service.ResultStatus
 import com.dacosys.warehouseCounter.data.room.entity.user.User
-import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.CurrentUser
+import com.dacosys.warehouseCounter.misc.utils.DeviceData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import kotlinx.coroutines.CoroutineScope
@@ -52,7 +53,7 @@ class SendOrder(
             return
         }
 
-        Statics.getCurrentUser { user ->
+        CurrentUser.getUser { user ->
             if (user != null) {
                 currentUser = user
                 thread { GetToken { onGetTokenResult(it) }.execute(false) }
@@ -85,7 +86,7 @@ class SendOrder(
         })
 
         // Collector DATA //////////////////
-        val collectorData = Statics.getDeviceData()
+        val collectorData = DeviceData.getDeviceData()
         jsonParam.put("collectorData", collectorData)
 
         // Todos los Pedidos //////////////////

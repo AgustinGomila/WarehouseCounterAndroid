@@ -20,9 +20,9 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.Scanner.ScannerListener
+import com.dacosys.warehouseCounter.scanners.collectorType.CollectorType
 import com.dacosys.warehouseCounter.scanners.floatingCamera.FloatingCameraBarcode
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc.enableNfcForegroundDispatch
@@ -42,13 +42,13 @@ import id.pahlevikun.jotter.Jotter
  *
  * Medios administrados:
  * ---------------------
- * NFC
- * RFID
- *   - Vh75 (Bluetooth)
- * Imager
- *   - Honeywell
- *   - Zebra
- * Camara (ventana flotante)
+ * - NFC
+ * - RFID
+ *      - Vh75 (Bluetooth)
+ * - Imager
+ *      - Honeywell
+ *      - Zebra
+ * - Camara (ventana flotante)
  */
 
 //------------------------------------------------------------------------------//
@@ -238,16 +238,10 @@ object LifecycleListener : Jotter.Listener {
     }
 
     /**
-     * FloatingCameraBarcode llama a registerForActivityResult para solicitar
-     * los permisos que necesita.
+     * FloatingCameraBarcode llama a registerForActivityResult para solicitar los permisos que necesita.
+     * Únicamente se pueden registrar las actividades en onCreate() porque:
      *
-     * Sólo se pueden registrar las actividades en onCreate().
-     *
-     * Si la actividad ya fue creada, y estamos recreándola para reconfigurar el
-     * escáner luego de volver de Settings, estamos llegando aquí después de onResume(),
-     * por lo tanto, tenemos que evitar volver a registrar la actividad porque:
-     *
-     * java.lang.IllegalStateException:
+     * Java.lang.IllegalStateException:
      * LifecycleOwner com.dacosys.warehouseCounter.xxx.xxxActivity@cf72429
      * is attempting to register while current state is STARTED.
      * LifecycleOwners must call register before they are STARTED.

@@ -10,7 +10,7 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.WC_ROOT_PATH
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.verifyWritePermissions
-import com.dacosys.warehouseCounter.misc.UTCDataTime
+import com.dacosys.warehouseCounter.misc.utils.UTCDataTime
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException

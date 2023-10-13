@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.misc
+package com.dacosys.warehouseCounter.misc.utils
 
 import java.text.SimpleDateFormat
 import java.util.*

@@ -3,6 +3,7 @@ package com.dacosys.warehouseCounter.ui.activities.main
 import android.animation.ObjectAnimator
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -60,12 +61,10 @@ import com.dacosys.warehouseCounter.data.room.entity.client.Client
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.AddOrder
 import com.dacosys.warehouseCounter.data.room.entity.orderRequest.RepackOrder
 import com.dacosys.warehouseCounter.databinding.ActivityHomeBinding
-import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
-import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.isDebuggable
+import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.Statics.Companion.lineSeparator
+import com.dacosys.warehouseCounter.misc.imageControl.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.printer.Printer
 import com.dacosys.warehouseCounter.scanners.LifecycleListener
@@ -84,6 +83,7 @@ import com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderActivity
 import com.dacosys.warehouseCounter.ui.activities.sync.InboxActivity
 import com.dacosys.warehouseCounter.ui.activities.sync.OutboxActivity
 import com.dacosys.warehouseCounter.ui.fragments.main.ButtonPageFragment
+import com.dacosys.warehouseCounter.ui.fragments.main.MainButton
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
@@ -213,7 +213,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     @Suppress("OVERRIDE_DEPRECATION")
     override fun onBackPressed() {
         super.onBackPressed()
-        Statics.cleanCurrentUser()
+        CurrentUser.cleanUser()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -679,7 +679,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             Screen.setScreenRotation(this)
 
             // Todavía no está autentificado
-            if (Statics.currentUserId < 0L) {
+            if (!CurrentUser.isLogged) {
                 login()
             }
         }
@@ -736,6 +736,10 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     private val handler = Handler(Looper.getMainLooper())
     private var delayedTask: Runnable? = null
 
+    private fun isDebuggable(): Boolean {
+        return 0 != context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE
+    }
+
     override fun onStop() {
         super.onStop()
 
@@ -754,7 +758,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     override fun onStart() {
         super.onStart()
 
-        if (Statics.currentUserId <= 0L) {
+        if (!CurrentUser.isLogged) {
             if (settingsVm.urlPanel.isEmpty()) {
                 showSnackBar(getString(R.string.server_is_not_configured), ERROR)
                 setupInitConfig()
@@ -793,7 +797,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     private fun setHeaderUserName() {
-        Statics.getCurrentUser {
+        CurrentUser.getUser {
             if (it != null) {
                 binding.clientTextView.text =
                     String.format("%s - %s", settingsVm.installationCode, it.name)

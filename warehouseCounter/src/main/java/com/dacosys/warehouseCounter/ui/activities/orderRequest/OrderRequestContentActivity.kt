@@ -42,6 +42,7 @@ import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.LogCoroutines
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.databinding.OrderRequestActivityBothPanelsCollapsedBinding
+import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.DATE_FORMAT
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
@@ -698,7 +699,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                                 orderId = id,
                                 log = Log(
                                     clientId = orderRequest.clientId,
-                                    userId = Statics.currentUserId,
+                                    userId = CurrentUser.userId,
                                     itemId = i.itemId,
                                     itemDescription = i.itemDescription,
                                     itemCode = i.ean,
@@ -1354,7 +1355,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 orderId = id,
                 log = Log(
                     clientId = orderRequest.clientId,
-                    userId = Statics.currentUserId,
+                    userId = CurrentUser.userId,
                     itemId = tempOrc.itemId,
                     itemDescription = tempOrc.itemDescription,
                     itemCode = tempOrc.ean,

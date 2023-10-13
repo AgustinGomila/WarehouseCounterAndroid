@@ -61,10 +61,11 @@ import com.dacosys.warehouseCounter.data.sync.ClientPackage
 import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.getConfigFromScannedCode
 import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.selectClientPackage
 import com.dacosys.warehouseCounter.databinding.LoginActivityBinding
-import com.dacosys.warehouseCounter.misc.ImageControl.Companion.closeImageControl
-import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
+import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
+import com.dacosys.warehouseCounter.misc.imageControl.ImageControl.Companion.closeImageControl
+import com.dacosys.warehouseCounter.misc.imageControl.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.scanners.LifecycleListener
@@ -336,7 +337,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         LifecycleListener.lockScanner(this, false)
         rejectNewInstances = false
 
-        Statics.isLogged = false
+        CurrentUser.isLogged = false
     }
 
     private fun refreshUsers() {
@@ -719,12 +720,13 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             // perform the user login attempt.
             val tempUser = user
             if (tempUser != null && userPass == Md5.getMd5(password)) {
-                Statics.cleanCurrentUser()
 
-                Statics.currentUserId = tempUser.userId
-                Statics.currentUserName = tempUser.name
-                Statics.currentPass = tempUser.password ?: ""
-                Statics.isLogged = true
+                CurrentUser.setUser(
+                    userId = tempUser.userId,
+                    userName = tempUser.name,
+                    pass = tempUser.password ?: "",
+                    isLogged = true
+                )
 
                 setupImageControl()
 

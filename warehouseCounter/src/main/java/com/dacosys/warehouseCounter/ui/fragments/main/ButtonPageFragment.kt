@@ -24,7 +24,6 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp
 import com.dacosys.warehouseCounter.databinding.HomeActivityButtonPage1Binding
 import com.dacosys.warehouseCounter.databinding.HomeActivityButtonPage2Binding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.objects.mainButton.MainButton
 import com.dacosys.warehouseCounter.ui.activities.main.HomeActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType

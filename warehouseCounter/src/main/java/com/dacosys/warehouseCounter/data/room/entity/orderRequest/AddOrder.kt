@@ -8,6 +8,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.client.Client
+import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
@@ -37,7 +38,7 @@ class AddOrder {
         val startDate =
             if (!orderResponse.startDate.isNullOrEmpty()) orderResponse.startDate.toString()
             else DateFormat.format(Statics.DATE_FORMAT, System.currentTimeMillis()).toString()
-        val userId = orderResponse.collectorUserId ?: Statics.currentUserId
+        val userId = orderResponse.collectorUserId ?: CurrentUser.userId
         val zone = orderResponse.zone
 
         this.onEvent = onEvent
@@ -120,7 +121,7 @@ class AddOrder {
             resultDiffProduct = 1,
             resultDiffQty = 1,
             startDate = DateFormat.format(Statics.DATE_FORMAT, System.currentTimeMillis()).toString(),
-            userId = Statics.currentUserId
+            userId = CurrentUser.userId
         )
 
         addOrder(
