@@ -12,6 +12,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -128,6 +129,13 @@ class OutboxActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
 
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -599,7 +607,7 @@ class OutboxActivity : AppCompatActivity() {
 
         val id = item.itemId
         if (id == R.id.home || id == android.R.id.home) {
-            @Suppress("DEPRECATION") onBackPressed()
+            isBackPressed()
             return true
         }
 
@@ -641,9 +649,7 @@ class OutboxActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)

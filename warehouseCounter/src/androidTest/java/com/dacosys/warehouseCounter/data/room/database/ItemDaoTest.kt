@@ -30,23 +30,28 @@ class ItemDaoTest {
         itemDao = database.itemDao()
     }
 
+    @After
+    fun closeDb() {
+        database.close()
+    }
+
     @Test
     fun inserting_an_item_should_return_a_total_of_one_item() = runTest {
-        val fakeItem = Companion.createFakeItem()
+        val fakeItem = createFakeItem()
         itemDao.insert(fakeItem)
         assert(itemDao.count() == 1)
     }
 
     @Test
     fun inserting_an_item_should_return_a_equal_item_id() = runTest {
-        val fakeItem = Companion.createFakeItem()
+        val fakeItem = createFakeItem()
         val id = itemDao.insert(fakeItem)
         assert(fakeItem.itemId == id)
     }
 
     @Test
     fun inserting_an_item_should_return_a_equal_item() = runTest {
-        val fakeItem = Companion.createFakeItem()
+        val fakeItem = createFakeItem()
         val id = itemDao.insert(fakeItem)
         val item = itemDao.getById(id!!)
         assert(fakeItem == item)
@@ -54,15 +59,10 @@ class ItemDaoTest {
 
     @Test
     fun inserting_an_item_should_return_a_same_hashcode_item() = runTest {
-        val fakeItem = Companion.createFakeItem()
+        val fakeItem = createFakeItem()
         val id = itemDao.insert(fakeItem)
         val item = itemDao.getById(id!!)
         assert(fakeItem.hashCode() == item!!.hashCode())
-    }
-
-    @After
-    fun closeDb() {
-        database.close()
     }
 
     companion object {
@@ -92,7 +92,6 @@ class ItemDaoTest {
                 qty = faker.number().randomDouble(2, 0, 999),
                 toUpload = 0
             )
-
         }
     }
 }

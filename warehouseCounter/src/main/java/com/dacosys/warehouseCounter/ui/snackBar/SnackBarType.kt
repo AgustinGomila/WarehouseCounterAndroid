@@ -1,5 +1,6 @@
 package com.dacosys.warehouseCounter.ui.snackBar
 
+import android.os.Parcel
 import android.os.Parcelable
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
@@ -24,30 +25,30 @@ class SnackBarType : Parcelable {
         this.foreColor = foreColor
     }
 
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeInt(snackBarTypeId)
+        parcel.writeString(description)
+        parcel.writeInt(duration)
+        parcel.writeInt(backColor)
+        parcel.writeInt(foreColor)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
     var snackBarTypeId: Int = 0
     var description: String = ""
     var duration: Int = 0
     var backColor: Int = 0
     var foreColor: Int = 0
 
-    override fun describeContents(): Int {
-        return 0
-    }
-
-    constructor(parcel: android.os.Parcel) {
+    constructor(parcel: Parcel) {
         snackBarTypeId = parcel.readInt()
         description = parcel.readString() ?: ""
         duration = parcel.readInt()
         backColor = parcel.readInt()
         foreColor = parcel.readInt()
-    }
-
-    override fun writeToParcel(parcel: android.os.Parcel, flags: Int) {
-        parcel.writeInt(snackBarTypeId)
-        parcel.writeString(description)
-        parcel.writeInt(duration)
-        parcel.writeInt(backColor)
-        parcel.writeInt(foreColor)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -63,7 +64,7 @@ class SnackBarType : Parcelable {
         return snackBarTypeId.hashCode()
     }
 
-    companion object CREATOR {
+    companion object CREATOR : Parcelable.Creator<SnackBarType> {
 
         var ERROR = SnackBarType(
             snackBarTypeId = 0,
@@ -139,6 +140,14 @@ class SnackBarType : Parcelable {
 
         fun getById(typeId: Int): SnackBarType {
             return getAll().firstOrNull { it.snackBarTypeId == typeId } ?: INFO
+        }
+
+        override fun createFromParcel(source: Parcel): SnackBarType {
+            return SnackBarType(source)
+        }
+
+        override fun newArray(size: Int): Array<SnackBarType?> {
+            return arrayOfNulls(size)
         }
     }
 }

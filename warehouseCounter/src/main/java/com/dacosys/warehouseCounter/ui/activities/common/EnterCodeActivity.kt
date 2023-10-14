@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.text.InputType
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
@@ -49,6 +50,13 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         // Permite finalizar la actividad si se toca la pantalla
         // fuera de la ventana. Esta actividad se ve como un diálogo.
         setFinishOnTouchOutside(true)
+
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
 
         var tempTitle = getString(R.string.enter_the_code)
         var tempHint = getString(R.string.item_code)
@@ -95,7 +103,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         }
 
         binding.codeEditText.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 codeSelect()
                 true
             } else {
@@ -112,7 +120,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         }
 
         binding.enterCode.setOnClickListener {
-            @Suppress("DEPRECATION") onBackPressed()
+            isBackPressed()
         }
 
         binding.codeEditText.isCursorVisible = true
@@ -137,9 +145,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         finish()
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         closeKeyboard(this)
 
         setResult(RESULT_CANCELED)

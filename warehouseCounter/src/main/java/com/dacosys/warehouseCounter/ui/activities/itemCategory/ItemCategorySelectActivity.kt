@@ -13,6 +13,7 @@ import android.view.View
 import android.view.View.GONE
 import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
@@ -66,6 +67,13 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         // fuera de la ventana. Esta actividad se ve como un diálogo.
         setFinishOnTouchOutside(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         var tempTitle = getString(R.string.search_by_category)
         if (savedInstanceState != null) {
             // Dejo de escuchar estos eventos hasta pasar los valores guardados
@@ -93,7 +101,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         title = tempTitle
 
         binding.codeSelect.setOnClickListener {
-            @Suppress("DEPRECATION") onBackPressed()
+            isBackPressed()
         }
 
         binding.codeClearImageView.setOnClickListener {
@@ -144,7 +152,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
             return@setOnTouchListener false
         }
         binding.autoCompleteTextView.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 val adapter = binding.autoCompleteTextView.adapter
                 if (adapter is ItemCategoryAdapter) {
                     if (binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold) {
@@ -274,9 +282,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         }
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)

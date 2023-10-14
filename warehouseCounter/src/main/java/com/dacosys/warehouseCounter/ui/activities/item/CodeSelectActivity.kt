@@ -14,6 +14,7 @@ import android.view.View
 import android.view.View.GONE
 import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
@@ -85,6 +86,13 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         // fuera de la ventana. Esta actividad se ve como un diálogo.
         setFinishOnTouchOutside(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         if (savedInstanceState != null) {
             // Dejo de escuchar estos eventos hasta pasar los valores guardados
             // más adelante se reconectan
@@ -106,7 +114,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         fillRequired = true
 
         binding.codeSelect.setOnClickListener {
-            @Suppress("DEPRECATION") onBackPressed()
+            isBackPressed()
         }
 
         binding.codeClearImageView.setOnClickListener {
@@ -161,7 +169,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
             return@setOnTouchListener false
         }
         binding.autoCompleteTextView.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 if (currentText.length >= binding.autoCompleteTextView.threshold) {
                     code = binding.autoCompleteTextView.text!!.toString().trim()
                 }
@@ -253,9 +261,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         }, 20)
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)

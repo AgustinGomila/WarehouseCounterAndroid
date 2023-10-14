@@ -20,6 +20,7 @@ import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.view.WindowManager
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -191,6 +192,13 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
 
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
 
         filterFragment = supportFragmentManager.findFragmentById(R.id.filterFragment) as SelectFilterFragment
         printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
@@ -662,9 +670,7 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
         makeText(binding.root, text, snackBarType)
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         closeKeyboard(this)
 
         isFinishingByUser = true
@@ -737,7 +743,7 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
         val id = item.itemId
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                @Suppress("DEPRECATION") onBackPressed()
+                isBackPressed()
                 return true
             }
 

@@ -33,13 +33,13 @@ data class PtlOrder(
     @SerialName(ROW_CREATION_DATE_KEY) val rowCreationDate: String,
     @SerialName(ROW_MODIFICATION_DATE_KEY) val rowModificationDate: String,
 ) : Parcelable {
-    constructor(parcel: Parcel) : this(id = parcel.readLong(),
+    constructor(parcel: Parcel) : this(
+        id = parcel.readLong(),
         orderTypeId = parcel.readLong(),
         orderTypeKey = parcel.readString() ?: "",
         externalId = parcel.readString() ?: "",
         clientId = parcel.readLong(),
-        client = parcel.readParcelableArray(Client::class.java.classLoader)
-            ?.mapNotNull { if (it != null) it as Client else null } ?: listOf(),
+        client = parcel.createTypedArrayList(Client.CREATOR) ?: emptyList(),
         collectorId = parcel.readValue(Long::class.java.classLoader) as? Long,
         collectorUserId = parcel.readValue(Long::class.java.classLoader) as? Long,
         description = parcel.readString() ?: "",
@@ -58,7 +58,8 @@ data class PtlOrder(
         processedDate = parcel.readString() ?: "",
         statusId = parcel.readLong(),
         rowCreationDate = parcel.readString() ?: "",
-        rowModificationDate = parcel.readString() ?: "")
+        rowModificationDate = parcel.readString() ?: ""
+    )
 
     val orderType by lazy {
         PtlOrderType.values().firstOrNull { it.id == this.orderTypeId }

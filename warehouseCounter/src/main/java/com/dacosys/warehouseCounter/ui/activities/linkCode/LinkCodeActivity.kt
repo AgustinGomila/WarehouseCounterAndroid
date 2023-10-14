@@ -979,7 +979,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         val id = item.itemId
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                @Suppress("DEPRECATION") onBackPressed()
+                finish()
                 return true
             }
 

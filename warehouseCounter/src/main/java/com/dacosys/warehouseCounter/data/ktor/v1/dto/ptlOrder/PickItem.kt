@@ -26,8 +26,7 @@ data class PickItem(
         orderId = parcel.readLong(),
         orderDescription = parcel.readString() ?: "",
         itemId = parcel.readLong(),
-        item = parcel.readParcelableArray(PtlItem::class.java.classLoader)
-            ?.mapNotNull { if (it != null) it as PtlItem else null } ?: listOf(),
+        item = parcel.createTypedArrayList(PtlItem.CREATOR) ?: emptyList(),
         qtyRequested = parcel.readString(),
         qtyCollected = parcel.readInt(),
         qtyPending = parcel.readInt(),

@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
@@ -50,6 +51,13 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
 
         title = getString(R.string.observations)
 
@@ -167,9 +175,7 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
         Nfc.nfcHandleIntent(intent, this)
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)

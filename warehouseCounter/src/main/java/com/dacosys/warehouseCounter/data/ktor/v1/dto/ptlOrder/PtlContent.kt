@@ -26,19 +26,20 @@ data class PtlContent(
         else if (qtyCollected > qtyRequested) ContentStatus.QTY_MORE
         else ContentStatus.QTY_LESS
 ) : Parcelable {
-    constructor(parcel: Parcel) : this(id = parcel.readLong(),
+    constructor(parcel: Parcel) : this(
+        id = parcel.readLong(),
         externalId = parcel.readString() ?: "",
         orderId = parcel.readLong(),
         orderDescription = parcel.readString() ?: "",
         itemId = parcel.readLong(),
-        item = parcel.readParcelableArray(PtlItem::class.java.classLoader)
-            ?.mapNotNull { if (it != null) it as PtlItem else null } ?: listOf(),
+        item = parcel.createTypedArrayList(PtlItem.CREATOR) ?: emptyList(),
         qtyRequested = parcel.readDouble(),
         qtyCollected = parcel.readDouble(),
         qtyPending = parcel.readDouble(),
         lotId = parcel.readValue(Long::class.java.classLoader) as? Long,
         rowCreationDate = parcel.readString() ?: "",
-        rowModificationDate = parcel.readString() ?: "")
+        rowModificationDate = parcel.readString() ?: ""
+    )
 
     companion object CREATOR : Parcelable.Creator<PtlContent> {
         override fun createFromParcel(parcel: Parcel): PtlContent {

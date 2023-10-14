@@ -27,6 +27,7 @@ import android.view.animation.Animation
 import android.view.animation.Interpolator
 import android.view.animation.TranslateAnimation
 import android.widget.Button
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -210,9 +211,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         Screen.closeKeyboard(this)
     }
 
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
-        super.onBackPressed()
+    private fun isBackPressed() {
         CurrentUser.cleanUser()
     }
 
@@ -233,7 +232,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                @Suppress("DEPRECATION") onBackPressed()
+                isBackPressed()
                 return true
             }
 
@@ -709,6 +708,13 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
 
         if (!isDebuggable() && !BuildConfig.DEBUG) {
             binding.timeTextView.visibility = View.GONE

@@ -25,6 +25,7 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -165,8 +166,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             DownloadStatus.FINISHED, /* FINISHED = Ok */
             DownloadStatus.CANCELED, /* CANCELED = Sin conexión */
             -> {
-                showProgressBar()
-
                 Handler(Looper.getMainLooper()).postDelayed({
                     setHeader()
                     closeCurrentInstances()
@@ -181,7 +180,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
             DownloadStatus.CRASHED -> {
                 setButton(ButtonStyle.REFRESH)
-                showProgressBar()
+                hideProgressBar()
             }
 
             DownloadStatus.DOWNLOADING,
@@ -208,13 +207,10 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     private fun enableLogin() {
-        showProgressBar(getString(R.string.updating_item_codes))
-
-        Statics.insertItemCodes()
         refreshUsers()
 
         setButton(ButtonStyle.READY)
-        showProgressBar()
+        hideProgressBar()
     }
 
     override fun onDownloadFileTask(
@@ -356,9 +352,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         setEditTextFocus()
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         moveTaskToBack(true)
     }
 
@@ -390,6 +384,13 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         userSpinnerFragment = supportFragmentManager.findFragmentById(R.id.userSpinnerFragment) as UserSpinnerFragment?
 
         if (savedInstanceState != null) {
@@ -420,7 +421,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             }
         }
         binding.passwordEditText.setOnEditorActionListener { _, actionId, event ->
-            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 binding.loginImageView.performClick()
                 true
             } else {
@@ -516,6 +517,10 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         binding.imageView.setImageDrawable(draw)
     }
 
+    private fun hideProgressBar() {
+        showProgressBar()
+    }
+
     private fun showProgressBar(msg: String = "", progress: Int? = null) {
         runOnUiThread {
             if (msg.isNotEmpty()) {
@@ -550,7 +555,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                     if (it != null) {
                         onGetDatabaseData(it)
                     } else {
-                        showProgressBar()
+                        hideProgressBar()
                         setButton(ButtonStyle.REFRESH)
                         attemptSync = false
                     }
@@ -574,7 +579,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 closeCurrentInstances()
                 initSync()
             } catch (ex: Exception) {
-                showProgressBar()
+                hideProgressBar()
                 showSnackBar(ex.message.toString(), ERROR)
                 ErrorLog.writeLog(this, tag, ex.message.toString())
 
@@ -841,7 +846,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                @Suppress("DEPRECATION") onBackPressed()
+                isBackPressed()
                 return true
             }
 
@@ -898,11 +903,11 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
             CANCELED, CRASHED -> {
                 setButton(ButtonStyle.REFRESH)
-                showProgressBar()
+                hideProgressBar()
             }
 
             FINISHED -> {
-                showProgressBar()
+                hideProgressBar()
                 if ((userSpinnerFragment?.count ?: 0) < 1) {
                     setButton(ButtonStyle.REFRESH)
                     Log.d(

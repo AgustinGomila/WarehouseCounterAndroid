@@ -12,6 +12,7 @@ import android.view.View
 import android.view.View.VISIBLE
 import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
@@ -113,6 +114,13 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         // fuera de la ventana. Esta actividad se ve como un diálogo.
         setFinishOnTouchOutside(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         if (savedInstanceState != null) {
             loadSavedValues(savedInstanceState)
 
@@ -141,7 +149,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         fillRequired = true
 
         binding.root.setOnClickListener {
-            @Suppress("DEPRECATION") onBackPressed()
+            isBackPressed()
         }
 
         binding.warehouseClearImageView.setOnClickListener { setWarehouse(null) }
@@ -194,7 +202,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
             return@setOnTouchListener false
         }
         binding.warehouse.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 val adapter = binding.warehouse.adapter
                 if (adapter is WarehouseAdapter) {
                     if (binding.warehouse.text.trim().length >= binding.warehouse.threshold) {
@@ -276,7 +284,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
             return@setOnTouchListener false
         }
         binding.warehouseArea.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 val adapter = binding.warehouseArea.adapter
                 if (adapter is WarehouseAreaAdapter) {
                     if (binding.warehouseArea.text.trim().length >= binding.warehouseArea.threshold) {
@@ -360,7 +368,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
             return@setOnTouchListener false
         }
         binding.rackCode.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 val adapter = binding.rackCode.adapter
                 if (adapter is RackAdapter) {
                     if (binding.rackCode.text.trim().length >= binding.rackCode.threshold) {
@@ -698,9 +706,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         isRFilling = false
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)

@@ -53,9 +53,7 @@ data class OrderResponse(
         id = parcel.readLong(),
         collectorUserId = parcel.readValue(Long::class.java.classLoader) as? Long,
         collectorId = parcel.readValue(Long::class.java.classLoader) as? Long,
-        contents = parcel.readParcelableArray(OrderResponseContent::class.java.classLoader)
-            ?.mapNotNull { if (it != null) it as OrderResponseContent else null }
-            ?: emptyList(),
+        contents = parcel.createTypedArrayList(OrderResponseContent.CREATOR) ?: emptyList()
     )
 
     val orderType: OrderRequestType

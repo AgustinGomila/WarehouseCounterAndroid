@@ -19,6 +19,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.View.GONE
 import android.view.WindowManager
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -274,6 +275,13 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
 
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -848,9 +856,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         makeText(binding.root, text, snackBarType)
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         closeKeyboard(this)
 
         isFinishingByUser = true
@@ -942,7 +948,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         val id = item.itemId
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                @Suppress("DEPRECATION") onBackPressed()
+                isBackPressed()
                 return true
             }
 

@@ -74,14 +74,6 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     private var currentItem: Any? = null
     private lateinit var printLabelFragment: PrintLabelFragment
 
-    override fun onDestroy() {
-        destroyLocals()
-        super.onDestroy()
-    }
-
-    private fun destroyLocals() {
-    }
-
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
@@ -113,7 +105,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
         binding.codeEditText.setText(tempCode, TextView.BufferType.EDITABLE)
         binding.codeEditText.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 fillHexTextView()
                 true
             } else {
@@ -239,7 +231,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                @Suppress("DEPRECATION") onBackPressed()
+                finish()
                 return true
             }
 

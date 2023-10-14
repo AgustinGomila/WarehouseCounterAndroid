@@ -12,6 +12,7 @@ import android.transition.TransitionManager
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.fragment.app.Fragment
@@ -175,6 +176,13 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
 
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
 
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -442,9 +450,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         }, 20)
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         ////////////// IMAGE CONTROL //////////////
@@ -560,7 +566,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
         return if (id == R.id.home || id == android.R.id.home) {
-            @Suppress("DEPRECATION") onBackPressed()
+            isBackPressed()
             true
         } else super.onOptionsItemSelected(item)
     }

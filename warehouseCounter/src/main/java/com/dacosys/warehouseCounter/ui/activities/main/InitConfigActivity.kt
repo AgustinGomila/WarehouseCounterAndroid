@@ -15,6 +15,7 @@ import android.view.MenuItem
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -50,6 +51,7 @@ import kotlin.concurrent.thread
 
 class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     ProxySetup.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded {
+
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
             isConfiguring = false
@@ -132,9 +134,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         rejectNewInstances = false
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         val i = baseContext.packageManager.getLaunchIntentForPackage(baseContext.packageName)
         if (i != null) {
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -145,8 +145,8 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("email", binding.emailEditText.text.toString())
-        savedInstanceState.putString("password", binding.passwordEditText.text.toString())
+        savedInstanceState.putString(ARG_EMAIL, binding.emailEditText.text.toString())
+        savedInstanceState.putString(ARG_PASSWORD, binding.passwordEditText.text.toString())
     }
 
     private lateinit var binding: InitConfigActivityBinding
@@ -161,14 +161,21 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         if (savedInstanceState != null) {
-            email = savedInstanceState.getString("email") ?: ""
-            password = savedInstanceState.getString("password") ?: ""
+            email = savedInstanceState.getString(ARG_EMAIL) ?: ""
+            password = savedInstanceState.getString(ARG_PASSWORD) ?: ""
         } else {
             val extras = intent.extras
             if (extras != null) {
-                email = extras.getString("email") ?: ""
-                password = extras.getString("password") ?: ""
+                email = extras.getString(ARG_EMAIL) ?: ""
+                password = extras.getString(ARG_PASSWORD) ?: ""
             }
 
             clearOldPrefs()
@@ -202,7 +209,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
         }
         binding.passwordEditText.setOnEditorActionListener { _, actionId, event ->
-            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 Screen.closeKeyboard(this)
                 attemptToConfigure()
                 true
@@ -226,7 +233,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
         }
         binding.emailEditText.setOnEditorActionListener { _, actionId, event ->
-            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 binding.passwordEditText.requestFocus()
                 true
             } else {
@@ -407,7 +414,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                @Suppress("DEPRECATION") onBackPressed()
+                isBackPressed()
                 return true
             }
 
@@ -448,5 +455,10 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                 super.onOptionsItemSelected(item)
             }
         }
+    }
+
+    companion object {
+        const val ARG_PASSWORD = "password"
+        const val ARG_EMAIL = "email"
     }
 }

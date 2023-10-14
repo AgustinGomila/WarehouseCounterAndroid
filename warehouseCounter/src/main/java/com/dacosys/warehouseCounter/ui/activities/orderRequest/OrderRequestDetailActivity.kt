@@ -436,7 +436,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
         return if (id == R.id.home || id == android.R.id.home) {
-            @Suppress("DEPRECATION") onBackPressed()
+            finish()
             true
         } else super.onOptionsItemSelected(item)
     }

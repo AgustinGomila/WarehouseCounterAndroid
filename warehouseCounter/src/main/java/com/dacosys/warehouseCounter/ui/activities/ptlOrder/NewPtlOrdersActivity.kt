@@ -221,7 +221,7 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                @Suppress("DEPRECATION") onBackPressed()
+                finish()
                 return true
             }
 

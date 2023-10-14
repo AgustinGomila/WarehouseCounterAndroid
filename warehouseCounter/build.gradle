@@ -125,6 +125,7 @@ dependencies {
     // Permite utilizar API restringidas no públicas del SDK
     implementation 'com.github.tiann:FreeReflection:3.1.0'
     implementation 'com.google.android.gms:play-services-basement:18.2.0'
+    implementation 'androidx.test:core-ktx:1.5.0'
 
     // Permite utilizar las librerías Zxing en API 23
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
@@ -188,7 +189,7 @@ dependencies {
     implementation files('libs/honeywell/DataCollection.aar')
 
     // Koin
-    implementation "io.insert-koin:koin-android:3.4.2"
+    implementation "io.insert-koin:koin-android:$koinVersion"
 
     // Room
     api("androidx.room:room-runtime:$roomVersion")
@@ -238,6 +239,8 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    testImplementation "io.insert-koin:koin-test:3.2.2"
+    testImplementation "io.mockk:mockk:1.13.8"
 }
 
 repositories {

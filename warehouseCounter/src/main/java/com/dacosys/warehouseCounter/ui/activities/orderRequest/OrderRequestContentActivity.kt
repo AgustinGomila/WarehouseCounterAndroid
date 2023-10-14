@@ -17,6 +17,7 @@ import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.WindowManager
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -285,6 +286,13 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
 
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -1110,9 +1118,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         cancelCount()
     }
 
@@ -1486,7 +1492,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                @Suppress("DEPRECATION") onBackPressed()
+                isBackPressed()
                 return true
             }
 

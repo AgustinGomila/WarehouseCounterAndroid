@@ -159,7 +159,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             }
         }
         binding.descEditText.setOnEditorActionListener { _, actionId, event ->
-            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
                 binding.continueButton.performClick()
                 true
             } else {
@@ -295,7 +295,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                @Suppress("DEPRECATION") onBackPressed()
+                finish()
                 return true
             }
 

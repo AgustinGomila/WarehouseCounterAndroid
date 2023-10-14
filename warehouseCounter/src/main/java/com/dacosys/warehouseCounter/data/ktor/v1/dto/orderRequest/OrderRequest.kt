@@ -71,7 +71,7 @@ class OrderRequest() : Parcelable {
         filename = parcel.readString() ?: ""
         orderRequestId = parcel.readValue(Long::class.java.classLoader) as? Long
         externalId = parcel.readString() ?: ""
-        creationDate = parcel.readString() ?: ""
+        creationDate = parcel.readString()
         description = parcel.readString() ?: ""
         zone = parcel.readString() ?: ""
         orderRequestedType = parcel.readParcelable(OrderRequestType::class.java.classLoader)
@@ -84,15 +84,9 @@ class OrderRequest() : Parcelable {
         finishDate = parcel.readString()
         clientId = parcel.readValue(Long::class.java.classLoader) as? Long
         userId = parcel.readValue(Long::class.java.classLoader) as? Long
-
-        log = parcel.readParcelable(Log::class.java.classLoader)
-            ?: Log()
-        content =
-            parcel.readParcelableArray(OrderRequestContent::class.java.classLoader)
-                ?.mapNotNull { if (it != null) it as OrderRequestContent else null }
-                ?: emptyList()
-        docArray = parcel.readParcelableArray(Document::class.java.classLoader)
-            ?.mapNotNull { if (it != null) it as Document else null } ?: emptyList()
+        content = parcel.createTypedArrayList(OrderRequestContent) ?: listOf()
+        log = parcel.readParcelable(Log::class.java.classLoader) ?: Log()
+        docArray = parcel.createTypedArrayList(Document) ?: listOf()
     }
 
     constructor(
@@ -140,29 +134,6 @@ class OrderRequest() : Parcelable {
         return description
     }
 
-    override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeString(filename)
-        parcel.writeValue(orderRequestId)
-        parcel.writeString(externalId)
-        parcel.writeString(creationDate)
-        parcel.writeString(description)
-        parcel.writeString(zone)
-        parcel.writeParcelable(orderRequestedType, flags)
-        parcel.writeValue(resultDiffQty)
-        parcel.writeValue(resultDiffProduct)
-        parcel.writeValue(resultAllowDiff)
-        parcel.writeValue(resultAllowMod)
-        parcel.writeValue(completed)
-        parcel.writeString(startDate)
-        parcel.writeString(finishDate)
-        parcel.writeValue(clientId)
-        parcel.writeValue(userId)
-
-        parcel.writeParcelable(log, flags)
-        parcel.writeParcelableArray(content.toTypedArray(), flags)
-        parcel.writeParcelableArray(docArray.toTypedArray(), flags)
-    }
-
     override fun describeContents(): Int {
         return 0
     }
@@ -194,6 +165,28 @@ class OrderRequest() : Parcelable {
         result = 31 * result + (clientId?.hashCode() ?: 0)
         result = 31 * result + (userId?.hashCode() ?: 0)
         return result
+    }
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(filename)
+        parcel.writeValue(orderRequestId)
+        parcel.writeString(externalId)
+        parcel.writeString(creationDate)
+        parcel.writeString(description)
+        parcel.writeString(zone)
+        parcel.writeParcelable(orderRequestedType, flags)
+        parcel.writeValue(resultDiffQty)
+        parcel.writeValue(resultDiffProduct)
+        parcel.writeValue(resultAllowDiff)
+        parcel.writeValue(resultAllowMod)
+        parcel.writeValue(completed)
+        parcel.writeString(startDate)
+        parcel.writeString(finishDate)
+        parcel.writeValue(clientId)
+        parcel.writeValue(userId)
+        parcel.writeTypedList(content)
+        parcel.writeParcelable(log, flags)
+        parcel.writeTypedList(docArray)
     }
 
     companion object CREATOR : Parcelable.Creator<OrderRequest> {

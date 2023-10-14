@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -124,6 +125,13 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
 
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
 
         summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
 
@@ -497,7 +505,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
 
         val id = item.itemId
         if (id == R.id.home || id == android.R.id.home) {
-            @Suppress("DEPRECATION") onBackPressed()
+            isBackPressed()
             return true
         }
 
@@ -521,9 +529,7 @@ class InboxActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         return true
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)

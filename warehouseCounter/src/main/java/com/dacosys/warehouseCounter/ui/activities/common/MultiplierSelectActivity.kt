@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.widget.SeekBar
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
@@ -33,6 +34,13 @@ class MultiplierSelectActivity : AppCompatActivity() {
         // Permite finalizar la actividad si se toca la pantalla
         // fuera de la ventana. Esta actividad se ve como un diálogo.
         setFinishOnTouchOutside(true)
+
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
 
         var tempTitle = getString(R.string.select_multiplier)
 
@@ -80,7 +88,7 @@ class MultiplierSelectActivity : AppCompatActivity() {
         binding.multiplierTextView.text = String.format("%sX", tempMultiplier)
 
         binding.multiplierSelect.setOnClickListener {
-            @Suppress("DEPRECATION") onBackPressed()
+            isBackPressed()
         }
 
         Screen.setupUI(binding.root, this)
@@ -102,9 +110,7 @@ class MultiplierSelectActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
