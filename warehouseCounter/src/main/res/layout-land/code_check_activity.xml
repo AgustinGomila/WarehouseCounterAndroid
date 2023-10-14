@@ -156,8 +156,8 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="@+id/guidelineMain"
                 android:layout_marginBottom="1dp" android:layout_marginEnd="1dp" android:layout_marginStart="1dp"
-                android:background="@drawable/listview_border" android:paddingTop="8sp" android:paddingStart="1sp"
-                android:paddingEnd="1sp" android:paddingBottom="1sp">
+                android:background="@drawable/rounded_corner_button_f1f1f1"
+        >
 
             <androidx.fragment.app.FragmentContainerView
                     android:id="@+id/printFragment"

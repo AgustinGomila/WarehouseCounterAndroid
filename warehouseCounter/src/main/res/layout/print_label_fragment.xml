@@ -11,12 +11,13 @@
             android:layout_height="wrap_content"
             android:background="@drawable/rounded_corner_button_808f87"
             android:gravity="center_horizontal"
-            android:text="@string/printer"
+            android:text="@string/print_labels"
             android:textColor="@color/whitesmoke"
-            android:textSize="12sp"
+            android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent" android:layout_marginStart="1dp" android:layout_marginEnd="1dp"
+            android:layout_marginTop="1dp"/>
     <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/templatePanel"
             android:layout_width="match_parent"
