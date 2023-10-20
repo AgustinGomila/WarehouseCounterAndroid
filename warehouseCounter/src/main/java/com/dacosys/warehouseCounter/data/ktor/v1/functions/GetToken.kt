@@ -10,7 +10,6 @@ import com.dacosys.warehouseCounter.data.ktor.v1.dto.user.UserAuthData
 import com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl.Companion.validUrl
 import com.dacosys.warehouseCounter.data.ktor.v1.service.RequestResult
 import com.dacosys.warehouseCounter.data.ktor.v1.service.ResultStatus
-import com.dacosys.warehouseCounter.data.room.entity.user.User
 import com.dacosys.warehouseCounter.misc.CurrentUser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,8 +36,6 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
-    private lateinit var currentUser: User
-
     fun execute(force: Boolean) {
         fun onGetUserResult() {
             if (force || !isTokenValid()) {
@@ -57,14 +54,7 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
             return
         }
 
-        CurrentUser.getUser { user ->
-            if (user != null) {
-                currentUser = user
-                onGetUserResult()
-            } else {
-                onEvent.invoke(RequestResult(ResultStatus.ERROR, context.getString(R.string.invalid_user)))
-            }
-        }
+        onGetUserResult()
     }
 
     private fun isTokenValid(): Boolean {
@@ -100,8 +90,8 @@ class GetToken(private val onEvent: (RequestResult) -> Unit) {
     private val body by lazy {
         UserAuthData().apply {
             authData = AuthData().apply {
-                username = currentUser.name
-                password = currentUser.password ?: ""
+                username = CurrentUser.name
+                password = CurrentUser.password
             }
         }
     }

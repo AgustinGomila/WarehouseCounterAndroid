@@ -6,11 +6,9 @@ import android.graphics.Rect
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.VISIBLE
-import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -32,6 +30,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
@@ -56,6 +55,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
     }
 
     private var fillRequired = false
+    private var allowPartial = false
 
     private var warehouse: Warehouse? = null
     private var warehouseArea: WarehouseArea? = null
@@ -77,6 +77,8 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         savedInstanceState.putBoolean(ARG_WAREHOUSE_VISIBLE, warehouseVisible)
         savedInstanceState.putBoolean(ARG_WAREHOUSE_AREA_VISIBLE, warehouseAreaVisible)
         savedInstanceState.putBoolean(ARG_RACK_VISIBLE, rackVisible)
+
+        savedInstanceState.putBoolean(ARG_ALLOW_PARTIAL, allowPartial)
     }
 
     private fun loadSavedValues(b: Bundle) {
@@ -99,6 +101,10 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         warehouseVisible =
             if (b.containsKey(ARG_WAREHOUSE_VISIBLE)) b.getBoolean(ARG_WAREHOUSE_VISIBLE)
             else true
+
+        allowPartial =
+            if (b.containsKey(ARG_ALLOW_PARTIAL)) b.getBoolean(ARG_ALLOW_PARTIAL)
+            else false
     }
 
     private lateinit var binding: LocationSelectActivityBinding
@@ -202,7 +208,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
             return@setOnTouchListener false
         }
         binding.warehouse.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(actionId, event)) {
                 val adapter = binding.warehouse.adapter
                 if (adapter is WarehouseAdapter) {
                     if (binding.warehouse.text.trim().length >= binding.warehouse.threshold) {
@@ -284,19 +290,24 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
             return@setOnTouchListener false
         }
         binding.warehouseArea.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(actionId, event)) {
+                val textValue = binding.warehouseArea.text.trim().toString()
+                if (allowPartial) {
+                    locationSelect(textValue)
+                    return@setOnEditorActionListener true
+                }
+
                 val adapter = binding.warehouseArea.adapter
                 if (adapter is WarehouseAreaAdapter) {
-                    if (binding.warehouseArea.text.trim().length >= binding.warehouseArea.threshold) {
+                    if (textValue.length >= binding.warehouseArea.threshold) {
                         val all = adapter.getAll()
-
                         if (all.any()) {
                             var founded = false
                             for (a in all) {
                                 if (a.description.isEmpty()) {
                                     continue
                                 }
-                                if (a.description.startsWith(binding.warehouseArea.text.toString().trim(), true)) {
+                                if (a.description.startsWith(textValue, true)) {
                                     setWarehouseArea(a)
                                     founded = true
                                     break
@@ -307,10 +318,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
                                     if (a.description.isEmpty()) {
                                         continue
                                     }
-                                    if (a.description.contains(
-                                            binding.warehouseArea.text.toString().trim(), true
-                                        )
-                                    ) {
+                                    if (a.description.contains(textValue, true)) {
                                         setWarehouseArea(a)
                                         break
                                     }
@@ -368,10 +376,16 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
             return@setOnTouchListener false
         }
         binding.rackCode.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(actionId, event)) {
+                val textValue = binding.rackCode.text.trim().toString()
+                if (allowPartial) {
+                    locationSelect(textValue)
+                    return@setOnEditorActionListener true
+                }
+
                 val adapter = binding.rackCode.adapter
                 if (adapter is RackAdapter) {
-                    if (binding.rackCode.text.trim().length >= binding.rackCode.threshold) {
+                    if (textValue.length >= binding.rackCode.threshold) {
                         val all = adapter.getAll()
 
                         if (all.any()) {
@@ -380,7 +394,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
                                 if (a.code.isEmpty()) {
                                     continue
                                 }
-                                if (a.code.startsWith(binding.rackCode.text.toString().trim(), true)) {
+                                if (a.code.startsWith(textValue, true)) {
                                     setRack(a)
                                     founded = true
                                     break
@@ -391,7 +405,7 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
                                     if (a.code.isEmpty()) {
                                         continue
                                     }
-                                    if (a.code.contains(binding.rackCode.text.toString().trim(), true)) {
+                                    if (a.code.contains(textValue, true)) {
                                         setRack(a)
                                         break
                                     }
@@ -466,6 +480,15 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         data.putExtra(ARG_RACK, rack)
         data.putExtra(ARG_WAREHOUSE_AREA, warehouseArea)
         data.putExtra(ARG_WAREHOUSE, warehouse)
+        setResult(RESULT_OK, data)
+        finish()
+    }
+
+    private fun locationSelect(value: String) {
+        Screen.closeKeyboard(this)
+
+        val data = Intent()
+        data.putExtra(ARG_SEARCH_STRING_VALUE, value)
         setResult(RESULT_OK, data)
         finish()
     }
@@ -837,5 +860,8 @@ class LocationSelectActivity : AppCompatActivity(), ContractsAutoCompleteTextVie
         const val ARG_WAREHOUSE_AREA_VISIBLE = "warehouseAreaVisible"
         const val ARG_WAREHOUSE_VISIBLE = "warehouseVisible"
         const val ARG_RACK_VISIBLE = "rackVisible"
+
+        const val ARG_ALLOW_PARTIAL = "allowPartial"
+        const val ARG_SEARCH_STRING_VALUE = "searchString"
     }
 }

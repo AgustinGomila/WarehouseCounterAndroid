@@ -11,7 +11,6 @@ import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
 import android.util.Log
-import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.WindowManager
@@ -51,6 +50,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.util.*
@@ -212,7 +212,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         })
         binding.searchEditText.setText(searchedText, TextView.BufferType.EDITABLE)
         binding.searchEditText.setOnKeyListener { _, _, event ->
-            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(event)) {
                 Screen.closeKeyboard(this)
                 true
             } else {
@@ -539,7 +539,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             input.isFocusable = true
             input.isFocusableInTouchMode = true
             input.setOnKeyListener { _, _, event ->
-                if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                if (isActionDone(event)) {
                     alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
                     true
                 } else {

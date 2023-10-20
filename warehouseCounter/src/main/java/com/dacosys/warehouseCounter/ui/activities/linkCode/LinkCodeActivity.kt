@@ -82,6 +82,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.dacosys.warehouseCounter.ui.views.CounterHandler
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -398,7 +399,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
         }
 
         binding.qtyEditText.setOnKeyListener { _, _, event ->
-            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(event)) {
                 binding.linkButton.performClick()
                 true
             } else {
@@ -1081,7 +1082,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             input.isFocusable = true
             input.isFocusableInTouchMode = true
             input.setOnKeyListener { _, _, event ->
-                if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                if (isActionDone(event)) {
                     alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
                     true
                 } else {

@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
-import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnFocusChangeListener
@@ -29,6 +28,7 @@ import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.itemCategory.ItemCategorySelectActivity
 import com.dacosys.warehouseCounter.ui.activities.location.LocationSelectActivity
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 
 class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
@@ -40,6 +40,8 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     constructor() : this(Builder())
 
     private var description: String
+
+    private var allowPartialSearch: Boolean = false
 
     @Suppress("unused")
     fun setDescription(description: String) {
@@ -318,12 +320,38 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         return view
     }
 
+    private val resultForWarehouseSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                var value = ""
+                if (allowPartialSearch) {
+                    value = data.getStringExtra(LocationSelectActivity.ARG_SEARCH_STRING_VALUE) ?: ""
+                } else {
+                    warehouse = data.parcelable<Warehouse>(LocationSelectActivity.ARG_WAREHOUSE)
+                    value = warehouse?.description ?: ""
+                }
+                setWarehouseText(value)
+                onFilterChanged()
+            }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(requireActivity(), tag, ex)
+        }
+    }
+
     private val resultForAreaSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         val data = it?.data
         try {
             if (it?.resultCode == RESULT_OK && data != null) {
-                warehouseArea = data.parcelable<WarehouseArea>(LocationSelectActivity.ARG_WAREHOUSE_AREA)
-                setAreaText()
+                var value = ""
+                if (allowPartialSearch) {
+                    value = data.getStringExtra(LocationSelectActivity.ARG_SEARCH_STRING_VALUE) ?: ""
+                } else {
+                    warehouseArea = data.parcelable<WarehouseArea>(LocationSelectActivity.ARG_WAREHOUSE_AREA)
+                    value = warehouseArea?.description ?: ""
+                }
+                setAreaText(value)
                 onFilterChanged()
             }
         } catch (ex: Exception) {
@@ -336,8 +364,14 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         val data = it?.data
         try {
             if (it?.resultCode == RESULT_OK && data != null) {
-                rack = data.parcelable<Rack>(LocationSelectActivity.ARG_RACK)
-                setRackText()
+                var value = ""
+                if (allowPartialSearch) {
+                    value = data.getStringExtra(LocationSelectActivity.ARG_SEARCH_STRING_VALUE) ?: ""
+                } else {
+                    rack = data.parcelable<Rack>(LocationSelectActivity.ARG_RACK)
+                    value = rack?.code ?: ""
+                }
+                setRackText(value)
                 onFilterChanged()
             }
         } catch (ex: Exception) {
@@ -352,20 +386,6 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             if (it?.resultCode == RESULT_OK && data != null) {
                 itemCategory = data.parcelable(ItemCategorySelectActivity.ARG_ITEM_CATEGORY)
                 setCategoryText()
-                onFilterChanged()
-            }
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            ErrorLog.writeLog(requireActivity(), tag, ex)
-        }
-    }
-
-    private val resultForWarehouseSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        val data = it?.data
-        try {
-            if (it?.resultCode == RESULT_OK && data != null) {
-                warehouse = data.parcelable<Warehouse>(LocationSelectActivity.ARG_WAREHOUSE)
-                setWarehouseText()
                 onFilterChanged()
             }
         } catch (ex: Exception) {
@@ -410,7 +430,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
                 .create()
 
             editText.setOnKeyListener { _, _, event ->
-                if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                if (isActionDone(event)) {
                     val t = editText.text.toString()
                     onResult.invoke(t)
                     dialog.dismiss()
@@ -536,6 +556,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_AREA_VISIBLE, false)
             intent.putExtra(LocationSelectActivity.ARG_RACK_VISIBLE, false)
             intent.putExtra(LocationSelectActivity.ARG_TITLE, requireContext().getString(R.string.select_warehouse))
+            intent.putExtra(LocationSelectActivity.ARG_ALLOW_PARTIAL, allowPartialSearch)
             resultForWarehouseSelect.launch(intent)
         }
         binding.warehouseSearchImageView.setOnClickListener { binding.warehouseTextView.performClick() }
@@ -553,6 +574,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_VISIBLE, false)
             intent.putExtra(LocationSelectActivity.ARG_RACK_VISIBLE, false)
             intent.putExtra(LocationSelectActivity.ARG_TITLE, requireContext().getString(R.string.select_area))
+            intent.putExtra(LocationSelectActivity.ARG_ALLOW_PARTIAL, allowPartialSearch)
             resultForAreaSelect.launch(intent)
         }
 
@@ -571,6 +593,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
             intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_VISIBLE, false)
             intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_AREA_VISIBLE, false)
             intent.putExtra(LocationSelectActivity.ARG_TITLE, requireContext().getString(R.string.select_rack))
+            intent.putExtra(LocationSelectActivity.ARG_ALLOW_PARTIAL, allowPartialSearch)
             resultForRackSelect.launch(intent)
         }
         binding.rackSearchImageView.setOnClickListener { binding.rackTextView.performClick() }
@@ -655,9 +678,9 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     }
 
     private fun setLocationTexts() {
-        setWarehouseText()
-        setAreaText()
-        setRackText()
+        setWarehouseText(warehouse?.description ?: "")
+        setAreaText(warehouseArea?.description ?: "")
+        setRackText(rack?.code ?: "")
     }
 
     private fun setOrderTexts() {
@@ -749,38 +772,38 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         }
     }
 
-    private fun setWarehouseText() {
+    private fun setWarehouseText(value: String = "") {
         activity?.runOnUiThread {
-            if (warehouse == null) {
+            if (value.trim().isEmpty()) {
                 binding.warehouseTextView.typeface = Typeface.DEFAULT
                 binding.warehouseTextView.text = getString(R.string.search_by_warehouse)
             } else {
                 binding.warehouseTextView.typeface = Typeface.DEFAULT_BOLD
-                binding.warehouseTextView.text = warehouse?.description
+                binding.warehouseTextView.text = value
             }
         }
     }
 
-    private fun setAreaText() {
+    private fun setAreaText(value: String = "") {
         activity?.runOnUiThread {
-            if (warehouseArea == null) {
+            if (value.trim().isEmpty()) {
                 binding.areaTextView.typeface = Typeface.DEFAULT
                 binding.areaTextView.text = getString(R.string.search_by_area)
             } else {
                 binding.areaTextView.typeface = Typeface.DEFAULT_BOLD
-                binding.areaTextView.text = warehouseArea?.description
+                binding.areaTextView.text = value
             }
         }
     }
 
-    private fun setRackText() {
+    private fun setRackText(value: String = "") {
         activity?.runOnUiThread {
-            if (rack == null) {
+            if (value.trim().isEmpty()) {
                 binding.rackTextView.typeface = Typeface.DEFAULT
                 binding.rackTextView.text = getString(R.string.search_by_rack)
             } else {
                 binding.rackTextView.typeface = Typeface.DEFAULT_BOLD
-                binding.rackTextView.text = rack?.code
+                binding.rackTextView.text = value
             }
         }
     }
@@ -1234,12 +1257,16 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         pSearchByArea = builder.pSearchByArea
         pSearchByRack = builder.pSearchByRack
         pSearchByOnlyActive = builder.pSearchByOnlyActive
+
+        allowPartialSearch = builder.allowPartialSearch
     }
 
     class Builder {
         fun build(): SelectFilterFragment {
             return SelectFilterFragment(this)
         }
+
+        internal var allowPartialSearch: Boolean = false
 
         internal var description: String = ""
 
@@ -1352,6 +1379,12 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         @Suppress("unused")
         fun onlyActive(value: Boolean): Builder {
             onlyActive = value
+            return this
+        }
+
+        @Suppress("unused")
+        fun allowPartialSearch(): Builder {
+            allowPartialSearch = true
             return this
         }
 

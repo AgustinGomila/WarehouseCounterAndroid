@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
-import android.view.KeyEvent
 import android.view.View
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,6 +31,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.dacosys.warehouseCounter.ui.views.CounterHandler
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 
@@ -180,7 +180,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
             currentValue.toString(), TextView.BufferType.EDITABLE
         )
         binding.qtyEditText.setOnKeyListener { _, _, event ->
-            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(event)) {
                 selectQty()
                 true
             } else {

@@ -58,11 +58,20 @@ data class BarcodeLabelType(
             return arrayOfNulls(size)
         }
 
+        /*
+        const LOT = 1;
+        const RACK = 2;
+        const WAREHOUSE_AREA = 3;
+        const ORDER = 4;
+        const ITEM = 5;
+         */
+
         var notDefined = BarcodeLabelType(0, context.getString(R.string.not_defined))
         var item = BarcodeLabelType(1, context.getString(R.string.item))
         var warehouseArea = BarcodeLabelType(2, context.getString(R.string.area))
         var rack = BarcodeLabelType(3, context.getString(R.string.rack))
         var order = BarcodeLabelType(4, context.getString(R.string.order))
+        var lot = BarcodeLabelType(5, context.getString(R.string.lot))
 
         fun getAll(): ArrayList<BarcodeLabelType> {
             val allSections = ArrayList<BarcodeLabelType>()
@@ -71,7 +80,8 @@ data class BarcodeLabelType(
                 item,
                 warehouseArea,
                 rack,
-                order
+                order,
+                lot
             )
 
             Collections.sort(allSections, CustomComparator())
@@ -108,7 +118,8 @@ data class BarcodeLabelType(
                 item.id.toString(),
                 warehouseArea.id.toString(),
                 rack.id.toString(),
-                order.id.toString()
+                order.id.toString(),
+                lot.id.toString()
             )
 
             return ArrayList(allSections.sortedWith(compareBy { it }))

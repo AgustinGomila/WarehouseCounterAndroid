@@ -8,11 +8,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.GONE
-import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -28,6 +26,7 @@ import com.dacosys.warehouseCounter.ui.adapter.item.ItemAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
@@ -169,7 +168,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
             return@setOnTouchListener false
         }
         binding.autoCompleteTextView.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(actionId, event)) {
                 if (currentText.length >= binding.autoCompleteTextView.threshold) {
                     code = binding.autoCompleteTextView.text!!.toString().trim()
                 }

@@ -13,7 +13,6 @@ import android.text.format.DateFormat
 import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
-import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.WindowManager
@@ -72,6 +71,7 @@ import com.dacosys.warehouseCounter.ui.utils.ParcelLong
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.text.SimpleDateFormat
@@ -160,11 +160,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun saveSharedPreferences() {
-        settingsVm.scanModeCount = when {
-            !partialBlock && !partial -> 1 // Parcial auto
-            partialBlock -> 2 // Parcial bloqueado
-            else -> 0 // Manual
-        }
+        saveCurrentScanMode()
     }
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
@@ -183,19 +179,26 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         b.putLong(ARG_ID, id)
         b.putString(ARG_FILENAME, filename)
 
-        b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
-        b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
-
-        b.putBoolean("partial", partial)
-        b.putBoolean("partialBlock", partialBlock)
-        b.putBoolean("divided", divided)
-        b.putBoolean("dividedBlock", dividedBlock)
+        savePanelState(b)
+        saveScanMode(b)
 
         if (tempQty != null) b.putDouble("tempQty", tempQty!!)
         if (tempLot != null) b.putString("tempLot", tempLot)
 
         // Guardar en Room la orden
         saveTempOrder()
+    }
+
+    private fun savePanelState(b: Bundle) {
+        b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
+        b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
+    }
+
+    private fun saveScanMode(b: Bundle) {
+        b.putBoolean("partial", partial)
+        b.putBoolean("partialBlock", partialBlock)
+        b.putBoolean("divided", divided)
+        b.putBoolean("dividedBlock", dividedBlock)
     }
 
     private fun loadBundleValues(b: Bundle) {
@@ -211,17 +214,25 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         id = b.getLong(ARG_ID)
         filename = b.getString(ARG_FILENAME) ?: ""
 
+        loadScanMode(b)
+        loadPanelState(b)
+
+        binding.requiredDescCheckBox.isChecked = b.getBoolean("requiredDescription")
+
+        if (b.containsKey("tempQty")) tempQty = b.getDouble("tempQty")
+        if (b.containsKey("tempLot")) tempLot = b.getString("tempLot")
+    }
+
+    private fun loadPanelState(b: Bundle) {
+        panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
+        panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
+    }
+
+    private fun loadScanMode(b: Bundle) {
         partial = b.getBoolean("partial")
         partialBlock = b.getBoolean("partialBlock")
         divided = b.getBoolean("divided")
         dividedBlock = b.getBoolean("dividedBlock")
-        binding.requiredDescCheckBox.isChecked = b.getBoolean("requiredDescription")
-
-        panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
-        panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
-
-        if (b.containsKey("tempQty")) tempQty = b.getDouble("tempQty")
-        if (b.containsKey("tempLot")) tempLot = b.getString("tempLot")
     }
 
     private fun loadExtraBundleValues(extras: Bundle) {
@@ -261,11 +272,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         fillAdapter(completeList)
     }
 
-    private fun loadDefaultValues() {
+    private fun loadLastScanMode() {
         when (settingsVm.scanModeCount) {
             1 -> {
                 partialBlock = false
-                partial = false // Parcial auto
+                partial = false // Parcial Auto
             }
 
             2 -> partialBlock = true // Parcial bloqueado
@@ -273,6 +284,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 partialBlock = false
                 partial = true // Manual
             }
+        }
+    }
+
+    private fun saveCurrentScanMode() {
+        settingsVm.scanModeCount = when {
+            !partialBlock && !partial -> 1 // Parcial Auto
+            partialBlock -> 2 // Parcial bloqueado
+            else -> 0 // Manual
         }
     }
 
@@ -313,7 +332,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             // Inicializar la actividad. EXTRAS: Parámetros que recibe la actividad
             val extras = intent.extras
             if (extras != null) loadExtraBundleValues(extras)
-            loadDefaultValues()
+            loadLastScanMode()
         }
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
@@ -402,10 +421,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 multiplierDialog()
             }
         }
-
-        setupPartial()
-        setupDivided()
-        setMultiplierButtonText()
     }
 
     private val requiredLayout: Int
@@ -1088,6 +1103,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         super.onStart()
 
         setPanels()
+        setupPartial()
+        setupDivided()
+        setMultiplierButtonText()
 
         if (fillRequired) {
             fillRequired = false
@@ -1585,7 +1603,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             input.isFocusable = true
             input.isFocusableInTouchMode = true
             input.setOnKeyListener { _, _, event ->
-                if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                if (isActionDone(event)) {
                     alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
                     true
                 } else {

@@ -6,11 +6,9 @@ import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.TextUtils
-import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.inputmethod.EditorInfo
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -32,6 +30,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import kotlin.concurrent.thread
 
@@ -151,7 +150,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             }
         }
         binding.descEditText.setOnKeyListener { _, _, event ->
-            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(event)) {
                 attemptSetupNewCount()
                 true
             } else {
@@ -159,7 +158,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             }
         }
         binding.descEditText.setOnEditorActionListener { _, actionId, event ->
-            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            return@setOnEditorActionListener if (isActionDone(actionId, event)) {
                 binding.continueButton.performClick()
                 true
             } else {

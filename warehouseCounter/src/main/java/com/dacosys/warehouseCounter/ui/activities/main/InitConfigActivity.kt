@@ -9,11 +9,9 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.InputType
-import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.WindowManager
-import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -43,6 +41,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import io.github.cdimascio.dotenv.DotenvBuilder
@@ -195,7 +194,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
 
         binding.passwordEditText.setText(password, TextView.BufferType.EDITABLE)
         binding.passwordEditText.setOnKeyListener { _, _, event ->
-            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(event)) {
                 Screen.closeKeyboard(this)
                 attemptToConfigure()
                 true
@@ -209,7 +208,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
         }
         binding.passwordEditText.setOnEditorActionListener { _, actionId, event ->
-            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            return@setOnEditorActionListener if (isActionDone(actionId, event)) {
                 Screen.closeKeyboard(this)
                 attemptToConfigure()
                 true
@@ -225,7 +224,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
         }
         binding.emailEditText.setOnKeyListener { _, _, event ->
-            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(event)) {
                 binding.passwordEditText.requestFocus()
                 true
             } else {
@@ -233,7 +232,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
         }
         binding.emailEditText.setOnEditorActionListener { _, actionId, event ->
-            return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            return@setOnEditorActionListener if (isActionDone(actionId, event)) {
                 binding.passwordEditText.requestFocus()
                 true
             } else {
@@ -272,7 +271,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             input.isFocusable = true
             input.isFocusableInTouchMode = true
             input.setOnKeyListener { _, _, event ->
-                if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                if (isActionDone(event)) {
                     alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
                     true
                 } else {

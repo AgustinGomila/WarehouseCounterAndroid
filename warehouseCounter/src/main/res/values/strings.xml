@@ -812,4 +812,6 @@
     <string name="start_date">Iniciado</string>
     <string name="received_date">Recibido</string>
     <string name="processed_date">Procesado</string>
+    <string name="lot">Lote</string>
+    <string name="there_is_a_printing_in_progress_">Hay una impresión en curso…</string>
 </resources>

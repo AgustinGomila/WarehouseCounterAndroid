@@ -197,6 +197,7 @@ class ButtonPageFragment : Fragment() {
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        if (_binding1 == null) return
         makeText(binding1.root, text, snackBarType)
     }
 

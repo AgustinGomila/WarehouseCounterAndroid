@@ -18,7 +18,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.text.InputType
 import android.util.Log
-import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -92,6 +91,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -212,7 +212,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     private fun isBackPressed() {
-        CurrentUser.cleanUser()
+        CurrentUser.clear()
+        finish()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -620,7 +621,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             input.isFocusable = true
             input.isFocusableInTouchMode = true
             input.setOnKeyListener { _, _, event ->
-                if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                if (isActionDone(event)) {
                     alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
                     true
                 } else {
@@ -798,12 +799,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
     }
 
     private fun setHeaderUserName() {
-        CurrentUser.getUser {
-            if (it != null) {
-                binding.clientTextView.text =
-                    String.format("%s - %s", settingsVm.installationCode, it.name)
-            }
-        }
+        binding.clientTextView.text =
+            String.format("%s - %s", settingsVm.installationCode, CurrentUser.name)
     }
 
     private fun setHeaderVersion() {
@@ -969,7 +966,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
             return totalPages
         }
     }
-    //endregion
+//endregion
 
     /**
      *

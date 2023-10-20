@@ -1,42 +1,33 @@
 package com.dacosys.warehouseCounter.misc
 
-import com.dacosys.warehouseCounter.data.room.dao.user.UserCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.user.User
 
 class CurrentUser {
     companion object {
-        private var currentUser: User? = null
+        private var user: User = defaultUser()
+        var isLogged: Boolean = false
 
-        var userId: Long = -1L
-        var password: String = ""
-        var name: String = ""
-        var isLogged = false
+        val password: String
+            get() = user.password ?: ""
 
-        fun getUser(onResult: (User?) -> Unit = {}) {
-            if (currentUser == null) {
-                UserCoroutines.getById(userId) {
-                    currentUser = it
-                    onResult(currentUser)
-                }
-            } else onResult(currentUser)
+        val name: String
+            get() = user.name
+
+        val userId: Long
+            get() = user.userId
+
+        private fun defaultUser(): User {
+            return User(userId = -1L, name = "", password = "")
         }
 
-        fun setUser(userId: Long, userName: String, pass: String, isLogged: Boolean) {
-            cleanUser()
-
-            this.userId = userId
-            this.password = pass
-            this.name = userName
-            this.isLogged = isLogged
+        fun set(user: User) {
+            this.user = user
+            this.user.apply { isLogged = true }
         }
 
-        fun cleanUser() {
-            currentUser = null
-
-            userId = -1L
-            password = ""
-            name = ""
-            isLogged = false
+        fun clear() {
+            user = defaultUser()
+            user.apply { isLogged = false }
         }
     }
 }

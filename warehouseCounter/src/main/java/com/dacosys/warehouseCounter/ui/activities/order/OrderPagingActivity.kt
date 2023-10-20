@@ -13,7 +13,6 @@ import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.util.Log
-import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -73,6 +72,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.launch
@@ -256,8 +256,11 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
             currentTemplateId = settingsVm.defaultOrderTemplateId
         }
 
-        printLabelFragment = PrintLabelFragment.Builder().setTemplateTypeIdList(arrayListOf(BarcodeLabelType.order.id))
-            .setTemplateId(currentTemplateId).setQty(currentPrintQty).build()
+        printLabelFragment = PrintLabelFragment.Builder()
+            .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.order.id))
+            .setTemplateId(currentTemplateId)
+            .setQty(currentPrintQty)
+            .build()
         supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
     }
 
@@ -812,7 +815,7 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
             input.isFocusable = true
             input.isFocusableInTouchMode = true
             input.setOnKeyListener { _, _, event ->
-                if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+                if (isActionDone(event)) {
                     alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
                     true
                 } else {

@@ -11,7 +11,6 @@ import com.dacosys.warehouseCounter.data.ktor.v1.service.RequestResult
 import com.dacosys.warehouseCounter.data.ktor.v1.service.ResultStatus
 import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
-import com.dacosys.warehouseCounter.data.room.entity.user.User
 import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.utils.DeviceData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
@@ -32,8 +31,6 @@ class SendItemCode(
 ) {
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
-    private lateinit var currentUser: User
-
     fun execute() {
         fun onGetTokenResult(it: RequestResult) {
             if (it.status == ResultStatus.SUCCESS) {
@@ -52,14 +49,7 @@ class SendItemCode(
             return
         }
 
-        CurrentUser.getUser { user ->
-            if (user != null) {
-                currentUser = user
-                thread { GetToken { onGetTokenResult(it) }.execute(false) }
-            } else {
-                sendEvent(context.getString(R.string.invalid_user), SnackBarType.ERROR)
-            }
-        }
+        thread { GetToken { onGetTokenResult(it) }.execute(false) }
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
@@ -89,8 +79,8 @@ class SendItemCode(
 
         // User Auth DATA //////////////////
         jsonParam.put(USER_AUTH_KEY, AuthData().apply {
-            username = currentUser.name
-            password = currentUser.password ?: ""
+            username = CurrentUser.name
+            password = CurrentUser.password
         })
 
         // Collector DATA //////////////////

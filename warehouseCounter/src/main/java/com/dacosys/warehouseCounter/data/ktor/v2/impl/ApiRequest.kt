@@ -228,16 +228,17 @@ class ApiRequest {
 
         suspend fun httpResponse(): HttpResponse {
             val url = URL(apiUrl)
+            val apiPath = "$VERSION_PATH/$objPath/$BARCODE_PATH"
+            val path = "${url.path}/$apiPath"
+            if (BuildConfig.DEBUG) Log.d(tag, "Send POST to $apiUrl/$apiPath")
 
             val response = httpClient.post {
-                basicAuth(
-                    username = CurrentUser.name, password = CurrentUser.password
-                )
+                basicAuth(username = authName, password = authPassword)
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                     else URLProtocol.HTTPS
                     host = url.host
-                    path("${url.path}/$VERSION_PATH/$objPath/$BARCODE_PATH")
+                    path(path)
                 }
                 contentType(ContentType.Application.Json)
                 setBody(params)
@@ -276,16 +277,17 @@ class ApiRequest {
     ) {
         suspend fun httpResponse(): HttpResponse {
             val url = URL(apiUrl)
+            val apiPath = "$VERSION_PATH/$objPath/$BARCODE_CODE_PATH"
+            val path = "${url.path}/$apiPath"
+            if (BuildConfig.DEBUG) Log.d(tag, "Send POST to $apiUrl/$apiPath")
 
             val response = httpClient.post {
-                basicAuth(
-                    username = CurrentUser.name, password = CurrentUser.password
-                )
+                basicAuth(username = authName, password = authPassword)
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                     else URLProtocol.HTTPS
                     host = url.host
-                    path("${url.path}/$VERSION_PATH/$objPath/$BARCODE_CODE_PATH")
+                    path(path)
                 }
                 contentType(ContentType.Application.Json)
                 setBody(params)
@@ -322,16 +324,17 @@ class ApiRequest {
     suspend fun getDatabase(version: String, callback: (APIResponse<DatabaseData>) -> Unit) {
         suspend fun httpResponse(): HttpResponse {
             val url = URL(apiUrl)
+            val apiPath = "$VERSION_PATH/$DATABASE_PATH/$DB_PATH$version"
+            val path = "${url.path}/$apiPath"
+            if (BuildConfig.DEBUG) Log.d(tag, "Send GET to $apiUrl/$apiPath")
 
             val response = httpClient.get {
-                basicAuth(
-                    username = CurrentUser.name, password = CurrentUser.password
-                )
+                basicAuth(username = authName, password = authPassword)
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                     else URLProtocol.HTTPS
                     host = url.host
-                    path("${url.path}/$VERSION_PATH/$DATABASE_PATH/$DB_PATH$version")
+                    path(path)
                 }
             }
             return response
@@ -369,28 +372,24 @@ class ApiRequest {
         callback: (APIResponse<List<T>>) -> Unit
     ) {
         val url = URL(apiUrl)
+        val apiPath = "$VERSION_PATH/$ORDER_LOCATION_PATH"
+        val path = "${url.path}/$apiPath"
+        if (BuildConfig.DEBUG) Log.d(tag, "Send GET to $apiUrl/$apiPath")
 
         val params = Parameters.build {
             appendAll(ApiFilterParam.asParameter(filter))
             appendAll(ApiPaginationParam.asParameter(pagination))
         }
 
-        val urlComplete = "${url.path}/$VERSION_PATH/$ORDER_LOCATION_PATH"
-
-        if (BuildConfig.DEBUG) {
-            Log.d(tag, "URL: $urlComplete")
-            Log.d(tag, "PARAMS: $params")
-        }
+        if (BuildConfig.DEBUG) Log.d(tag, "PARAMS: $params")
 
         val httpResponse = httpClient.get {
-            basicAuth(
-                username = CurrentUser.name, password = CurrentUser.password
-            )
+            basicAuth(username = authName, password = authPassword)
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS
                 host = url.host
-                path(urlComplete)
+                path(path)
                 parameters.appendAll(params)
             }
         }
@@ -434,6 +433,9 @@ class ApiRequest {
         callback: (APIResponse<ListResponse<T>>) -> Unit
     ) {
         val url = URL(apiUrl)
+        val apiPath = "$VERSION_PATH/$objPath/"
+        val path = "${url.path}/$apiPath"
+        if (BuildConfig.DEBUG) Log.d(tag, "Send GET to $apiUrl/$apiPath")
 
         val params = Parameters.build {
             appendAll(ApiActionParam.asParameter(action))
@@ -441,22 +443,15 @@ class ApiRequest {
             appendAll(ApiPaginationParam.asParameter(pagination))
         }
 
-        val urlComplete = "${url.path}/$VERSION_PATH/$objPath/"
-
-        if (BuildConfig.DEBUG) {
-            Log.d(tag, "URL: $urlComplete")
-            Log.d(tag, "PARAMS: $params")
-        }
+        if (BuildConfig.DEBUG) Log.d(tag, "PARAMS: $params")
 
         val httpResponse = httpClient.get {
-            basicAuth(
-                username = CurrentUser.name, password = CurrentUser.password
-            )
+            basicAuth(username = authName, password = authPassword)
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS
                 host = url.host
-                path(urlComplete)
+                path(path)
                 parameters.appendAll(params)
             }
         }
@@ -492,16 +487,17 @@ class ApiRequest {
         objPath: String, payload: Any, callback: (APIResponse<T>) -> Unit
     ) {
         val url = URL(apiUrl)
+        val apiPath = "$VERSION_PATH/$objPath/$CREATE_PATH"
+        val path = "${url.path}/$apiPath"
+        if (BuildConfig.DEBUG) Log.d(tag, "Send POST to $apiUrl/$apiPath")
 
         val response = httpClient.post {
-            basicAuth(
-                username = CurrentUser.name, password = CurrentUser.password
-            )
+            basicAuth(username = authName, password = authPassword)
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS
                 host = url.host
-                path("${url.path}/$VERSION_PATH/$objPath/$CREATE_PATH")
+                path(path)
             }
             contentType(ContentType.Application.Json)
             setBody(payload)
@@ -536,16 +532,17 @@ class ApiRequest {
     ) {
         suspend fun httpResponse(): HttpResponse {
             val url = URL(apiUrl)
+            val apiPath = "$VERSION_PATH/$ORDER_PATH/$MOVE_PATH"
+            val path = "${url.path}/$apiPath"
+            if (BuildConfig.DEBUG) Log.d(tag, "Send POST to $apiUrl/$apiPath")
 
             val response = httpClient.post {
-                basicAuth(
-                    username = CurrentUser.name, password = CurrentUser.password
-                )
+                basicAuth(username = authName, password = authPassword)
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                     else URLProtocol.HTTPS
                     host = url.host
-                    path("${url.path}/$VERSION_PATH/$ORDER_PATH/$MOVE_PATH")
+                    path(path)
                 }
                 contentType(ContentType.Application.Json)
                 setBody(payload)
@@ -583,16 +580,17 @@ class ApiRequest {
     ) {
         suspend fun httpResponse(): HttpResponse {
             val url = URL(apiUrl)
+            val apiPath = "$VERSION_PATH/$ITEM_CODE_PATH/$CREATE_PATH"
+            val path = "${url.path}/$apiPath"
+            if (BuildConfig.DEBUG) Log.d(tag, "Send POST to $apiUrl/$apiPath")
 
             val response = httpClient.post {
-                basicAuth(
-                    username = CurrentUser.name, password = CurrentUser.password
-                )
+                basicAuth(username = authName, password = authPassword)
                 url {
                     protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                     else URLProtocol.HTTPS
                     host = url.host
-                    path("${url.path}/$VERSION_PATH/$ITEM_CODE_PATH/$CREATE_PATH")
+                    path(path)
                 }
                 contentType(ContentType.Application.Json)
                 setBody(payload)
@@ -632,28 +630,25 @@ class ApiRequest {
         objPath: String, id: Long, payload: Any, callback: (APIResponse<T>) -> Unit
     ) {
         val url = URL(apiUrl)
+        val apiPath = "$VERSION_PATH/$objPath/$UPDATE_PATH"
+        val path = "${url.path}/$apiPath"
+        if (BuildConfig.DEBUG) Log.d(tag, "Send PUT to $apiUrl/$apiPath")
+
         val columnName = EXTENSION_ID
 
         val params = Parameters.build {
             append(columnName, id.toString())
         }
 
-        val urlComplete = "${url.path}/$VERSION_PATH/$objPath/$UPDATE_PATH"
-
-        if (BuildConfig.DEBUG) {
-            Log.d(tag, "URL: $urlComplete")
-            Log.d(tag, "PARAM: $columnName $id")
-        }
+        if (BuildConfig.DEBUG) Log.d(tag, "PARAM: $columnName $id")
 
         val response = httpClient.put {
-            basicAuth(
-                username = CurrentUser.name, password = CurrentUser.password
-            )
+            basicAuth(username = authName, password = authPassword)
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS
                 host = url.host
-                path(urlComplete)
+                path(path)
                 parameters.appendAll(params)
             }
             contentType(ContentType.Application.Json)
@@ -691,6 +686,10 @@ class ApiRequest {
         objPath: String, id: Long, action: ArrayList<ApiActionParam>, callback: (APIResponse<T>) -> Unit
     ) {
         val url = URL(apiUrl)
+        val apiPath = "$VERSION_PATH/$objPath/$VIEW_PATH"
+        val path = "${url.path}/$apiPath"
+        if (BuildConfig.DEBUG) Log.d(tag, "Send GET to $apiUrl/$apiPath")
+
         val columnName = EXTENSION_ID
 
         val params = Parameters.build {
@@ -698,22 +697,15 @@ class ApiRequest {
             append(columnName, id.toString())
         }
 
-        val urlComplete = "${url.path}/$VERSION_PATH/$objPath/$VIEW_PATH"
-
-        if (BuildConfig.DEBUG) {
-            Log.d(tag, "URL: $urlComplete")
-            Log.d(tag, "PARAMS: $params")
-        }
+        if (BuildConfig.DEBUG) Log.d(tag, "PARAMS: $params")
 
         val response = httpClient.get {
-            basicAuth(
-                username = CurrentUser.name, password = CurrentUser.password
-            )
+            basicAuth(username = authName, password = authPassword)
             url {
                 protocol = if (url.protocol.equals("HTTP", true)) URLProtocol.HTTP
                 else URLProtocol.HTTPS
                 host = url.host
-                path(urlComplete)
+                path(path)
                 parameters.appendAll(params)
             }
         }
@@ -739,6 +731,16 @@ class ApiRequest {
         val apiUrl: String
             get() {
                 return settingsVm.urlPanel
+            }
+
+        val authName: String
+            get() {
+                return CurrentUser.name
+            }
+
+        val authPassword: String
+            get() {
+                return CurrentUser.password
             }
 
         const val VERSION_PATH = "v2"

@@ -5,8 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
-import android.view.KeyEvent
-import android.view.inputmethod.EditorInfo
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
@@ -21,6 +19,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 
 
@@ -103,7 +102,7 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         }
 
         binding.codeEditText.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE && (event == null || event.action == KeyEvent.ACTION_DOWN) && (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_UNKNOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(actionId, event)) {
                 codeSelect()
                 true
             } else {

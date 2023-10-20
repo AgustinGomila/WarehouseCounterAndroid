@@ -250,6 +250,7 @@ class ItemDetailFragment : Fragment() {
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        if (_binding == null) return
         makeText(binding.root, text, snackBarType)
     }
 

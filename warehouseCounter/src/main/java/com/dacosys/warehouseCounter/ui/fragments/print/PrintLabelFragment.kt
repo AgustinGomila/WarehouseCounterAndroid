@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
-import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -34,6 +33,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.serializable
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.dacosys.warehouseCounter.ui.views.CounterHandler
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -166,6 +166,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
     }
 
     private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        if (_binding == null) return
         makeText(binding.root, text, snackBarType)
     }
 
@@ -299,7 +300,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
             }
         })
         binding.qtyEditText.setOnKeyListener { _, _, event ->
-            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(event)) {
                 binding.printButton.performClick()
                 true
             } else {
@@ -364,7 +365,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
         input.isFocusable = true
         input.isFocusableInTouchMode = true
         input.setOnKeyListener { _, _, event ->
-            if (event.action == KeyEvent.ACTION_DOWN && (event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_UNKNOWN || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+            if (isActionDone(event)) {
                 alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
                 true
             } else {
@@ -443,14 +444,36 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
         sendToPrinter(sendThis, onFinish)
     }
 
+    @get:Synchronized
+    private var isPrintDone = true
+
+    @Synchronized
+    private fun getIsPrintDone(): Boolean {
+        return isPrintDone
+    }
+
+    @Synchronized
+    private fun setIsPrintDone(state: Boolean) {
+        isPrintDone = state
+    }
+
     private fun sendToPrinter(sendThis: String, onFinish: (Boolean) -> Unit) {
+        if (!getIsPrintDone()) {
+            showSnackBar(getString(R.string.there_is_a_printing_in_progress_), SnackBarType.REMOVE)
+            return
+        }
+
+        setIsPrintDone(false)
         Printer.PrinterFactory.createPrinter(
             activity = requireActivity(),
             onEvent = { showSnackBar(it.text, it.snackBarType) }
         )?.printLabel(
             printThis = sendThis,
             qty = qty,
-            onFinish = onFinish
+            onFinish = {
+                setIsPrintDone(true)
+                onFinish(it)
+            }
         )
     }
 

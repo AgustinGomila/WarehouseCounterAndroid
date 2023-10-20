@@ -8,8 +8,6 @@ import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetToken.Companion.To
 import com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl.Companion.validUrl
 import com.dacosys.warehouseCounter.data.ktor.v1.service.RequestResult
 import com.dacosys.warehouseCounter.data.ktor.v1.service.ResultStatus
-import com.dacosys.warehouseCounter.data.room.entity.user.User
-import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.getFinish
@@ -29,8 +27,6 @@ class BlinkOneItem(
 ) {
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
-    private lateinit var currentUser: User
-
     fun execute() {
         fun onGetTokenResult(it: RequestResult) {
             if (it.status == ResultStatus.SUCCESS) {
@@ -49,14 +45,7 @@ class BlinkOneItem(
             return
         }
 
-        CurrentUser.getUser { user ->
-            if (user != null) {
-                currentUser = user
-                thread { GetToken { onGetTokenResult(it) }.execute(false) }
-            } else {
-                sendEvent(context.getString(R.string.invalid_user), SnackBarType.ERROR)
-            }
-        }
+        thread { GetToken { onGetTokenResult(it) }.execute(false) }
     }
 
     private suspend fun suspendFunction() = withContext(Dispatchers.IO) {
