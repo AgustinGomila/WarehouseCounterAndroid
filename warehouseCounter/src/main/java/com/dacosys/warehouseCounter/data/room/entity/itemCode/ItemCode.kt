@@ -31,6 +31,23 @@ data class ItemCode(
         toUpload = parcel.readInt()
     )
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ItemCode
+
+        return id == other.id
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + (itemId?.hashCode() ?: 0)
+        result = 31 * result + (code?.hashCode() ?: 0)
+        result = 31 * result + (qty?.hashCode() ?: 0)
+        return result
+    }
+
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeLong(id)
         parcel.writeValue(itemId)

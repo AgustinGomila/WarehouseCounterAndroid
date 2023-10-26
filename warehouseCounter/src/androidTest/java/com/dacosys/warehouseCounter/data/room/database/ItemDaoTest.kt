@@ -5,7 +5,6 @@ import androidx.room.Room.inMemoryDatabaseBuilder
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemDao
-import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.github.javafaker.Faker
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -79,18 +78,6 @@ class ItemDaoTest {
                 externalId = faker.lorem().word(),
                 lotEnabled = faker.random().nextInt(0, 1),
                 itemCategoryStr = faker.commerce().department()
-            )
-        }
-
-        fun createFakeItemCode(itemId: Long): ItemCode {
-            val faker = Faker()
-
-            return ItemCode(
-                id = faker.number().randomNumber(),
-                itemId = itemId,
-                code = faker.lorem().word(),
-                qty = faker.number().randomDouble(2, 0, 999),
-                toUpload = 0
             )
         }
     }

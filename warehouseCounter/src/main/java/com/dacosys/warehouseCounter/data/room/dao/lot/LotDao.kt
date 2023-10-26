@@ -22,7 +22,7 @@ interface LotDao {
 
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(lot: Lot)
+    suspend fun insert(lot: Lot): Long?
 
 
     @Update
