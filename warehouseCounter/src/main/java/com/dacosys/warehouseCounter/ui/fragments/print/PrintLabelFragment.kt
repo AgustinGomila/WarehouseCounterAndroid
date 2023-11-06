@@ -94,7 +94,7 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
         fragmentListener?.onFilterChanged(printer = printer, template = template, qty = qty)
     }
 
-    private fun saveSharedPreferences() {
+    fun saveSharedPreferences() {
         settingsVm.printerQty = qty
 
         val currentTemplate = template
@@ -119,7 +119,6 @@ class PrintLabelFragment private constructor(builder: Builder) : Fragment(), Cou
     }
 
     private fun destroyLocals() {
-        saveSharedPreferences()
         this.fragmentListener = null
     }
 

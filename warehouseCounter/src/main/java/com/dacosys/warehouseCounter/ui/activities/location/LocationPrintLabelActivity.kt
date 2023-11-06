@@ -179,7 +179,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         }
 
     private lateinit var filterFragment: SelectFilterFragment
-    private lateinit var printLabelFragment: PrintLabelFragment
+    private var printLabelFragment: PrintLabelFragment? = null
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
@@ -350,13 +350,15 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
             if (currentTemplateId == 0L) currentTemplateId = settingsVm.defaultRackTemplateId
         }
 
-        printLabelFragment =
+        printLabelFragment?.saveSharedPreferences()
+        val fragment =
             PrintLabelFragment.Builder()
                 .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.rack.id, BarcodeLabelType.warehouseArea.id))
                 .setTemplateId(currentTemplateId)
                 .setQty(currentPrintQty)
                 .build()
-        supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
+        printLabelFragment = fragment
+        supportFragmentManager.beginTransaction().replace(R.id.printFragment, fragment).commit()
     }
 
     private fun setupSearchTextFragment() {
@@ -632,7 +634,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
 
     private fun refreshTextViews() {
         runOnUiThread {
-            if (panelTopIsExpanded) printLabelFragment.refreshViews()
+            if (panelTopIsExpanded) printLabelFragment?.refreshViews()
             if (panelBottomIsExpanded) filterFragment.refreshViews()
         }
     }
@@ -1099,7 +1101,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     }
 
     override fun onPrintRequested(printer: String, qty: Int) {
-        val template = printLabelFragment.template
+        val template = printLabelFragment?.template
         if (template == null) {
             showSnackBar(context.getString(R.string.you_must_select_a_template), ERROR)
             return
@@ -1127,7 +1129,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 ),
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
-                    printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
+                    printLabelFragment?.printBarcodes(labelArray = it, onFinish = {})
                 }
             ).execute()
         } else if (was.any()) {
@@ -1140,7 +1142,7 @@ class LocationPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 ),
                 onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
                 onFinish = {
-                    printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
+                    printLabelFragment?.printBarcodes(labelArray = it, onFinish = {})
                 }
             ).execute()
         }

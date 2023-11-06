@@ -176,7 +176,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
         }
 
     private lateinit var filterFragment: SelectFilterFragment
-    private lateinit var printLabelFragment: PrintLabelFragment
+    private var printLabelFragment: PrintLabelFragment? = null
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
@@ -353,13 +353,15 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             currentTemplateId = settingsVm.defaultItemTemplateId
         }
 
-        printLabelFragment =
+        printLabelFragment?.saveSharedPreferences()
+        val fragment =
             PrintLabelFragment.Builder()
                 .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.item.id))
                 .setTemplateId(currentTemplateId)
                 .setQty(currentPrintQty)
                 .build()
-        supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
+        printLabelFragment = fragment
+        supportFragmentManager.beginTransaction().replace(R.id.printFragment, fragment).commit()
     }
 
     private fun setupSearchTextFragment() {
@@ -653,7 +655,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     private fun refreshTextViews() {
         runOnUiThread {
-            if (panelTopIsExpanded) printLabelFragment.refreshViews()
+            if (panelTopIsExpanded) printLabelFragment?.refreshViews()
             if (panelBottomIsExpanded ||
                 resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT
             )
@@ -1127,7 +1129,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
 
     override fun onPrintRequested(printer: String, qty: Int) {
         val itemArray = adapter?.selectedItems() ?: arrayListOf()
-        val template = printLabelFragment.template ?: return
+        val template = printLabelFragment?.template ?: return
 
         if (!itemArray.any()) {
             showSnackBar(getString(R.string.you_must_select_at_least_one_item), ERROR)
@@ -1142,7 +1144,7 @@ class ItemSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshList
             ),
             onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
             onFinish = {
-                printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
+                printLabelFragment?.printBarcodes(labelArray = it, onFinish = {})
             }
         ).execute()
     }

@@ -132,7 +132,7 @@ class QtySelectorActivity : AppCompatActivity(), CounterHandler.CounterListener,
             .incrementalView(binding.moreButton)
             .decrementalView(binding.lessButton).minRange(minValue) // cant go any less than -50
             .maxRange(maxValue) // cant go any further than 50
-            .isCycle(true) // 49,50,-50,-49 and so on
+            .isCycle(false) // 49,50,-50,-49 and so on
             .counterDelay(50) // speed of counter
             .startNumber(currentValue).counterStep(1)  // steps e.g. 0,2,4,6...
             .listener(this) // to listen to counter-results and show them in app

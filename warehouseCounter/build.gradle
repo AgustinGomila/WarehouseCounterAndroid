@@ -3,6 +3,7 @@ plugins {
     id 'kotlin-android'
     id 'kotlin-kapt'
     id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlinVersion"
+    id 'jacoco'
 }
 
 android {
@@ -54,6 +55,7 @@ android {
         debug {
             initWith debug
             debuggable true
+            testCoverageEnabled true
             minifyEnabled false
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android.txt'),
@@ -115,6 +117,15 @@ android {
         checkReleaseBuilds false
         disable = ['MissingTranslation']
     }
+    testOptions {
+        unitTests.all {
+            jacoco {
+                includeNoLocationClasses = true
+                excludes = ['jdk.internal.*']
+            }
+        }
+        unitTests.returnDefaultValues = true
+    }
     namespace 'com.dacosys.warehouseCounter'
 }
 
@@ -127,9 +138,6 @@ dependencies {
     implementation 'com.google.android.gms:play-services-basement:18.2.0'
     implementation 'androidx.test:core-ktx:1.5.0'
     implementation 'androidx.test.ext:junit-ktx:1.1.5'
-    testImplementation 'junit:junit:4.13.1'
-    testImplementation 'junit:junit:4.13.1'
-    testImplementation 'junit:junit:4.13.1'
 
     // Permite utilizar las librerías Zxing en API 23
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
@@ -176,7 +184,7 @@ dependencies {
     // AndroidX Libs
     implementation 'androidx.annotation:annotation:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.compose.animation:animation-core:1.6.0-alpha07'
+    implementation 'androidx.compose.animation:animation-core:1.6.0-alpha08'
 
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.percentlayout:percentlayout:1.0.0'
@@ -237,13 +245,14 @@ dependencies {
     implementation 'com.github.javafaker:javafaker:1.0.2'
 
     // Testing
-    testImplementation "junit:junit:$junitVersion"
-    testImplementation "androidx.arch.core:core-testing:$coreTestingVersion"
     androidTestImplementation("androidx.test.espresso:espresso-core:$espressoVersion", {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "io.insert-koin:koin-test:3.2.2"
+
+    testImplementation "junit:junit:$junitVersion"
+    testImplementation "androidx.arch.core:core-testing:$coreTestingVersion"
     testImplementation "io.mockk:mockk:1.13.8"
 }
 

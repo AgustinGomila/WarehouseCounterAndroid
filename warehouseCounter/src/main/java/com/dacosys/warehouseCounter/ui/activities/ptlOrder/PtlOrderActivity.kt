@@ -183,7 +183,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
 
     private fun onGetLabel(it: ArrayList<Label>) {
         if (it.any()) {
-            printLabelFragment.printPtlLabels(labelArray = it, onFinish = {})
+            printLabelFragment?.printPtlLabels(labelArray = it, onFinish = {})
         }
         gentlyReturn()
     }
@@ -325,7 +325,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     private var timerTask: TimerTask? = null
 
     private lateinit var headerFragment: PtlOrderHeaderFragment
-    private lateinit var printLabelFragment: PrintLabelFragment
+    private var printLabelFragment: PrintLabelFragment? = null
     private lateinit var summaryFragment: SummaryFragment
 
     private var currentPrintQty: Int = 1
@@ -592,13 +592,15 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
             currentTemplateId = settingsVm.defaultOrderTemplateId
         }
 
-        printLabelFragment =
+        printLabelFragment?.saveSharedPreferences()
+        val fragment =
             PrintLabelFragment.Builder()
                 .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.order.id))
                 .setTemplateId(currentTemplateId)
                 .setQty(currentPrintQty)
                 .build()
-        supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
+        printLabelFragment = fragment
+        supportFragmentManager.beginTransaction().replace(R.id.printFragment, fragment).commit()
     }
 
     private val requiredLayout: Int
@@ -757,7 +759,7 @@ class PtlOrderActivity : AppCompatActivity(), PtlContentAdapter.EditQtyListener,
     private fun refreshTextViews() {
         runOnUiThread {
             if (panelTopIsExpanded) {
-                printLabelFragment.refreshViews()
+                printLabelFragment?.refreshViews()
                 headerFragment.refreshViews()
             }
         }

@@ -71,7 +71,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
     private var currentFragment: Fragment? = null
     private var currentItem: Any? = null
-    private lateinit var printLabelFragment: PrintLabelFragment
+    private var printLabelFragment: PrintLabelFragment? = null
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
@@ -128,13 +128,15 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         runOnUiThread {
             binding.printFragment.visibility = View.VISIBLE
 
-            printLabelFragment =
+            printLabelFragment?.saveSharedPreferences()
+            val fragment =
                 PrintLabelFragment.Builder()
                     .setTemplateTypeIdList(typesId)
                     .setTemplateId(templateId)
                     .setQty(settingsVm.printerQty)
                     .build()
-            supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
+            printLabelFragment = fragment
+            supportFragmentManager.beginTransaction().replace(R.id.printFragment, fragment).commit()
         }
     }
 
@@ -554,7 +556,7 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
 
     override fun onPrintRequested(printer: String, qty: Int) {
         val tempObj = currentItem ?: return
-        val template = printLabelFragment.template ?: return
+        val template = printLabelFragment?.template ?: return
 
         when (tempObj) {
             is Item -> {
@@ -564,10 +566,15 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                         templateId = template.templateId,
                         printOps = PrintOps.getPrintOps()
                     ),
-                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                    onEvent = {
+                        if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(
+                            it.text,
+                            it.snackBarType
+                        )
+                    },
                     onFinish = {
                         if (it.any()) {
-                            printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
+                            printLabelFragment?.printBarcodes(labelArray = it, onFinish = {})
                         } else {
                             showSnackBar(getString(R.string.there_are_no_labels_to_print), ERROR)
                         }
@@ -582,10 +589,15 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                         templateId = template.templateId,
                         printOps = PrintOps.getPrintOps()
                     ),
-                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                    onEvent = {
+                        if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(
+                            it.text,
+                            it.snackBarType
+                        )
+                    },
                     onFinish = {
                         if (it.any()) {
-                            printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
+                            printLabelFragment?.printBarcodes(labelArray = it, onFinish = {})
                         } else {
                             showSnackBar(getString(R.string.there_are_no_labels_to_print), ERROR)
                         }
@@ -600,10 +612,15 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                         templateId = template.templateId,
                         printOps = PrintOps.getPrintOps()
                     ),
-                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                    onEvent = {
+                        if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(
+                            it.text,
+                            it.snackBarType
+                        )
+                    },
                     onFinish = {
                         if (it.any()) {
-                            printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
+                            printLabelFragment?.printBarcodes(labelArray = it, onFinish = {})
                         } else {
                             showSnackBar(getString(R.string.there_are_no_labels_to_print), ERROR)
                         }
@@ -618,10 +635,15 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
                         templateId = template.templateId,
                         printOps = PrintOps.getPrintOps()
                     ),
-                    onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                    onEvent = {
+                        if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(
+                            it.text,
+                            it.snackBarType
+                        )
+                    },
                     onFinish = {
                         if (it.any()) {
-                            printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
+                            printLabelFragment?.printBarcodes(labelArray = it, onFinish = {})
                         } else {
                             showSnackBar(getString(R.string.there_are_no_labels_to_print), ERROR)
                         }

@@ -117,7 +117,7 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
     private var hideFilterPanel = false
 
     private lateinit var filterFragment: SelectFilterFragment
-    private lateinit var printLabelFragment: PrintLabelFragment
+    private var printLabelFragment: PrintLabelFragment? = null
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
@@ -256,12 +256,15 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
             currentTemplateId = settingsVm.defaultOrderTemplateId
         }
 
-        printLabelFragment = PrintLabelFragment.Builder()
-            .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.order.id))
-            .setTemplateId(currentTemplateId)
-            .setQty(currentPrintQty)
-            .build()
-        supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
+        printLabelFragment?.saveSharedPreferences()
+        val fragment =
+            PrintLabelFragment.Builder()
+                .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.order.id))
+                .setTemplateId(currentTemplateId)
+                .setQty(currentPrintQty)
+                .build()
+        printLabelFragment = fragment
+        supportFragmentManager.beginTransaction().replace(R.id.printFragment, fragment).commit()
     }
 
     private fun setupSearchTextFragment() {
@@ -524,7 +527,7 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
 
     private fun refreshTextViews() {
         runOnUiThread {
-            if (panelTopIsExpanded) printLabelFragment.refreshViews()
+            if (panelTopIsExpanded) printLabelFragment?.refreshViews()
             if (panelBottomIsExpanded) filterFragment.refreshViews()
         }
     }
@@ -855,7 +858,7 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
     }
 
     override fun onPrintRequested(printer: String, qty: Int) {
-        val template = printLabelFragment.template
+        val template = printLabelFragment?.template
         if (template == null) {
             showSnackBar(context.getString(R.string.you_must_select_a_template), ERROR)
             return
@@ -878,7 +881,7 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
             onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
             onFinish = {
                 if (it.isNotEmpty()) {
-                    printLabelFragment.printBarcodes(
+                    printLabelFragment?.printBarcodes(
                         labelArray = it,
                         onFinish = { success ->
                             if (success) PendingLabelCoroutines.remove(listOf(order.id))

@@ -355,7 +355,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             .incrementalView(binding.moreButton)
             .decrementalView(binding.lessButton).minRange(1.0) // cant go any less than -50
             .maxRange(100.0) // cant go any further than 50
-            .isCycle(true) // 49,50,-50,-49 and so on
+            .isCycle(false) // 49,50,-50,-49 and so on
             .counterDelay(50) // speed of counter
             .startNumber(1.0).counterStep(1L)  // steps e.g. 0,2,4,6...
             .listener(this) // to listen to counter-results and show them in app

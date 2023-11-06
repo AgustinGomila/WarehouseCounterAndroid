@@ -20,6 +20,7 @@ import com.dacosys.warehouseCounter.data.ktor.v1.dto.user.UserAuthData
 import com.dacosys.warehouseCounter.data.ktor.v1.service.APIService
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import io.ktor.client.call.*
+import io.ktor.client.network.sockets.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -229,6 +230,9 @@ class APIServiceImpl : APIService {
         } catch (e: SerializationException) {
             println(e.stackTrace)
             ApiResponse(RESULT_ERROR, e.message.toString())
+        } catch (e: SocketTimeoutException) {
+            println(e.stackTrace)
+            ApiResponse(RESULT_ERROR, e.message.toString())
         }
         callback(result)
     }
@@ -245,6 +249,9 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<ApiResponse>()
         } catch (e: SerializationException) {
+            println(e.stackTrace)
+            ApiResponse(RESULT_ERROR, e.message.toString())
+        } catch (e: SocketTimeoutException) {
             println(e.stackTrace)
             ApiResponse(RESULT_ERROR, e.message.toString())
         }
@@ -265,6 +272,9 @@ class APIServiceImpl : APIService {
         } catch (e: SerializationException) {
             println(e.stackTrace)
             ApiResponse(RESULT_ERROR, e.message.toString())
+        } catch (e: SocketTimeoutException) {
+            println(e.stackTrace)
+            ApiResponse(RESULT_ERROR, e.message.toString())
         }
         callback(result)
     }
@@ -281,6 +291,9 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<LabelResponse>()
         } catch (e: SerializationException) {
+            println(e.stackTrace)
+            LabelResponse(RESULT_ERROR, e.message.toString(), listOf())
+        } catch (e: SocketTimeoutException) {
             println(e.stackTrace)
             LabelResponse(RESULT_ERROR, e.message.toString(), listOf())
         }
@@ -301,6 +314,9 @@ class APIServiceImpl : APIService {
         } catch (e: SerializationException) {
             println(e.stackTrace)
             PickManualResponse(RESULT_ERROR, e.message.toString(), listOf())
+        } catch (e: SocketTimeoutException) {
+            println(e.stackTrace)
+            PickManualResponse(RESULT_ERROR, e.message.toString(), listOf())
         }
         callback(result)
     }
@@ -317,6 +333,9 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<ApiResponse>()
         } catch (e: SerializationException) {
+            println(e.stackTrace)
+            ApiResponse(RESULT_ERROR, e.message.toString())
+        } catch (e: SocketTimeoutException) {
             println(e.stackTrace)
             ApiResponse(RESULT_ERROR, e.message.toString())
         }
@@ -337,6 +356,9 @@ class APIServiceImpl : APIService {
         } catch (e: SerializationException) {
             println(e.stackTrace)
             ApiResponse(RESULT_ERROR, e.message.toString())
+        } catch (e: SocketTimeoutException) {
+            println(e.stackTrace)
+            ApiResponse(RESULT_ERROR, e.message.toString())
         }
         callback(result)
     }
@@ -353,6 +375,9 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<PtlContentResponse>()
         } catch (e: SerializationException) {
+            println(e.stackTrace)
+            PtlContentResponse(RESULT_ERROR, e.message.toString(), listOf())
+        } catch (e: SocketTimeoutException) {
             println(e.stackTrace)
             PtlContentResponse(RESULT_ERROR, e.message.toString(), listOf())
         }

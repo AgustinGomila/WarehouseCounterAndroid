@@ -158,7 +158,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }
 
     private lateinit var filterFragment: SelectFilterFragment
-    private lateinit var printLabelFragment: PrintLabelFragment
+    private var printLabelFragment: PrintLabelFragment? = null
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
@@ -361,13 +361,15 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             currentTemplateId = settingsVm.defaultOrderTemplateId
         }
 
-        printLabelFragment =
+        printLabelFragment?.saveSharedPreferences()
+        val fragment =
             PrintLabelFragment.Builder()
                 .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.order.id))
                 .setTemplateId(currentTemplateId)
                 .setQty(currentPrintQty)
                 .build()
-        supportFragmentManager.beginTransaction().replace(R.id.printFragment, printLabelFragment).commit()
+        printLabelFragment = fragment
+        supportFragmentManager.beginTransaction().replace(R.id.printFragment, fragment).commit()
     }
 
     private fun setupSearchTextFragment() {
@@ -642,7 +644,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
     private fun refreshTextViews() {
         runOnUiThread {
-            if (panelTopIsExpanded) printLabelFragment.refreshViews()
+            if (panelTopIsExpanded) printLabelFragment?.refreshViews()
             if (panelBottomIsExpanded) filterFragment.refreshViews()
         }
     }
@@ -1087,7 +1089,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
     }
 
     override fun onPrintRequested(printer: String, qty: Int) {
-        val template = printLabelFragment.template
+        val template = printLabelFragment?.template
         if (template == null) {
             showSnackBar(context.getString(R.string.you_must_select_a_template), ERROR)
             return
@@ -1115,7 +1117,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
             },
             onFinish = {
                 if (it.isNotEmpty()) {
-                    printLabelFragment.printBarcodes(
+                    printLabelFragment?.printBarcodes(
                         labelArray = it,
                         onFinish = { success ->
                             if (success) PendingLabelCoroutines.remove(ids)
