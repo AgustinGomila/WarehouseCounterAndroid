@@ -76,7 +76,7 @@ class ClientDaoTest {
                 address = if (faker.random().nextBoolean()) faker.address().streetAddress() else null,
                 city = if (faker.random().nextBoolean()) faker.address().city() else null,
                 userId = if (faker.random().nextBoolean()) faker.number().numberBetween(1, 1000) else null,
-                active = faker.random().nextInt(0, 2),
+                active = faker.random().nextInt(0, 1),
                 latitude = if (faker.random().nextBoolean()) faker.number().randomDouble(6, -90, 90)
                     .toFloat() else null,
                 longitude = if (faker.random().nextBoolean()) faker.number().randomDouble(6, -180, 180)
