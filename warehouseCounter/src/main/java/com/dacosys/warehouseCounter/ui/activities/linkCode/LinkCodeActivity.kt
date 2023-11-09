@@ -1289,7 +1289,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             val item = r.toRoom()
             val pos = adapter?.getIndexById(item.itemId) ?: NO_POSITION
 
-            if (pos != NO_POSITION) {
+            if (pos != NO_POSITION && pos < (adapter?.itemCount ?: 0)) {
                 adapter?.selectItem(item)
             } else {
                 runOnUiThread {

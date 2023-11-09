@@ -14,6 +14,8 @@ class Statics {
         val lineSeparator: String = System.getProperty("line.separator") ?: "\\r\\n"
         const val DATE_FORMAT: String = "yyyy-MM-dd hh:mm:ss"
 
+        val listSeparator: Char = ','
+
         /**
          * Modo DEMO
          */

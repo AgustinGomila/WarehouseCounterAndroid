@@ -89,6 +89,7 @@
     <string name="dacosys_logo">Dacosys logo</string>
     <string name="database_is_not_created_yet">La base de datos aún no fue creada</string>
     <string name="database_name_is_invalid">Nombre inválido de la base de datos</string>
+    <string name="take_off">Quitar</string>
     <string name="delete">Eliminar</string>
     <string name="delivery_control">Control de despacho</string>
     <string name="description">Descripción</string>

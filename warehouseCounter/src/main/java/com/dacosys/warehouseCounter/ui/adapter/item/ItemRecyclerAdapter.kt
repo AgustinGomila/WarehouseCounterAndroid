@@ -616,7 +616,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
     private fun notifyItemSelectedChanged(pos: Int) {
         notifyItemChanged(currentIndex)
         var item: Item? = null
-        if (pos != NO_POSITION) item = getItem(pos)
+        if (pos != NO_POSITION && pos < itemCount) item = getItem(pos)
         selectedItemChangedListener?.onSelectedItemChanged(item)
     }
 

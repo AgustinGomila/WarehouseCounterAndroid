@@ -24,6 +24,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiFilterParam.Companion.A
 import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.data.settings.Preference
 import com.dacosys.warehouseCounter.databinding.SelectFilterFragmentBinding
+import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.ui.activities.itemCategory.ItemCategorySelectActivity
 import com.dacosys.warehouseCounter.ui.activities.location.LocationSelectActivity
@@ -99,6 +100,42 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     fun setOrderId(orderId: String) {
         this.orderId = orderId
         refreshViews()
+    }
+
+    @Suppress("unused")
+    fun addOrderId(orderId: String) {
+        var allOrders: MutableList<String> = mutableListOf()
+        if (this.orderId.isNotEmpty())
+            allOrders = this.orderId.split(Statics.listSeparator).toMutableList()
+
+        if (allOrders.contains(orderId)) return
+
+        allOrders.add(orderId)
+
+        if (allOrders.count() == 1) this.orderId = allOrders.first()
+        else this.orderId = allOrders.joinToString(Statics.listSeparator.toString())
+
+        refreshViews()
+    }
+
+    @Suppress("unused")
+    fun removeOrderId(ids: List<String>) {
+        var allOrders: MutableList<String> = mutableListOf()
+        if (this.orderId.isNotEmpty())
+            allOrders = this.orderId.split(Statics.listSeparator).toMutableList()
+
+        if (allOrders.isEmpty()) return
+
+        allOrders.removeAll(ids)
+
+        this.orderId = allOrders.joinToString(Statics.listSeparator.toString())
+
+        refreshViews()
+    }
+
+    @Suppress("unused")
+    fun removeOrderId(orderId: String) {
+        removeOrderId(arrayListOf(orderId))
     }
 
     @Suppress("unused")
@@ -1064,6 +1101,23 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
         }
 
     @Suppress("MemberVisibilityCanBePrivate")
+    val filterOrderIdArray: ArrayList<ApiFilterParam>
+        get() {
+            val allOrdersId = orderId.split(Statics.listSeparator)
+            val filter: java.util.ArrayList<ApiFilterParam> = arrayListOf()
+            for (id in allOrdersId) {
+                filter.add(
+                    ApiFilterParam(
+                        columnName = ApiFilterParam.EXTENSION_ORDER_ORDER_ID,
+                        value = id,
+                        conditional = ApiFilterParam.ACTION_OPERATOR_IN
+                    )
+                )
+            }
+            return filter
+        }
+
+    @Suppress("MemberVisibilityCanBePrivate")
     val filterOrderLocationId: ApiFilterParam
         get() {
             return ApiFilterParam(
@@ -1169,7 +1223,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
 
         if (validOrderFilter()) {
             if (description.isNotEmpty()) filter.add(filterOrderDescription)
-            if (orderId.isNotEmpty()) filter.add(filterOrderId)
+            if (orderId.isNotEmpty()) filter.addAll(filterOrderIdArray)
             if (orderExternalId.isNotEmpty()) filter.add(filterOrderExternalId)
         }
         return filter

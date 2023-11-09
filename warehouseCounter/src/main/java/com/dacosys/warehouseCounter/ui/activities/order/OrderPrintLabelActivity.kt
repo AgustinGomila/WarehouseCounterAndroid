@@ -238,19 +238,20 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
-        multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
+        multiSelect = b.getBoolean(ARG_MULTI_SELECT, multiSelect)
 
         showSelectButton =
-            if (b.containsKey(ARG_SHOW_SELECT_BUTTON)) b.getBoolean(ARG_SHOW_SELECT_BUTTON, true)
-            else true
+            if (b.containsKey(ARG_SHOW_SELECT_BUTTON)) b.getBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
+            else showSelectButton
 
         showRemoveButton =
-            if (b.containsKey(ARG_SHOW_REMOVE_BUTTON)) b.getBoolean(ARG_SHOW_REMOVE_BUTTON, false)
-            else false
+            if (b.containsKey(ARG_SHOW_REMOVE_BUTTON)) b.getBoolean(ARG_SHOW_REMOVE_BUTTON, showRemoveButton)
+            else showRemoveButton
 
         val temp =
             if (b.containsKey(ARG_IDS)) b.serializable<ArrayList<Long>>(ARG_IDS) as ArrayList<*>
             else ArrayList<Long>()
+
         if (temp.firstOrNull() is Long) {
             @Suppress("UNCHECKED_CAST")
             ids = temp as ArrayList<Long>
@@ -325,16 +326,30 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
     private fun setSelectRemoveButton() {
         if (showRemoveButton) {
+            val pendingLabel = ids.isNotEmpty()
+
+            binding.okButton.visibility = VISIBLE
             val textColor =
-                getBestContrastColor(ResourcesCompat.getColor(context.resources, R.color.coral, null))
-            binding.okButton.text = getString(R.string.remove)
+                getBestContrastColor(
+                    if (pendingLabel) ResourcesCompat.getColor(context.resources, R.color.coral, null)
+                    else ResourcesCompat.getColor(context.resources, R.color.button_ptl_order, null)
+                )
+            binding.okButton.text =
+                if (pendingLabel) getString(R.string.remove_pending_label)
+                else getString(R.string.take_off)
+
             binding.okButton.setTextColor(textColor)
             binding.okButton.background = AppCompatResources.getDrawable(
                 context,
-                R.drawable.rounded_corner_button_coral
+                if (pendingLabel) R.drawable.rounded_corner_button_coral
+                else R.drawable.rounded_corner_button_ea526f
             )
-            binding.okButton.setOnClickListener { itemRemove() }
-        } else {
+            binding.okButton.setOnClickListener {
+                if (pendingLabel) itemRemove()
+                else itemFilterRemove()
+            }
+        } else if (showSelectButton) {
+            binding.okButton.visibility = VISIBLE
             val textColor =
                 getBestContrastColor(ResourcesCompat.getColor(context.resources, R.color.seagreen, null))
             binding.okButton.text = getString(R.string.accept)
@@ -344,6 +359,8 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
                 R.drawable.rounded_corner_button_seagreen
             )
             binding.okButton.setOnClickListener { itemSelect() }
+        } else {
+            binding.okButton.visibility = GONE
         }
     }
 
@@ -655,6 +672,20 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         }, 20)
     }
 
+    private fun itemFilterRemove() {
+        val selectedOrders = adapter?.selectedOrders() ?: arrayListOf()
+        if (!selectedOrders.any()) return
+        val idsToRemove = selectedOrders.map { it.id.toString() }
+        filterFragment.removeOrderId(idsToRemove)
+        removeFromAdapter(idsToRemove)
+    }
+
+    private fun removeFromAdapter(idsToRemove: List<String>) {
+        runOnUiThread {
+            adapter?.removeByIds(idsToRemove)
+        }
+    }
+
     private fun itemRemove() {
         val selectedOrders = adapter?.selectedOrders() ?: arrayListOf()
         if (!selectedOrders.any()) {
@@ -713,6 +744,7 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
 
         var filter: ArrayList<ApiFilterParam> = arrayListOf()
         if (ids.isEmpty()) {
+            // No es una lista fija de ID
             filter = filterFragment.getFilters()
             if (!filter.any()) {
                 fillAdapter(arrayListOf())
@@ -865,9 +897,14 @@ class OrderPrintLabelActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefres
         when (val itemObj = it.item) {
             is OrderResponse -> {
                 runOnUiThread {
-                    filterFragment.setOrderExternalId(itemObj.externalId)
-                    filterFragment.setOrderId(itemObj.id.toString())
-                    fillAdapter(arrayListOf(itemObj))
+                    if (scanCode.startsWith(PREFIX_ORDER, 0, true)) {
+                        filterFragment.addOrderId(itemObj.id.toString())
+                    } else {
+                        filterFragment.setOrderExternalId(itemObj.externalId)
+                    }
+                    runOnUiThread {
+                        adapter?.add(itemObj)
+                    }
                 }
             }
 

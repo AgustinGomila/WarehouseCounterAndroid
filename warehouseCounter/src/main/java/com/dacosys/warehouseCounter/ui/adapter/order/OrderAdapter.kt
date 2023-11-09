@@ -417,8 +417,13 @@ class OrderAdapter private constructor(builder: Builder) :
         refreshFilter(filterOptions)
     }
 
-    fun add(item: OrderResponse, position: Int) {
-        fullList.add(position, item)
+    fun add(item: OrderResponse) {
+        if (fullList.contains(item)) return
+
+        val position = fullList.size
+        fullList.add(item)
+        checkedHashArray.add(item.hashCode)
+
         submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
             selectItem(position)
@@ -426,13 +431,29 @@ class OrderAdapter private constructor(builder: Builder) :
     }
 
     fun remove(position: Int) {
-        val location = getItem(position)
-        checkedHashArray.remove(location.hashCode)
+        val order = getItem(position)
+        removeById(order.id.toString())
+    }
 
-        fullList.removeAt(position)
+    fun removeByIds(orderIdList: List<String>) {
+        val allIndex: List<Int> =
+            fullList.mapIndexed { index, order -> if (order.id.toString() in orderIdList) index else null }
+                .filterNotNull()
+
+        val allOrders: List<OrderResponse> = allIndex.map { getItem(it) }
+
+        val allHashCodes = allOrders.map { it.hashCode }
+
+        checkedHashArray.removeAll(allHashCodes.toSet())
+        fullList.removeAll(allOrders.toSet())
+
         submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
         }
+    }
+
+    private fun removeById(id: String) {
+        removeByIds(listOf(id))
     }
 
     /**
@@ -464,7 +485,7 @@ class OrderAdapter private constructor(builder: Builder) :
     private fun notifyItemSelectedChanged(pos: Int) {
         notifyItemChanged(currentIndex)
         var item: OrderResponse? = null
-        if (pos != NO_POSITION) item = getItem(pos)
+        if (pos != NO_POSITION && pos < itemCount) item = getItem(pos)
         selectedItemChangedListener?.onSelectedItemChanged(item)
     }
 

@@ -71,7 +71,7 @@ class PrintLabelActivity : AppCompatActivity() {
                 val intent = Intent(baseContext, OrderPrintLabelActivity::class.java)
                 intent.putExtra(OrderPrintLabelActivity.ARG_TITLE, getString(R.string.print_order_labels))
                 intent.putExtra(OrderPrintLabelActivity.ARG_MULTI_SELECT, true)
-                intent.putExtra(OrderPrintLabelActivity.ARG_SHOW_SELECT_BUTTON, false)
+                intent.putExtra(OrderPrintLabelActivity.ARG_SHOW_REMOVE_BUTTON, true)
                 startActivity(intent)
             }
         }

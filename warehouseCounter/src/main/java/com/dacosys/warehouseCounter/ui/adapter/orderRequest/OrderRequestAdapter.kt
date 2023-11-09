@@ -479,7 +479,7 @@ class OrderRequestAdapter private constructor(builder: Builder) :
     private fun notifyItemSelectedChanged(pos: Int) {
         notifyItemChanged(currentIndex)
         var orderRequest: OrderRequest? = null
-        if (pos != NO_POSITION) orderRequest = getItem(pos)
+        if (pos != NO_POSITION && pos < itemCount) orderRequest = getItem(pos)
         selectedOrderRequestChangedListener?.onSelectedOrderRequestChanged(orderRequest)
     }
 
