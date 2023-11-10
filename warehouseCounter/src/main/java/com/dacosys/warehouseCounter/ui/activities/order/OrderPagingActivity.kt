@@ -178,7 +178,7 @@ class OrderPagingActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLis
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
-        showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, true)
+        showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
     }
 
     private lateinit var binding: ItemPrintLabelActivityTopPanelCollapsedBinding

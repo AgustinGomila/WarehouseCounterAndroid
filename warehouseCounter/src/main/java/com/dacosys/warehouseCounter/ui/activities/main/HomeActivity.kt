@@ -356,7 +356,7 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
         val intent = Intent(context, OrderMoveActivity::class.java)
         intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.move_order))
-        intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, false)
+        intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, true)
         startActivity(intent)
     }
 

@@ -235,8 +235,8 @@ class OrderLocationSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.order_location)
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
-        multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
-        showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, true)
+        multiSelect = b.getBoolean(ARG_MULTI_SELECT, multiSelect)
+        showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
     }
 
     private lateinit var binding: OrderLocationActivityBinding

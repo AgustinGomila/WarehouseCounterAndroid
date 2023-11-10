@@ -114,7 +114,7 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
 
     private var showSelectButton = true
 
-    private var multiSelect = false
+    private var multiSelect = true
     private var adapter: OrderAdapter? = null
     private var lastSelected: OrderResponse? = null
     private var firstVisiblePos: Int? = null
@@ -233,8 +233,8 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.move_order)
 
         hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
-        multiSelect = b.getBoolean(ARG_MULTI_SELECT, false)
-        showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, true)
+        multiSelect = b.getBoolean(ARG_MULTI_SELECT, multiSelect)
+        showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
 
         warehouseArea = b.parcelable(ARG_WAREHOUSE_AREA)
         rack = b.parcelable(ARG_RACK)
@@ -660,8 +660,6 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
                     if (index == itemArray.lastIndex) {
                         showSnackBar(getString(R.string.move_ok), SUCCESS)
                         filterFragment.clear()
-                    } else {
-                        showSnackBar(getString(R.string.move_error), ERROR)
                     }
                 },
                 onEvent = { showSnackBar(it.text, it.snackBarType) }
@@ -829,9 +827,14 @@ class OrderMoveActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
     private fun proceedByResult(it: GetResultFromCode.CodeResult, scanCode: String) {
         when (val itemObj = it.item) {
             is OrderResponse -> {
-                filterFragment.setOrderExternalId(itemObj.externalId)
-                filterFragment.setOrderId(itemObj.id.toString())
-                fillAdapter(arrayListOf(itemObj))
+                if (scanCode.startsWith(PREFIX_ORDER, 0, true)) {
+                    filterFragment.addOrderId(itemObj.id.toString())
+                } else {
+                    filterFragment.setOrderExternalId(itemObj.externalId)
+                }
+                runOnUiThread {
+                    adapter?.add(itemObj)
+                }
             }
 
             is WarehouseArea -> {
