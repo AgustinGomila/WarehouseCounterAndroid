@@ -155,7 +155,7 @@ class ItemDetailFragment : Fragment() {
         // Get the prices of this particular item in a separate thread
         thread {
             ViewItem(
-                id = it.itemId,
+                id = it.itemId.toString(),
                 action = ViewItem.defaultAction,
                 onEvent = {
                     if (it.snackBarType != SnackBarType.SUCCESS)

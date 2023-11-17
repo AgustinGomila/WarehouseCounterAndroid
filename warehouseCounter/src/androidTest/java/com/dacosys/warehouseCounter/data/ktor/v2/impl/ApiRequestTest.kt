@@ -28,6 +28,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.GetItemCode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.BARCODE_LABEL_TEMPLATE_PATH
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.FREE_ITEM_PATH
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ITEM_CODE_PATH
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ITEM_PATH
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.RACK_PATH
@@ -65,6 +66,7 @@ import java.net.InetSocketAddress
 import java.net.PasswordAuthentication
 import java.net.Proxy
 import java.net.Proxy.NO_PROXY
+import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -531,6 +533,92 @@ class ApiRequestTest : KoinTest {
         else assert(false)
     }
 
+    @Test
+    fun viewItemByIDReturnSameUUID(): Unit = runTest {
+        val lock = CountDownLatch(1)
+        var r: ListResponse<Item>? = null
+
+        apiRequest.getListOf<Item>(
+            objPath = ITEM_PATH,
+            listName = Item.ITEM_LIST_KEY,
+            action = GetItem.defaultAction,
+            filter = arrayListOf(),
+            pagination = ApiPaginationParam.defaultPagination,
+            callback = {
+                if (it.response != null) r = it.response
+                if (it.onEvent != null) sendEvent(it.onEvent)
+                lock.countDown()
+            }
+        )
+
+        lock.await(sv.connectionTimeout.toLong(), TimeUnit.MILLISECONDS)
+
+        val allItems = r?.items ?: arrayListOf()
+        val item = allItems[Random().nextInt(allItems.count())]
+        var r2: Item? = null
+
+        apiRequest.view<Item>(
+            objPath = FREE_ITEM_PATH,
+            id = item.id,
+            action = GetItem.defaultAction,
+            callback = {
+                if (it.response != null) r2 = it.response
+                if (it.onEvent != null) sendEvent(it.onEvent)
+                lock.countDown()
+            }
+        )
+
+        lock.await(sv.connectionTimeout.toLong(), TimeUnit.MILLISECONDS)
+
+        println(r2)
+
+        if (r2?.uuid.equals(item.uuid, true)) assert(true)
+        else assert(false)
+    }
+
+    @Test
+    fun viewItemByUUIDReturnSameUUID(): Unit = runTest {
+        val lock = CountDownLatch(1)
+        var r: ListResponse<Item>? = null
+
+        apiRequest.getListOf<Item>(
+            objPath = ITEM_PATH,
+            listName = Item.ITEM_LIST_KEY,
+            action = GetItem.defaultAction,
+            filter = arrayListOf(),
+            pagination = ApiPaginationParam.defaultPagination,
+            callback = {
+                if (it.response != null) r = it.response
+                if (it.onEvent != null) sendEvent(it.onEvent)
+                lock.countDown()
+            }
+        )
+
+        lock.await(sv.connectionTimeout.toLong(), TimeUnit.MILLISECONDS)
+
+        val allItems = r?.items ?: arrayListOf()
+        val item = allItems[Random().nextInt(allItems.count())]
+        var r2: Item? = null
+
+        apiRequest.view<Item>(
+            objPath = FREE_ITEM_PATH,
+            id = item.uuid,
+            action = GetItem.defaultAction,
+            callback = {
+                if (it.response != null) r2 = it.response
+                if (it.onEvent != null) sendEvent(it.onEvent)
+                lock.countDown()
+            }
+        )
+
+        lock.await(sv.connectionTimeout.toLong(), TimeUnit.MILLISECONDS)
+
+        println(r2)
+
+        if (r2?.uuid.equals(item.uuid, true)) assert(true)
+        else assert(false)
+    }
+
     fun createFakeItem(): Item {
         val faker = Faker()
 
@@ -540,6 +628,7 @@ class ApiRequestTest : KoinTest {
             ean = faker.code().ean13(),
             externalId = faker.number().digits(10),
             id = 0L,
+            uuid = "",
             itemCategoryId = faker.number().randomNumber(10, true),
             lotEnabled = faker.bool().bool(),
             price = faker.number().randomDouble(2, 1, 100),

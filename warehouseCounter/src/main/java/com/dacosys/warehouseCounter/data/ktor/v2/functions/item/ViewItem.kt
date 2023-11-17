@@ -27,7 +27,7 @@ class ViewItem
  * @property onEvent Event to update the state of the UI according to the progress of the operation.
  * @property onFinish If the operation is successful it returns a [Item] else null.
  */(
-    private val id: Long,
+    private val id: String,
     private val action: ArrayList<ApiActionParam> = arrayListOf(),
     private val onEvent: (SnackBarEventData) -> Unit = { },
     private val onFinish: (Item?) -> Unit,

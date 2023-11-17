@@ -29,6 +29,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetItemBarcod
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetOrderBarcode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetRackBarcode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.barcode.GetWarehouseAreaBarcode
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.GetItem
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.GetItemCode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
@@ -266,9 +267,10 @@ class CodeCheckActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             }
 
             menuItemRandomItUrl -> {
-                ItemCoroutines.getIds(true) {
-                    if (it.any()) scannerCompleted("$PREFIX_ITEM_URL${it[Random().nextInt(it.count())]}")
-                }
+                GetItem(onFinish = {
+                    if (!it.any()) return@GetItem
+                    scannerCompleted("$PREFIX_ITEM_URL${it[Random().nextInt(it.count())].uuid}#")
+                }).execute()
                 return super.onOptionsItemSelected(item)
             }
 

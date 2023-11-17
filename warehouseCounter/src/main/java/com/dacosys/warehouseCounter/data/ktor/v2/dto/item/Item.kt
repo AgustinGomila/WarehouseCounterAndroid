@@ -14,6 +14,7 @@ data class Item(
     @SerialName(EAN_KEY) var ean: String = "",
     @SerialName(EXTERNAL_ID_KEY) var externalId: String? = null,
     @SerialName(ID_KEY) var id: Long = 0L,
+    @SerialName(UUID_KEY) var uuid: String = "",
     @SerialName(ITEM_CATEGORY_ID_KEY) var itemCategoryId: Long? = null,
     @SerialName(LOT_ENABLED_KEY) var lotEnabled: Boolean = false,
     @SerialName(PRICE_KEY) var price: Double = 0.0,
@@ -28,6 +29,7 @@ data class Item(
         ean = parcel.readString() ?: "",
         externalId = parcel.readString() ?: "",
         id = parcel.readLong(),
+        uuid = parcel.readString() ?: "",
         itemCategoryId = parcel.readLong(),
         lotEnabled = parcel.readByte() != 0.toByte(),
         price = parcel.readDouble(),
@@ -40,14 +42,14 @@ data class Item(
 
     fun toRoom(): ItemRoom {
         return ItemRoom(
-            active = if (active) 1 else 0,
-            description = description,
-            ean = ean,
-            externalId = externalId,
             itemId = id,
-            itemCategoryId = itemCategoryId ?: 0L,
-            lotEnabled = if (lotEnabled) 1 else 0,
+            description = description,
+            active = if (active) 1 else 0,
             price = price.toFloat(),
+            ean = ean,
+            itemCategoryId = itemCategoryId ?: 0L,
+            externalId = externalId,
+            lotEnabled = if (lotEnabled) 1 else 0,
             itemCategoryStr = itemCategory?.description ?: "",
         )
     }
@@ -77,6 +79,7 @@ data class Item(
         parcel.writeString(ean)
         parcel.writeString(externalId)
         parcel.writeLong(id)
+        parcel.writeString(uuid)
         parcel.writeValue(itemCategoryId)
         parcel.writeByte(if (lotEnabled) 1 else 0)
         parcel.writeDouble(price)
@@ -97,6 +100,7 @@ data class Item(
         const val EAN_KEY = "ean"
         const val EXTERNAL_ID_KEY = "externalId"
         const val ID_KEY = "id"
+        const val UUID_KEY = "uuid"
         const val ITEM_CATEGORY_ID_KEY = "itemCategoryId"
         const val LOT_ENABLED_KEY = "lotEnabled"
         const val PRICE_KEY = "price"

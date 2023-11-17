@@ -102,7 +102,7 @@ interface APIService {
     suspend fun sendItemCode(payload: ItemCodePayload, callback: (APIResponse<ItemCodeResponse>) -> Unit)
 
     suspend fun viewItem(
-        id: Long, action: ArrayList<ApiActionParam>, callback: (APIResponse<Item>) -> Unit
+        id: String, action: ArrayList<ApiActionParam>, callback: (APIResponse<Item>) -> Unit
     )
 
     suspend fun getItem(

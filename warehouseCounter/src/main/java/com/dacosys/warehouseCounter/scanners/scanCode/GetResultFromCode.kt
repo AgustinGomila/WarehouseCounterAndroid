@@ -383,12 +383,12 @@ class GetResultFromCode private constructor(builder: Builder) {
             if (it != null) {
                 onItemIdResult(it.toKtor(), onFinish)
             } else {
-                getItemByIdFromApi(id, onFinish)
+                getItemByIdFromApi(id.toString(), onFinish)
             }
         }
     }
 
-    private fun getItemByIdFromApi(id: Long, onFinish: (CodeResult) -> Unit) {
+    private fun getItemByIdFromApi(id: String, onFinish: (CodeResult) -> Unit) {
         ViewItem(
             id = id,
             onFinish = { onItemIdResult(it, onFinish) }
@@ -534,20 +534,24 @@ class GetResultFromCode private constructor(builder: Builder) {
         thread {
             val match: String = code.substringAfterLast("?id=")
             if (match.isNotEmpty()) {
-                val id: Long
+                val id: String
                 try {
-                    id = match.toLong()
+                    id = match
                 } catch (ex: NumberFormatException) {
                     Log.i(tag, "Could not parse: $ex")
                     searchItemUrl = false
                     return@thread
                 }
 
-                if (id > 0) {
-                    getItemById(id) {
+                val longId: Long = id.toLongOrNull() ?: id.toLongOrNull() ?: 0
+                if (longId > 0) {
+                    getItemById(longId) {
                         sendFinish(it)
                     }
-                } else searchItemUrl = false
+                } else if (id.isNotEmpty()) {
+                    getItemByIdFromApi(id, onFinish)
+                    searchItemUrl = false
+                }
             } else searchItemUrl = false
         }
     }

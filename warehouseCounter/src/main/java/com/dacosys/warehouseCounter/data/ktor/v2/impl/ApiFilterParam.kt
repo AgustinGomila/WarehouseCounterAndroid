@@ -32,6 +32,7 @@ data class ApiFilterParam(
         const val ACTION_OPERATOR_IN = "in"
 
         const val EXTENSION_ID = "id"
+        const val EXTENSION_UUID = "uuid"
 
         const val EXTENSION_STATUS_ID = "status_id"
 

@@ -333,8 +333,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, OrderPagingActivity::class.java)
-        intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.test))
-        intent.putExtra(OrderLocationSelectActivity.ARG_SHOW_SELECT_BUTTON, false)
+        intent.putExtra(OrderPagingActivity.ARG_TITLE, getString(R.string.test))
+        intent.putExtra(OrderPagingActivity.ARG_SHOW_SELECT_BUTTON, false)
         resultForTestActivity.launch(intent)
     }
 
@@ -344,8 +344,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, OrderPackUnpackActivity::class.java)
-        intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.pack_unpack))
-        intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, false)
+        intent.putExtra(OrderPackUnpackActivity.ARG_TITLE, getString(R.string.pack_unpack))
+        intent.putExtra(OrderPackUnpackActivity.ARG_MULTI_SELECT, false)
         resultForUnpackOrder.launch(intent)
     }
 
@@ -355,8 +355,8 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, OrderMoveActivity::class.java)
-        intent.putExtra(OrderLocationSelectActivity.ARG_TITLE, getString(R.string.move_order))
-        intent.putExtra(OrderLocationSelectActivity.ARG_MULTI_SELECT, true)
+        intent.putExtra(OrderMoveActivity.ARG_TITLE, getString(R.string.move_order))
+        intent.putExtra(OrderMoveActivity.ARG_MULTI_SELECT, true)
         startActivity(intent)
     }
 

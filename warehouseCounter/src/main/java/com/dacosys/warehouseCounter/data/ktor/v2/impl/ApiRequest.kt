@@ -683,7 +683,7 @@ class ApiRequest {
      *   El [APIResponse] pasado a esta función de devolución de llamada contendrá los resultados de la operación, que es un objeto [T].
      */
     suspend inline fun <reified T : Any> view(
-        objPath: String, id: Long, action: ArrayList<ApiActionParam>, callback: (APIResponse<T>) -> Unit
+        objPath: String, id: String, action: ArrayList<ApiActionParam>, callback: (APIResponse<T>) -> Unit
     ) {
         val url = URL(apiUrl)
         val apiPath = "$VERSION_PATH/$objPath/$VIEW_PATH"
@@ -694,7 +694,7 @@ class ApiRequest {
 
         val params = Parameters.build {
             appendAll(ApiActionParam.asParameter(action))
-            append(columnName, id.toString())
+            append(columnName, id)
         }
 
         if (BuildConfig.DEBUG) Log.d(tag, "PARAMS: $params")
@@ -727,6 +727,12 @@ class ApiRequest {
             })
     }
 
+    suspend inline fun <reified T : Any> view(
+        objPath: String, id: Long, action: ArrayList<ApiActionParam>, callback: (APIResponse<T>) -> Unit
+    ) {
+        view(objPath, id.toString(), action, callback)
+    }
+
     companion object {
         val apiUrl: String
             get() {
@@ -746,6 +752,8 @@ class ApiRequest {
         const val VERSION_PATH = "v2"
 
         const val ITEM_PATH = "item"
+        const val FREE_ITEM_PATH = "free/item"
+
         const val ITEM_CODE_PATH = "item-code"
         const val ORDER_PATH = "order"
         const val RACK_PATH = "rack"

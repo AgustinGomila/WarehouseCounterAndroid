@@ -119,6 +119,7 @@ data class Item(
             ean = ean,
             externalId = externalId,
             id = itemId,
+            uuid = "",
             itemCategoryId = itemCategoryId,
             lotEnabled = lotEnabled == 1,
             price = price?.toDouble() ?: 0.0,
