@@ -752,7 +752,6 @@ class ApiRequest {
         const val VERSION_PATH = "v2"
 
         const val ITEM_PATH = "item"
-        const val FREE_ITEM_PATH = "free/item"
 
         const val ITEM_CODE_PATH = "item-code"
         const val ORDER_PATH = "order"

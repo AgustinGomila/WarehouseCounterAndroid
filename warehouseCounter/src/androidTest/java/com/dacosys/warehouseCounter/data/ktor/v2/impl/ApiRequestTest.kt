@@ -28,7 +28,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.GetItemCode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.BARCODE_LABEL_TEMPLATE_PATH
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.FREE_ITEM_PATH
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ITEM_CODE_PATH
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ITEM_PATH
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.RACK_PATH
@@ -558,7 +557,7 @@ class ApiRequestTest : KoinTest {
         var r2: Item? = null
 
         apiRequest.view<Item>(
-            objPath = FREE_ITEM_PATH,
+            objPath = ITEM_PATH,
             id = item.id,
             action = GetItem.defaultAction,
             callback = {
@@ -601,7 +600,7 @@ class ApiRequestTest : KoinTest {
         var r2: Item? = null
 
         apiRequest.view<Item>(
-            objPath = FREE_ITEM_PATH,
+            objPath = ITEM_PATH,
             id = item.uuid,
             action = GetItem.defaultAction,
             callback = {
@@ -618,6 +617,7 @@ class ApiRequestTest : KoinTest {
         if (r2?.uuid.equals(item.uuid, true)) assert(true)
         else assert(false)
     }
+
 
     fun createFakeItem(): Item {
         val faker = Faker()

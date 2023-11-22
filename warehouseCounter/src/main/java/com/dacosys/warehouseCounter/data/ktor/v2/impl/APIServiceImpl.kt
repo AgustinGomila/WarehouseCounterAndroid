@@ -21,7 +21,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderUpdatePayload
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.BARCODE_LABEL_TEMPLATE_PATH
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.FREE_ITEM_PATH
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ITEM_CODE_PATH
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ITEM_PATH
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ORDER_PACKAGE_PATH
@@ -417,7 +416,7 @@ class APIServiceImpl : APIService {
         callback: (APIResponse<Item>) -> Unit
     ) {
         apiRequest.view<Item>(
-            objPath = FREE_ITEM_PATH, id = id, action = action, callback = callback
+            objPath = ITEM_PATH, id = id, action = action, callback = callback
         )
     }
 

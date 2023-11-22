@@ -1399,6 +1399,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     override fun scannerCompleted(scanCode: String) {
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
+        println("Scanner ${tag}: $scanCode")
 
         LifecycleListener.lockScanner(this, true)
 
@@ -1471,6 +1472,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         // Esta pausa permite que el Adapter se actualice a tiempo
         Handler(mainLooper).postDelayed({
             setQty(orc)
+            gentlyReturn()
         }, 250)
     }
 
