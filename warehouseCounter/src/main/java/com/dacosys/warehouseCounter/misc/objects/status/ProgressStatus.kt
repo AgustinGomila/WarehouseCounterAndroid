@@ -31,5 +31,17 @@ class ProgressStatus(var id: Int, var description: String) {
         fun getById(id: Int): ProgressStatus? {
             return getAll().firstOrNull { it.id == id }
         }
+
+        fun getAllFinish(): ArrayList<ProgressStatus> {
+            val allSections = ArrayList<ProgressStatus>()
+            Collections.addAll(
+                allSections,
+                canceled,
+                crashed,
+                finished,
+            )
+
+            return ArrayList(allSections.sortedWith(compareBy { it.id }))
+        }
     }
 }

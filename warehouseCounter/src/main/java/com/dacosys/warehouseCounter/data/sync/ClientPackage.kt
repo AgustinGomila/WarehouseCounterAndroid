@@ -41,11 +41,10 @@ class ClientPackage {
     companion object : DialogInterface.OnMultiChoiceClickListener {
 
         // region Selección automática de paquetes del cliente
-        private var allProductArray: ArrayList<ClientPackage> =
-            ArrayList()
-        private var validProductsArray: ArrayList<ClientPackage> =
-            ArrayList()
+        private var allProductArray: ArrayList<ClientPackage> = ArrayList()
+        private var validProductsArray: ArrayList<ClientPackage> = ArrayList()
         private var selected: BooleanArray = booleanArrayOf()
+        private var finishByUser = false
 
         override fun onClick(dialog: DialogInterface?, which: Int, isChecked: Boolean) {
             if (isChecked) {
@@ -136,8 +135,10 @@ class ClientPackage {
                 if (productVersionId == Statics.APP_VERSION_ID || productVersionId == Statics.APP_VERSION_ID_IMAGECONTROL) {
                     validProducts = true
                     val clientPackage = pack.clientPackageContDesc
+                    val installationCode = pack.installationCode
+                    val packageStr = "$clientPackage (${installationCode})"
 
-                    listItems.add(clientPackage)
+                    listItems.add(packageStr)
                     validProductsArray.add(pack)
                 }
             }
@@ -152,6 +153,7 @@ class ClientPackage {
                 return
             }
 
+            finishByUser = false
             selected = BooleanArray(validProductsArray.size)
 
             val cw = ContextThemeWrapper(activity, R.style.AlertDialogTheme)
@@ -185,7 +187,11 @@ class ClientPackage {
                         onEventData = onEventData
                     )
                 }
+                finishByUser = true
                 dialog.dismiss()
+            }
+            builder.setOnDismissListener {
+                if (!finishByUser) callback.onTaskConfigPanelEnded(ProgressStatus.canceled)
             }
 
             val layoutDefault = ResourcesCompat.getDrawable(context.resources, R.drawable.layout_thin_border, null)

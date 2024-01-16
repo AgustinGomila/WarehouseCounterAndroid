@@ -52,11 +52,12 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     ProxySetup.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded {
 
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
-        if (status == ProgressStatus.finished) {
+        if (status in ProgressStatus.getAllFinish()) {
             isConfiguring = false
-            showSnackBar(
-                getString(R.string.configuration_applied), SnackBarType.SUCCESS
-            )
+        }
+
+        if (status == ProgressStatus.finished) {
+            showSnackBar(getString(R.string.configuration_applied), SnackBarType.SUCCESS)
             removeDataBases()
             finish()
         }
