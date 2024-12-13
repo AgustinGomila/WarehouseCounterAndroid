@@ -12,12 +12,30 @@ class SendOrder(
     private val onFinish: (ArrayList<Long>) -> Unit
 ) {
     init {
+        // TODO: Revisar y probar envío de pedidos
+
+        val newOrders = orders.mapNotNull { if (it.roomId == null) it else null }
+        val oldOrders = orders.mapNotNull { if (it.roomId != null) it else null }
+
         CreateOrder(
-            payload = orders,
+            payload = ArrayList(newOrders),
             onEvent = { sendEvent(it.text, it.snackBarType) },
             onFinish = { ids, successFiles ->
                 if (successFiles.isNotEmpty()) {
                     removeOrders(ids, successFiles)
+                }
+            }
+        ).execute()
+
+        UpdateOrder(
+            payload = ArrayList(oldOrders),
+            onEvent = { sendEvent(it.text, it.snackBarType) },
+            onFinish = { successFiles ->
+                if (successFiles.isNotEmpty()) {
+                    removeOrders(
+                        ids = ArrayList(oldOrders.mapNotNull { it.roomId }),
+                        filesToRemove = ArrayList(successFiles.map { it.toString() })
+                    )
                 }
             }
         ).execute()

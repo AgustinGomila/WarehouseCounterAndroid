@@ -28,7 +28,7 @@ data class OrderResponse(
     @SerialName(ROW_MODIFICATION_DATE_KEY) var rowModificationDate: String = "",
     @SerialName(START_DATE_KEY) var startDate: String? = null,
     @SerialName(STATUS_ID_KEY) var statusId: Long? = null,
-    @SerialName(ZONE_KEY) var zone: String = "",
+    @SerialName(ZONE_KEY) var zone: String = "", // TODO: Hacer nullable
     @SerialName(CONTENT_RESPONSE_LIST_KEY) var contents: List<OrderResponseContent> = listOf()
 ) : Parcelable {
     constructor(parcel: Parcel) : this(

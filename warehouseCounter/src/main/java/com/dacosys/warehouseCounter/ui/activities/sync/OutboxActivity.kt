@@ -296,6 +296,9 @@ class OutboxActivity : AppCompatActivity() {
             alert.setNegativeButton(R.string.cancel, null)
             alert.setPositiveButton(R.string.ok) { _, _ ->
                 sendSelected(toSend)
+
+
+                toSend.first().roomId
             }
             alert.show()
         }

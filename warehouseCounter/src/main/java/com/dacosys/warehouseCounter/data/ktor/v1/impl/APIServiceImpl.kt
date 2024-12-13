@@ -60,7 +60,7 @@ class APIServiceImpl : APIService {
                 val url = URL(apiUrl)
                 url.protocol.isNotEmpty() && url.host.isNotEmpty()
             } catch (e: MalformedURLException) {
-                println(e.stackTrace)
+                Log.e(javaClass.simpleName, "Error", e)
                 false
             }
         }
@@ -76,7 +76,7 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<TokenObject>()
         } catch (e: Exception) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
         }
         callback(result)
     }
@@ -91,7 +91,7 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<PtlOrderResponse>()
         } catch (e: Exception) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
         }
         callback(result)
     }
@@ -108,7 +108,7 @@ class APIServiceImpl : APIService {
             }.bodyAsText()
             res = json.decodeFromString<ArrayList<Price>>(result)
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
         }
         callback(res)
     }
@@ -125,7 +125,7 @@ class APIServiceImpl : APIService {
             }.bodyAsText()
             res = json.decodeFromString<ArrayList<OrderRequest>>(result)
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
         }
         callback(res)
     }
@@ -142,7 +142,7 @@ class APIServiceImpl : APIService {
             }.bodyAsText()
             res = json.decodeFromString<ArrayList<Warehouse>>(result)
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
         }
         callback(res)
     }
@@ -157,7 +157,7 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<PtlOrderResponse>()
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
         }
         callback(result)
     }
@@ -172,7 +172,7 @@ class APIServiceImpl : APIService {
             }.bodyAsText()
             Log.i(javaClass.simpleName, result)
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
         }
         callback()
     }
@@ -187,7 +187,7 @@ class APIServiceImpl : APIService {
             }.bodyAsText()
             Log.i(javaClass.simpleName, result)
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
         }
         callback()
     }
@@ -211,7 +211,7 @@ class APIServiceImpl : APIService {
                 )
             res = arrayListOf(inter.databaseData)
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
         }
         callback(res)
     }
@@ -228,10 +228,10 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<ApiResponse>()
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             ApiResponse(RESULT_ERROR, e.message.toString())
         } catch (e: SocketTimeoutException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             ApiResponse(RESULT_ERROR, e.message.toString())
         }
         callback(result)
@@ -249,10 +249,10 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<ApiResponse>()
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             ApiResponse(RESULT_ERROR, e.message.toString())
         } catch (e: SocketTimeoutException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             ApiResponse(RESULT_ERROR, e.message.toString())
         }
         callback(result)
@@ -270,10 +270,10 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<ApiResponse>()
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             ApiResponse(RESULT_ERROR, e.message.toString())
         } catch (e: SocketTimeoutException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             ApiResponse(RESULT_ERROR, e.message.toString())
         }
         callback(result)
@@ -291,10 +291,10 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<LabelResponse>()
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             LabelResponse(RESULT_ERROR, e.message.toString(), listOf())
         } catch (e: SocketTimeoutException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             LabelResponse(RESULT_ERROR, e.message.toString(), listOf())
         }
         callback(result)
@@ -312,10 +312,10 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<PickManualResponse>()
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             PickManualResponse(RESULT_ERROR, e.message.toString(), listOf())
         } catch (e: SocketTimeoutException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             PickManualResponse(RESULT_ERROR, e.message.toString(), listOf())
         }
         callback(result)
@@ -333,10 +333,10 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<ApiResponse>()
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             ApiResponse(RESULT_ERROR, e.message.toString())
         } catch (e: SocketTimeoutException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             ApiResponse(RESULT_ERROR, e.message.toString())
         }
         callback(result)
@@ -354,10 +354,10 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<ApiResponse>()
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             ApiResponse(RESULT_ERROR, e.message.toString())
         } catch (e: SocketTimeoutException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             ApiResponse(RESULT_ERROR, e.message.toString())
         }
         callback(result)
@@ -375,10 +375,10 @@ class APIServiceImpl : APIService {
                 setBody(body)
             }.body<PtlContentResponse>()
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             PtlContentResponse(RESULT_ERROR, e.message.toString(), listOf())
         } catch (e: SocketTimeoutException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
             PtlContentResponse(RESULT_ERROR, e.message.toString(), listOf())
         }
         callback(result)

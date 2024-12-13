@@ -10,6 +10,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.SerializationException
+import javax.net.ssl.SSLHandshakeException
 
 class DacoServiceImpl : DacoService {
     companion object {
@@ -32,9 +33,12 @@ class DacoServiceImpl : DacoService {
             res = json.decodeFromString<PackageResponse>(
                 result
             )
+        } catch (e: SSLHandshakeException) {
+            Log.e(javaClass.simpleName, "Error", e)
         } catch (e: SerializationException) {
-            println(e.stackTrace)
+            Log.e(javaClass.simpleName, "Error", e)
         }
         callback(res)
     }
 }
+

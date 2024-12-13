@@ -30,7 +30,7 @@ data class OrderRequest(
     @SerialName(RESULT_DIFF_QTY_KEY) var resultDiffQty: Boolean? = null,
     @SerialName(START_DATE_KEY) var startDate: String? = null,
     @SerialName(USER_ID_KEY) var userId: Long? = null,
-    @SerialName(ZONE_KEY) var zone: String = "",
+    @SerialName(ZONE_KEY) var zone: String = "", // TODO: Debe poder ser nullable
 
     @SerialName(CONTENT_LIST_KEY) var contents: List<OrderRequestContent> = listOf(),
     @SerialName(LOG_LIST_KEY) var logs: List<Log> = listOf(),
@@ -151,7 +151,7 @@ data class OrderRequest(
         this.resultDiffQty = orderResponse.resultDiffQty
         this.startDate = orderResponse.startDate
         this.userId = orderResponse.collectorUserId
-        this.zone = orderResponse.zone
+        this.zone = orderResponse.zone.orEmpty()
 
         this.contents = orderResponse.contents.map { OrderRequestContent(it) }
         this.logs = listOf()

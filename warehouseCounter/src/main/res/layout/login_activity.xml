@@ -197,7 +197,7 @@
             app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent"
             android:layout_marginStart="4dp"
             android:layout_marginEnd="4dp" android:layout_marginBottom="4dp"
-            android:background="@drawable/layout_thin_border_stock_audit_from_device" android:visibility="gone">
+            android:background="@drawable/layout_thin_border_stock_audit_from_device" android:visibility="visible">
 
         <androidx.constraintlayout.widget.Guideline
                 android:orientation="vertical"

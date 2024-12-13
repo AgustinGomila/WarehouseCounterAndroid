@@ -159,7 +159,7 @@ class Sync private constructor(builder: Builder) {
                 GetOrder(
                     filter = filter,
                     action = GetOrder.defaultAction,
-                    onEvent = { },
+                    onEvent = { }, // TODO: Elevar mensajes de eventos
                     onFinish = {
                         onPendingOrdersReceived(
                             remoteOrders = it,
@@ -325,7 +325,7 @@ class Sync private constructor(builder: Builder) {
 
             AddOrder(
                 orderResponse = order,
-                onEvent = { },
+                onEvent = { }, // TODO: Elevar mensajes de eventos
                 onNewId = { newId, filename ->
 
                     Log.d(tag, "Adding order: $filename / $newId")
@@ -384,7 +384,7 @@ class Sync private constructor(builder: Builder) {
 
             OrderRequestCoroutines.update(
                 orderRequest = order,
-                onEvent = { },
+                onEvent = { }, // TODO: Elevar mensajes de eventos
                 onFilename = { }
             )
         }

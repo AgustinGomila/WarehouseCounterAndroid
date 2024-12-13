@@ -3,10 +3,12 @@ package com.dacosys.warehouseCounter
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 import android.util.Base64
 import androidx.preference.PreferenceManager
 import com.dacosys.imageControl.ImageControl
 import com.dacosys.warehouseCounter.data.ktor.v1.impl.DacoServiceImpl
+import com.dacosys.warehouseCounter.data.ktor.v1.impl.TrustFactory
 import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest
 import com.dacosys.warehouseCounter.data.ktor.v2.sync.Sync
 import com.dacosys.warehouseCounter.data.ktor.v2.sync.SyncViewModel
@@ -37,6 +39,8 @@ import java.net.PasswordAuthentication
 import java.net.Proxy
 import java.net.Proxy.NO_PROXY
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.X509TrustManager
 
 /**
  * Created by Agustin on 24/01/2017.
@@ -102,12 +106,19 @@ class WarehouseCounterApp : Application(), KoinComponent {
 
         /** Ktor Client */
         single {
+            TrustFactory.getTrustFactoryManager(context)
+        }
+
+        single {
             HttpClient(OkHttp) {
                 engine {
                     config {
                         followRedirects(true)
                         connectTimeout(settingsVm.connectionTimeout.toLong(), TimeUnit.SECONDS)
                         proxy(currentProxy)
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                            sslSocketFactory(pair.first, pair.second)
+                        }
                     }
                 }
                 install(ContentNegotiation) {
@@ -154,6 +165,9 @@ class WarehouseCounterApp : Application(), KoinComponent {
             get() = get().get()
 
         val syncVm: SyncViewModel
+            get() = get().get()
+
+        val pair: Pair<SSLSocketFactory, X509TrustManager>
             get() = get().get()
 
         val httpClient: HttpClient

@@ -62,8 +62,8 @@ abstract class WcTempDatabase : RoomDatabase() {
          * sin las etiquetas impresas, para que el operario pueda imprimirlas cuando lo necesite.
          */
         private val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL(
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
                     """CREATE TABLE IF NOT EXISTS ${PendingLabelEntry.TABLE_NAME} 
                         |(${PendingLabelEntry.ID} INTEGER NOT NULL PRIMARY KEY)""".trimMargin()
                 )
@@ -75,11 +75,11 @@ abstract class WcTempDatabase : RoomDatabase() {
          *
          */
         private val MIGRATION_2_3 = object : Migration(2, 3) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL(
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
                     """ALTER TABLE ${OrderRequestEntry.TABLE_NAME} ADD ${OrderRequestEntry.ORDER_REQUEST_ID} INTEGER NOT NULL""".trimMargin()
                 )
-                database.execSQL(
+                db.execSQL(
                     """CREATE INDEX IDX_${OrderRequestEntry.TABLE_NAME}_${OrderRequestEntry.ORDER_REQUEST_ID} ON ${OrderRequestEntry.TABLE_NAME} (${OrderRequestEntry.ORDER_REQUEST_ID})""".trimIndent()
                 )
             }
