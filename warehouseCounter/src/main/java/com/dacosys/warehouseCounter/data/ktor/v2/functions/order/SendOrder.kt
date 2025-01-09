@@ -3,6 +3,7 @@ package com.dacosys.warehouseCounter.data.ktor.v2.functions.order
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedPath
 import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.removeOrdersFiles
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 
@@ -12,33 +13,35 @@ class SendOrder(
     private val onFinish: (ArrayList<Long>) -> Unit
 ) {
     init {
-        // TODO: Revisar y probar envío de pedidos
+        val newOrders = orders.mapNotNull { if (it.orderRequestId == null || it.orderRequestId == 0L) it else null }
+        val oldOrders = orders.mapNotNull { if ((it.orderRequestId ?: 0L) > 0L) it else null }
 
-        val newOrders = orders.mapNotNull { if (it.roomId == null) it else null }
-        val oldOrders = orders.mapNotNull { if (it.roomId != null) it else null }
-
-        CreateOrder(
-            payload = ArrayList(newOrders),
-            onEvent = { sendEvent(it.text, it.snackBarType) },
-            onFinish = { ids, successFiles ->
-                if (successFiles.isNotEmpty()) {
-                    removeOrders(ids, successFiles)
+        if (newOrders.isNotEmpty()) {
+            CreateOrder(
+                payload = ArrayList(newOrders),
+                onEvent = { sendEvent(it.text, it.snackBarType) },
+                onFinish = { ids, successFiles ->
+                    if (successFiles.isNotEmpty()) {
+                        removeOrders(ids, successFiles)
+                    }
                 }
-            }
-        ).execute()
+            ).execute()
+        }
 
-        UpdateOrder(
-            payload = ArrayList(oldOrders),
-            onEvent = { sendEvent(it.text, it.snackBarType) },
-            onFinish = { successFiles ->
-                if (successFiles.isNotEmpty()) {
-                    removeOrders(
-                        ids = ArrayList(oldOrders.mapNotNull { it.roomId }),
-                        filesToRemove = ArrayList(successFiles.map { it.toString() })
-                    )
+        if (oldOrders.isNotEmpty()) {
+            UpdateOrder(
+                payload = ArrayList(oldOrders),
+                onEvent = { sendEvent(it.text, it.snackBarType) },
+                onFinish = { successFiles ->
+                    if (successFiles.isNotEmpty()) {
+                        removeOrders(
+                            ids = ArrayList(oldOrders.mapNotNull { it.roomId }),
+                            filesToRemove = ArrayList(successFiles.map { it.toString() })
+                        )
+                    }
                 }
-            }
-        ).execute()
+            ).execute()
+        }
     }
 
     private fun removeOrders(ids: ArrayList<Long>, filesToRemove: ArrayList<String>) {
@@ -49,15 +52,12 @@ class SendOrder(
             sendEvent = { eventData ->
 
                 if (eventData.snackBarType == SnackBarType.SUCCESS) {
-                    // TODO: Ver esto, qué hacer con los pedidos enviados?
-
                     /** We remove the reference to the order in room database. */
-
-                    // OrderRequestCoroutines.removeById(
-                    //     idList = orders.mapNotNull { orderRequest -> orderRequest.roomId },
-                    //     onResult = {
-                    //         onFinish(ids)
-                    //     })
+                    OrderRequestCoroutines.removeById(
+                        idList = orders.mapNotNull { orderRequest -> orderRequest.roomId },
+                        onResult = {
+                            onFinish(ids)
+                        })
 
                     onFinish(ids)
                 } else {

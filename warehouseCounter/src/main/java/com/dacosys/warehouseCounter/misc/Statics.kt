@@ -11,10 +11,9 @@ class Statics {
 
         var downloadDbRequired = false
 
-        val lineSeparator: String = System.getProperty("line.separator") ?: "\\r\\n"
+        val lineSeparator: String = System.lineSeparator()
         const val DATE_FORMAT: String = "yyyy-MM-dd hh:mm:ss"
-
-        val listSeparator: Char = ','
+        const val LIST_SEPARATOR: Char = ','
 
         /**
          * Modo DEMO

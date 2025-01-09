@@ -8,7 +8,6 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.dacosys.warehouseCounter.data.room.dao.itemRegex.ItemRegexCoroutines
-import org.json.JSONObject
 import java.util.regex.PatternSyntaxException
 import com.dacosys.warehouseCounter.data.room.entity.itemRegex.ItemRegexEntry as Entry
 
@@ -30,20 +29,32 @@ data class ItemRegex(
 ) {
     companion object {
         private const val EAN_KEY = "ean"
-        private const val LOT_ID_KEY = "lotid"
+        private const val LOT_CODE_KEY = "lotCode"
+        private const val LOT_ID_KEY = "lotId"
         private const val QTY_KEY = "qty"
+        private const val EXT_ID_KEY = "externalId"
 
-        class RegexResult(var ean: String, var lot: String, var qty: Float?) : Parcelable {
+        class RegexResult(
+            var ean: String,
+            var lotCode: String,
+            var lotId: String,
+            var qty: Float?,
+            var extId: String?
+        ) : Parcelable {
             constructor(parcel: Parcel) : this(
                 ean = parcel.readString() ?: "",
-                lot = parcel.readString() ?: "",
-                qty = parcel.readValue(Float::class.java.classLoader) as? Float
+                lotCode = parcel.readString() ?: "",
+                lotId = parcel.readString() ?: "",
+                qty = parcel.readValue(Float::class.java.classLoader) as? Float,
+                extId = parcel.readString() ?: ""
             )
 
             override fun writeToParcel(parcel: Parcel, flags: Int) {
                 parcel.writeString(ean)
-                parcel.writeString(lot)
+                parcel.writeString(lotCode)
+                parcel.writeString(lotId)
                 parcel.writeValue(qty)
+                parcel.writeString(extId)
             }
 
             override fun describeContents(): Int {
@@ -64,151 +75,68 @@ data class ItemRegex(
         /**
          * Devuelve una lista de resultados completos al intentar hacer una serie de Regex
          *     sobre un código dado.
-         *     Si no encuentra alguno de los Keys necesarios ("ean", "lotid" o "qty") el resultado
-         *     es incompleto y no se devuelve.
+         *     Si no encuentra alguno de los Keys necesarios ("ean", "lotCode", "lotId", "qty" o "externalId") el
+         *     resultado es incompleto y no se devuelve.
          * @param codeRead
          * @return Lista de resultados completos del Regex
          */
         fun tryToRegex(codeRead: String, onFinished: (ArrayList<RegexResult>) -> Unit = {}) {
             ItemRegexCoroutines.get {
-                val result = ArrayList<RegexResult>()
+                val result = mutableListOf<RegexResult>()
 
-                // Es un regex?
+                // Procesar cada elemento
                 for (reg in it) {
-                    if (codeRead.length != (reg.codeLength
-                            ?: 0).toInt() || reg.jsonConfig.isNullOrEmpty()
-                    ) {
-                        continue
-                    }
+                    val expectedCodeLength = reg.codeLength ?: 0
+                    if (expectedCodeLength > 0 && codeRead.length != expectedCodeLength) continue
 
-                    val json = JSONObject(reg.jsonConfig)
-                    val matches: Sequence<MatchResult>?
-                    val rx: Regex?
-
-                    try {
-                        rx = reg.regex.toRegex()
-                        matches = rx.findAll(codeRead)
+                    val regex = try {
+                        reg.regex.toRegex()
                     } catch (ex: PatternSyntaxException) {
-                        // Cuando se usan caracteres prohibidos como "_" hay posibles:
-                        // U_REGEX_INVALID_CAPTURE_GROUP_NAME
-                        Log.e(this::class.java.simpleName, ex.message.toString())
+                        Log.e(this::class.java.simpleName, ex.message.orEmpty())
                         continue
                     }
 
-                    for (match in matches) {
-                        // Tienen que estar estas tres condiciones para
-                        // formar un resultado completo.
-                        var isEanFounded = false
-                        var isLotIdFounded = false
-                        var isQtyFounded = false
+                    val match = regex.find(codeRead) ?: continue
 
-                        var ean: String? = null
-                        var lot: String? = null
-                        var qty: Float? = null
-
-                        // Pasamos por todos los GroupNames (Keys) definidos en el Json
-                        for (key in getKeysFromJson(json)) {
-                            // El índice que corresponde a este GroupName en el Regex
-                            val jsonIndex = json[key] as Int
-
-                            var groupIndex = 0
-                            for (gr in match.groups) {
-                                // El primer grupo es la lectura completa y no nos interesa, por eso
-                                // no aumentamos el contador (groupIndex) todavía.
-                                if (gr == null || gr.value == codeRead) continue
-
-                                // Vamos directo al índice que nos interesa.
-                                if (groupIndex < jsonIndex) {
-                                    groupIndex++
-                                    continue
-                                }
-
-                                // Traemos cada GroupName (Key) del Json cuyo valor (Value) coincida con el índice de grupo.
-                                val groupName: String? = getKeyFromJsonByIndex(json, jsonIndex)
-
-                                // Si no devuelve un nombre de grupo no nos interesa.
-                                // Si el nombre devuelto no es el mismo nombre que buscamos no nos interesa.
-                                if (groupName.isNullOrEmpty() || groupName != key) continue
-
-                                var isFounded = false
-                                when (groupName) {
-                                    EAN_KEY -> {
-                                        isFounded = true
-                                        ean = gr.value
-                                        isEanFounded = true
-                                    }
-
-                                    LOT_ID_KEY -> {
-                                        isFounded = true
-                                        lot = gr.value
-                                        isLotIdFounded = true
-                                    }
-
-                                    QTY_KEY -> {
-                                        isFounded = true
-                                        try {
-                                            qty = gr.value.toFloat()
-                                        } catch (ex: Exception) {
-                                            // qty quedará en Null. Más adelante el usuario recibirá un notificación,
-                                            // pero podrá proseguir como si fuera un código corriente.
-                                            Log.e(
-                                                this::class.java.simpleName, ex.message.toString()
-                                            )
-                                        }
-                                        isQtyFounded = true
-                                    }
-                                }
-
-                                if (isFounded) break
-                            }
-
-                            // ¿Están todos los datos necesarios para agregar un resultado?
-                            if (isEanFounded && isLotIdFounded && isQtyFounded) {
-                                result.add(RegexResult(ean ?: "", lot ?: "", qty))
-                                break
-                            }
-                        }
+                    var ean = ""
+                    try {
+                        ean = match.groups[EAN_KEY]?.value.orEmpty()
+                    } catch (_: Exception) {
                     }
+                    var lotCode = ""
+                    try {
+                        lotCode = match.groups[LOT_CODE_KEY]?.value.orEmpty()
+                    } catch (_: Exception) {
+                    }
+                    var lotId = ""
+                    try {
+                        lotId = match.groups[LOT_ID_KEY]?.value.orEmpty()
+                    } catch (_: Exception) {
+                    }
+                    var qty: Float? = 0F
+                    try {
+                        qty = match.groups[QTY_KEY]?.value?.toFloatOrNull()
+                    } catch (_: Exception) {
+                    }
+                    var extId = ""
+                    try {
+                        extId = match.groups[EXT_ID_KEY]?.value.orEmpty()
+                    } catch (_: Exception) {
+                    }
+
+                    result.add(
+                        RegexResult(
+                            ean = ean,
+                            lotCode = lotCode,
+                            lotId = lotId,
+                            qty = qty,
+                            extId = extId
+                        )
+                    )
                 }
 
-                onFinished(result)
+                onFinished(ArrayList(result))
             }
-        }
-
-        /**
-         * Devuelve todos los Keys del Json
-         * @param json Json de origen
-         * @return Lista de Keys (GroupsNames)
-         */
-        private fun getKeysFromJson(json: JSONObject): ArrayList<String> {
-            val keys: ArrayList<String> = ArrayList()
-            json.keys().forEach { j ->
-                keys.add(j.toString())
-            }
-            return keys
-        }
-
-        /**
-         * Devuelve el Key (GroupName), si el Valor es igual al índice dado.
-         * @param json Json de origen
-         * @param index Índice que tiene que coincidir con el valor del Key
-         * @return Nombre del grupo o NULL
-         */
-        private fun getKeyFromJsonByIndex(json: JSONObject, index: Int): String? {
-            var label: String? = null
-            json.keys().forEach { jKey ->
-                var jV = 0
-                try {
-                    jV = json[jKey] as Int
-                } catch (ex: Exception) {
-                    Log.e(this::class.java.simpleName, ex.message.toString())
-                }
-
-                if (jV == index) {
-                    label = jKey
-                }
-            }
-            return label
         }
     }
 }

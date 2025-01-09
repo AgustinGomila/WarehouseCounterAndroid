@@ -106,14 +106,14 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     fun addOrderId(orderId: String) {
         var allOrders: MutableList<String> = mutableListOf()
         if (this.orderId.isNotEmpty())
-            allOrders = this.orderId.split(Statics.listSeparator).toMutableList()
+            allOrders = this.orderId.split(Statics.LIST_SEPARATOR).toMutableList()
 
         if (allOrders.contains(orderId)) return
 
         allOrders.add(orderId)
 
         if (allOrders.count() == 1) this.orderId = allOrders.first()
-        else this.orderId = allOrders.joinToString(Statics.listSeparator.toString())
+        else this.orderId = allOrders.joinToString(Statics.LIST_SEPARATOR.toString())
 
         refreshViews()
     }
@@ -122,13 +122,13 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     fun removeOrderId(ids: List<String>) {
         var allOrders: MutableList<String> = mutableListOf()
         if (this.orderId.isNotEmpty())
-            allOrders = this.orderId.split(Statics.listSeparator).toMutableList()
+            allOrders = this.orderId.split(Statics.LIST_SEPARATOR).toMutableList()
 
         if (allOrders.isEmpty()) return
 
         allOrders.removeAll(ids)
 
-        this.orderId = allOrders.joinToString(Statics.listSeparator.toString())
+        this.orderId = allOrders.joinToString(Statics.LIST_SEPARATOR.toString())
 
         refreshViews()
     }
@@ -1103,7 +1103,7 @@ class SelectFilterFragment private constructor(builder: Builder) : Fragment() {
     @Suppress("MemberVisibilityCanBePrivate")
     val filterOrderIdArray: ArrayList<ApiFilterParam>
         get() {
-            val allOrdersId = orderId.split(Statics.listSeparator)
+            val allOrdersId = orderId.split(Statics.LIST_SEPARATOR)
             val filter: java.util.ArrayList<ApiFilterParam> = arrayListOf()
             for (id in allOrdersId) {
                 filter.add(

@@ -55,7 +55,7 @@ class OrcAdapter private constructor(builder: Builder) :
     private val recyclerView: RecyclerView
     var fullList: ArrayList<OrderRequestContent>
     private var orType: OrderRequestType = OrderRequestType.notDefined
-    var checkedIdArray: ArrayList<Long> = ArrayList()
+    var checkedHashArray: ArrayList<String> = ArrayList()
     var multiSelect: Boolean = false
     private var allowEditQty: Boolean = false
     private var allowEditDescription: Boolean = false
@@ -80,7 +80,7 @@ class OrcAdapter private constructor(builder: Builder) :
     private val unlimitedMax by lazy { orType in OrderRequestType.getUnlimited() }
 
     fun clear() {
-        checkedIdArray.clear()
+        checkedHashArray.clear()
 
         fullList.clear()
         submitList(fullList)
@@ -230,14 +230,14 @@ class OrcAdapter private constructor(builder: Builder) :
                     val ptlOrder = getItem(position)
                     if (position == currentIndex)
                         (holder as SelectedViewHolder).bindCheckBoxState(
-                            checkedIdArray.contains(
-                                ptlOrder.itemId ?: -1
+                            checkedHashArray.contains(
+                                ptlOrder.lotHash
                             )
                         )
                     else
                         (holder as UnselectedViewHolder).bindCheckBoxState(
-                            checkedIdArray.contains(
-                                ptlOrder.itemId ?: -1
+                            checkedHashArray.contains(
+                                ptlOrder.lotHash
                             )
                         )
                 }
@@ -298,16 +298,16 @@ class OrcAdapter private constructor(builder: Builder) :
 
         if (allowEditQty) {
             setQtyEditLogic(holder.binding.editQty, orderRequestContent, position)
-            holder.binding.editQty.visibility = View.VISIBLE
+            holder.binding.editQty.visibility = VISIBLE
         } else {
-            holder.binding.editQty.visibility = View.GONE
+            holder.binding.editQty.visibility = GONE
         }
 
         if (allowEditDescription) {
             setDescriptionEditLogic(holder.binding.editDescription, orderRequestContent, position)
-            holder.binding.editDescription.visibility = View.VISIBLE
+            holder.binding.editDescription.visibility = VISIBLE
         } else {
-            holder.binding.editDescription.visibility = View.GONE
+            holder.binding.editDescription.visibility = GONE
         }
 
         if (orType == OrderRequestType.stockAuditFromDevice) {
@@ -336,11 +336,11 @@ class OrcAdapter private constructor(builder: Builder) :
         setCheckBoxLogic(holder.binding.checkBox, orderRequestContent, position)
 
         if (orType == OrderRequestType.stockAuditFromDevice) {
-            holder.binding.qtyReqPanel.visibility = View.GONE
-            holder.binding.eanDivider.visibility = View.GONE
+            holder.binding.qtyReqPanel.visibility = GONE
+            holder.binding.eanDivider.visibility = GONE
         } else {
-            holder.binding.qtyReqPanel.visibility = View.VISIBLE
-            holder.binding.eanDivider.visibility = View.VISIBLE
+            holder.binding.qtyReqPanel.visibility = VISIBLE
+            holder.binding.eanDivider.visibility = VISIBLE
         }
     }
 
@@ -350,8 +350,7 @@ class OrcAdapter private constructor(builder: Builder) :
         content: OrderRequestContent,
         position: Int,
     ) {
-        val itemId = content.itemId ?: -1
-        if (itemId > 0) {
+        if (!isTemporal(content)) {
             editDescription.visibility = GONE
         }
         editDescription.setOnTouchListener { _, _ ->
@@ -418,17 +417,17 @@ class OrcAdapter private constructor(builder: Builder) :
             val newState = !checkBox.isChecked
             if (newState) {
                 currentList.mapIndexed { pos, ptlOrder ->
-                    val id = ptlOrder.itemId ?: -1
-                    if (id !in checkedIdArray) {
-                        checkedIdArray.add(id)
+                    val lotHash = ptlOrder.lotHash
+                    if (lotHash !in checkedHashArray) {
+                        checkedHashArray.add(lotHash)
                         notifyItemChanged(pos, PAYLOADS.CHECKBOX_STATE)
                     }
                 }
             } else {
                 currentList.mapIndexed { pos, ptlOrder ->
-                    val id = ptlOrder.itemId ?: -1
-                    if (id in checkedIdArray) {
-                        checkedIdArray.remove(id)
+                    val lotHash = ptlOrder.lotHash
+                    if (lotHash in checkedHashArray) {
+                        checkedHashArray.remove(lotHash)
                         notifyItemChanged(pos, PAYLOADS.CHECKBOX_STATE)
                     }
                 }
@@ -441,12 +440,16 @@ class OrcAdapter private constructor(builder: Builder) :
         // Important to remove previous checkedChangedListener before calling setChecked
         checkBox.setOnCheckedChangeListener(null)
 
-        checkBox.isChecked = checkedIdArray.contains(content.itemId ?: -1)
+        checkBox.isChecked = checkedHashArray.contains(content.lotHash)
         checkBox.isLongClickable = true
         checkBox.tag = position
 
         checkBox.setOnLongClickListener(longClickListener)
         checkBox.setOnCheckedChangeListener(checkChangeListener)
+    }
+
+    private fun isTemporal(content: OrderRequestContent): Boolean {
+        return (content.itemId ?: -1) <= 0
     }
 
     // El método getItemCount devuelve el número de elementos en la lista
@@ -536,8 +539,9 @@ class OrcAdapter private constructor(builder: Builder) :
                     dataSetChangedListener?.onDataSetChanged()
 
                     // Recuperamos el item seleccionado y la posición del scroll
-                    if (firstVisible != null)
-                        scrollToPos(getIndexById(firstVisible?.itemId ?: -1), true)
+                    val fv = firstVisible
+                    if (fv != null)
+                        scrollToPos(getIndexByLotHash(fv.lotHash), true)
                     if (selected != null)
                         selectItem(selected, false)
                 }
@@ -574,7 +578,6 @@ class OrcAdapter private constructor(builder: Builder) :
         }
     }
 
-
     fun add(orcs: ArrayList<OrderRequestContent>) {
         var lastIndex = fullList.lastIndex
         for (orc in orcs) {
@@ -591,13 +594,19 @@ class OrcAdapter private constructor(builder: Builder) :
     }
 
     fun remove(position: Int) {
-        val id = getItemId(position)
-        checkedIdArray.remove(id)
+        val lotHash = getLotHashByPosition(position)
+        checkedHashArray.remove(lotHash)
 
         fullList.removeAt(position)
         submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()
         }
+    }
+
+    private fun getLotHashByPosition(position: Int): String {
+        return if (fullList.size > position)
+            fullList[position].lotHash else
+            ""
     }
 
     fun remove(orc: OrderRequestContent?) {
@@ -606,10 +615,10 @@ class OrcAdapter private constructor(builder: Builder) :
     }
 
     fun remove(orcs: ArrayList<OrderRequestContent>) {
-        for (w in orcs) {
-            if (fullList.contains(w)) {
-                fullList.remove(w)
-                checkedIdArray.remove(w.itemId ?: -1)
+        for (orc in orcs) {
+            if (fullList.contains(orc)) {
+                fullList.remove(orc)
+                checkedHashArray.remove(orc.lotHash)
             }
         }
 
@@ -619,35 +628,33 @@ class OrcAdapter private constructor(builder: Builder) :
     }
 
     fun updateDescription(item: OrderRequestContent, desc: String) {
-        return updateDescription(item.itemId ?: -1, desc)
+        var itemId = item.itemId ?: return
+        return updateDescription(itemId, desc)
     }
 
-    fun updateDescription(itemId: Long, desc: String) {
-        val content = fullList.firstOrNull { it.itemId == itemId } ?: return
-        val index = getIndexById(content.itemId ?: -1)
+    fun updateDescription(lotId: Long, desc: String) {
+        val content = fullList.mapNotNull { if (it.lotId == lotId) it else null }
+        var index = 0
+        for (c in content) {
+            index = getIndexByLotHash(c.lotHash)
 
-        if (content.itemDescription != desc) {
-            content.itemDescription = desc
-
-            submitList(fullList).apply {
-                notifyItemChanged(index)
-                selectItem(content)
+            if (c.itemDescription != desc) {
+                c.itemDescription = desc
             }
         }
+
+        submitList(fullList).apply {
+            notifyItemChanged(index)
+            selectItem(content.last())
+        }
     }
 
-    fun updateLotCode(itemId: Long, lotCode: String) {
-        val content = fullList.firstOrNull { it.itemId == itemId } ?: return
-        val index = getIndexById(content.itemId ?: -1)
-
-        val longLotId = try {
-            lotCode.toLong()
-        } catch (ex: Exception) {
-            0L
-        }
+    fun updateLotCode(lotHash: String, lotCode: String) {
+        val content = fullList.firstOrNull { it.lotHash == lotHash } ?: return
+        val index = getIndexByLotHash(content.lotHash)
 
         content.lotCode = lotCode
-        content.lotId = longLotId
+        content.lotId = null
         content.lotActive = true
 
         submitList(fullList).apply {
@@ -659,7 +666,7 @@ class OrcAdapter private constructor(builder: Builder) :
     fun updateQtyCollected(tempOrc: OrderRequestContent?, qtyCollected: Double) {
         val orc = tempOrc ?: return
         val content = fullList.firstOrNull { it == orc } ?: return
-        val index = getIndexById(content.itemId ?: -1)
+        val index = getIndexByLotHash(content.lotHash)
         val qtyRequested = content.qtyRequested ?: 0.0
 
         content.qtyCollected = qtyCollected
@@ -780,29 +787,23 @@ class OrcAdapter private constructor(builder: Builder) :
     }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
-    fun getIndexById(id: Long): Int {
-        return currentList.indexOfFirst { it.itemId == id }
-    }
-
-    @Suppress("MemberVisibilityCanBePrivate", "unused")
     private fun getIndex(content: OrderRequestContent): Int {
         return currentList.indexOf(content)
     }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
-    fun getIndexByItemId(itemId: Long): Int {
-        return currentList.indexOfFirst { it.itemId == itemId }
-    }
-
-    @Suppress("MemberVisibilityCanBePrivate", "unused")
-    fun getByItemId(itemId: Long): OrderRequestContent? {
-        return currentList.firstOrNull { it.itemId == itemId }
+    fun getIndexByLotHash(lotHash: String): Int {
+        return currentList.indexOfFirst { it.lotHash == lotHash }
     }
 
     fun getAllChecked(): ArrayList<OrderRequestContent> {
         val items = ArrayList<OrderRequestContent>()
-        checkedIdArray.mapNotNullTo(items) { getByItemId(it) }
+        checkedHashArray.mapNotNullTo(items) { getByItemHash(it) }
         return items
+    }
+
+    private fun getByItemHash(lotHash: String): OrderRequestContent? {
+        return fullList.firstOrNull { it -> it.lotHash == lotHash }
     }
 
     @Suppress("unused")
@@ -818,7 +819,7 @@ class OrcAdapter private constructor(builder: Builder) :
     }
 
     fun countChecked(): Int {
-        return checkedIdArray.count()
+        return checkedHashArray.count()
     }
 
     fun firstVisiblePos(): Int {
@@ -827,14 +828,14 @@ class OrcAdapter private constructor(builder: Builder) :
     }
 
     fun setChecked(content: OrderRequestContent, isChecked: Boolean, suspendRefresh: Boolean = false) {
-        val id = content.itemId ?: -1
-        val pos = getIndexById(id)
+        val lotHash = content.lotHash
+        val pos = getIndexByLotHash(lotHash)
         if (isChecked) {
-            if (!checkedIdArray.contains(id)) {
-                checkedIdArray.add(id)
+            if (!checkedHashArray.contains(lotHash)) {
+                checkedHashArray.add(lotHash)
             }
         } else {
-            checkedIdArray.remove(id)
+            checkedHashArray.remove(lotHash)
         }
 
         checkedChangedListener?.onCheckedChanged(isChecked, pos)
@@ -875,8 +876,8 @@ class OrcAdapter private constructor(builder: Builder) :
 
         // Quitamos los ítems con el estado seleccionado de la lista marcados.
         val uncheckedItems =
-            ArrayList(fullList.mapNotNull { if (it.contentStatus == status) it.itemId else null })
-        checkedIdArray.removeAll(uncheckedItems.toSet())
+            ArrayList(fullList.mapNotNull { if (it.contentStatus == status) it.lotHash else null })
+        checkedHashArray.removeAll(uncheckedItems.toSet())
 
         refreshFilter()
     }
@@ -892,6 +893,10 @@ class OrcAdapter private constructor(builder: Builder) :
             binding.checkBox.isChecked = checked
         }
 
+        private fun isTemporal(content: OrderRequestContent): Boolean {
+            return (content.itemId ?: -1) <= 0
+        }
+
         fun bind(content: OrderRequestContent, checkBoxVisibility: Int = GONE) {
             bindCheckBoxVisibility(checkBoxVisibility)
 
@@ -905,12 +910,12 @@ class OrcAdapter private constructor(builder: Builder) :
 
             binding.itemIdCheckedTextView.text =
                 when {
-                    (content.itemId ?: -1) < 0 -> context.getString(R.string.new_product)
+                    isTemporal(content) -> context.getString(R.string.new_product)
                     content.itemId == 0L -> context.getString(R.string.without_id)
                     else -> content.itemId.toString()
                 }
             binding.extIdCheckedTextView.text = content.externalId ?: ""
-            binding.lotIdCheckedTextView.text = content.lotId?.toString() ?: ""
+            binding.lotIdCheckedTextView.text = content.lotCode
 
             // Category
             val category = content.itemCategoryId ?: 0L // TODO: Agregar description para categorías
@@ -1054,7 +1059,7 @@ class OrcAdapter private constructor(builder: Builder) :
         recyclerView = builder.recyclerView
         fullList = builder.fullList
         orType = builder.orType
-        checkedIdArray = builder.checkedIdArray
+        checkedHashArray = builder.checkedHashArray
         multiSelect = builder.multiSelect
         allowEditQty = builder.allowEditQty
         allowEditDescription = builder.allowEditDescription
@@ -1119,7 +1124,7 @@ class OrcAdapter private constructor(builder: Builder) :
         internal lateinit var recyclerView: RecyclerView
         internal var fullList: ArrayList<OrderRequestContent> = arrayListOf()
         internal var orType: OrderRequestType = OrderRequestType.notDefined
-        internal var checkedIdArray: ArrayList<Long> = ArrayList()
+        internal var checkedHashArray: ArrayList<String> = ArrayList()
         internal var multiSelect: Boolean = false
         internal var allowEditQty: Boolean = false
         internal var allowEditDescription: Boolean = false
@@ -1153,8 +1158,8 @@ class OrcAdapter private constructor(builder: Builder) :
         }
 
         @Suppress("unused")
-        fun checkedIdArray(`val`: ArrayList<Long>): Builder {
-            checkedIdArray = `val`
+        fun checkedHashArray(`val`: ArrayList<String>): Builder {
+            checkedHashArray = `val`
             return this
         }
 

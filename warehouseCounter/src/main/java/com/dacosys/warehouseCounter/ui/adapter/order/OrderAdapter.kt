@@ -456,19 +456,6 @@ class OrderAdapter private constructor(builder: Builder) :
         removeByIds(listOf(id))
     }
 
-    /**
-     * Se utiliza cuando se edita un ítem y necesita actualizarse
-     */
-    fun updateItem(item: OrderResponse, scrollToPos: Boolean = false) {
-        // TODO: Update ítem here
-        //  val t = fullList.firstOrNull { it == item } ?: return
-
-        submitList(fullList).apply {
-            dataSetChangedListener?.onDataSetChanged()
-            selectItem(item, scrollToPos)
-        }
-    }
-
     fun selectItem(a: OrderResponse?, scroll: Boolean = true) {
         var pos = NO_POSITION
         if (a != null) pos = getIndex(a)

@@ -102,7 +102,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var filename: String = ""
 
     private var completeList: ArrayList<OrderRequestContent> = ArrayList()
-    private var checkedIdArray: ArrayList<Long> = ArrayList()
+    private var checkedHashArray: ArrayList<String> = ArrayList()
 
     private var partial = true
     private var partialBlock = true
@@ -172,7 +172,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         if (adapter != null) {
             b.putParcelable("lastSelected", currentItem)
             b.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
-            b.putLongArray("checkedIdArray", adapter?.checkedIdArray?.map { it }?.toLongArray())
+            b.putStringArrayList("checkedHashArray", adapter?.checkedHashArray ?: ArrayList<String>())
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
@@ -183,7 +183,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         saveScanMode(b)
 
         if (tempQty != null) b.putDouble("tempQty", tempQty!!)
-        if (tempLot != null) b.putString("tempLot", tempLot)
+        if (tempLotCode != null) b.putString("tempLotCode", tempLotCode)
 
         // Guardar en Room la orden
         saveTempOrder()
@@ -206,7 +206,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val t1 = b.getString(ARG_TITLE)
         if (!t1.isNullOrEmpty()) tempTitle = t1
 
-        checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
+        checkedHashArray = b.getStringArrayList("checkedHashArray") ?: ArrayList()
         lastSelected = b.parcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
@@ -220,7 +220,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         binding.requiredDescCheckBox.isChecked = b.getBoolean("requiredDescription")
 
         if (b.containsKey("tempQty")) tempQty = b.getDouble("tempQty")
-        if (b.containsKey("tempLot")) tempLot = b.getString("tempLot")
+        if (b.containsKey("tempLotCode")) tempLotCode = b.getString("tempLotCode")
     }
 
     private fun loadPanelState(b: Bundle) {
@@ -626,7 +626,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     .fullList(completeList)
                     .allowEditQty(true, this)
                     .allowEditDescription(true, this)
-                    .checkedIdArray(checkedIdArray)
+                    .checkedHashArray(checkedHashArray)
                     .orType(orderRequest.orderRequestType)
                     .dataSetChangedListener(this)
                     .checkedChangedListener(this)
@@ -1293,9 +1293,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun setLotCode(orc: OrderRequestContent, lotCode: String) {
         if (lotCode.isEmpty()) return
 
-        val itemId = orc.itemId ?: return
-
-        adapter?.updateLotCode(itemId, lotCode)
+        adapter?.updateLotCode(orc.lotHash, lotCode)
     }
 
     private fun setDescription(
@@ -1304,9 +1302,11 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         updateDb: Boolean = true,
     ) {
         if (updateDb) {
-            val itemId = orc.itemId ?: return
-            ItemCoroutines.updateDescription(itemId, description) {
-                adapter?.updateDescription(itemId, description)
+            val itemId = orc.itemId
+            if (itemId != null) {
+                ItemCoroutines.updateDescription(itemId, description) {
+                    adapter?.updateDescription(itemId, description)
+                }
             }
         } else {
             adapter?.updateDescription(orc, description)
@@ -1322,7 +1322,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     ) {
         if (orc == null || qty <= 0 && !manualAdd) {
             tempQty = null
-            tempLot = null
+            tempLotCode = null
             return
         }
 
@@ -1343,8 +1343,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
         val initialQty = orc.qtyCollected ?: 0.0
-        val itemId = orc.itemId ?: 0L
-        val tempOrc = adapter?.fullList?.firstOrNull { it.itemId == itemId } ?: return
+        val lotHash = orc.lotHash
+        val tempOrc = adapter?.fullList?.firstOrNull { it.lotHash == lotHash } ?: return
 
         val multipliedQty: Double = if (!total) {
             qty * multi + (tempOrc.qtyCollected ?: 0.toDouble())
@@ -1356,7 +1356,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             removeItem {
                 allowClicks = true
                 tempQty = null
-                tempLot = null
+                tempLotCode = null
             }
             return
         }
@@ -1395,7 +1395,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private var tempQty: Double? = null
-    private var tempLot: String? = null
+    private var tempLotCode: String? = null
 
     override fun scannerCompleted(scanCode: String) {
         if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
@@ -1454,7 +1454,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
         tempQty = it.qty
-        tempLot = it.lot
+        tempLotCode = it.lotCode
 
         // El código fue chequeado, se agrega y se selecciona en la lista
         runOnUiThread { adapter?.add(arrayListOf(orc)) }
@@ -1630,7 +1630,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun setQty(orc: OrderRequestContent) {
-        if (tempLot != null && tempQty == null) showSnackBar(getString(R.string.null_quantity_in_regex), ERROR)
+        if (tempLotCode != null && tempQty == null) showSnackBar(
+            getString(R.string.null_quantity_in_regex),
+            ERROR
+        )
 
         if (partial || partialBlock) {
             setQtyManually(orc)
@@ -1644,13 +1647,13 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val itemId = orc.itemId ?: 0
         if (itemId <= 0 || orc.lotEnabled != true) return
 
-        val lotIdStr = tempLot ?: orc.lotId?.toString() ?: ""
-        if (lotIdStr.isNotEmpty()) {
+        val lotCode = tempLotCode ?: orc.lotCode.toString()
+        if (lotCode.isNotEmpty()) {
 
             // Ya no lo necesitamos
-            tempLot = null
+            tempLotCode = null
 
-            setLotCode(orc = orc, lotCode = lotIdStr)
+            setLotCode(orc = orc, lotCode = lotCode)
         } else {
             lotCodeDialog(orc)
         }

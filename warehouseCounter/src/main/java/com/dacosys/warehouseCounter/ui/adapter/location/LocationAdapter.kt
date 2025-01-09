@@ -606,8 +606,17 @@ class LocationAdapter private constructor(builder: Builder) :
      * Se utiliza cuando se edita un ítem y necesita actualizarse
      */
     fun updateItem(item: Location, scrollToPos: Boolean = false) {
-        // TODO: Update ítem here
-        //  val t = fullList.firstOrNull { it == item } ?: return
+        val t = fullList.firstOrNull { it == item } ?: return
+
+        t.locationId = item.locationId
+        t.locationDescription = item.locationDescription
+        t.locationParentStr = item.locationParentStr
+        t.locationExternalId = item.locationExternalId
+        t.locationType = item.locationType
+        t.locationActive = item.locationActive
+        t.locationStatus = item.locationStatus
+        t.hashCode = item.hashCode
+        t.location = item.location
 
         submitList(fullList).apply {
             dataSetChangedListener?.onDataSetChanged()

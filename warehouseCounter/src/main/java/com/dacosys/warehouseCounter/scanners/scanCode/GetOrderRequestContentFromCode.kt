@@ -53,15 +53,17 @@ class GetOrderRequestContentFromCode(
     /** Un valor para qty positivo puede provenir de ItemCode o de RegexResult, si no está definido es NULL */
     private var qty: Double? = null
 
-    /** Lot proviene de RegexResult si es positiva la búsqueda */
-    private var lot: String? = null
+    /** Lot y ExternalID provienen del RegexResult si es positiva la búsqueda */
+    private var lotCode: String? = null
+    private var externalId: String? = null
 
     private var count: Int = 0
 
     data class OrderRequestContentResult(
         var orc: OrderRequestContent? = null,
         var qty: Double? = null,
-        var lot: String? = null
+        var lotCode: String? = null,
+        var extId: String? = null,
     )
 
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
@@ -109,7 +111,8 @@ class GetOrderRequestContentFromCode(
         if (it.item != null) {
             val item = it.item as ItemKtor
             qty = it.qty
-            lot = it.lot
+            lotCode = it.lotCode
+            externalId = it.externalId
 
             getItemFromListOrAdd(item)
         } else {
@@ -254,15 +257,17 @@ class GetOrderRequestContentFromCode(
     }
 
     private fun isItemRegexInTheList(): Boolean {
-        var tempLot: String? = null
+        var tempLotCode: String? = null
         var tempEan: String? = null
         var tempQty: Double? = null
+        var tempExtId: String? = null
 
         ItemRegex.tryToRegex(code) {
             if (it.any()) {
-                tempLot = it.first().lot
+                tempLotCode = it.first().lotCode
                 tempEan = it.first().ean
                 tempQty = it.first().qty?.toDouble()
+                tempExtId = it.first().extId
             }
             setProcessState(true)
         }
@@ -274,13 +279,15 @@ class GetOrderRequestContentFromCode(
             }
         }
 
-        if (tempEan == null) return false
+        if (tempLotCode == null) return false
 
         (0 until count).map { list[it] }
-            .filter { it.ean == tempEan }.forEach { it2 ->
+            .filter { it.lotCode.isNotEmpty() && it.lotCode == tempLotCode }
+            .forEach { it2 ->
                 orc = it2
                 qty = tempQty
-                lot = tempLot
+                lotCode = tempLotCode
+                externalId = tempEan
                 sendFinish()
                 return true
             }
@@ -343,16 +350,17 @@ class GetOrderRequestContentFromCode(
         // Buscar de nuevo dentro del adaptador del control
         for (x in 0 until count) {
             val item = list[x]
-            if (item.itemId == itemKtor.id) {
-                // Ya está en el adaptador, devolver el ítem
-                orc = item
-                sendFinish()
-                return
-            }
+            if (item.itemId == itemKtor.id)
+                if (lotCode.isNullOrEmpty() || item.lotCode == lotCode) {
+                    // Ya está en el adaptador, devolver el ítem
+                    orc = item
+                    sendFinish()
+                    return
+                }
         }
 
         // No está en el adaptador, devolver el ítem ya convertido
-        orc = itemKtor.toOrderRequestContent(code)
+        orc = itemKtor.toOrderRequestContent(code, lotCode)
         sendFinish()
     }
 
@@ -367,6 +375,7 @@ class GetOrderRequestContentFromCode(
             externalId = item.externalId
             itemCategoryId = item.itemCategoryId
             lotEnabled = item.lotEnabled == 1
+            lotCode = ""
             qtyCollected = 0.toDouble()
             qtyRequested = 0.toDouble()
         }
@@ -382,6 +391,6 @@ class GetOrderRequestContentFromCode(
     }
 
     private fun sendFinish() {
-        onFinish(OrderRequestContentResult(orc, qty, lot))
+        onFinish(OrderRequestContentResult(orc, qty, lotCode, externalId))
     }
 }

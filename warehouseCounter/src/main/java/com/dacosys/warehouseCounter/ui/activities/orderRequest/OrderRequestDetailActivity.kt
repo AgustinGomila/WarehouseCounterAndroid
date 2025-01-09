@@ -48,7 +48,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
     // Adaptador, colección de ítems, fila seleccionada
     private var adapter: OrcAdapter? = null
     private var lastSelected: OrderRequestContent? = null
-    private var checkedIdArray: ArrayList<Long> = ArrayList()
+    private var checkedHashArray: ArrayList<String> = ArrayList()
     private var firstVisiblePos: Int? = null
     private var currentScrollPosition: Int = 0
 
@@ -123,7 +123,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
         filename = b.getString(ARG_FILENAME) ?: ""
 
         client = b.parcelable(ARG_CLIENT)
-        checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
+        checkedHashArray = b.getStringArrayList("checkedHashArray") ?: ArrayList()
         lastSelected = b.parcelable("lastSelected")
         firstVisiblePos =
             if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos")
@@ -404,7 +404,7 @@ class OrderRequestDetailActivity : AppCompatActivity(), SwipeRefreshLayout.OnRef
                 adapter = OrcAdapter.Builder()
                     .recyclerView(binding.recyclerView)
                     .fullList(filteredList)
-                    .checkedIdArray(checkedIdArray)
+                    .checkedHashArray(checkedHashArray)
                     .orType(orderRequest.orderRequestType)
                     .dataSetChangedListener(this)
                     .checkedChangedListener(this)

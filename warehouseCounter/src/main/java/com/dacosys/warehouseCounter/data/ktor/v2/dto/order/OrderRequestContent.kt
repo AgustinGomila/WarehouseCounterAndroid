@@ -78,11 +78,19 @@ data class OrderRequestContent(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
 
         other as OrderRequestContent
 
-        return itemId == other.itemId
+        return lotHash == other.lotHash
     }
+
+    val lotHash: String
+        get() {
+            var result = itemId?.hashCode() ?: 0
+            result = 31 * result + lotCode.hashCode()
+            return result.toString()
+        }
 
     override fun hashCode(): Int {
         var result = itemId?.hashCode() ?: 0

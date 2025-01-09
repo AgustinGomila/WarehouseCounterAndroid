@@ -21,15 +21,59 @@ data class WarehouseArea(
     @SerialName(PTL_LIST_KEY) var ptlList: List<String>? = null,
 
     ) : Parcelable, Location {
-    override val locationType: LocationType get() = LocationType.WAREHOUSE_AREA
-    override val locationId: Long get() = id
-    override val locationParentStr: String get() = warehouse?.description ?: ""
-    override val locationExternalId: String get() = externalId
-    override val locationDescription: String get() = description
-    override val locationStatus: Status? get() = status
-    override val locationActive: Boolean get() = true
-    override val hashCode: Int get() = hashCode()
-    override val location: Location get() = this
+    override var locationType: LocationType
+        get() = LocationType.WAREHOUSE_AREA
+        set(value) {
+            locationType = value
+        }
+
+    override var locationId: Long
+        get() = id
+        set(value) {
+            locationId = value
+        }
+
+    override var locationParentStr: String
+        get() = warehouse?.description ?: ""
+        set(value) {
+            locationParentStr = value
+        }
+
+    override var locationExternalId: String
+        get() = externalId
+        set(value) {
+            locationExternalId = value
+        }
+
+    override var locationDescription: String
+        get() = description
+        set(value) {
+            locationDescription = value
+        }
+
+    override var locationStatus: Status?
+        get() = status
+        set(value) {
+            locationStatus = value
+        }
+
+    override var locationActive: Boolean
+        get() = true
+        set(value) {
+            locationActive = value
+        }
+
+    override var hashCode: Int
+        get() = hashCode()
+        set(value) {
+            hashCode = value
+        }
+
+    override var location: Location
+        get() = this
+        set(value) {
+            location = value
+        }
 
     constructor(parcel: Parcel) : this(
         id = parcel.readLong(),

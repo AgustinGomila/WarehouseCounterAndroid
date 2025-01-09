@@ -191,7 +191,12 @@ class GetResultFromCode private constructor(builder: Builder) {
 
     private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
-    data class CodeResult(var item: Any? = null, var qty: Double? = null, var lot: String? = null)
+    data class CodeResult(
+        var item: Any? = null,
+        var qty: Double? = null,
+        var lotCode: String? = null,
+        var externalId: String? = null
+    )
 
     @get:Synchronized
     private var isFounded: Boolean = false
@@ -713,7 +718,14 @@ class GetResultFromCode private constructor(builder: Builder) {
             } else {
                 playSoundNotification(false)
             }
-            onFinish(CodeResult(item = r, qty = regexRes.qty?.toDouble(), lot = regexRes.lot))
+            onFinish(
+                CodeResult(
+                    item = r,
+                    qty = regexRes.qty?.toDouble(),
+                    lotCode = regexRes.lotCode,
+                    externalId = regexRes.extId
+                )
+            )
         }
     }
 

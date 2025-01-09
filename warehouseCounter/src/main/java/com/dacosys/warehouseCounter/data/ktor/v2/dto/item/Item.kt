@@ -54,7 +54,7 @@ data class Item(
         )
     }
 
-    fun toOrderRequestContent(scannedCode: String): OrderRequestContent {
+    fun toOrderRequestContent(scannedCode: String, lotCode: String?): OrderRequestContent {
         return OrderRequestContent(
             codeRead = scannedCode,
             ean = ean,
@@ -64,7 +64,7 @@ data class Item(
             itemDescription = description,
             itemId = id,
             lotActive = lotEnabled,
-            lotCode = "",
+            lotCode = lotCode.orEmpty(),
             lotEnabled = lotEnabled,
             lotId = 0L,
             price = price,
