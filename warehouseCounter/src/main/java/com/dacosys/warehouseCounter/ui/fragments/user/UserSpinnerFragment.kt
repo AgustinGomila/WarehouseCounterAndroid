@@ -8,12 +8,12 @@ import android.view.ViewGroup
 import android.widget.AdapterView
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.adapter.user.UserAdapter
+import com.dacosys.warehouseCounter.data.room.dao.user.UserCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.user.User
 import com.dacosys.warehouseCounter.databinding.FragmentSpinnerBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.room.dao.user.UserCoroutines
-import com.dacosys.warehouseCounter.room.entity.user.User
-import org.parceler.Parcels
+import com.dacosys.warehouseCounter.ui.adapter.user.UserAdapter
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 
 /**
  * A simple [Fragment] subclass.
@@ -156,8 +156,6 @@ class UserSpinnerFragment : Fragment() {
         savedInstanceState.putInt("oldPos", oldPos)
     }
 
-    // Este método es llamado cuando el fragmento se está creando.
-    // En el puedes inicializar todos los componentes que deseas guardar si el fragmento fue pausado o detenido.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -166,7 +164,7 @@ class UserSpinnerFragment : Fragment() {
         }
 
         if (arguments != null) {
-            allUser = requireArguments().getParcelableArrayList(ARG_ALL_USER)
+            allUser = requireArguments().parcelableArrayList(ARG_ALL_USER)
             showGeneralLevel = requireArguments().getBoolean(ARG_SHOW_GENERAL_LEVEL)
         }
     }
@@ -197,7 +195,11 @@ class UserSpinnerFragment : Fragment() {
         savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentSpinnerBinding.inflate(inflater, container, false)
-        val view = binding.root
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         binding.autoResizeTextView.visibility = View.GONE
         binding.fragmentSpinner.onItemSelectedListener =
@@ -219,12 +221,8 @@ class UserSpinnerFragment : Fragment() {
                     mCallback?.onItemSelected(null)
                 }
             }
-
-        return view
     }
 
-    // Se llama cuando el fragmento esta visible ante el usuario.
-    // Obviamente depende del método onStart() de la actividad para saber si la actividad se está mostrando.
     override fun onStart() {
         super.onStart()
         try {
@@ -243,7 +241,6 @@ class UserSpinnerFragment : Fragment() {
     // Se llama cuando el fragmento ya no está asociado a la actividad anfitriona.
     override fun onDetach() {
         super.onDetach()
-
         mListener = null
         mCallback = null
     }
@@ -253,35 +250,38 @@ class UserSpinnerFragment : Fragment() {
     }
 
     private fun getUsers() {
-        UserCoroutines().get {
-            allUser = it
-
-            if (!allUser!!.any() && Statics.superDemoMode) {
-                // En modo desarrollo o para mostrar sin datos reales
-                // y si no hay usuarios agregados, agrego
-                // DATOS FALSOS de 5 items de fantasía
-                val fantasyNames = arrayListOf<String>()
-                fantasyNames.add("miguel")
-                fantasyNames.add("adriana")
-                fantasyNames.add("milagros")
-                fantasyNames.add("arturo")
-                fantasyNames.add("agustin")
-                for (i in 1..5) {
-                    UserCoroutines().add(
-                        User(
-                            name = fantasyNames[i - 1],
-                            password = "81dc9bdb52d04dc20036dbd8313ed055"
-                        )
-                    )
-                }
-
-                UserCoroutines().get { it2 ->
-                    allUser = it2
-                    fillAdapter()
-                }
+        UserCoroutines.get {
+            if (!it.any() && Statics.SUPER_DEMO_MODE) {
+                addFantasyUsers()
             } else {
+                allUser = it
                 fillAdapter()
             }
+        }
+    }
+
+    private fun addFantasyUsers() {
+        // En modo desarrollo o para mostrar sin datos reales
+        // y si no hay usuarios agregados, agrego
+        // DATOS FALSOS de 5 items de fantasía
+        val fantasyNames = arrayListOf<String>()
+        fantasyNames.add("miguel")
+        fantasyNames.add("adriana")
+        fantasyNames.add("milagros")
+        fantasyNames.add("arturo")
+        fantasyNames.add("agustin")
+        for (i in 1..5) {
+            UserCoroutines.add(
+                User(
+                    name = fantasyNames[i - 1],
+                    password = "81dc9bdb52d04dc20036dbd8313ed055"
+                )
+            )
+        }
+
+        UserCoroutines.get {
+            allUser = it
+            fillAdapter()
         }
     }
 
@@ -309,7 +309,7 @@ class UserSpinnerFragment : Fragment() {
     }
 
     companion object {
-        // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+        // The fragment initialization parameters
         private const val ARG_ALL_USER = "allUser"
         private const val ARG_SHOW_GENERAL_LEVEL = "showGeneralLevel"
 
@@ -331,7 +331,7 @@ class UserSpinnerFragment : Fragment() {
             val fragment = UserSpinnerFragment()
 
             val args = Bundle()
-            args.putParcelable(ARG_ALL_USER, Parcels.wrap(allUser))
+            args.putParcelableArrayList(ARG_ALL_USER, allUser)
             args.putBoolean(ARG_SHOW_GENERAL_LEVEL, showGeneralLevel)
 
             fragment.arguments = args

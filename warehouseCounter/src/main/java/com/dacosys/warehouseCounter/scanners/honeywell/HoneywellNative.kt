@@ -6,9 +6,16 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.scanners.Scanner
-import com.honeywell.aidc.*
+import com.honeywell.aidc.AidcManager
+import com.honeywell.aidc.BarcodeFailureEvent
+import com.honeywell.aidc.BarcodeReadEvent
+import com.honeywell.aidc.BarcodeReader
+import com.honeywell.aidc.ScannerNotClaimedException
+import com.honeywell.aidc.ScannerUnavailableException
+import com.honeywell.aidc.TriggerStateChangeEvent
+import com.honeywell.aidc.UnsupportedPropertyException
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -18,6 +25,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : Scanner(),
     BarcodeReader.BarcodeListener, BarcodeReader.TriggerListener {
+
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
+
     private var initialized = AtomicBoolean(false)
     private var initializing = AtomicBoolean(false)
     private var pendingResume = AtomicBoolean(false)
@@ -51,7 +61,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
         activityName = weakRef.get()?.javaClass?.simpleName ?: ""
         scannerListener = weakRef.get() as ScannerListener
 
-        Log.v(this::class.java.simpleName, "Initializing scanner on $activityName...")
+        Log.v(tag, "Initializing scanner on $activityName...")
 
         initializing.set(true)
 
@@ -59,7 +69,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
         // create the AidcManager providing a Context and a
         // CreatedCallback implementation.
         AidcManager.create(weakRef.get()) { manager ->
-            Log.v(this::class.java.simpleName, "Manager created on $activityName...")
+            Log.v(tag, "Manager created on $activityName...")
             scannerManager = manager
             scanner = scannerManager?.createBarcodeReader()
 
@@ -74,7 +84,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
                 scanner?.claim()
             } catch (e: ScannerUnavailableException) {
                 e.printStackTrace()
-                Log.e(this::class.java.simpleName, "Scanner unavailable")
+                Log.e(tag, "Scanner unavailable")
             }
 
             loadProperties()
@@ -131,7 +141,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
 
     override fun onFailureEvent(barcodeFailureEvent: BarcodeFailureEvent) {
         if (lockScannerEvent) return
-        Log.v(this::class.java.simpleName, context.getString(R.string.barcode_failure))
+        Log.v(tag, context.getString(R.string.barcode_failure))
     }
 
     // When using Automatic Trigger control do not need to implement the
@@ -147,10 +157,10 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
             scanner?.decode(triggerStateChangeEvent.state)
         } catch (e: ScannerNotClaimedException) {
             e.printStackTrace()
-            Log.e(this::class.java.simpleName, "Scanner is not claimed")
+            Log.e(tag, "Scanner is not claimed")
         } catch (e: ScannerUnavailableException) {
             e.printStackTrace()
-            Log.e(this::class.java.simpleName, "Scanner unavailable")
+            Log.e(tag, "Scanner unavailable")
         }
     }
 
@@ -186,7 +196,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
     }
 
     private fun loadProperties() {
-        val sv = settingViewModel
+        val sv = settingsVm
         properties = HashMap()
         properties[BarcodeReader.PROPERTY_PDF_417_ENABLED] = sv.symbologyPDF417
         properties[BarcodeReader.PROPERTY_AZTEC_ENABLED] = sv.symbologyAztec
@@ -250,7 +260,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
             return
         }
 
-        Log.v(this::class.java.simpleName, "Resuming scanner on $activityName...")
+        Log.v(tag, "Resuming scanner on $activityName...")
 
         try {
             scanner?.claim()
@@ -265,7 +275,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
     }
 
     private fun pauseScanner() {
-        Log.v(this::class.java.simpleName, "Pausing scanner on $activityName...")
+        Log.v(tag, "Pausing scanner on $activityName...")
         // release the scanner claim so we don't get any scanner notifications while paused
         // and the scanner properties are restored to default.
         scanner?.release()
@@ -273,7 +283,7 @@ class HoneywellNative(private var weakRef: WeakReference<AppCompatActivity>) : S
     }
 
     fun destroy() {
-        Log.v(this::class.java.simpleName, "Destroying scanner on $activityName...")
+        Log.v(tag, "Destroying scanner on $activityName...")
         try {
             removeListeners()
 

@@ -14,24 +14,23 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
+import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
+import com.dacosys.warehouseCounter.data.room.database.helper.FileHelper.Companion.removeDataBases
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType.CREATOR.QRConfigApp
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType.CREATOR.QRConfigClientAccount
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType.CREATOR.QRConfigWebservice
+import com.dacosys.warehouseCounter.data.sync.ClientPackage
+import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.getConfigFromScannedCode
+import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.selectClientPackage
 import com.dacosys.warehouseCounter.databinding.SettingsActivityBinding
-import com.dacosys.warehouseCounter.dto.clientPackage.Package
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.PackagesResult
-import com.dacosys.warehouseCounter.room.database.FileHelper.Companion.removeDataBases
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType.CREATOR.QRConfigApp
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType.CREATOR.QRConfigClientAccount
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType.CREATOR.QRConfigWebservice
-import com.dacosys.warehouseCounter.sync.ClientPackage
-import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.getConfigFromScannedCode
-import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.selectClientPackage
-import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.fragments.settings.HeaderFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
@@ -41,13 +40,12 @@ import java.lang.ref.WeakReference
 /**
  * A [SettingsActivity] that presents a set of application settings. On
  * handset devices, settings are presented as a single list. On tablets,
- * settings are split by category, with category headers shown to the left of
- * the list of settings.
+ * category splits settings, with category headers shown to the left of
+ * the settings list.
  *
- *
- * See [
- * Android Design: Settings](http://developer.android.com/design/patterns/settings.html) for design guidelines and the [Settings
- * API Guide](http://developer.android.com/guide/topics/ui/settings.html) for more information on developing a Settings UI.
+ * See:
+ * [Android Design: Settings](http://developer.android.com/design/patterns/settings.html) for design guidelines and the
+ * [Settings API Guide](http://developer.android.com/guide/topics/ui/settings.html) for more information on developing a Settings UI.
  */
 
 class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPreferenceStartFragmentCallback,
@@ -62,7 +60,10 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         fragment.arguments = args
 
         // Replace the existing Fragment with the new Fragment
-        supportFragmentManager.beginTransaction().replace(R.id.settings, fragment).addToBackStack(null).commit()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.settings, fragment)
+            .addToBackStack(null)
+            .commit()
         supportFragmentManager.setFragmentResultListener("requestKey", this) { key, _ ->
             if (key == "requestKey") title = pref.title
         }
@@ -77,7 +78,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         binding = SettingsActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        createOptionsMenu()
+        createOptionMenu()
 
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -85,9 +86,11 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         titleTag = getString(R.string.settings)
 
         if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction().replace(R.id.settings, HeaderFragment()).commit()
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.settings, HeaderFragment())
+                .commit()
         } else {
-            titleTag = savedInstanceState.getCharSequence("title").toString()
+            titleTag = savedInstanceState.getCharSequence(ARG_TITLE).toString()
             title = titleTag
         }
 
@@ -98,12 +101,10 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         }
     }
 
-    private fun createOptionsMenu() {
+    private fun createOptionMenu() {
         // Add menu items without overriding methods in the Activity
         (this as ComponentActivity).addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                // Add menu items here
-                // Inflate the menu; this adds items to the action bar if it is present.
                 menuInflater.inflate(R.menu.menu_read_activity, menu)
                 menu.removeItem(menu.findItem(R.id.action_trigger_scan).itemId)
                 menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
@@ -114,7 +115,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
                 // Handle the menu selection
                 return when (menuItem.itemId) {
                     R.id.home, android.R.id.home -> {
-                        onBackPressed()
+                        finish()
                         true
                     }
 
@@ -145,23 +146,24 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        // Save current requireActivity() title so we can set it again after a configuration change
-        outState.putCharSequence("title", title)
+        // Save current requireActivity() title, so we can set it again after a configuration change
+        outState.putCharSequence(ARG_TITLE, title)
     }
 
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
-            makeText(binding.settings, getString(R.string.configuration_applied), INFO)
+            showSnackBar(getString(R.string.configuration_applied), INFO)
             removeDataBases()
-            onBackPressed()
+            finish()
         } else if (status == ProgressStatus.crashed) {
-            makeText(binding.settings, getString(R.string.error_setting_user_panel), ERROR)
+            showSnackBar(getString(R.string.error_setting_user_panel), ERROR)
         }
     }
 
     private fun onGetPackagesEnded(packagesResult: PackagesResult) {
         val status: ProgressStatus = packagesResult.status
-        val result: ArrayList<Package> = packagesResult.result
+        val result: ArrayList<com.dacosys.warehouseCounter.data.ktor.v1.dto.clientPackage.Package> =
+            packagesResult.result
         val clientEmail: String = packagesResult.clientEmail
         val clientPassword: String = packagesResult.clientPassword
         val msg: String = packagesResult.msg
@@ -174,23 +176,27 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
                         allPackage = result,
                         email = clientEmail,
                         password = clientPassword,
-                        onEventData = { showSnackBar(it) })
+                        onEventData = { showSnackBar(it.text, it.snackBarType) })
                 }
             } else {
-                makeText(binding.settings, msg, INFO)
+                showSnackBar(msg, INFO)
             }
         } else if (status == ProgressStatus.success) {
-            makeText(binding.settings, msg, SUCCESS)
+            showSnackBar(msg, SUCCESS)
         } else if (status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
-            makeText(binding.settings, msg, ERROR)
+            showSnackBar(msg, ERROR)
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     companion object {
+        private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
+
+        const val ARG_TITLE = "title"
+
         //region CAMERA SCAN
         var currentQRConfigType = QRConfigApp
 
@@ -237,7 +243,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
          */
         fun bindPreferenceSummaryToValue(
             frag: PreferenceFragmentCompat,
-            pref: com.dacosys.warehouseCounter.settings.Preference,
+            pref: com.dacosys.warehouseCounter.data.settings.Preference,
         ) {
             val preference = frag.findPreference<Preference>(pref.key) ?: return
             val defaultValue: Any = pref.value
@@ -319,7 +325,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
                         }
                     } catch (ex: Exception) {
                         ex.printStackTrace()
-                        ErrorLog.writeLog(null, this::class.java.simpleName, ex)
+                        ErrorLog.writeLog(null, tag, ex)
                     }
                 }
             }
@@ -332,29 +338,29 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         try {
             // No capturar códigos que cambian el servidor cuando está autentificado.
             if (currentQRConfigType == QRConfigClientAccount || currentQRConfigType == QRConfigWebservice) return
 
             getConfigFromScannedCode(
-                onEvent = { onGetPackagesEnded(it) }, scanCode = scanCode, mode = currentQRConfigType
+                onEvent = { onGetPackagesEnded(it) },
+                scanCode = scanCode,
+                mode = currentQRConfigType
             )
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(binding.settings, ex.message.toString(), ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            showSnackBar(ex.message.toString(), ERROR)
+            ErrorLog.writeLog(this, tag, ex)
         } finally {
             // Unless is blocked, unlock the partial
-            JotterListener.lockScanner(this, false)
+            LifecycleListener.lockScanner(this, false)
         }
     }
 }
-

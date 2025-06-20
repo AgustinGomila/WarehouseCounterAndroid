@@ -4,15 +4,16 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.widget.*
+import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.databinding.ObservationsActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.room.entity.item.Item
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
@@ -36,7 +37,7 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("obs", binding.obsEditText.text.trim().toString())
+        savedInstanceState.putString(ARG_OBS, binding.obsEditText.text.trim().toString())
     }
 
     private lateinit var binding: ObservationsActivityBinding
@@ -51,16 +52,23 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         title = getString(R.string.observations)
 
         if (savedInstanceState != null) {
-            val t1 = savedInstanceState.getString("obs")
+            val t1 = savedInstanceState.getString(ARG_OBS)
             if (t1 != null) obs = t1
         }
 
         val extras = intent.extras
         if (extras != null) {
-            val t1 = extras.getString("obs")
+            val t1 = extras.getString(ARG_OBS)
             if (t1 != null) obs = t1
         }
 
@@ -69,12 +77,8 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         fillControls()
 
-        // Conectar el lector NFC
-        if (WarehouseCounterApp.settingViewModel.useNfc) {
-            Nfc.setupNFCReader(this)
-        }
+        if (settingsVm.useNfc) Nfc.setupNFCReader(this)
 
-        // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
         Screen.setupUI(binding.root, this)
     }
 
@@ -82,7 +86,7 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
         Screen.closeKeyboard(this)
 
         val data = Intent()
-        data.putExtra("obs", binding.obsEditText.text.trim().toString())
+        data.putExtra(ARG_OBS, binding.obsEditText.text.trim().toString())
         setResult(RESULT_OK, data)
         finish()
     }
@@ -115,7 +119,7 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
 
         autoText = ""
 
-        ItemCoroutines().getByQuery(tempCode) {
+        ItemCoroutines.getByQuery(tempCode) {
             var item: Item? = null
             if (it.size > 0) item = it.first()
 
@@ -134,13 +138,12 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         try {
             addAutoText(scanCode)
@@ -152,15 +155,19 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
                 binding.obsEditText.scrollTo(0, binding.obsEditText.bottom)
             }
 
-            makeText(binding.root, getString(R.string.ok), SnackBarType.SUCCESS)
+            showSnackBar(getString(R.string.ok), SnackBarType.SUCCESS)
         } catch (ex: Exception) {
             ex.printStackTrace()
-            makeText(binding.root, ex.message.toString(), SnackBarType.ERROR)
+            showSnackBar(ex.message.toString(), SnackBarType.ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial
-            JotterListener.lockScanner(this, false)
+            LifecycleListener.lockScanner(this, false)
         }
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -168,10 +175,14 @@ class ObservationActivity : AppCompatActivity(), Scanner.ScannerListener {
         Nfc.nfcHandleIntent(intent, this)
     }
 
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()
+    }
+
+    companion object {
+        const val ARG_OBS = "obs"
     }
 }

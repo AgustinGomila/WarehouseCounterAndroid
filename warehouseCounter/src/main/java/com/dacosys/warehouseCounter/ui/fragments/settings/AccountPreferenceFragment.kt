@@ -1,33 +1,37 @@
 package com.dacosys.warehouseCounter.ui.fragments.settings
 
 import android.os.Bundle
+import android.text.InputType
+import android.text.method.PasswordTransformationMethod
+import android.view.inputmethod.EditorInfo
 import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
+import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.dto.clientPackage.Package
-import com.dacosys.warehouseCounter.ktor.functions.GetClientPackages
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages
+import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
+import com.dacosys.warehouseCounter.data.room.database.helper.FileHelper
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType
+import com.dacosys.warehouseCounter.data.sync.ClientPackage
+import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.PackagesResult
-import com.dacosys.warehouseCounter.room.database.FileHelper
-import com.dacosys.warehouseCounter.settings.SettingsRepository
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType
-import com.dacosys.warehouseCounter.sync.ClientPackage
-import com.dacosys.warehouseCounter.sync.ProgressStatus
+import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.bindPreferenceSummaryToValue
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.lang.ref.WeakReference
+import kotlin.concurrent.thread
 
 class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Companion.TaskConfigPanelEnded {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -57,11 +61,15 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
         // guidelines.
 
         if (BuildConfig.DEBUG) {
-            bindPreferenceSummaryToValue(this, settingRepository.clientEmail)
-            bindPreferenceSummaryToValue(this, settingRepository.clientPassword)
+            bindPreferenceSummaryToValue(this, settingsRepository.clientEmail)
+            bindPreferenceSummaryToValue(this, settingsRepository.clientPassword)
         }
 
-        val emailEditText = findPreference<Preference>(settingRepository.clientEmail.key)
+        val emailEditText = findPreference<EditTextPreference>(settingsRepository.clientEmail.key)
+        emailEditText?.setOnBindEditTextListener { editText ->
+            editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS
+            editText.imeOptions = EditorInfo.IME_ACTION_DONE
+        }
         emailEditText?.setOnPreferenceChangeListener { preference, newValue ->
             if (alreadyAnsweredYes) {
                 preference.summary = newValue.toString()
@@ -77,7 +85,12 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
             }
         }
 
-        val passwordEditText = findPreference<Preference>(settingRepository.clientPassword.key)
+        val passwordEditText = findPreference<EditTextPreference>(settingsRepository.clientPassword.key)
+        passwordEditText?.setOnBindEditTextListener { editText ->
+            editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            editText.transformationMethod = PasswordTransformationMethod.getInstance()
+            editText.imeOptions = EditorInfo.IME_ACTION_DONE
+        }
         passwordEditText?.setOnPreferenceChangeListener { preference, newValue ->
             if (alreadyAnsweredYes) {
                 preference.summary = newValue.toString()
@@ -96,18 +109,21 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
         val selectPackageButton = findPreference<Preference>("select_package")
         selectPackageButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
             if (emailEditText != null && passwordEditText != null) {
-                val email = settingViewModel.clientEmail
-                val password = settingViewModel.clientPassword
+                val email = settingsVm.clientEmail
+                val password = settingsVm.clientPassword
 
                 if (alreadyAnsweredYes) {
                     Statics.downloadDbRequired = true
-                    if (email.isNotEmpty() && password.isNotEmpty()) {
-                        GetClientPackages.getConfig(
-                            onEvent = { onGetPackagesEnded(it) },
-                            email = email,
-                            password = password,
-                            installationCode = ""
-                        )
+                    if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
+                        thread {
+                            GetClientPackages.Builder()
+                                .onEvent { onGetPackagesEnded(it) }
+                                .addParams(
+                                    email = email,
+                                    password = password,
+                                    installationCode = ""
+                                ).build()
+                        }
                     }
                 } else {
                     val diaBox = askForDownloadDbRequired2(email = email, password = password)
@@ -124,9 +140,7 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
                 true
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                if (view != null) MakeText.makeText(
-                    requireView(), "${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR
-                )
+                if (view != null) showSnackBar("${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR)
                 ErrorLog.writeLog(null, this::class.java.simpleName, ex)
                 false
             }
@@ -134,15 +148,14 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
 
         val qrCodeButton = findPreference<Preference>("ac_qr_code")
         qrCodeButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            val urlPanel = settingViewModel.urlPanel
-            val installationCode = settingViewModel.installationCode
-            val clientEmail = settingViewModel.clientEmail
-            val clientPassword = settingViewModel.clientPassword
-            val clientPackage = settingViewModel.clientPackage
+            val urlPanel = settingsVm.urlPanel
+            val installationCode = settingsVm.installationCode
+            val clientEmail = settingsVm.clientEmail
+            val clientPassword = settingsVm.clientPassword
+            val clientPackage = settingsVm.clientPackage
 
             if (urlPanel.isEmpty() || installationCode.isEmpty() || clientPackage.isEmpty() || clientEmail.isEmpty() || clientPassword.isEmpty()) {
-                if (view != null) MakeText.makeText(
-                    requireView(),
+                if (view != null) showSnackBar(
                     WarehouseCounterApp.context.getString(R.string.invalid_client_data),
                     SnackBarType.ERROR
                 )
@@ -175,14 +188,12 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
         val updateAppButton = findPreference<Preference>("update_app") as Preference
         updateAppButton.isEnabled = false
         updateAppButton.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            MakeText.makeText(
-                requireView(), getString(R.string.no_available_option), SnackBarType.INFO
-            )
+            showSnackBar(getString(R.string.no_available_option), SnackBarType.INFO)
             true
         }
 
         // Si ya está loggeado, deshabilitar estas opciones
-        if (Statics.isLogged) {
+        if (CurrentUser.isLogged) {
             passwordEditText?.isEnabled = false
             emailEditText?.isEnabled = false
             selectPackageButton?.isEnabled = false
@@ -203,10 +214,16 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
                 Statics.downloadDbRequired = true
                 alreadyAnsweredYes = true
 
-                if (email.isNotEmpty() && password.isNotEmpty()) {
-                    GetClientPackages.getConfig(
-                        onEvent = { onGetPackagesEnded(it) }, email = email, password = password, installationCode = ""
-                    )
+                if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
+                    thread {
+                        GetClientPackages.Builder()
+                            .onEvent { onGetPackagesEnded(it) }
+                            .addParams(
+                                email = email,
+                                password = password,
+                                installationCode = ""
+                            ).build()
+                    }
                 }
                 dialog.dismiss()
             }.setNegativeButton(R.string.no) { dialog, _ -> dialog.dismiss() }.create()
@@ -240,7 +257,8 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
 
     private fun onGetPackagesEnded(packagesResult: PackagesResult) {
         val status: ProgressStatus = packagesResult.status
-        val result: ArrayList<Package> = packagesResult.result
+        val result: ArrayList<com.dacosys.warehouseCounter.data.ktor.v1.dto.clientPackage.Package> =
+            packagesResult.result
         val clientEmail: String = packagesResult.clientEmail
         val clientPassword: String = packagesResult.clientPassword
         val msg: String = packagesResult.msg
@@ -253,33 +271,33 @@ class AccountPreferenceFragment : PreferenceFragmentCompat(), ClientPackage.Comp
                         allPackage = result,
                         email = clientEmail,
                         password = clientPassword,
-                        onEventData = { showSnackBar(it) })
+                        onEventData = { showSnackBar(it.text, it.snackBarType) })
                 }
             } else {
-                if (view != null) MakeText.makeText(requireView(), msg, SnackBarType.INFO)
+                if (view != null) showSnackBar(msg, SnackBarType.INFO)
             }
         } else if (status == ProgressStatus.success) {
-            if (view != null) MakeText.makeText(requireView(), msg, SnackBarType.SUCCESS)
+            if (view != null) showSnackBar(msg, SnackBarType.SUCCESS)
         } else if (status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
-            if (view != null) MakeText.makeText(requireView(), msg, SnackBarType.ERROR)
+            if (view != null) showSnackBar(msg, SnackBarType.ERROR)
         }
     }
 
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
-            if (view != null) MakeText.makeText(
-                requireView(), getString(R.string.configuration_applied), SnackBarType.INFO
+            if (view != null) showSnackBar(
+                getString(R.string.configuration_applied), SnackBarType.INFO
             )
             FileHelper.removeDataBases()
             requireActivity().finish()
         } else if (status == ProgressStatus.crashed) {
-            if (view != null) MakeText.makeText(
-                requireView(), getString(R.string.error_setting_user_panel), SnackBarType.ERROR
+            if (view != null) showSnackBar(
+                getString(R.string.error_setting_user_panel), SnackBarType.ERROR
             )
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        MakeText.makeText(requireView(), it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(requireView(), text, snackBarType)
     }
 }

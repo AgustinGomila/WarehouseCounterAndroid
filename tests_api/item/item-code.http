@@ -1,0 +1,42 @@
+# INDEX
+###
+GET {{server}}/v2/item-code?expand=item
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+###
+
+# VIEW
+###
+GET {{server}}/v2/item-code/view?id=7
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+# CREATE
+###
+POST {{server}}/v2/item-code/create
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "qty": 1.0,
+  "item_id": 84,
+  "code": "27731723"
+}
+
+###
+
+# UPDATE
+###
+PUT {{server}}/v2/item-code/update?id=7
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "id": 7,
+  "qty": 1.0,
+  "item_id": 209314,
+  "code": "update code test"
+}
+
+###

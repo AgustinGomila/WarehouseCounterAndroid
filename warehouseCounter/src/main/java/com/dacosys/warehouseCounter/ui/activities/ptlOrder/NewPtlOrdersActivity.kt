@@ -12,21 +12,22 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouse
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest
 import com.dacosys.warehouseCounter.databinding.NewPtlOrdersBinding
-import com.dacosys.warehouseCounter.dto.warehouse.Warehouse
-import com.dacosys.warehouseCounter.dto.warehouse.WarehouseArea
-import com.dacosys.warehouseCounter.ktor.functions.GetWarehouse
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.ui.activities.location.LocationSelectActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import org.parceler.Parcels
 import kotlin.concurrent.thread
 
 class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
@@ -36,15 +37,14 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
         if (isFinishing) return
 
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, SnackBarType.INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
     }
 
     private var warehouseArea: WarehouseArea? = null
@@ -52,19 +52,19 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putParcelable("warehouseArea", warehouseArea)
+        savedInstanceState.putParcelable(ARG_WAREHOUSE_AREA, warehouseArea)
     }
 
     private fun loadBundleValues(b: Bundle) {
-        val t1 = b.getString("title")
+        val t1 = b.getString(ARG_TITLE)
         tempTitle = if (!t1.isNullOrEmpty()) t1
         else context.getString(R.string.setup_new_ptl)
 
-        warehouseArea = b.getParcelable("warehouseArea")
+        warehouseArea = b.parcelable(ARG_WAREHOUSE_AREA)
     }
 
     private fun loadExtraBundleValues(b: Bundle) {
-        val t1 = b.getString("title")
+        val t1 = b.getString(ARG_TITLE)
         tempTitle = if (!t1.isNullOrEmpty()) t1
         else context.getString(R.string.setup_new_ptl)
     }
@@ -90,15 +90,17 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
             if (extras != null) loadExtraBundleValues(extras)
         }
 
-        title = tempTitle
+        binding.topAppbar.title = tempTitle
 
         binding.continueButton.setOnClickListener { attemptSetupNewCount() }
 
         binding.areaTextView.setOnClickListener {
-            val intent = Intent(this, WarehouseAreaSelectActivity::class.java)
+            val intent = Intent(this, LocationSelectActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra("warehouseArea", warehouseArea)
-            intent.putExtra("title", context.getString(R.string.select_area))
+            intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_AREA, warehouseArea)
+            intent.putExtra(LocationSelectActivity.ARG_WAREHOUSE_VISIBLE, false)
+            intent.putExtra(LocationSelectActivity.ARG_RACK_VISIBLE, false)
+            intent.putExtra(LocationSelectActivity.ARG_TITLE, context.getString(R.string.select_area))
             resultForAreaSelect.launch(intent)
         }
 
@@ -109,40 +111,47 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
         }
     }
 
-    private val resultForAreaSelect =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            val data = it?.data
-            try {
-                if (it?.resultCode == RESULT_OK && data != null) {
-                    warehouseArea =
-                        data.getParcelableExtra("warehouseArea") ?: return@registerForActivityResult
-                    setAreaText()
-                }
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+    private val resultForAreaSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                warehouseArea = data.parcelable<WarehouseArea>(LocationSelectActivity.ARG_WAREHOUSE_AREA)
+                    ?: return@registerForActivityResult
+                setAreaText()
             }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         }
+    }
 
     private fun selectDefaultArea() {
         if (isFinishing) return
 
+        if (!ApiRequest.validUrl()) {
+            showSnackBar(context.getString(R.string.invalid_url), SnackBarType.ERROR)
+            return
+        }
+
         thread {
-            GetWarehouse(onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
-                onFinish = { if (it.any()) onGetAreas(it) }).execute()
+            GetWarehouse(
+                action = GetWarehouse.defaultAction,
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                onFinish = { if (it.any()) onGetWarehouses(it) }
+            ).execute()
         }
     }
 
-    private fun onGetAreas(it: ArrayList<Warehouse>) {
+    private fun onGetWarehouses(it: ArrayList<Warehouse>) {
         val w = it.first()
-        val wa = w.areas.first()
+        val wa = w.areas?.first()
 
         warehouseArea = wa
         setAreaText()
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private fun setAreaText() {
@@ -161,9 +170,7 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
         Screen.closeKeyboard(this)
 
         val data = Intent()
-        if (warehouseArea != null) data.putExtra(
-            "warehouseArea", Parcels.wrap<WarehouseArea>(warehouseArea)
-        )
+        if (warehouseArea != null) data.putExtra(ARG_WAREHOUSE_AREA, warehouseArea)
 
         setResult(RESULT_OK, data)
         finish()
@@ -198,10 +205,9 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -213,28 +219,24 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                finish()
                 return true
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_trigger_scan -> {
-                JotterListener.trigger(this)
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
         }
@@ -242,6 +244,9 @@ class NewPtlOrdersActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.
     }
 
     companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_WAREHOUSE_AREA = "warehouseArea"
+
         fun equals(a: Any?, b: Any?): Boolean {
             return a != null && a == b
         }

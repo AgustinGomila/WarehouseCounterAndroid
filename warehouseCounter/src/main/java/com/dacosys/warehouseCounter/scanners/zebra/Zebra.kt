@@ -8,11 +8,13 @@ import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTION_DATAWEDGE
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTION_RESULT
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTION_RESULT_NOTIFICATION
+import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTIVITY_ACTION_FROM_SERVICE
+import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTIVITY_INTENT_FILTER_ACTION
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_CREATE_PROFILE
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_EMPTY
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_GET_VERSION_INFO
@@ -25,8 +27,6 @@ import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_SEND_RE
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_SET_CONFIG
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_SOFT_SCAN_TRIGGER
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_UNREGISTER_NOTIFICATION
-import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.activityActionFromService
-import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.activityIntentFilterAction
 import java.util.concurrent.atomic.AtomicBoolean
 
 // ****************************************************************************************
@@ -35,6 +35,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 // *                                                                                      *
 // ****************************************************************************************
 class Zebra(private val activity: AppCompatActivity) : Scanner() {
+
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
+
     // private variables
     private val bRequestSendResult = false
 
@@ -64,7 +67,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
 
     private fun initializeScanner() {
         // Use SET_CONFIG: http://techdocs.zebra.com/datawedge/latest/guide/api/setconfig/
-        val sv = settingViewModel
+        val sv = settingsVm
 
         // Main bundle properties
         val profileConfig = Bundle()
@@ -178,7 +181,7 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
         intentConfig.putBundle("PARAM_LIST", intentProps)
         profileConfig.putBundle("PLUGIN_CONFIG", intentConfig)
         sendDataWedgeIntentWithExtra(EXTRA_SET_CONFIG, profileConfig)
-        Log.v(this::class.java.simpleName, "Created profile.  Check DataWedge app UI.")
+        Log.v(tag, "Created profile.  Check DataWedge app UI.")
     }
 
     // Toggle soft scan trigger from UI onClick() event
@@ -194,22 +197,22 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
 
     // Create filter for the broadcast intent
     private fun registerReceivers() {
-        Log.v(this::class.java.simpleName, "registerReceivers() on $activityName")
+        Log.v(tag, "registerReceivers() on $activityName")
         val filter = IntentFilter()
         filter.addAction(ACTION_RESULT_NOTIFICATION) // for notification result
         filter.addAction(ACTION_RESULT) // for error code result
         filter.addCategory(Intent.CATEGORY_DEFAULT) // needed to get version info
 
         // register to received broadcasts via DataWedge scanning
-        filter.addAction(activityIntentFilterAction)
-        filter.addAction(activityActionFromService)
+        filter.addAction(ACTIVITY_INTENT_FILTER_ACTION)
+        filter.addAction(ACTIVITY_ACTION_FROM_SERVICE)
 
         activity.registerReceiver(broadcastReceiver, filter)
     }
 
     // Unregister scanner status notification
     private fun unRegisterScannerStatus() {
-        Log.v(this::class.java.simpleName, "unRegisterScannerStatus() on $activityName")
+        Log.v(tag, "unRegisterScannerStatus() on $activityName")
         val b = Bundle()
         b.putString(EXTRA_KEY_APPLICATION_NAME, context.packageName)
         b.putString(EXTRA_KEY_NOTIFICATION_TYPE, EXTRA_KEY_VALUE_SCANNER_STATUS)
@@ -245,12 +248,12 @@ class Zebra(private val activity: AppCompatActivity) : Scanner() {
     }
 
     internal object Constants {
-        const val activityIntentFilterAction = "com.zebra.datacapture1.ACTION"
-        const val activityActionFromService = "com.zebra.datacapture1.service.ACTION"
+        const val ACTIVITY_INTENT_FILTER_ACTION = "com.zebra.datacapture1.ACTION"
+        const val ACTIVITY_ACTION_FROM_SERVICE = "com.zebra.datacapture1.service.ACTION"
 
         //private val datawedgeIntentKeySource = "com.symbol.datawedge.source"
         //private val datawedgeIntentKeyLabelType = "com.symbol.datawedge.label_type"
-        const val datawedgeIntentKeyData = "com.symbol.datawedge.data_string"
+        const val DATA_WEDGE_INTENT_KEY_DATA = "com.symbol.datawedge.data_string"
 
         // DataWedge Sample supporting DataWedge APIs up to DW 7.0
         const val EXTRA_PROFILENAME = "DWDataCapture1"

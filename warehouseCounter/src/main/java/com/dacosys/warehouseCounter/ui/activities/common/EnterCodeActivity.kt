@@ -4,35 +4,37 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.view.KeyEvent
-import android.view.inputmethod.EditorInfo
+import android.text.InputType
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.dacosys.warehouseCounter.databinding.EnterCodeActivityBinding
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
-import org.parceler.Parcels
 
 
 class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
+    private var capSentences: Boolean = false
     private var orc: OrderRequestContent? = null
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("title", title.toString())
-        savedInstanceState.putString("hint", binding.codeEditText.hint.toString())
-        savedInstanceState.putParcelable("orc", orc)
-        savedInstanceState.putString(
-            "defaultValue", binding.codeEditText.editableText.toString().trim()
-        )
+        savedInstanceState.putString(ARG_TITLE, title.toString())
+        savedInstanceState.putString(ARG_HINT, binding.codeEditText.hint.toString())
+        savedInstanceState.putParcelable(ARG_ORC, orc)
+        savedInstanceState.putString(ARG_DEFAULT_VALUE, binding.codeEditText.editableText.toString().trim())
+        savedInstanceState.putBoolean(ARG_CAP_SENTENCES, capSentences)
     }
 
     private lateinit var binding: EnterCodeActivityBinding
@@ -48,33 +50,44 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         // fuera de la ventana. Esta actividad se ve como un diálogo.
         setFinishOnTouchOutside(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         var tempTitle = getString(R.string.enter_the_code)
         var tempHint = getString(R.string.item_code)
         var defaultValue = ""
 
         if (savedInstanceState != null) {
-            val t1 = savedInstanceState.getString("title")
+            val t1 = savedInstanceState.getString(ARG_TITLE)
             if (!t1.isNullOrEmpty()) tempTitle = t1
 
-            val t2 = savedInstanceState.getString("hint")
+            val t2 = savedInstanceState.getString(ARG_HINT)
             if (!t2.isNullOrEmpty()) tempHint = t2
 
-            orc = savedInstanceState.getParcelable("orc")
+            orc = savedInstanceState.parcelable(ARG_ORC)
 
-            defaultValue = savedInstanceState.getString("defaultValue") ?: ""
+            capSentences = savedInstanceState.getBoolean(ARG_CAP_SENTENCES)
+
+            defaultValue = savedInstanceState.getString(ARG_DEFAULT_VALUE) ?: ""
         } else {
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
+                val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                val t2 = extras.getString("hint")
+                val t2 = extras.getString(ARG_HINT)
                 if (!t2.isNullOrEmpty()) tempHint = t2
 
-                val t3 = extras.getParcelable("orc") as OrderRequestContent?
+                val t3 = extras.parcelable(ARG_ORC) as OrderRequestContent?
                 if (t3 != null) orc = t3
 
-                defaultValue = extras.getString("defaultValue") ?: ""
+                capSentences = extras.getBoolean(ARG_CAP_SENTENCES)
+
+                defaultValue = extras.getString(ARG_DEFAULT_VALUE) ?: ""
             }
         }
 
@@ -83,8 +96,13 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         binding.okButton.setOnClickListener { codeSelect() }
 
         binding.codeEditText.hint = tempHint
+
+        if (capSentences) {
+            binding.codeEditText.inputType = InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+        }
+
         binding.codeEditText.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE || event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
+            if (isActionDone(actionId, event)) {
                 codeSelect()
                 true
             } else {
@@ -100,7 +118,9 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             }
         }
 
-        binding.enterCode.setOnClickListener { onBackPressed() }
+        binding.enterCode.setOnClickListener {
+            isBackPressed()
+        }
 
         binding.codeEditText.isCursorVisible = true
         binding.codeEditText.isFocusable = true
@@ -109,6 +129,8 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     }
 
     private fun codeSelect() {
+        closeKeyboard(this)
+
         val data = Intent()
         val result: Int = if (binding.codeEditText.editableText.toString().isEmpty()) {
             RESULT_CANCELED
@@ -116,14 +138,14 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
             RESULT_OK
         }
 
-        data.putExtra("code", binding.codeEditText.editableText.toString().trim())
-        data.putExtra("orc", Parcels.wrap(orc))
+        data.putExtra(ARG_CODE, binding.codeEditText.editableText.toString().trim())
+        data.putExtra(ARG_ORC, orc)
         setResult(result, data)
         finish()
     }
 
-    override fun onBackPressed() {
-        Screen.closeKeyboard(this)
+    private fun isBackPressed() {
+        closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()
@@ -135,15 +157,18 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, SnackBarType.INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
 
         binding.codeEditText.setText(scanCode)
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onReadCompleted(scanCode: String) {
@@ -153,4 +178,13 @@ class EnterCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfi
     override fun onWriteCompleted(isOk: Boolean) {}
 
     override fun onGetBluetoothName(name: String) {}
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_HINT = "hint"
+        const val ARG_CAP_SENTENCES = "captFirst"
+        const val ARG_ORC = "orc"
+        const val ARG_CODE = "code"
+        const val ARG_DEFAULT_VALUE = "defaultValue"
+    }
 }

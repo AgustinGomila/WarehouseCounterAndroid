@@ -3,6 +3,7 @@ plugins {
     id 'kotlin-android'
     id 'kotlin-kapt'
     id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlinVersion"
+    id 'jacoco'
 }
 
 android {
@@ -54,6 +55,7 @@ android {
         debug {
             initWith debug
             debuggable true
+            testCoverageEnabled true
             minifyEnabled false
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android.txt'),
@@ -78,28 +80,38 @@ android {
     }
     compileOptions {
         coreLibraryDesugaringEnabled true
-        targetCompatibility JavaVersion.VERSION_1_8
-        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility jvmCompatibility
+        sourceCompatibility jvmCompatibility
     }
+
+    kotlinOptions {
+        jvmTarget = project.jvmCompatibility
+        freeCompilerArgs = freeCompilerArgs + "-opt-in=kotlin.RequiresOptIn"
+    }
+
     buildFeatures {
         dataBinding true
         viewBinding true
     }
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/*']
+        }
+    }
     productFlavors {}
     buildToolsVersion = buildToolsVer
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
+
     defaultConfig {
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         proguardFiles
         manifestPlaceholders = [:]
         targetSdk = androidTargetSdk
         minSdk = androidMinSdk
+        multiDexEnabled true
 
-        javaCompileOptions {
-            // Necesario para Room si se define exportSchema en [true] en la clase @Database
-            annotationProcessorOptions {
-                arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
+        kapt {
+            arguments {
+                arg("room.schemaLocation", "$projectDir/schemas")
             }
         }
     }
@@ -108,39 +120,38 @@ android {
         checkReleaseBuilds false
         disable = ['MissingTranslation']
     }
+    testOptions {
+        unitTests.all {
+            jacoco {
+                includeNoLocationClasses = true
+                excludes = ['jdk.internal.*']
+            }
+        }
+        unitTests.returnDefaultValues = true
+    }
     namespace 'com.dacosys.warehouseCounter'
 }
 
 dependencies {
+    // MultiDex
+    implementation 'com.android.support:multidex:1.0.3'
+
     // Permite utilizar API restringidas no públicas del SDK
     implementation 'com.github.tiann:FreeReflection:3.1.0'
     implementation 'com.google.android.gms:play-services-basement:18.2.0'
+    implementation 'androidx.test:core-ktx:1.5.0'
+    implementation 'androidx.test.ext:junit-ktx:1.1.5'
 
     // Permite utilizar las librerías Zxing en API 23
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.6'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
 
     // LeakCanary: debugImplementation because LeakCanary should only run in debug builds.
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
 
-    // TODO: Implementar Unit Test
-    // testImplementation 'junit:junit:4.13.2'
-    // testImplementation 'com.google.truth:truth:1.1.3'
-
-    // androidTestImplementation 'androidx.test:runner:1.4.0'
-    // androidTestImplementation('androidx.test.espresso:espresso-core:3.4.0', {
-    //     exclude group: 'com.android.support', module: 'support-annotations'
-    // })
-
-    // Constaint Layout
-    // No update 2.0.1 (Bugs persist in: 2.0.2, 2.0.3, 2.0.4, 2.1.0),
-    // Todas tienen un bug al finalizar una animación que no re-dibuja los fragmentos
+    // Constraint Layout
+    // No update 2.0.1 (Bugs persist until 2.1.4),
+    // Todas tienen un bug al finalizar una animación que no re-dibuja los fragmentos anidados
     implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
-
-    // Common STATUS CODES that are often shared across API surfaces
-    // implementation 'com.google.android.gms:play-services-vision:20.1.3'
-
-    // SOAP Library
-    implementation 'com.google.code.ksoap2-android:ksoap2-android:3.6.2'
 
     // Keyboard Visibility Library
     implementation 'net.yslibrary.keyboardvisibilityevent:keyboardvisibilityevent:2.3.0'
@@ -148,15 +159,13 @@ dependencies {
     // Apache Commons Net
     implementation 'commons-net:commons-net:3.8.0'
 
-    // Parceler
-    implementation 'org.parceler:parceler-api:1.1.13'
-
     // Android Asynchronous Http Client
     implementation 'com.loopj.android:android-async-http:1.4.11'
 
     // Coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1'
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutines"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinxCoroutines"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:$kotlinxCoroutines"
 
     // ImageControl
     implementation project(':imageControl')
@@ -172,36 +181,40 @@ dependencies {
 
     // SplashScreen
     implementation 'androidx.core:core-splashscreen:1.0.1'
-    implementation 'androidx.core:core-ktx:1.10.1'
-    implementation 'androidx.preference:preference-ktx:1.2.0'
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.preference:preference-ktx:1.2.1'
 
-    // Some AndroidX Libs
-    implementation 'androidx.annotation:annotation:1.6.0'
+    // AndroidX Libs
+    implementation 'androidx.annotation:annotation:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.compose.animation:animation-core:1.6.0-alpha01'
+    implementation 'androidx.compose.animation:animation-core:1.6.0-alpha08'
 
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.percentlayout:percentlayout:1.0.0'
-    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'com.google.android.material:material:1.10.0'
 
     // SwipeR
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
 
     // Para ActivityResults
-    implementation 'androidx.activity:activity-ktx:1.8.0-alpha06'
-    implementation 'androidx.fragment:fragment-ktx:1.6.0'
+    implementation 'androidx.activity:activity-ktx:1.8.0'
+    implementation 'androidx.fragment:fragment-ktx:1.6.1'
 
     // Honeywell native driver
     implementation files('libs/honeywell/DataCollection.aar')
 
     // Koin
-    implementation "io.insert-koin:koin-android:3.3.3"
+    implementation "io.insert-koin:koin-android:$koinVersion"
 
     // Room
     api("androidx.room:room-runtime:$roomVersion")
     annotationProcessor("androidx.room:room-compiler:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
+    implementation("android.arch.persistence.room:runtime:$archPersistenceVersion")
+    androidTestImplementation "androidx.room:room-testing:$roomVersion"
+
     // To use Kotlin annotation processing tool (kapt)
+    kapt("android.arch.persistence.room:compiler:$archPersistenceVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
 
     // KTor
@@ -210,12 +223,40 @@ dependencies {
     implementation "io.ktor:ktor-client-content-negotiation:$kTorVersion"
     implementation "io.ktor:ktor-serialization-kotlinx-json:$kTorVersion"
     implementation "io.ktor:ktor-client-json:$kTorVersion"
+    implementation "io.ktor:ktor-client-auth:$kTorVersion"
 
     // RecyclerView
-    implementation 'androidx.recyclerview:recyclerview:1.3.0'
+    implementation "androidx.recyclerview:recyclerview:$recyclerViewVersion"
 
     // KotlinX Serialization
-    runtimeOnly 'org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.5.1'
+    runtimeOnly "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:$kotlinxSerializationVersion"
+
+    // Arrows
+    implementation "io.arrow-kt:arrow-core:$arrowVersion"
+
+    // Paging3
+    implementation "androidx.paging:paging-common-ktx:$pagging3Version"
+    implementation "androidx.paging:paging-runtime-ktx:$pagging3Version"
+
+    // ViewPager2
+    implementation "androidx.viewpager2:viewpager2:$viewPager2Version"
+
+    // .env Support
+    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+
+    // Faker for Test
+    implementation 'com.github.javafaker:javafaker:1.0.2'
+
+    // Testing
+    androidTestImplementation("androidx.test.espresso:espresso-core:$espressoVersion", {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "io.insert-koin:koin-test:3.2.2"
+
+    testImplementation "junit:junit:$junitVersion"
+    testImplementation "androidx.arch.core:core-testing:$coreTestingVersion"
+    testImplementation "io.mockk:mockk:1.13.8"
 }
 
 repositories {

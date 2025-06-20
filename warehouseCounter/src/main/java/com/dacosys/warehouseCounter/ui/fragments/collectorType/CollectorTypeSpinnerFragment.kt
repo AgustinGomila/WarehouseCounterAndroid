@@ -9,8 +9,8 @@ import android.widget.ArrayAdapter
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.databinding.FragmentSpinnerBinding
-import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
-import org.parceler.Parcels
+import com.dacosys.warehouseCounter.scanners.collectorType.CollectorType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 
 /**
  * A simple [Fragment] subclass.
@@ -61,17 +61,10 @@ class CollectorTypeSpinnerFragment : Fragment() {
             else -> 0
         }
 
-    // Este método es llamado cuando el fragmento se está creando.
-    // En el puedes inicializar todos los componentes que deseas guardar si el fragmento fue pausado o detenido.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (arguments != null) {
-            allCollectorType =
-                Parcels.unwrap<ArrayList<CollectorType>>(
-                    requireArguments().getParcelable(
-                        ARG_ALL_COLLECTOR_TYPE
-                    )
-                )
+            allCollectorType = requireArguments().parcelableArrayList(ARG_ALL_COLLECTOR_TYPE)
             showGeneralLevel = requireArguments().getBoolean(ARG_SHOW_GENERAL_LEVEL)
         }
     }
@@ -99,6 +92,12 @@ class CollectorTypeSpinnerFragment : Fragment() {
         // Llenar el binding.fragmentSpinner
         allCollectorType = CollectorType.getAll()
 
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
         binding.fragmentSpinner.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(
@@ -114,12 +113,8 @@ class CollectorTypeSpinnerFragment : Fragment() {
                     mCallback?.onItemSelected(null)
                 }
             }
-
-        return view
     }
 
-    // Se llama cuando el fragmento esta visible ante el usuario.
-    // Obviamente depende del método onStart() de la actividad para saber si la actividad se está mostrando.
     override fun onStart() {
         super.onStart()
         try {
@@ -146,7 +141,7 @@ class CollectorTypeSpinnerFragment : Fragment() {
     }
 
     companion object {
-        // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+        // The fragment initialization parameters
         private const val ARG_ALL_COLLECTOR_TYPE = "allCollectorType"
         private const val ARG_SHOW_GENERAL_LEVEL = "showGeneralLevel"
 
@@ -164,7 +159,7 @@ class CollectorTypeSpinnerFragment : Fragment() {
             val fragment = CollectorTypeSpinnerFragment()
 
             val args = Bundle()
-            args.putParcelable(ARG_ALL_COLLECTOR_TYPE, Parcels.wrap(allCollectorType))
+            args.putParcelableArrayList(ARG_ALL_COLLECTOR_TYPE, allCollectorType)
             args.putBoolean(ARG_SHOW_GENERAL_LEVEL, showGeneralLevel)
 
             fragment.arguments = args

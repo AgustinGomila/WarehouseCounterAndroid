@@ -3,19 +3,27 @@ package com.dacosys.warehouseCounter
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
+import android.util.Base64
 import androidx.preference.PreferenceManager
 import com.dacosys.imageControl.ImageControl
-import com.dacosys.warehouseCounter.ktor.APIServiceImpl
-import com.dacosys.warehouseCounter.ktor.DacoServiceImpl
-import com.dacosys.warehouseCounter.misc.Statics.Companion.INTERNAL_IMAGE_CONTROL_APP_ID
-import com.dacosys.warehouseCounter.scanners.JotterListener
-import com.dacosys.warehouseCounter.settings.SettingsRepository
-import com.dacosys.warehouseCounter.settings.SettingsViewModel
-import com.dacosys.warehouseCounter.sync.SyncViewModel
+import com.dacosys.warehouseCounter.data.ktor.v1.impl.DacoServiceImpl
+import com.dacosys.warehouseCounter.data.ktor.v1.impl.TrustFactory
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest
+import com.dacosys.warehouseCounter.data.ktor.v2.sync.Sync
+import com.dacosys.warehouseCounter.data.ktor.v2.sync.SyncViewModel
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
+import com.dacosys.warehouseCounter.data.settings.SettingsViewModel
+import com.dacosys.warehouseCounter.misc.CurrentUser
+import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
+import com.dacosys.warehouseCounter.ui.adapter.order.OrderViewModel
 import id.pahlevikun.jotter.Jotter
 import id.pahlevikun.jotter.event.ActivityEvent
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.auth.providers.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
@@ -31,6 +39,8 @@ import java.net.PasswordAuthentication
 import java.net.Proxy
 import java.net.Proxy.NO_PROXY
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.X509TrustManager
 
 /**
  * Created by Agustin on 24/01/2017.
@@ -44,36 +54,34 @@ class WarehouseCounterApp : Application(), KoinComponent {
             modules(koinAppModule())
         }
 
-        // Eventos del ciclo de vida de las actividades
-        // que nos interesa interceptar para conectar y
-        // desconectar los medios de lectura de códigos.
-        Jotter.Builder(this@WarehouseCounterApp).setLogEnable(true).setActivityEventFilter(
-            listOf(
-                ActivityEvent.CREATE,
-                ActivityEvent.RESUME,
-                ActivityEvent.PAUSE,
-                ActivityEvent.DESTROY
+        /**
+         * Life cicle events of the activities
+         * that we are interested in intercepting to connect and disconnect the code reading means.
+         */
+        Jotter.Builder(this@WarehouseCounterApp)
+            .setLogEnable(true)
+            .setActivityEventFilter(
+                listOf(
+                    ActivityEvent.CREATE,
+                    ActivityEvent.RESUME,
+                    ActivityEvent.PAUSE,
+                    ActivityEvent.DESTROY
+                )
             )
-        )
-            //.setFragmentEventFilter(listOf(FragmentEvent.VIEW_CREATE, FragmentEvent.PAUSE))
-            .setJotterListener(JotterListener).build().startListening()
-
-        // Setup ImageControl context
-        ImageControl().create(
-            context = applicationContext,
-            id = INTERNAL_IMAGE_CONTROL_APP_ID
-        )
+            .setJotterListener(LifecycleListener).build().startListening()
     }
 
     private fun koinAppModule() = module {
-        single { sharedPreferences }
+        single { PreferenceManager.getDefaultSharedPreferences(context) }
         single { SettingsRepository() }
 
         viewModel { SettingsViewModel() }
         viewModel { SyncViewModel() }
+        viewModel { OrderViewModel() }
 
+        /** Proxy */
         single {
-            val sv = settingViewModel
+            val sv = settingsVm
             if (sv.useProxy) {
                 val authenticator = object : Authenticator() {
                     override fun getPasswordAuthentication(): PasswordAuthentication =
@@ -86,63 +94,115 @@ class WarehouseCounterApp : Application(), KoinComponent {
             }
         }
 
-        // Ktor
+        /** Json instance */
+        single {
+            Json {
+                prettyPrint = true
+                isLenient = true
+                encodeDefaults = true
+                ignoreUnknownKeys = true
+            }
+        }
+
+        /** Ktor Client */
+        single {
+            TrustFactory.getTrustFactoryManager(context)
+        }
+
         single {
             HttpClient(OkHttp) {
                 engine {
                     config {
                         followRedirects(true)
-                        connectTimeout(settingViewModel.connectionTimeout.toLong(), TimeUnit.SECONDS)
+                        connectTimeout(settingsVm.connectionTimeout.toLong(), TimeUnit.SECONDS)
                         proxy(currentProxy)
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                            sslSocketFactory(pair.first, pair.second)
+                        }
                     }
                 }
                 install(ContentNegotiation) {
-                    json(Json {
-                        prettyPrint = true
-                        isLenient = true
-                        encodeDefaults = true
-                        ignoreUnknownKeys = true
-                    })
+                    json(json)
+                }
+                install(Auth) {
+                    basic {
+                        credentials {
+                            BasicAuthCredentials(
+                                username = CurrentUser.name,
+                                password = String(Base64.decode(CurrentUser.password, Base64.DEFAULT))
+                            )
+                        }
+                    }
                 }
             }
         }
-        single { APIServiceImpl() }
+
+        /** Services for the different versions of the API and the Client Configuration service */
+        /** API Version 1 */
+        single { com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl() }
+        /** Client packages API Service Version 1 */
         single { DacoServiceImpl() }
+
+        /** API Version 2 */
+        single { com.dacosys.warehouseCounter.data.ktor.v2.impl.APIServiceImpl() }
+        single { ApiRequest() }
+
+        /** Synchronization */
+        single { Sync.Builder().build() }
+
+        /** Setup ImageControl app identification */
+        single { ImageControl.Builder(Statics.INTERNAL_IMAGE_CONTROL_APP_ID).build() }
     }
 
     companion object {
         val context: Context
             get() = get().get()
 
-        val settingRepository: SettingsRepository
+        val settingsRepository: SettingsRepository
             get() = get().get()
 
-        val settingViewModel: SettingsViewModel
+        val settingsVm: SettingsViewModel
             get() = get().get()
 
-        val syncViewModel: SyncViewModel
+        val syncVm: SyncViewModel
+            get() = get().get()
+
+        val pair: Pair<SSLSocketFactory, X509TrustManager>
             get() = get().get()
 
         val httpClient: HttpClient
             get() = get().get()
 
-        val ktorApiService: APIServiceImpl
+        val apiServiceV1: com.dacosys.warehouseCounter.data.ktor.v1.impl.APIServiceImpl
             get() = get().get()
 
-        val ktorDacoService: DacoServiceImpl
+        val dacoService: DacoServiceImpl
+            get() = get().get()
+
+        val apiServiceV2: com.dacosys.warehouseCounter.data.ktor.v2.impl.APIServiceImpl
             get() = get().get()
 
         val currentProxy: Proxy
             get() = get().get()
 
-        fun applicationName(): String {
-            val applicationInfo = context.applicationInfo
-            val stringId = applicationInfo.labelRes
-            return if (stringId == 0) applicationInfo.nonLocalizedLabel.toString()
-            else context.getString(stringId)
-        }
+        val json: Json
+            get() = get().get()
 
         val sharedPreferences: SharedPreferences
-            get() = PreferenceManager.getDefaultSharedPreferences(context)
+            get() = get().get()
+
+        val apiRequest: ApiRequest
+            get() = get().get()
+
+        val sync: Sync
+            get() = get().get()
+
+        val applicationName: String
+            get() {
+                val applicationInfo = context.applicationInfo
+                val stringId = applicationInfo.labelRes
+                return if (stringId == 0) applicationInfo.nonLocalizedLabel.toString()
+                else context.getString(stringId)
+            }
     }
 }

@@ -8,16 +8,17 @@ import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Price
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.ViewItem
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.item.Item
+import com.dacosys.warehouseCounter.data.room.entity.itemCode.ItemCode
 import com.dacosys.warehouseCounter.databinding.ItemDetailBinding
-import com.dacosys.warehouseCounter.dto.price.Price
-import com.dacosys.warehouseCounter.dto.search.SearchObject
-import com.dacosys.warehouseCounter.ktor.functions.GetPrice
-import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.room.entity.item.Item
-import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.misc.utils.NumberUtils.Companion.roundToString
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import kotlin.concurrent.thread
 
 /**
@@ -29,17 +30,15 @@ class ItemDetailFragment : Fragment() {
     private var item: Item? = null
     private var itemCode: ItemCode? = null
 
-    // Este método es llamado cuando el fragmento se está creando.
-    // En el puedes inicializar todos los componentes que deseas guardar si el fragmento fue pausado o detenido.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (arguments != null) {
-            item = requireArguments().getParcelable("item")
-            itemCode = requireArguments().getParcelable("itemCode")
+            item = requireArguments().parcelable(ARG_ITEM)
+            itemCode = requireArguments().parcelable(ARG_ITEM_CODE)
 
             val ic = itemCode ?: return
-            ItemCoroutines().getById(ic.itemId ?: 0L) {
+            ItemCoroutines.getById(ic.itemId ?: 0L) {
                 item = it
             }
         }
@@ -59,8 +58,8 @@ class ItemDetailFragment : Fragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        outState.putParcelable("item", item)
-        outState.putParcelable("itemCode", itemCode)
+        outState.putParcelable(ARG_ITEM, item)
+        outState.putParcelable(ARG_ITEM_CODE, itemCode)
     }
 
     override fun onCreateView(
@@ -72,13 +71,17 @@ class ItemDetailFragment : Fragment() {
         val view = binding.root
 
         if (savedInstanceState != null) {
-            item = savedInstanceState.getParcelable("item")
-            itemCode = savedInstanceState.getParcelable("itemCode")
+            item = savedInstanceState.parcelable(ARG_ITEM)
+            itemCode = savedInstanceState.parcelable(ARG_ITEM_CODE)
         }
 
-        fillControls()
-
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        fillControls()
     }
 
     private fun fillControls() {
@@ -129,7 +132,7 @@ class ItemDetailFragment : Fragment() {
             binding.priceTextView.visibility = GONE
         } else {
             binding.priceAutoResizeTextView.text =
-                String.format("$ %s", Statics.roundToString(it.price ?: 0f, 2))
+                String.format("$ %s", roundToString(it.price ?: 0f, 2))
             binding.priceAutoResizeTextView.visibility = VISIBLE
             binding.priceTextView.visibility = VISIBLE
         }
@@ -142,22 +145,33 @@ class ItemDetailFragment : Fragment() {
             binding.codeTextView.visibility = VISIBLE
 
             binding.qtyAutoResizeTextView.text =
-                Statics.roundToString(itemCode?.qty ?: 0.0, Statics.decimalPlaces)
+                roundToString(itemCode?.qty ?: 0.0, settingsVm.decimalPlaces)
             binding.qtyAutoResizeTextView.visibility = VISIBLE
             binding.qtyTextView.visibility = VISIBLE
         } else {
             binding.itemCodeConstraintLayout.visibility = GONE
         }
 
-        // Obtenemos los precios en un thread aparte
+        // Get the prices of this particular item in a separate thread
         thread {
-            GetPrice(searchObject = SearchObject(it.itemId),
-                onEvent = { showSnackBar(it) },
-                onFinish = { fillPriceLayout(it) }).execute()
+            ViewItem(
+                id = it.itemId.toString(),
+                action = ViewItem.defaultAction,
+                onEvent = {
+                    if (it.snackBarType != SnackBarType.SUCCESS)
+                        showSnackBar(it.text, it.snackBarType)
+                },
+                onFinish = {
+                    val prices = it?.prices ?: listOf()
+                    fillPriceLayout(prices)
+                }
+            ).execute()
         }
     }
 
-    private fun fillPriceLayout(it: ArrayList<Price>) {
+    private fun fillPriceLayout(it: List<Price>) {
+        if (_binding == null) return
+
         if (!it.any()) {
             binding.priceLayout.visibility = GONE
             return
@@ -223,21 +237,27 @@ class ItemDetailFragment : Fragment() {
         for ((index, p) in it.withIndex()) {
             if (index == 10) break
             if (p.active != 1) continue
+
             l[index].text = buildString {
                 append("$ ")
                 append(p.price)
             }
             l[index].visibility = VISIBLE
+
             d[index].text = p.itemPriceListDescription
             d[index].visibility = VISIBLE
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        MakeText.makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        if (_binding == null) return
+        makeText(binding.root, text, snackBarType)
     }
 
     companion object {
+        const val ARG_ITEM = "item"
+        const val ARG_ITEM_CODE = "itemCode"
+
         /**
          * Use this factory method to create a new instance of
          * this fragment using the provided parameters.
@@ -249,7 +269,7 @@ class ItemDetailFragment : Fragment() {
             val fragment = ItemDetailFragment()
 
             val args = Bundle()
-            args.putParcelable("item", item)
+            args.putParcelable(ARG_ITEM, item)
 
             fragment.arguments = args
             return fragment
@@ -259,7 +279,7 @@ class ItemDetailFragment : Fragment() {
             val fragment = ItemDetailFragment()
 
             val args = Bundle()
-            args.putParcelable("itemCode", itemCode)
+            args.putParcelable(ARG_ITEM_CODE, itemCode)
 
             fragment.arguments = args
             return fragment

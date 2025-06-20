@@ -6,79 +6,87 @@ import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.TextUtils
-import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.inputmethod.EditorInfo
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
+import com.dacosys.warehouseCounter.data.room.dao.client.ClientCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.client.Client
 import com.dacosys.warehouseCounter.databinding.NewCountActivityBinding
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
-import com.dacosys.warehouseCounter.room.entity.client.Client
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.ui.activities.client.ClientSelectActivity
+import com.dacosys.warehouseCounter.ui.fragments.orderRequest.OrderRequestTypeSpinnerFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
-import org.parceler.Parcels
 import kotlin.concurrent.thread
 
-class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener {
+class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.RfidDeviceListener,
+    OrderRequestTypeSpinnerFragment.OnItemSelectedListener {
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
         if (isFinishing) return
 
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, SnackBarType.INFO)
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, SnackBarType.INFO)
 
         runOnUiThread {
-            binding.countCodeEditText.setText(scanCode)
+            binding.descEditText.setText(scanCode)
         }
     }
 
-    private var client: Client? = null
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
+    }
 
+    private var client: Client? = null
+    private var orderRequestType: OrderRequestType = OrderRequestType.stockAuditFromDevice
     private var tempTitle: String = ""
     private var tempDescription: String = ""
+
+    private var orderRequestTypeSpinnerFragment: OrderRequestTypeSpinnerFragment? = null
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("description", binding.countCodeEditText.text.toString())
-        savedInstanceState.putParcelable("client", client)
+        savedInstanceState.putString(ARG_DESCRIPTION, binding.descEditText.text.toString())
+        savedInstanceState.putParcelable(ARG_CLIENT, client)
+        savedInstanceState.putParcelable(ARG_ORDER_REQUEST_TYPE, orderRequestType)
     }
 
     private fun loadBundleValues(b: Bundle) {
-        val t1 = b.getString("title")
+        val t1 = b.getString(ARG_TITLE)
         tempTitle = if (!t1.isNullOrEmpty()) t1
         else context.getString(R.string.setup_new_count)
 
-        tempDescription = b.getString("description") ?: ""
-        client = b.getParcelable("client")
+        tempDescription = b.getString(ARG_DESCRIPTION) ?: ""
+        client = b.parcelable(ARG_CLIENT)
+        orderRequestType = b.parcelable(ARG_ORDER_REQUEST_TYPE) ?: OrderRequestType.stockAuditFromDevice
     }
 
     private fun loadExtraBundleValues(b: Bundle) {
-        val t1 = b.getString("title")
+        val t1 = b.getString(ARG_TITLE)
         tempTitle = if (!t1.isNullOrEmpty()) t1
         else context.getString(R.string.setup_new_count)
     }
@@ -104,15 +112,26 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             if (extras != null) loadExtraBundleValues(extras)
         }
 
-        title = tempTitle
+        // Order request type spinner
+        orderRequestTypeSpinnerFragment =
+            OrderRequestTypeSpinnerFragment.Builder()
+                .orderRequestType(OrderRequestType.prepareOrder)
+                .allOrderRequestType(OrderRequestType.getAll())
+                .callback(this)
+                .build()
+
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.orderRequestTypeSpinnerFragment, orderRequestTypeSpinnerFragment!!).commit()
+
+        binding.topAppbar.title = tempTitle
 
         binding.continueButton.setOnClickListener { attemptSetupNewCount() }
 
         binding.clientTextView.setOnClickListener {
             val intent = Intent(this, ClientSelectActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            intent.putExtra("client", client)
-            intent.putExtra("title", context.getString(R.string.select_client))
+            intent.putExtra(ARG_CLIENT, client)
+            intent.putExtra(ARG_TITLE, context.getString(R.string.select_client))
             resultForClientSelect.launch(intent)
         }
 
@@ -122,57 +141,54 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             setClientText()
         }
 
-        binding.countCodeEditText.clearFocus()
-        binding.countCodeEditText.setOnFocusChangeListener { _, hasFocus ->
+        binding.descEditText.clearFocus()
+        binding.descEditText.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus && !KeyboardVisibilityEvent.isKeyboardVisible(this)) {
                 Screen.showKeyboard(this)
             } else {
                 Screen.closeKeyboard(this)
             }
         }
-        binding.countCodeEditText.setOnKeyListener { _, keyCode, keyEvent ->
-            if (keyEvent.action == KeyEvent.ACTION_UP && (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+        binding.descEditText.setOnKeyListener { _, _, event ->
+            if (isActionDone(event)) {
                 attemptSetupNewCount()
                 true
             } else {
                 false
             }
         }
-        binding.countCodeEditText.setOnEditorActionListener { _, actionId, _ ->
-            return@setOnEditorActionListener when (actionId) {
-                EditorInfo.IME_ACTION_DONE -> {
-                    binding.continueButton.performClick()
-                    true
-                }
-
-                else -> false
+        binding.descEditText.setOnEditorActionListener { _, actionId, event ->
+            return@setOnEditorActionListener if (isActionDone(actionId, event)) {
+                binding.continueButton.performClick()
+                true
+            } else {
+                false
             }
         }
 
-        binding.countCodeEditText.isCursorVisible = true
-        binding.countCodeEditText.isFocusable = true
-        binding.countCodeEditText.isFocusableInTouchMode = true
-        binding.countCodeEditText.requestFocus()
+        binding.descEditText.isCursorVisible = true
+        binding.descEditText.isFocusable = true
+        binding.descEditText.isFocusableInTouchMode = true
+        binding.descEditText.requestFocus()
     }
 
-    private val resultForClientSelect =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            val data = it?.data
-            try {
-                if (it?.resultCode == RESULT_OK && data != null) {
-                    client = data.getParcelableExtra("client") ?: return@registerForActivityResult
-                    setClientText()
-                }
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+    private val resultForClientSelect = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val data = it?.data
+        try {
+            if (it?.resultCode == RESULT_OK && data != null) {
+                client = data.parcelable(ClientSelectActivity.ARG_CLIENT) ?: return@registerForActivityResult
+                setClientText()
             }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         }
+    }
 
     private fun selectDefaultClient() {
         if (isFinishing) return
 
-        ClientCoroutines().get {
+        ClientCoroutines.get {
             client = it.firstOrNull()
             setClientText()
         }
@@ -192,30 +208,20 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     private fun attemptSetupNewCount() {
         // Reset errors.
-        //clientSpinnerFragment.setError(null);
-        binding.countCodeEditText.error = null
+        binding.descEditText.error = null
 
-        // Store values at the time of the setupnewcount attempt.
-        val description = binding.countCodeEditText.text.toString()
+        // Store values at the time of the attempt.
+        val description = binding.descEditText.text.toString()
 
         var cancel = false
         var focusView: View? = null
 
         // Check for a valid data.
         if (!TextUtils.isEmpty(description) && !isDescriptionValid(description)) {
-            binding.countCodeEditText.error = context.getString(R.string.invalid_description)
-            focusView = binding.countCodeEditText
+            binding.descEditText.error = context.getString(R.string.invalid_description)
+            focusView = binding.descEditText
             cancel = true
         }
-
-        /*
-        if (client == null || !isClientValid(client!!)) {
-            //clientSpinnerFragment.setError(getString(R.string.error_field_required));
-            focusView = clientAutoCompleteTextView!!
-            Toast.makeText(binding.root,context(), R.string.you_must_select_a_client, Toast.LENGTH_SHORT).show()
-            cancel = true
-        }
-        */
 
         if (cancel) {
             // Hacer foco en el problema
@@ -224,9 +230,9 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             Screen.closeKeyboard(this)
 
             val data = Intent()
-            data.putExtra("description", description.trim())
-            if (client != null) data.putExtra("client", Parcels.wrap<Client>(client))
-            data.putExtra("orderRequestType", Parcels.wrap(OrderRequestType.stockAuditFromDevice))
+            data.putExtra(ARG_DESCRIPTION, description.trim())
+            data.putExtra(ARG_ORDER_REQUEST_TYPE, orderRequestType)
+            if (client != null) data.putExtra(ARG_CLIENT, client)
 
             setResult(RESULT_OK, data)
             finish()
@@ -248,7 +254,7 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             selectDefaultClient()
 
             if (tempDescription.isNotEmpty()) {
-                binding.countCodeEditText.setText(tempDescription)
+                binding.descEditText.setText(tempDescription)
             }
         }
     }
@@ -272,10 +278,9 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_read_activity, menu)
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -287,28 +292,24 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-
         when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                finish()
                 return true
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_trigger_scan -> {
-                JotterListener.trigger(this)
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
         }
@@ -316,9 +317,17 @@ class NewCountActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
     }
 
     companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_DESCRIPTION = "description"
+        const val ARG_CLIENT = "client"
+        const val ARG_ORDER_REQUEST_TYPE = "orderRequestType"
+
         fun equals(a: Any?, b: Any?): Boolean {
             return a != null && a == b
         }
     }
-}
 
+    override fun onItemSelected(orderRequestType: OrderRequestType?) {
+        if (orderRequestType != null) this.orderRequestType = orderRequestType
+    }
+}

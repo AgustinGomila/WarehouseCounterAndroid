@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.text.InputFilter
-import android.text.Spanned
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,27 +15,30 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.preference.*
+import androidx.preference.EditTextPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceScreen
+import androidx.preference.SeekBarPreference
+import androidx.preference.SwitchPreference
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
+import com.dacosys.warehouseCounter.data.settings.SettingsViewModel
+import com.dacosys.warehouseCounter.data.settings.custom.CollectorTypePreference
+import com.dacosys.warehouseCounter.data.settings.custom.DevicePreference
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.scanners.collectorType.CollectorType
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
 import com.dacosys.warehouseCounter.scanners.rfid.RfidType
 import com.dacosys.warehouseCounter.scanners.vh75.Vh75Bt
-import com.dacosys.warehouseCounter.settings.SettingsRepository
-import com.dacosys.warehouseCounter.settings.SettingsViewModel
-import com.dacosys.warehouseCounter.settings.custom.CollectorTypePreference
-import com.dacosys.warehouseCounter.settings.custom.DevicePreference
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.google.android.gms.common.api.CommonStatusCodes
-import java.util.regex.Matcher
-import java.util.regex.Pattern
 import kotlin.concurrent.thread
 
 /**
@@ -45,8 +47,8 @@ import kotlin.concurrent.thread
  */
 class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceListener {
 
-    private val vm: SettingsViewModel by lazy { settingViewModel }
-    private val sp: SettingsRepository by lazy { settingRepository }
+    private val vm: SettingsViewModel by lazy { settingsVm }
+    private val sp: SettingsRepository by lazy { settingsRepository }
     private lateinit var printerPref: PreferenceScreen
     private lateinit var rfidPref: PreferenceScreen
 
@@ -84,14 +86,14 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             .commit()
     }
 
-    private lateinit var v: View
+    private lateinit var currentView: View
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        v = super.onCreateView(inflater, container, savedInstanceState)
-        return v
+        currentView = super.onCreateView(inflater, container, savedInstanceState)
+        return currentView
     }
 
     override fun onGetBluetoothName(name: String) {
@@ -109,7 +111,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             }
         } catch (ex: Exception) {
             ex.printStackTrace()
-            MakeText.makeText(v, getString(R.string.rfid_reader_not_initialized), SnackBarType.INFO)
+            showSnackBar(getString(R.string.rfid_reader_not_initialized), SnackBarType.INFO)
             ErrorLog.writeLog(activity, this::class.java.simpleName, ex)
         }
     }
@@ -143,8 +145,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
         SettingsActivity.bindPreferenceSummaryToValue(this, sp.collectorType)
 
         // PERMITE ACTUALIZAR EN PANTALLA EL ITEM SELECCIONADO EN EL SUMMARY DEL CONTROL
-        val collectorTypeListPreference =
-            findPreference<Preference>(sp.collectorType.key) as CollectorTypePreference
+        val collectorTypeListPreference = findPreference<Preference>(sp.collectorType.key) as CollectorTypePreference
         if (collectorTypeListPreference.value == null) {
             // to ensure we don't selectByItemId a null value
             // set first value by default
@@ -160,19 +161,6 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
                 Statics.collectorTypeChanged = true
                 true
             }
-    }
-
-    private val ipv4Regex =
-        "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." + "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." + "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." + "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-
-    private val ipv4Pattern: Pattern = Pattern.compile(ipv4Regex)
-
-    fun filter(source: CharSequence, start: Int, end: Int, dest: Spanned?, dStart: Int, dEnd: Int): CharSequence? {
-        if (source == "") return null // Para el backspace
-        val builder = java.lang.StringBuilder(dest.toString())
-        builder.replace(dStart, dEnd, source.subSequence(start, end).toString())
-        val matcher: Matcher = ipv4Pattern.matcher(builder)
-        return if (!matcher.matches()) "" else null
     }
 
     private fun getPrinterName(): String {
@@ -214,22 +202,24 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
         //endregion //// DEVICE LIST
 
         //region //// PRINTER IP / PORT
-        val portNetPrinterPref =
-            findPreference<Preference>(sp.portNetPrinter.key) as EditTextPreference
+        val portNetPrinterPref = findPreference<Preference>(sp.portNetPrinter.key) as EditTextPreference
         portNetPrinterPref.summary = portNetPrinterPref.text
 
-        val ipNetPrinterPref =
-            findPreference<Preference>(sp.ipNetPrinter.key) as EditTextPreference
+        val ipNetPrinterPref = findPreference<Preference>(sp.ipNetPrinter.key) as EditTextPreference
         ipNetPrinterPref.summary = ipNetPrinterPref.text
-
-        // TODO: Crear un filtro para IPs
-        // ipNetPrinterPref.setOnBindEditTextListener {
-        //     val filters = arrayOfNulls<InputFilter>(1)
-        //     filters[0] = InputFilter { source, start, end, dest, dStart, dEnd ->
-        //         filter(source, start, end, dest, dStart, dEnd)
-        //     }
-        //     it.filters = filters
-        // }
+        ipNetPrinterPref.setOnBindEditTextListener { editText ->
+            val filters = arrayOf(InputFilter { source, _, _, dest, _, _ ->
+                val input = (dest.toString() + source.toString())
+                if (input.matches(Regex("^([0-9]{1,3}\\.){0,3}[0-9]{0,3}\$"))) {
+                    val segments = input.split('.')
+                    if (segments.all { it.isEmpty() || (it.toIntOrNull() in 0..255) }) {
+                        return@InputFilter null
+                    }
+                }
+                ""
+            })
+            editText.filters = filters
+        }
         ipNetPrinterPref.setOnPreferenceChangeListener { _, newValue ->
             if (vm.useNetPrinter && newValue != null) {
                 ipNetPrinterPref.summary = newValue.toString()
@@ -271,7 +261,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
                 try {
                     val input = (dest.toString() + source.toString()).toInt()
                     if (input in 1 until maxPower) return@InputFilter null
-                } catch (ignore: NumberFormatException) {
+                } catch (_: NumberFormatException) {
                 }
                 ""
             })
@@ -291,7 +281,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
                 try {
                     val input = (dest.toString() + source.toString()).toInt()
                     if (input in 1 until maxSpeed) return@InputFilter null
-                } catch (ignore: NumberFormatException) {
+                } catch (_: NumberFormatException) {
                 }
                 ""
             })
@@ -342,8 +332,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             // returns boolean representing whether the
             // permission is granted or not
             if (!isGranted) {
-                MakeText.makeText(
-                    v,
+                showSnackBar(
                     WarehouseCounterApp.context.getString(R.string.app_dont_have_necessary_permissions),
                     SnackBarType.ERROR
                 )
@@ -363,6 +352,10 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
         return rfidSummary
     }
 
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(currentView, text, snackBarType)
+    }
+
     // Esta preferencia se utiliza al recibir el nombre del dispositivo
     // RFID seleccionado para modificar el texto de su sumario.
     private var rfidDeviceNamePreference: EditTextPreference? = null
@@ -379,14 +372,15 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
         //endregion //// USE RFID
 
         //region //// BLUETOOTH NAME
-        rfidDeviceNamePreference =
-            findPreference<Preference>("rfid_bluetooth_name") as EditTextPreference
+        rfidDeviceNamePreference = findPreference<Preference>("rfid_bluetooth_name") as EditTextPreference
         if (Rfid.rfidDevice != null && (Rfid.rfidDevice as Vh75Bt).getState() == Vh75Bt.STATE_CONNECTED) {
             (Rfid.rfidDevice as Vh75Bt).getBluetoothName()
         }
         rfidDeviceNamePreference!!.setOnPreferenceClickListener {
             if (Rfid.rfidDevice == null || (Rfid.rfidDevice as Vh75Bt).getState() != Vh75Bt.STATE_CONNECTED) {
-                MakeText.makeText(v, getString(R.string.there_is_no_rfid_device_connected), SnackBarType.ERROR)
+                showSnackBar(
+                    getString(R.string.there_is_no_rfid_device_connected), SnackBarType.ERROR
+                )
             }
             true
         }
@@ -394,15 +388,16 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             if (Rfid.rfidDevice != null && (Rfid.rfidDevice as Vh75Bt).getState() == Vh75Bt.STATE_CONNECTED) {
                 (Rfid.rfidDevice as Vh75Bt).setBluetoothName(newValue.toString())
             } else {
-                MakeText.makeText(v, getString(R.string.there_is_no_rfid_device_connected), SnackBarType.ERROR)
+                showSnackBar(
+                    getString(R.string.there_is_no_rfid_device_connected), SnackBarType.ERROR
+                )
             }
             true
         }
         //endregion //// BLUETOOTH NAME
 
         //region //// DEVICE LIST PREFERENCE
-        val deviceListPreference =
-            findPreference<Preference>(sp.rfidBtAddress.key) as DevicePreference
+        val deviceListPreference = findPreference<Preference>(sp.rfidBtAddress.key) as DevicePreference
         if (deviceListPreference.value == null) {
             // to ensure we don't selectByItemId a null value
             // set first value by default
@@ -421,8 +416,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
         //endregion //// DEVICE LIST PREFERENCE
 
         //region //// RFID POWER
-        val rfidReadPower =
-            findPreference<Preference>(sp.rfidReadPower.key) as SeekBarPreference
+        val rfidReadPower = findPreference<Preference>(sp.rfidReadPower.key) as SeekBarPreference
         rfidReadPower.setOnPreferenceChangeListener { _, newValue ->
             rfidReadPower.summary = "$newValue dB"
             true
@@ -437,7 +431,9 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
                 val diaBox = askForResetToFactory()
                 diaBox.show()
             } else {
-                MakeText.makeText(v, getString(R.string.there_is_no_rfid_device_connected), SnackBarType.ERROR)
+                showSnackBar(
+                    getString(R.string.there_is_no_rfid_device_connected), SnackBarType.ERROR
+                )
             }
             true
         }
@@ -453,7 +449,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             WarehouseCounterApp.context.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
         val mBluetoothAdapter = bluetoothManager.adapter
         if (mBluetoothAdapter == null) {
-            MakeText.makeText(v, getString(R.string.there_are_no_bluetooth_devices), SnackBarType.INFO)
+            showSnackBar(getString(R.string.there_are_no_bluetooth_devices), SnackBarType.INFO)
         } else {
             if (!mBluetoothAdapter.isEnabled) {
                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
@@ -491,8 +487,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             // returns boolean representing whether the
             // permission is granted or not
             if (!isGranted) {
-                MakeText.makeText(
-                    v,
+                showSnackBar(
                     WarehouseCounterApp.context.getString(R.string.app_dont_have_necessary_permissions),
                     SnackBarType.ERROR
                 )
@@ -518,7 +513,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             }
 
             val mPairedDevices = mBluetoothAdapter!!.bondedDevices
-            if (mPairedDevices.size > 0) {
+            if (mPairedDevices.isNotEmpty()) {
                 for (mDevice in mPairedDevices) {
                     if (mDevice.address == vm.rfidBtAddress) {
                         s = mDevice.name.toString()

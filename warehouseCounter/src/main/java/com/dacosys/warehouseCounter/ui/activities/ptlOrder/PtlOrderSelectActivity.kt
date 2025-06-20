@@ -2,6 +2,7 @@ package com.dacosys.warehouseCounter.ui.activities.ptlOrder
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -10,8 +11,11 @@ import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
 import android.util.Log
-import android.view.*
-import android.widget.*
+import android.view.Menu
+import android.view.MenuItem
+import android.view.WindowManager
+import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -26,31 +30,38 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter
-import com.dacosys.warehouseCounter.adapter.ptlOrder.PtlOrderAdapter.Companion.FilterOptions
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.ktor.v1.dto.ptlOrder.PtlOrder
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetPtlOrder
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetPtlOrderByCode
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
 import com.dacosys.warehouseCounter.databinding.PtlSelectOrderActivityBinding
-import com.dacosys.warehouseCounter.dto.ptlOrder.PtlOrder
-import com.dacosys.warehouseCounter.ktor.functions.GetPtlOrder
-import com.dacosys.warehouseCounter.ktor.functions.GetPtlOrderByCode
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.ui.adapter.FilterOptions
+import com.dacosys.warehouseCounter.ui.adapter.ptlOrder.PtlOrderAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import java.util.*
 import kotlin.concurrent.thread
 
 class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     Scanner.ScannerListener, Rfid.RfidDeviceListener, PtlOrderAdapter.CheckedChangedListener,
     PtlOrderAdapter.DataSetChangedListener {
+
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
+
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -62,9 +73,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshItem.isRefreshing = false
-            }
+            binding.swipeRefreshItem.isRefreshing = false
         }, 100)
     }
 
@@ -78,7 +87,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     private var currentScrollPosition: Int = 0
     private var firstVisiblePos: Int? = null
 
-    private var searchText: String = ""
+    private var searchedText: String = ""
 
     // region Variables para LoadOnDemand
     private var completeList: ArrayList<PtlOrder> = ArrayList()
@@ -88,9 +97,9 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     private var showCheckBoxes
         get() =
             if (!multiSelect) false
-            else settingViewModel.selectPtlOrderShowCheckBoxes
+            else settingsVm.selectPtlOrderShowCheckBoxes
         set(value) {
-            settingViewModel.selectPtlOrderShowCheckBoxes = value
+            settingsVm.selectPtlOrderShowCheckBoxes = value
         }
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
@@ -99,8 +108,8 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     }
 
     private fun saveBundleValues(b: Bundle) {
-        b.putString("title", title.toString())
-        b.putBoolean("multiSelect", multiSelect)
+        b.putString(ARG_TITLE, tempTitle)
+        b.putBoolean(ARG_MULTI_SELECT, multiSelect)
 
         if (adapter != null) {
             b.putParcelable("lastSelected", (adapter ?: return).currentPtlOrder())
@@ -110,28 +119,28 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
-        b.putString("searchText", searchText)
+        b.putString("searchText", searchedText)
     }
 
 
     private fun loadBundleValues(b: Bundle) {
-        tempTitle = b.getString("title") ?: ""
+        tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_order)
 
         multiSelect = b.getBoolean("multiSelect", multiSelect)
 
-        searchText = b.getString("searchText") ?: ""
+        searchedText = b.getString("searchText") ?: ""
 
         // Adapter
         checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
-        completeList = b.getParcelableArrayList("completeList") ?: ArrayList()
-        lastSelected = b.getParcelable("lastSelected")
+        completeList = b.parcelableArrayList("completeList") ?: ArrayList()
+        lastSelected = b.parcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
     }
 
     private fun loadExtrasBundleValues(b: Bundle) {
-        tempTitle = b.getString("title") ?: ""
+        tempTitle = b.getString(ARG_TITLE) ?: ""
         if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
 
         multiSelect = b.getBoolean("multiSelect", false)
@@ -149,6 +158,13 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 currentScrollPosition =
@@ -164,7 +180,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             if (extras != null) loadExtrasBundleValues(extras)
         }
 
-        title = tempTitle
+        binding.topAppbar.title = tempTitle
 
         binding.swipeRefreshItem.setOnRefreshListener(this)
         binding.swipeRefreshItem.setColorSchemeResources(
@@ -190,20 +206,18 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                 s: CharSequence, start: Int,
                 before: Int, count: Int,
             ) {
-                searchText = s.toString()
-                adapter?.refreshFilter(FilterOptions(searchText, true))
+                searchedText = s.toString()
+                adapter?.refreshFilter(FilterOptions(searchedText))
             }
         })
-        binding.searchEditText.setText(searchText, TextView.BufferType.EDITABLE)
-        binding.searchEditText.setOnKeyListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                        Screen.closeKeyboard(this)
-                    }
-                }
+        binding.searchEditText.setText(searchedText, TextView.BufferType.EDITABLE)
+        binding.searchEditText.setOnKeyListener { _, _, event ->
+            if (isActionDone(event)) {
+                Screen.closeKeyboard(this)
+                true
+            } else {
+                false
             }
-            false
         }
         binding.searchEditText.setRawInputType(InputType.TYPE_CLASS_TEXT)
 
@@ -254,7 +268,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
         ViewCompat.setWindowInsetsAnimationCallback(
             rootView,
-            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
                 override fun onEnd(animation: WindowInsetsAnimationCompat) {
                     val isIme = animation.typeMask and WindowInsetsCompat.Type.ime() != 0
                     if (!isIme) return
@@ -295,34 +309,37 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             Screen.closeKeyboard(this)
 
             val data = Intent()
-            data.putParcelableArrayListExtra("ptlOrder", arrayListOf(adapter!!.currentPtlOrder()))
+            data.putParcelableArrayListExtra(ARG_PTL_ORDER, arrayListOf(adapter!!.currentPtlOrder()))
             setResult(RESULT_OK, data)
             finish()
         } else if (multiSelect && ((adapter?.countChecked()) ?: 0) > 0) {
             Screen.closeKeyboard(this)
 
             val data = Intent()
-            data.putParcelableArrayListExtra("ptlOrder", adapter!!.getAllChecked())
+            data.putParcelableArrayListExtra(ARG_PTL_ORDER, adapter!!.getAllChecked())
             setResult(RESULT_OK, data)
             finish()
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshItem.isRefreshing = show
-            }
+            binding.swipeRefreshItem.isRefreshing = show
         }, 20)
     }
 
     private fun getOrders() {
         thread {
-            GetPtlOrder(onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
+            GetPtlOrder(onEvent = {
+                if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(
+                    it.text,
+                    it.snackBarType
+                )
+            },
                 onFinish = { if (it.any()) onGetPtlOrder(it) }).execute()
         }
     }
@@ -354,17 +371,16 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                     lastSelected = adapter?.currentPtlOrder()
                 }
 
-                adapter = PtlOrderAdapter(
-                    recyclerView = binding.recyclerView,
-                    fullList = completeList,
-                    checkedIdArray = checkedIdArray,
-                    multiSelect = multiSelect,
-                    showCheckBoxes = showCheckBoxes,
-                    showCheckBoxesChanged = { showCheckBoxes = it },
-                    filterOptions = FilterOptions(searchText, true)
-                )
-
-                refreshAdapterListeners()
+                adapter = PtlOrderAdapter.Builder()
+                    .recyclerView(binding.recyclerView)
+                    .fullList(completeList)
+                    .checkedIdArray(checkedIdArray)
+                    .multiSelect(multiSelect)
+                    .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
+                    .filterOptions(FilterOptions(searchedText))
+                    .checkedChangedListener(this)
+                    .dataSetChangedListener(this)
+                    .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
                 binding.recyclerView.adapter = adapter
@@ -373,8 +389,8 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                     // Horrible wait for a full load
                 }
 
-                // Estas variables locales evitar posteriores cambios de estado.
-                val ls = lastSelected
+                // Variables locales para evitar cambios posteriores de estado.
+                val ls = lastSelected ?: t.firstOrNull()
                 val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
                     adapter?.selectItem(ls, false)
@@ -382,27 +398,183 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                 }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 showProgressBar(false)
             }
         }
     }
 
-    private fun refreshAdapterListeners() {
-        // IMPORTANTE:
-        // Se deben actualizar los listeners, si no
-        // las variables de esta actividad pueden
-        // tener valores antiguos en del adaptador.
+    public override fun onStart() {
+        super.onStart()
+        rejectNewInstances = false
 
-        adapter?.refreshListeners(
-            checkedChangedListener = this,
-            dataSetChangedListener = this
-        )
+        Screen.closeKeyboard(this)
+
+        thread {
+            fillAdapter(completeList)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+    }
+
+    override fun scannerCompleted(scanCode: String) {
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
+
+        // Nada que hacer, volver
+        if (scanCode.trim().isEmpty()) {
+            val res = context.getString(R.string.invalid_code)
+            showSnackBar(res, ERROR)
+            ErrorLog.writeLog(this, tag, res)
+            return
+        }
+
+        LifecycleListener.lockScanner(this, true)
+
+        thread {
+            GetPtlOrderByCode(code = scanCode,
+                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it.text, it.snackBarType) },
+                onFinish = {
+                    if (it.any()) onGetPtlOrder(it)
+                    LifecycleListener.lockScanner(this, false)
+                }
+            ).execute()
+        }
+    }
+
+    private fun isBackPressed() {
+        Screen.closeKeyboard(this)
+
+        setResult(RESULT_CANCELED)
+        finish()
+    }
+
+    private val menuItemRandomIt = 999001
+    private val menuItemManualCode = 999002
+    private val menuItemRandomOnListL = 999003
+
+    @SuppressLint("RestrictedApi")
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_read_activity, menu)
+
+        if (menu is MenuBuilder) {
+            menu.setOptionalIconsVisible(true)
+        }
+
+        if (!settingsVm.useBtRfid) {
+            menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
+        }
+
+        val drawable = ContextCompat.getDrawable(this, R.drawable.ic_visibility)
+        binding.topAppbar.overflowIcon = drawable
+
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.home, android.R.id.home -> {
+                isBackPressed()
+                return true
+            }
+
+            R.id.action_rfid_connect -> {
+                LifecycleListener.rfidStart(this)
+                return super.onOptionsItemSelected(item)
+            }
+
+            R.id.action_trigger_scan -> {
+                LifecycleListener.trigger(this)
+                return super.onOptionsItemSelected(item)
+            }
+
+            R.id.action_read_barcode -> {
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomOnListL -> {
+                val codes: ArrayList<String> = ArrayList()
+                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.description }
+                if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomIt -> {
+                ItemCoroutines.getEanCodes(true) {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemManualCode -> {
+                enterCode()
+                return super.onOptionsItemSelected(item)
+            }
+        }
+
+        item.isChecked = !item.isChecked
+        return true
+    }
+
+    private fun enterCode() {
+        runOnUiThread {
+            var alertDialog: AlertDialog? = null
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(getString(R.string.enter_code))
+
+            val inputLayout = TextInputLayout(this)
+            inputLayout.endIconMode = TextInputLayout.END_ICON_CLEAR_TEXT
+
+            val input = TextInputEditText(this)
+            input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS
+            input.isFocusable = true
+            input.isFocusableInTouchMode = true
+            input.setOnKeyListener { _, _, event ->
+                if (isActionDone(event)) {
+                    alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
+                    true
+                } else {
+                    false
+                }
+            }
+
+            inputLayout.addView(input)
+            builder.setView(inputLayout)
+            builder.setPositiveButton(R.string.accept) { _, _ ->
+                scannerCompleted(input.text.toString())
+            }
+            builder.setNegativeButton(R.string.cancel, null)
+            alertDialog = builder.create()
+
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            alertDialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+            alertDialog.show()
+            input.requestFocus()
+        }
+    }
+
+    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
+        fillSummaryRow()
+    }
+
+    override fun onDataSetChanged() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            fillSummaryRow()
+        }, 100)
     }
 
     private fun fillSummaryRow() {
-        Log.d(this::class.java.simpleName, "fillSummaryRow")
+        Log.d(tag, "fillSummaryRow")
         runOnUiThread {
             if (multiSelect) {
                 binding.totalLabelTextView.text = context.getString(R.string.total)
@@ -417,7 +589,7 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
             } else {
                 binding.totalLabelTextView.text = context.getString(R.string.total)
                 binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
-                binding.selectedLabelTextView.text = context.getString(R.string.orders)
+                binding.selectedLabelTextView.text = context.getString(R.string.ptl_orders)
 
                 if (adapter != null) {
                     val cont = 0
@@ -436,160 +608,6 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         }
     }
 
-    public override fun onStart() {
-        super.onStart()
-        rejectNewInstances = false
-
-        Screen.closeKeyboard(this)
-        JotterListener.resumeReaderDevices(this)
-
-        thread {
-            fillAdapter(completeList)
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray,
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
-    }
-
-    override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) makeText(binding.root, scanCode, INFO)
-
-        // Nada que hacer, volver
-        if (scanCode.trim().isEmpty()) {
-            val res = context.getString(R.string.invalid_code)
-            makeText(binding.root, res, ERROR)
-            ErrorLog.writeLog(this, this::class.java.simpleName, res)
-            return
-        }
-
-        JotterListener.lockScanner(this, true)
-
-        thread {
-            GetPtlOrderByCode(code = scanCode,
-                onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showSnackBar(it) },
-                onFinish = { if (it.any()) onGetPtlOrder(it) }).execute()
-        }
-    }
-
-    override fun onBackPressed() {
-        Screen.closeKeyboard(this)
-
-        setResult(RESULT_CANCELED)
-        finish()
-    }
-
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
-    private val menuItemRandomOnListL = 999003
-
-    @SuppressLint("RestrictedApi")
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        menuInflater.inflate(R.menu.menu_read_activity, menu)
-
-        if (menu is MenuBuilder) {
-            menu.setOptionalIconsVisible(true)
-        }
-
-        if (!settingViewModel.useBtRfid) {
-            menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
-        }
-
-        val drawable = ContextCompat.getDrawable(this, R.drawable.ic_visibility)
-        binding.topAppbar.overflowIcon = drawable
-
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        when (item.itemId) {
-            R.id.home, android.R.id.home -> {
-                onBackPressed()
-                return true
-            }
-
-            R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
-                return super.onOptionsItemSelected(item)
-            }
-
-            R.id.action_trigger_scan -> {
-                JotterListener.trigger(this)
-                return super.onOptionsItemSelected(item)
-            }
-
-            R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
-                return super.onOptionsItemSelected(item)
-            }
-
-            menuItemRandomOnListL -> {
-                val codes: ArrayList<String> = ArrayList()
-                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.description }
-                if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
-                return super.onOptionsItemSelected(item)
-            }
-
-            menuItemRandomIt -> {
-                ItemCoroutines().getCodes(true) {
-                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
-                }
-                return super.onOptionsItemSelected(item)
-            }
-
-            menuItemManualCode -> {
-                enterCode()
-                return super.onOptionsItemSelected(item)
-            }
-        }
-
-        item.isChecked = !item.isChecked
-        return true
-    }
-
-    private fun enterCode() {
-        runOnUiThread {
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle(R.string.enter_code)
-
-            val input = EditText(this)
-            input.inputType = InputType.TYPE_CLASS_TEXT
-            builder.setView(input)
-
-            builder.setPositiveButton(R.string.ok) { _, _ ->
-                scannerCompleted(input.text.toString())
-            }
-            builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
-
-            builder.show()
-        }
-    }
-
-    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
-        runOnUiThread {
-            binding.selectedTextView.text = adapter?.countChecked().toString()
-        }
-    }
-
-    override fun onDataSetChanged() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                fillSummaryRow()
-            }
-        }, 100)
-    }
-
     // region READERS Reception
 
     override fun onNewIntent(intent: Intent) {
@@ -606,4 +624,10 @@ class PtlOrderSelectActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     }
 
     //endregion READERS Reception
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_MULTI_SELECT = "multiSelect"
+        const val ARG_PTL_ORDER = "ptlOrder"
+    }
 }

@@ -7,21 +7,23 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.GONE
-import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.adapter.client.ClientAdapter
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.room.dao.client.ClientCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.client.Client
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.dao.client.ClientCoroutines
-import com.dacosys.warehouseCounter.room.entity.client.Client
+import com.dacosys.warehouseCounter.ui.adapter.client.ClientAdapter
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
@@ -29,6 +31,9 @@ import kotlin.concurrent.thread
 
 class ClientSelectActivity : AppCompatActivity(),
     ContractsAutoCompleteTextView.OnContractsAvailability, KeyboardVisibilityEventListener {
+
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
+
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -44,7 +49,7 @@ class ClientSelectActivity : AppCompatActivity(),
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putParcelable("client", client)
+        savedInstanceState.putParcelable(ARG_CLIENT, client)
     }
 
     private lateinit var binding: CodeSelectActivityBinding
@@ -60,6 +65,13 @@ class ClientSelectActivity : AppCompatActivity(),
         // fuera de la ventana. Esta actividad se ve como un diálogo.
         setFinishOnTouchOutside(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         var tempTitle = getString(R.string.search_client)
         if (savedInstanceState != null) {
             // Dejo de escuchar estos eventos hasta pasar los valores guardados
@@ -69,19 +81,23 @@ class ClientSelectActivity : AppCompatActivity(),
             binding.autoCompleteTextView.setOnTouchListener(null)
             binding.autoCompleteTextView.onFocusChangeListener = null
             binding.autoCompleteTextView.setOnDismissListener(null)
-            client = savedInstanceState.getParcelable("client")
+
+            client = savedInstanceState.parcelable(ARG_CLIENT)
         } else {
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
+                val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                client = extras.getParcelable("client")
+                client = extras.parcelable(ARG_CLIENT)
             }
         }
 
         title = tempTitle
-        binding.codeSelect.setOnClickListener { onBackPressed() }
+
+        binding.codeSelect.setOnClickListener {
+            isBackPressed()
+        }
 
         binding.codeClearImageView.setOnClickListener {
             client = null
@@ -94,10 +110,9 @@ class ClientSelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.hint = tempTitle
         binding.autoCompleteTextView.onItemClickListener =
             AdapterView.OnItemClickListener { _, _, position, _ ->
-                if (binding.autoCompleteTextView.adapter != null && binding.autoCompleteTextView.adapter is ClientAdapter) {
-                    val it = (binding.autoCompleteTextView.adapter as ClientAdapter).getItem(
-                        position
-                    )
+                val adapter = binding.autoCompleteTextView.adapter
+                if (adapter is ClientAdapter) {
+                    val it = adapter.getItem(position)
                     if (it != null) {
                         client = it
                     }
@@ -107,12 +122,13 @@ class ClientSelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.setOnContractsAvailability(this)
         binding.autoCompleteTextView.onFocusChangeListener =
             View.OnFocusChangeListener { _, hasFocus ->
-                if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold && binding.autoCompleteTextView.adapter != null && (binding.autoCompleteTextView.adapter as ClientAdapter).count > 0 && !binding.autoCompleteTextView.isPopupShowing) {
+                if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold &&
+                    (binding.autoCompleteTextView.adapter?.count ?: 0) > 0 &&
+                    !binding.autoCompleteTextView.isPopupShowing
+                ) {
                     // Display the suggestion dropdown on focus
                     Handler(Looper.getMainLooper()).post {
-                        run {
-                            adjustAndShowDropDown()
-                        }
+                        adjustAndShowDropDown()
                     }
                 }
             }
@@ -131,10 +147,11 @@ class ClientSelectActivity : AppCompatActivity(),
             return@setOnTouchListener false
         }
         binding.autoCompleteTextView.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE || event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
-                if (binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold) {
-                    if (binding.autoCompleteTextView.adapter != null && binding.autoCompleteTextView.adapter is ClientAdapter) {
-                        val all = (binding.autoCompleteTextView.adapter as ClientAdapter).getAll()
+            if (isActionDone(actionId, event)) {
+                val adapter = binding.autoCompleteTextView.adapter
+                if (adapter is ClientAdapter) {
+                    if (binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold) {
+                        val all = adapter.getAll()
                         if (all.any()) {
                             var founded = false
                             for (a in all) {
@@ -161,8 +178,8 @@ class ClientSelectActivity : AppCompatActivity(),
                             }
                         }
                     }
+                    clientSelected()
                 }
-                clientSelected()
                 true
             } else {
                 false
@@ -177,11 +194,10 @@ class ClientSelectActivity : AppCompatActivity(),
         thread { fillAdapter() }
     }
 
+    @Suppress("SameParameterValue")
     private fun showProgressBar(visibility: Int) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.progressBar.visibility = visibility
-            }
+            binding.progressBar.visibility = visibility
         }, 20)
     }
 
@@ -215,7 +231,7 @@ class ClientSelectActivity : AppCompatActivity(),
         Screen.closeKeyboard(this)
 
         val data = Intent()
-        data.putExtra("client", client)
+        data.putExtra(ARG_CLIENT, client)
         setResult(RESULT_OK, data)
         finish()
     }
@@ -226,12 +242,12 @@ class ClientSelectActivity : AppCompatActivity(),
         isFilling = true
 
         try {
-            Log.d(this::class.java.simpleName, "Selecting item clients...")
-            ClientCoroutines().get {
+            Log.d(tag, "Selecting clients...")
+            ClientCoroutines.get {
                 val adapter = ClientAdapter(
                     activity = this,
                     resource = R.layout.client_row,
-                    clients = it,
+                    clientArray = it,
                     suggestedList = ArrayList()
                 )
 
@@ -248,20 +264,20 @@ class ClientSelectActivity : AppCompatActivity(),
             }
         } catch (ex: java.lang.Exception) {
             ex.printStackTrace()
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            ErrorLog.writeLog(this, tag, ex)
         } finally {
             isFilling = false
         }
     }
 
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()
     }
 
-    // region SOFT KEYBOARD AND DROPDOWN ISSUES
+    //region SOFT KEYBOARD AND DROPDOWN ISSUES
     override fun onVisibilityChanged(isOpen: Boolean) {
         adjustDropDownHeight()
     }
@@ -275,12 +291,10 @@ class ClientSelectActivity : AppCompatActivity(),
     }
 
     private fun adjustAndShowDropDown() {
-        // TOP LAYOUT
         topLayout()
 
-        val adapter = (binding.autoCompleteTextView.adapter!! as ClientAdapter)
-        val viewHeight = ClientAdapter.viewHeight
-        val maxNeeded = adapter.count() * viewHeight
+        val viewHeight = settingsVm.clientViewHeight
+        val maxNeeded = (binding.autoCompleteTextView.adapter?.count ?: 0) * viewHeight
         val availableHeight =
             calculateDropDownHeight() - (binding.autoCompleteTextView.y + binding.autoCompleteTextView.height).toInt()
         var newHeight = availableHeight / viewHeight * viewHeight
@@ -343,9 +357,14 @@ class ClientSelectActivity : AppCompatActivity(),
         if (count > 0) {
             adjustDropDownHeight()
         } else {
-            // CENTER LAYOUT
             centerLayout()
         }
     }
-// endregion SOFT KEYBOARD AND DROPDOWN ISSUES
+    // endregion SOFT KEYBOARD AND DROPDOWN ISSUES
+
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_CLIENT = "client"
+    }
 }

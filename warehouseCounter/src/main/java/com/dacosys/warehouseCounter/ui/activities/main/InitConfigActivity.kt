@@ -9,53 +9,55 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.InputType
-import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.WindowManager
-import android.view.inputmethod.EditorInfo
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages
+import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
+import com.dacosys.warehouseCounter.data.room.database.helper.FileHelper.Companion.removeDataBases
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType.CREATOR.QRConfigClientAccount
+import com.dacosys.warehouseCounter.data.sync.ClientPackage
+import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.getConfigFromScannedCode
+import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.selectClientPackage
 import com.dacosys.warehouseCounter.databinding.InitConfigActivityBinding
-import com.dacosys.warehouseCounter.dto.clientPackage.Package
-import com.dacosys.warehouseCounter.ktor.functions.GetClientPackages.Companion.getConfig
-import com.dacosys.warehouseCounter.misc.Proxy
-import com.dacosys.warehouseCounter.misc.Proxy.Companion.setupProxy
+import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.PackagesResult
-import com.dacosys.warehouseCounter.room.database.FileHelper.Companion.removeDataBases
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType.CREATOR.QRConfigClientAccount
-import com.dacosys.warehouseCounter.sync.ClientPackage
-import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.getConfigFromScannedCode
-import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.selectClientPackage
-import com.dacosys.warehouseCounter.sync.ProgressStatus
+import com.dacosys.warehouseCounter.ui.activities.main.ProxySetup.Companion.setupProxy
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import io.github.cdimascio.dotenv.DotenvBuilder
 import java.lang.ref.WeakReference
+import kotlin.concurrent.thread
 
 class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
-    Proxy.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded {
+    ProxySetup.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded {
+
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
-        if (status == ProgressStatus.finished) {
+        if (status in ProgressStatus.getAllFinish()) {
             isConfiguring = false
-            showSnackBar(
-                SnackBarEventData(
-                    getString(R.string.configuration_applied), SnackBarType.SUCCESS
-                )
-            )
+        }
+
+        if (status == ProgressStatus.finished) {
+            showSnackBar(getString(R.string.configuration_applied), SnackBarType.SUCCESS)
             removeDataBases()
             finish()
         }
@@ -63,7 +65,8 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
 
     private fun onGetPackagesEnded(packagesResult: PackagesResult) {
         val status: ProgressStatus = packagesResult.status
-        val result: ArrayList<Package> = packagesResult.result
+        val result: ArrayList<com.dacosys.warehouseCounter.data.ktor.v1.dto.clientPackage.Package> =
+            packagesResult.result
         val clientEmail: String = packagesResult.clientEmail
         val clientPassword: String = packagesResult.clientPassword
         val msg: String = packagesResult.msg
@@ -76,24 +79,24 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                         allPackage = result,
                         email = clientEmail,
                         password = clientPassword,
-                        onEventData = { showSnackBar(it) })
+                        onEventData = { showSnackBar(it.text, it.snackBarType) })
                 }
             } else {
                 isConfiguring = false
-                showSnackBar(SnackBarEventData(msg, INFO))
+                showSnackBar(msg, INFO)
             }
         } else if (status == ProgressStatus.success) {
             isConfiguring = false
-            showSnackBar(SnackBarEventData(msg, SnackBarType.SUCCESS))
+            showSnackBar(msg, SnackBarType.SUCCESS)
             finish()
         } else if (status == ProgressStatus.crashed || status == ProgressStatus.canceled) {
             isConfiguring = false
-            showSnackBar(SnackBarEventData(msg, ERROR))
+            showSnackBar(msg, ERROR)
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     override fun onTaskSetupProxyEnded(
@@ -103,17 +106,23 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         installationCode: String,
     ) {
         if (status == ProgressStatus.finished) {
-            getConfig(
-                onEvent = { onGetPackagesEnded(it) },
-                email = email,
-                password = password,
-                installationCode = installationCode
-            )
+            if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
+                thread {
+                    GetClientPackages.Builder()
+                        .onEvent { onGetPackagesEnded(it) }
+                        .addParams(
+                            email = email,
+                            password = password,
+                            installationCode = installationCode
+                        ).build()
+                }
+            } else {
+                isConfiguring = false
+            }
         }
     }
 
     private var rejectNewInstances = false
-    private var isReturnedFromSettings = false
 
     private var email: String = ""
     private var password: String = ""
@@ -121,33 +130,11 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     override fun onResume() {
         super.onResume()
 
-        JotterListener.lockScanner(this, false)
+        LifecycleListener.lockScanner(this, false)
         rejectNewInstances = false
-
-        // Parece que las actividades de tipo Setting no devuelven resultados
-        // así que de esta manera puedo volver a llenar el fragmento de usuarios
-        if (isReturnedFromSettings) {
-            isReturnedFromSettings = false
-
-            // Vamos a reconstruir el scanner por si cambió la configuración
-            JotterListener.autodetectDeviceModel(this)
-
-            if (settingViewModel.urlPanel.isEmpty()) {
-                showSnackBar(SnackBarEventData(getString(R.string.server_is_not_configured), ERROR))
-                return
-            }
-
-            Screen.closeKeyboard(this)
-
-            setResult(RESULT_OK)
-            finish()
-        }
     }
 
-    override fun onBackPressed() {
-        // Esto sirve para salir del programa desde la pantalla de Login
-        // moveTaskToBack(true)
-
+    private fun isBackPressed() {
         val i = baseContext.packageManager.getLaunchIntentForPackage(baseContext.packageName)
         if (i != null) {
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -158,8 +145,8 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("email", binding.emailEditText.text.toString())
-        savedInstanceState.putString("password", binding.passwordEditText.text.toString())
+        savedInstanceState.putString(ARG_EMAIL, binding.emailEditText.text.toString())
+        savedInstanceState.putString(ARG_PASSWORD, binding.passwordEditText.text.toString())
     }
 
     private lateinit var binding: InitConfigActivityBinding
@@ -174,18 +161,25 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         if (savedInstanceState != null) {
-            email = savedInstanceState.getString("email") ?: ""
-            password = savedInstanceState.getString("password") ?: ""
+            email = savedInstanceState.getString(ARG_EMAIL) ?: ""
+            password = savedInstanceState.getString(ARG_PASSWORD) ?: ""
         } else {
             val extras = intent.extras
             if (extras != null) {
-                email = extras.getString("email") ?: ""
-                password = extras.getString("password") ?: ""
+                email = extras.getString(ARG_EMAIL) ?: ""
+                password = extras.getString(ARG_PASSWORD) ?: ""
             }
 
             clearOldPrefs()
-            JotterListener.autodetectDeviceModel(this)
+            LifecycleListener.autodetectDeviceModel(this)
         }
 
         val pInfo = packageManager.getPackageInfo(packageName, 0)
@@ -200,8 +194,8 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         binding.imageView.setImageDrawable(draw)
 
         binding.passwordEditText.setText(password, TextView.BufferType.EDITABLE)
-        binding.passwordEditText.setOnKeyListener { _, keyCode, _ ->
-            if (keyCode == KeyEvent.ACTION_DOWN || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+        binding.passwordEditText.setOnKeyListener { _, _, event ->
+            if (isActionDone(event)) {
                 Screen.closeKeyboard(this)
                 attemptToConfigure()
                 true
@@ -214,15 +208,13 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                 Screen.showKeyboard(this)
             }
         }
-        binding.passwordEditText.setOnEditorActionListener { _, actionId, _ ->
-            return@setOnEditorActionListener when (actionId) {
-                EditorInfo.IME_ACTION_DONE -> {
-                    Screen.closeKeyboard(this)
-                    attemptToConfigure()
-                    true
-                }
-
-                else -> false
+        binding.passwordEditText.setOnEditorActionListener { _, actionId, event ->
+            return@setOnEditorActionListener if (isActionDone(actionId, event)) {
+                Screen.closeKeyboard(this)
+                attemptToConfigure()
+                true
+            } else {
+                false
             }
         }
 
@@ -232,22 +224,20 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                 Screen.showKeyboard(this)
             }
         }
-        binding.emailEditText.setOnKeyListener { _, keyCode, _ ->
-            if (keyCode == KeyEvent.ACTION_DOWN || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+        binding.emailEditText.setOnKeyListener { _, _, event ->
+            if (isActionDone(event)) {
                 binding.passwordEditText.requestFocus()
                 true
             } else {
                 false
             }
         }
-        binding.emailEditText.setOnEditorActionListener { _, actionId, _ ->
-            return@setOnEditorActionListener when (actionId) {
-                EditorInfo.IME_ACTION_NEXT -> {
-                    binding.passwordEditText.requestFocus()
-                    true
-                }
-
-                else -> false
+        binding.emailEditText.setOnEditorActionListener { _, actionId, event ->
+            return@setOnEditorActionListener if (isActionDone(actionId, event)) {
+                binding.passwordEditText.requestFocus()
+                true
+            } else {
+                false
             }
         }
 
@@ -263,7 +253,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     private fun configApp() {
-        val realPass = settingViewModel.confPassword
+        val realPass = settingsVm.confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
@@ -281,18 +271,13 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             input.isFocusable = true
             input.isFocusableInTouchMode = true
-            input.setOnKeyListener { _, keyCode, event ->
-                if (event.action == KeyEvent.ACTION_DOWN) {
-                    when (keyCode) {
-                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                            if (alertDialog != null) {
-                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
-                                    .performClick()
-                            }
-                        }
-                    }
+            input.setOnKeyListener { _, _, event ->
+                if (isActionDone(event)) {
+                    alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
+                    true
+                } else {
+                    false
                 }
-                false
             }
 
             inputLayout.addView(input)
@@ -312,20 +297,35 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = settingViewModel.confPassword
+        val realPass = settingsVm.confPassword
         if (password == realPass) {
             if (!rejectNewInstances) {
                 rejectNewInstances = true
 
                 val intent = Intent(baseContext, SettingsActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                startActivity(intent)
+                resultForSettings.launch(intent)
             }
-            isReturnedFromSettings = true
         } else {
-            showSnackBar(SnackBarEventData(getString(R.string.invalid_password), ERROR))
+            showSnackBar(getString(R.string.invalid_password), ERROR)
         }
     }
+
+    private val resultForSettings =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            // Vamos a reconstruir el scanner por si cambió la configuración
+            LifecycleListener.autodetectDeviceModel(this)
+
+            if (settingsVm.urlPanel.isEmpty()) {
+                showSnackBar(getString(R.string.server_is_not_configured), ERROR)
+                return@registerForActivityResult
+            }
+
+            Screen.closeKeyboard(this)
+
+            setResult(RESULT_OK)
+            finish()
+        }
 
     private var isConfiguring = false
     private fun attemptToConfigure() {
@@ -335,21 +335,27 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         val email = binding.emailEditText.text.toString()
         val password = binding.passwordEditText.text.toString()
 
-        if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
-            if (!binding.proxyCheckBox.isChecked) {
-                getConfig(
-                    onEvent = { onGetPackagesEnded(it) }, email = email, password = password
-                )
+        if (!binding.proxyCheckBox.isChecked) {
+            if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
+                thread {
+                    GetClientPackages.Builder()
+                        .onEvent { onGetPackagesEnded(it) }
+                        .addParams(
+                            email = email,
+                            password = password,
+                            installationCode = ""
+                        ).build()
+                }
             } else {
-                setupProxy(
-                    callback = this,
-                    weakAct = WeakReference(this),
-                    email = email,
-                    password = password
-                )
+                isConfiguring = false
             }
         } else {
-            isConfiguring = false
+            setupProxy(
+                callback = this,
+                weakAct = WeakReference(this),
+                email = email,
+                password = password
+            )
         }
     }
 
@@ -367,14 +373,13 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
-        JotterListener.lockScanner(this, true)
-        JotterListener.hideWindow(this)
+        LifecycleListener.lockScanner(this, true)
+        LifecycleListener.hideWindow(this)
 
         try {
             getConfigFromScannedCode(
@@ -384,23 +389,22 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             )
         } catch (ex: Exception) {
             ex.printStackTrace()
-            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
+            showSnackBar(ex.message.toString(), ERROR)
             ErrorLog.writeLog(this, this::class.java.simpleName, ex)
         } finally {
             // Unless is blocked, unlock the partial
-            JotterListener.lockScanner(this, false)
+            LifecycleListener.lockScanner(this, false)
         }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_login, menu)
 
-        if (!settingViewModel.showConfButton) {
+        if (!settingsVm.showConfButton) {
             menu.removeItem(menu.findItem(R.id.action_settings).itemId)
         }
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -408,13 +412,9 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-
         return when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                isBackPressed()
                 return true
             }
 
@@ -424,23 +424,30 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_trigger_scan -> {
-                ///* For Debug */
-                //scannerCompleted(
-                //    """{"config":{"client_email":"miguel@dacosys.com","client_password":"sarasa123!!"}}""".trimIndent()
-                //)
-                //return super.onOptionsItemSelected(item)
+                if (Statics.TEST_MODE && BuildConfig.DEBUG) {
+                    val env = DotenvBuilder()
+                        .directory("/assets")
+                        .filename("env")
+                        .load()
 
-                JotterListener.trigger(this)
+                    val username = env["CLIENT_EMAIL"]
+                    val password = env["CLIENT_PASSWORD"]
+
+                    scannerCompleted("""{"config":{"client_email":"$username","client_password":"$password"}}""".trimIndent())
+                    return super.onOptionsItemSelected(item)
+                }
+
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
 
@@ -448,5 +455,10 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
                 super.onOptionsItemSelected(item)
             }
         }
+    }
+
+    companion object {
+        const val ARG_PASSWORD = "password"
+        const val ARG_EMAIL = "email"
     }
 }

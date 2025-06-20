@@ -7,21 +7,23 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.GONE
-import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.adapter.itemCategory.ItemCategoryAdapter
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.room.dao.itemCategory.ItemCategoryCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategory
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.dao.itemCategory.ItemCategoryCoroutines
-import com.dacosys.warehouseCounter.room.entity.itemCategory.ItemCategory
+import com.dacosys.warehouseCounter.ui.adapter.itemCategory.ItemCategoryAdapter
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener
@@ -29,6 +31,9 @@ import kotlin.concurrent.thread
 
 class ItemCategorySelectActivity : AppCompatActivity(),
     ContractsAutoCompleteTextView.OnContractsAvailability, KeyboardVisibilityEventListener {
+
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
+
     override fun onDestroy() {
         destroyLocals()
         super.onDestroy()
@@ -40,11 +45,12 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.setAdapter(null)
     }
 
+    private var fillRequired = false
     private var itemCategory: ItemCategory? = null
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putParcelable("itemCategory", itemCategory)
+        savedInstanceState.putParcelable(ARG_ITEM_CATEGORY, itemCategory)
     }
 
     private lateinit var binding: CodeSelectActivityBinding
@@ -60,6 +66,13 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         // fuera de la ventana. Esta actividad se ve como un diálogo.
         setFinishOnTouchOutside(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         var tempTitle = getString(R.string.search_by_category)
         if (savedInstanceState != null) {
             // Dejo de escuchar estos eventos hasta pasar los valores guardados
@@ -69,19 +82,26 @@ class ItemCategorySelectActivity : AppCompatActivity(),
             binding.autoCompleteTextView.setOnTouchListener(null)
             binding.autoCompleteTextView.onFocusChangeListener = null
             binding.autoCompleteTextView.setOnDismissListener(null)
-            itemCategory = savedInstanceState.getParcelable("itemCategory")
+
+            itemCategory = savedInstanceState.parcelable(ARG_ITEM_CATEGORY)
         } else {
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
+                val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                itemCategory = extras.getParcelable("itemCategory")
+                itemCategory = extras.parcelable(ARG_ITEM_CATEGORY)
             }
         }
 
+        // Para el llenado en el onStart siguiente de onCreate
+        fillRequired = true
+
         title = tempTitle
-        binding.codeSelect.setOnClickListener { onBackPressed() }
+
+        binding.codeSelect.setOnClickListener {
+            isBackPressed()
+        }
 
         binding.codeClearImageView.setOnClickListener {
             itemCategory = null
@@ -94,10 +114,9 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.hint = tempTitle
         binding.autoCompleteTextView.onItemClickListener =
             AdapterView.OnItemClickListener { _, _, position, _ ->
-                if (binding.autoCompleteTextView.adapter != null && binding.autoCompleteTextView.adapter is ItemCategoryAdapter) {
-                    val it = (binding.autoCompleteTextView.adapter as ItemCategoryAdapter).getItem(
-                        position
-                    )
+                val adapter = binding.autoCompleteTextView.adapter
+                if (adapter is ItemCategoryAdapter) {
+                    val it = adapter.getItem(position)
                     if (it != null) {
                         itemCategory = it
                     }
@@ -107,12 +126,13 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         binding.autoCompleteTextView.setOnContractsAvailability(this)
         binding.autoCompleteTextView.onFocusChangeListener =
             View.OnFocusChangeListener { _, hasFocus ->
-                if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold && binding.autoCompleteTextView.adapter != null && (binding.autoCompleteTextView.adapter as ItemCategoryAdapter).count > 0 && !binding.autoCompleteTextView.isPopupShowing) {
+                if (hasFocus && binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold &&
+                    (binding.autoCompleteTextView.adapter?.count ?: 0) > 0 &&
+                    !binding.autoCompleteTextView.isPopupShowing
+                ) {
                     // Display the suggestion dropdown on focus
                     Handler(Looper.getMainLooper()).post {
-                        run {
-                            adjustAndShowDropDown()
-                        }
+                        adjustAndShowDropDown()
                     }
                 }
             }
@@ -131,11 +151,11 @@ class ItemCategorySelectActivity : AppCompatActivity(),
             return@setOnTouchListener false
         }
         binding.autoCompleteTextView.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE || event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
-                if (binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold) {
-                    if (binding.autoCompleteTextView.adapter != null && binding.autoCompleteTextView.adapter is ItemCategoryAdapter) {
-                        val all =
-                            (binding.autoCompleteTextView.adapter as ItemCategoryAdapter).getAll()
+            if (isActionDone(actionId, event)) {
+                val adapter = binding.autoCompleteTextView.adapter
+                if (adapter is ItemCategoryAdapter) {
+                    if (binding.autoCompleteTextView.text.trim().length >= binding.autoCompleteTextView.threshold) {
+                        val all = adapter.getAll()
                         if (all.any()) {
                             var founded = false
                             for (a in all) {
@@ -162,8 +182,8 @@ class ItemCategorySelectActivity : AppCompatActivity(),
                             }
                         }
                     }
+                    itemCategorySelected()
                 }
-                itemCategorySelected()
                 true
             } else {
                 false
@@ -173,14 +193,21 @@ class ItemCategorySelectActivity : AppCompatActivity(),
 
         KeyboardVisibilityEvent.registerEventListener(this, this)
         refreshItemCategoryText(cleanText = false, focus = true)
-        thread { fillAdapter() }
     }
 
+    override fun onStart() {
+        super.onStart()
+
+        if (fillRequired) {
+            fillRequired = false
+            thread { fillAdapter() }
+        }
+    }
+
+    @Suppress("SameParameterValue")
     private fun showProgressBar(visibility: Int) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.progressBar.visibility = visibility
-            }
+            binding.progressBar.visibility = visibility
         }, 20)
     }
 
@@ -214,7 +241,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         Screen.closeKeyboard(this)
 
         val data = Intent()
-        data.putExtra("itemCategory", itemCategory)
+        data.putExtra(ARG_ITEM_CATEGORY, itemCategory)
         setResult(RESULT_OK, data)
         finish()
     }
@@ -225,13 +252,13 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         isFilling = true
 
         try {
-            Log.d(this::class.java.simpleName, "Selecting item categories...")
+            Log.d(tag, "Selecting categories...")
 
-            ItemCategoryCoroutines().get {
+            ItemCategoryCoroutines.get {
                 val adapter = ItemCategoryAdapter(
                     activity = this,
                     resource = R.layout.item_category_row,
-                    itemCategorys = it,
+                    itemCategoryArray = it,
                     suggestedList = ArrayList()
                 )
 
@@ -248,20 +275,20 @@ class ItemCategorySelectActivity : AppCompatActivity(),
             }
         } catch (ex: java.lang.Exception) {
             ex.printStackTrace()
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            ErrorLog.writeLog(this, tag, ex)
         } finally {
             isFilling = false
         }
     }
 
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()
     }
 
-    // region SOFT KEYBOARD AND DROPDOWN ISSUES
+    //region SOFT KEYBOARD AND DROPDOWN ISSUES
     override fun onVisibilityChanged(isOpen: Boolean) {
         adjustDropDownHeight()
     }
@@ -275,12 +302,10 @@ class ItemCategorySelectActivity : AppCompatActivity(),
     }
 
     private fun adjustAndShowDropDown() {
-        // TOP LAYOUT
         topLayout()
 
-        val adapter = (binding.autoCompleteTextView.adapter!! as ItemCategoryAdapter)
-        val viewHeight = ItemCategoryAdapter.viewHeight
-        val maxNeeded = adapter.count() * viewHeight
+        val viewHeight = settingsVm.categoryViewHeight
+        val maxNeeded = (binding.autoCompleteTextView.adapter?.count ?: 0) * viewHeight
         val availableHeight =
             calculateDropDownHeight() - (binding.autoCompleteTextView.y + binding.autoCompleteTextView.height).toInt()
         var newHeight = availableHeight / viewHeight * viewHeight
@@ -343,9 +368,13 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         if (count > 0) {
             adjustDropDownHeight()
         } else {
-            // CENTER LAYOUT
             centerLayout()
         }
     }
     // endregion SOFT KEYBOARD AND DROPDOWN ISSUES
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_ITEM_CATEGORY = "itemCategory"
+    }
 }

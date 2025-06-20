@@ -80,7 +80,7 @@
                     android:textColor="@color/text_dark"
                     android:textColorHint="@color/colorHint"
                     app:autoSizeMaxTextSize="18sp"
-                    app:autoSizeMinTextSize="12dp"
+                    app:autoSizeMinTextSize="10sp"
                     app:autoSizeStepGranularity="1sp"
                     app:autoSizeTextType="uniform"
                     app:layout_constraintEnd_toEndOf="parent"

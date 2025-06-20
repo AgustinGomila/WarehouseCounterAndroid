@@ -1,5 +1,4 @@
 <resources>
-    <string name="_0_items">0 ítems</string>
     <string name="_1x">1X</string>
     <string name="_item_differences">%s ítems diferentes</string>
     <string name="_product_differences">%s diferencias de productos</string>
@@ -10,12 +9,21 @@
     <string name="added">Agregado</string>
     <string name="added_plural">Agregados</string>
     <string name="reception_control">Control de recepción</string>
+    <string name="error_when_deleting_counts">Error al eliminar el arqueo.</string>
+    <string name="error_when_deleting_counts_file_not_found">Error al eliminar el arqueo. Archivo no encontrado.
+    </string>
     <string name="an_error_occurred_while_deleting_counts">Ha ocurrido un error al eliminar los arqueos</string>
     <string name="an_error_occurred_while_requesting_new_counts">Ha ocurrido un error al solicitar nuevos arqueos
     </string>
     <string name="an_error_occurred_while_trying_to_add_the_item">Ha ocurrido un error al intentar agregar el ítem
     </string>
+    <string name="an_error_occurred_while_trying_to_add_the_item_code">Ha ocurrido un error al intentar agregar el
+        código de ítem
+    </string>
     <string name="an_error_occurred_while_trying_to_delete_the_count">Ha ocurrido un error al intentar eliminar el
+        arqueo
+    </string>
+    <string name="an_error_occurred_while_trying_to_reset_the_count">Ha ocurrido un error al intentar reiniciar el
         arqueo
     </string>
     <string name="an_error_occurred_while_trying_to_load_the_order">Ha ocurrido un error al intentar cargar el arqueo
@@ -81,6 +89,7 @@
     <string name="dacosys_logo">Dacosys logo</string>
     <string name="database_is_not_created_yet">La base de datos aún no fue creada</string>
     <string name="database_name_is_invalid">Nombre inválido de la base de datos</string>
+    <string name="take_off">Quitar</string>
     <string name="delete">Eliminar</string>
     <string name="delivery_control">Control de despacho</string>
     <string name="description">Descripción</string>
@@ -175,6 +184,14 @@
     <string name="item_select_search_by_item_category">Categoría</string>
     <string name="item_select_search_by_item_ean">EAN o descripción del ítem</string>
     <string name="item_unlinked_from_codes">Ítem %s desvinculado de códigos</string>
+    <string name="order_location_search_by_order_id">Buscar por número de pedido…</string>
+    <string name="order_location_search_by_order_external_id">Buscar por número externo de pedido…</string>
+    <string name="order_location_search_by_warehouse">Buscar por depósito…</string>
+    <string name="order_location_search_by_area">Buscar por área…</string>
+    <string name="order_location_search_by_rack">Buscar por rack…</string>
+    <string name="order_location_search_by_item_ean">Buscar por EAN del ítem…</string>
+    <string name="order_location_search_by_item_code">Buscar por código del ítem…</string>
+    <string name="order_location_search_by_item_description">Buscar por descripción del ítem…</string>
     <string name="items">ítems</string>
     <string name="link">Vincular</string>
     <string name="link_code">Vincular códigos</string>
@@ -223,6 +240,7 @@
     <string name="program_options">Opciones del programa</string>
     <string name="proxy">Proxy</string>
     <string name="qty">Cantidad</string>
+    <string name="qty_requested">Solicitado</string>
     <string name="qty_requested_exceeded">Cantidad solicitada superada</string>
     <string name="qty_requested_reached">Cantidad solicitada alcanzada</string>
     <string name="read_barcode">Leer código</string>
@@ -234,7 +252,7 @@
     <string name="removed">Eliminado</string>
     <string name="removed_plural">Eliminados</string>
     <string name="requested">solicitado</string>
-    <string name="requested_count_state_">Arqueo solicitado: %1$s Estado: %2$s</string>
+    <string name="requested_count_state_">Arqueo: %1$s Estado: %2$s</string>
     <string name="requested_plural">solicitados</string>
     <string name="required_description">Descripción obligatoria</string>
     <string name="resume">Resumen</string>
@@ -279,11 +297,14 @@
         configuración de los paquetes de software que tiene disponibles.
     </string>
     <string name="the_code_belongs_to_an_item">El código pertence a un ítem</string>
+    <string name="the_code_belongs_to_an_rack">El código pertence a un rack</string>
+    <string name="the_code_belongs_to_an_area">El código pertence a un área</string>
     <string name="the_code_belongs_to_an_item_code">El código pertence a una cantidad de ítems</string>
     <string name="the_code_does_not_belong_to_any_iem_in_the_database">El código no pertenece a ningún ítem en la base
         de datos
     </string>
     <string name="the_code_is_already_linked_to_an_item">El código ya se encuentra vinculado a un ítem</string>
+    <string name="there_are_no_labels_to_print">No se encontraron etiquetas para imprimir</string>
     <string name="there_are_no_bluetooth_devices">No hay dispositivos Bluetooth</string>
     <string name="there_are_no_completed_counts">No existen arqueos completados</string>
     <string name="there_are_no_item_codes_to_send">No hay códigos de ítems para enviar</string>
@@ -309,39 +330,6 @@
     </string>
     <string name="warehouse_counter">Arqueo de bodega</string>
     <string name="warehouse_counter_from_device">Arqueo de bodega (desde dispositivo)</string>
-    <string name="wc_barcode_label_default">; Primera etiqueta de contenido
-        N
-        q805
-        ; Datos Lote Caja Recepcion
-        B60,20,0,1,4,11,70,B,""%1$s""
-
-        A40,130,0,5,1,1,R,""%2$s""
-        A40,190,0,3,1,1,R,""%3$s""
-        A40,215,0,2,1,1,N,""%4$s""
-        A680,275,0,1,1,1,N,""%5$s""
-
-        ; Datos contenido
-        A220,320,0,5,1,1,N,""DACOSYS""
-        A60,390,0,4,1,1,N,""SISTEMAS DE IDENTIFICACION Y RECOLECCION""
-        A60,430,0,4,1,1,N,""DE DATOS""
-        A60,470,0,4,1,1,N,""http://www.dacosys.com""
-        A60,510,0,4,1,1,N,""+54(11)5217-9472/3""
-        A60,550,0,4,1,1,N,""info@dacosys.com""
-
-        A60,600,0,5,1,1,N,""ETIQUETA DE""
-        A60,650,0,5,1,1,N,""DEMOSTRACION""
-
-        ; Lineas Etiqueta
-        LO20,0,780,5
-        LO20,300,780,5
-        ; LO20,520,780,2
-        LO20,770,780,5
-
-        LO20,0,5,770
-        LO800,0,5,770
-        P1
-        N
-    </string>
     <string name="web_panel_is_not_configured_yet">Panel web no está configurado</string>
     <string name="without_description">Sin descripción</string>
     <string name="without_divider">Sin divisor</string>
@@ -403,6 +391,18 @@
     <string name="search_by_category">Buscar por categoría…</string>
     <string name="search_by_ean_description">Buscar por EAN, descripción…</string>
     <string name="search_by_code">Buscar por código…</string>
+    <string name="search_by_order">Buscar por número de pedido…</string>
+    <string name="search_by_description">Buscar por descripción…</string>
+    <string name="search_by_ean">Buscar por EAN…</string>
+    <string name="search_by_location">Buscar por ubicación…</string>
+    <string name="search_by_order_id">Buscar por número de pedido…</string>
+    <string name="search_by_order_external_id">Buscar por número externo de pedido…</string>
+    <string name="search_by_warehouse">Buscar por depósito…</string>
+    <string name="search_by_area">Buscar por área…</string>
+    <string name="search_by_rack">Buscar por rack…</string>
+    <string name="search_by_item_ean">Buscar por EAN del ítem…</string>
+    <string name="search_by_item_external_id">Buscar por ID externo del ítem…</string>
+    <string name="search_by_item_description">Buscar por descripción del ítem…</string>
     <string name="searching_rfid_reader">Buscando lector RFID…</string>
     <string name="action_rfid_connect">Reconectar lector RFID</string>
     <string name="invalid_user">Usuario inválido</string>
@@ -485,9 +485,9 @@
     <string name="enter_code">Ingrese el código</string>
     <string name="expected">Esperado</string>
     <string name="registered">Registrado</string>
-    <string name="cant">Cant.</string>
-    <string name="checked">Marc.</string>
-    <string name="cont_">Cont.</string>
+    <string name="cant">Cant</string>
+    <string name="checked">Marc</string>
+    <string name="cont_">Cont</string>
     <string name="there_are_no_pending_counts">No existen arqueos pendientes</string>
     <string name="scan_log">Registro de escaneos</string>
     <string name="show_scanned_code">Mostrar código escaneado</string>
@@ -638,7 +638,7 @@
     <string name="invalid_response">Respuesta inválida</string>
     <string name="invalid_contents">Contenidos inválidos</string>
     <string name="ptl_order">Orden PTL</string>
-    <string name="orders">Órdenes</string>
+    <string name="ptl_orders">Órdenes</string>
     <string name="zone">Zona</string>
     <string name="search_area_">Buscar área…</string>
     <string name="area">Área</string>
@@ -660,4 +660,159 @@
     <string name="edit_items">Editar ítems</string>
     <string name="unknown_host">Host desconocido</string>
     <string name="error_printing_to">Error al imprimir en</string>
+    <string name="amount_of_labels">Cantidad de etiquetas</string>
+    <string name="not_defined">No definido</string>
+    <string name="item_not_exists">El ítem no existe</string>
+    <string name="rack">Rack</string>
+    <string name="order_location">Ubicación de pedidos</string>
+    <string name="enter_ean">Ingresar EAN</string>
+    <string name="enter_order_id">Ingresar pedido ID</string>
+    <string name="enter_order_external_id">Ingresar ID externo de pedido</string>
+    <string name="enter_item_external_id">Ingresar ID externo de ítem</string>
+    <string name="enter_warehouse">Ingresar depósito</string>
+    <string name="enter_area">Ingresar área</string>
+    <string name="enter_rack">Ingresar rack</string>
+    <string name="not_implemented_yet">Aún no implementado</string>
+    <string name="order_request_type">Tipo de pedido</string>
+    <string name="search_order_request_type">Tipo de pedido…</string>
+    <string name="packaging">Empaquetado</string>
+    <string name="location_catalog">Catálogo de ubicaciones</string>
+    <string name="items_catalog">Catálogo de ítems</string>
+    <string name="items_and_location_catalog">Ítems y ubicaciones</string>
+    <string name="select_rack">Seleccionar rack</string>
+    <string name="select_warehouse">Seleccionar depósito</string>
+    <string name="connection_timeout">Tiempo de espera superado</string>
+    <string name="order_catalog">Pedidos</string>
+    <string name="locations">Ubicaciones</string>
+    <string name="parent_location">Ubicación padre</string>
+    <string name="print_location_labels">Imprimir etiquetas de ubicaciones</string>
+    <string name="status">Estado</string>
+    <string name="button_9">Botón 9</string>
+    <string name="button_10">Botón 10</string>
+    <string name="button_11">Botón 11</string>
+    <string name="button_12">Botón 12</string>
+    <string name="move_order">Mover pedido</string>
+    <string name="pack_unpack">Empaquetar y desempaquetar</string>
+    <string name="search_label_template_">Buscar plantilla…</string>
+    <string name="select_label_template">Seleccionar plantilla</string>
+    <string name="search_by_template">Buscar plantilla</string>
+    <string name="you_must_select_a_template">Debe seleccionar una plantilla</string>
+    <string name="print_order_labels">Imprimir etiquetas de pedidos</string>
+    <string name="status_approved">Aprobado</string>
+    <string name="status_draft">Borrador</string>
+    <string name="status_in_process">En proceso</string>
+    <string name="status_in_transit">En tránsito</string>
+    <string name="status_delivered">Entregado</string>
+    <string name="status_finished">Finalizado</string>
+    <string name="status_pending">Pendiente</string>
+    <string name="status_pending_distribution">Pendiente distribución</string>
+    <string name="status_processed">Procesado</string>
+    <string name="status_no_status">Sin estado</string>
+    <string name="status_active">Activo</string>
+    <string name="status_deactivated">Desactivado</string>
+    <string name="status_flashing">Destellando</string>
+    <string name="rack_code">Código de rack</string>
+    <string name="set_destination">Elegir destino</string>
+    <string name="change_position">Cambiar posición</string>
+    <string name="select_destination">Seleccionar destino</string>
+    <string name="capture_barcode">Capturar código</string>
+    <string name="you_must_select_a_destination">Debe seleccionar un destino</string>
+    <string name="move">Mover</string>
+    <string name="you_must_select_an_order">Debe seleccionar un pedido</string>
+    <string name="you_must_select_at_least_one_order">Debe seleccionar al menos un pedido</string>
+    <string name="confirm_movement">Confirmar movimiento</string>
+    <string name="are_you_sure_to_move_the_selected_orders">¿Está seguro de mover los pedidos seleccionados?
+    </string>
+    <string name="code_not_found">Código no encontrado</string>
+    <string name="unpack">Desempaquetar</string>
+    <string name="are_you_sure_to_unpack_the_selected_orders">¿Está seguro de desempaquetar los pedidos seleccionados?
+    </string>
+    <string name="confirm_unpacking">Confirmar desempaquetado</string>
+    <string name="order_not_found">Pedido no encontrado</string>
+    <string name="default_template_for_items">Plantilla para ítems predeterminada</string>
+    <string name="default_template_for_orders">Plantilla para pedidos predeterminada</string>
+    <string name="default_template_for_areas">Plantilla para áreas predeterminada</string>
+    <string name="default_template_for_racks">Plantilla para racks predeterminada</string>
+    <string name="you_must_select_at_least_one_location">Debe seleccionar al menos una ubicación</string>
+    <string name="default_client_adapter_view_height">Altura predeterminada para la vista de clientes</string>
+    <string name="default_template_adapter_view_height">Altura predeterminada para la vista de plantillas</string>
+    <string name="default_category_adapter_view_height">Altura predeterminada para la vista de categorías</string>
+    <string name="default_item_adapter_view_height">Altura predeterminada para la vista de ítems</string>
+    <string name="default_location_adapter_view_height">Altura predeterminada para la vista de ubicaciones</string>
+    <string name="status_out_of_stock">Agotado</string>
+    <string name="move_ok">Movimiento OK</string>
+    <string name="move_error">Error al mover el pedido</string>
+    <string name="unknown_error">Error desconocido</string>
+    <string name="error_when_updating_the_order">Error al actualizar el pedido</string>
+    <string name="error_when_creating_the_order">Error al crear el pedido</string>
+    <string name="new_product">Nuevo producto</string>
+    <string name="without_id">Sin ID</string>
+    <string name="first">Primero</string>
+    <string name="second">Segundo</string>
+    <string name="third">Tercero</string>
+    <string name="products">Productos</string>
+    <string name="json_conversion_failed">Falló la conversión Json</string>
+    <string name="serialization_failed">Falló la serialización</string>
+    <string name="null_error">Error de puntero nulo</string>
+    <string name="sending_item_codes_">Enviando códigos de ítems…</string>
+    <string name="creating_order_">Creando pedido…</string>
+    <string name="moving_order_">Moviendo pedido…</string>
+    <string name="updating_order_">Actualizando pedido…</string>
+    <string name="searching_database">Buscando base de datos…</string>
+    <string name="searching_orders">Buscando pedidos…</string>
+    <string name="searching_templates">Buscando plantillas…</string>
+    <string name="searching_barcodes">Buscando etiquetas…</string>
+    <string name="searching_order_locations">Buscando ubicaciones de pedidos…</string>
+    <string name="searching_order_packages">Buscando empaquetados…</string>
+    <string name="searching_racks">Buscando racks…</string>
+    <string name="searching_areas">Buscando áreas…</string>
+    <string name="searching_items">Buscando ítems…</string>
+    <string name="searching_warehouses">Buscando depósitos…</string>
+    <string name="problem_loading">Problema al cargar</string>
+    <string name="retry">Reintentar</string>
+    <string name="end_of_pagination">No hay más elementos</string>
+    <string name="external_storage_unwritable">Almacenamiento externo no grabable</string>
+    <string name="you_want_to_repack_this_order">¿Quiere reempaquetar el pedido?</string>
+    <string name="repack_this_order">Reempaquetar el pedido</string>
+    <string name="search_by_external_id">Buscar por ID externo…</string>
+    <string name="automatic_print_label_of_completed_counts">Impresión automática de pedidos completados</string>
+    <string name="automatic_printing">Impresión automática</string>
+    <string name="printer_not_found">Impresora no encontrada</string>
+    <string name="pending_labels">Etiquetas pendientes</string>
+    <string name="no_pending_labels">No hay etiquetas pendientes</string>
+    <string name="remove_pending_label">Quitar etiqueta pendiente</string>
+    <string name="do_you_want_to_print_the_label_for_these_orders">¿Desea dar por impresa la etiqueta de estos
+        pedidos?
+    </string>
+    <string name="do_you_want_to_print_the_label_for_this_order">¿Desea dar por impresa la etiqueta de este pedido?
+    </string>
+    <string name="decimal_places">Decimales</string>
+    <string name="decimal_separator">Separador decimal</string>
+    <string name="bluetooth_printer_not_configured">Impresora Bluetooth no configurada</string>
+    <string name="permission_denied">Permiso denegado</string>
+    <string name="template_type">Tipo de plantilla</string>
+    <string name="template">Plantilla</string>
+    <string name="default_page_size">Tamaño de página predefinido</string>
+    <string name="page_size_limit">Tamaño límite de pagina</string>
+    <string name="_0_items">%s items</string>
+    <string name="_0_categories">%s categorías</string>
+    <string name="_0_clients">%s clientes</string>
+    <string name="_0_item_codes">%s códigos</string>
+    <string name="_0_item_regexs">%s Regex</string>
+    <string name="_0_lots">%s lotes</string>
+    <string name="_0_users">%s usuarios</string>
+    <string name="database_status">Estado de la base de datos</string>
+    <string name="no_name">Sin nombre</string>
+    <string name="levels">Niveles</string>
+    <string name="acronym">Acrónimo</string>
+    <string name="rack_detail">Detalle del rack</string>
+    <string name="warehouse_area_detail">Detalle del área</string>
+    <string name="searching_item_codes">Buscando códigos de ítems…</string>
+    <string name="the_code_belongs_to_an_order">El código pertenece a un pedido</string>
+    <string name="hex">Hex</string>
+    <string name="start_date">Iniciado</string>
+    <string name="received_date">Recibido</string>
+    <string name="processed_date">Procesado</string>
+    <string name="lot">Lote</string>
+    <string name="there_is_a_printing_in_progress_">Hay una impresión en curso…</string>
 </resources>

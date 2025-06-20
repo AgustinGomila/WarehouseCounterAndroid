@@ -57,7 +57,42 @@
     <color name="status_stock_audit">#FF2196F3</color>
     <color name="status_reception_audit">#FFFF5722</color>
     <color name="status_delivery_audit">#FF4CAF50</color>
+    <color name="status_packaging">#8E24AA</color>
 
     <color name="status_some_qty">#FFF44336</color>
     <color name="status_qty_zero">#FFDFDFDF</color>
+
+    <color name="status_w_active">#1E88E5</color>
+    <color name="status_w_inactive">#1976D2</color>
+    <color name="status_wa_active">#039BE5</color>
+    <color name="status_wa_inactive">#0288D1</color>
+    <color name="status_r_active">#00ACC1</color>
+    <color name="status_r_inactive">#0097A7</color>
+
+    <color name="status_no_status">#ECECEC</color>
+    <color name="status_active">#512DA8</color>
+    <color name="status_draft">#AFB42B</color>
+    <color name="status_approved">#388E3C</color>
+    <color name="status_in_process">#0097A7</color>
+    <color name="status_in_transit">#1976D2</color>
+    <color name="status_delivered">#303F9F</color>
+    <color name="status_finished">#7B1FA2</color>
+    <color name="status_pending">#C2185B</color>
+    <color name="status_pending_distribution">#D32F2F</color>
+    <color name="status_processed">#F57C00</color>
+    <color name="status_deactivated">#FFA000</color>
+    <color name="status_flashing">#FBC02D</color>
+
+    <color name="button_pending">#b594b6</color>
+    <color name="button_completed">#FBC02D</color>
+    <color name="button_new_count">#395b50</color>
+    <color name="button_code_read">#9EBF77</color>
+    <color name="button_ptl_order">#ea526f</color>
+    <color name="button_link_code">#ff8a5b</color>
+    <color name="button_print_label">#6b2737</color>
+    <color name="button_location_order">#ffb997</color>
+    <color name="button_move_order">#6874e8</color>
+    <color name="button_pack_unpack">#af9164</color>
+    <color name="button_test">#0b4f6c</color>
+    <color name="button_configuration">#808f87</color>
 </resources>

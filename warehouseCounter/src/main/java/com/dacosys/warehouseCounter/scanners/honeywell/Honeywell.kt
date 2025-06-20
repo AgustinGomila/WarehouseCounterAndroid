@@ -10,7 +10,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.honeywell.Honeywell.Constants.PROPERTY_DATA_PROCESSOR_DATA_INTENT
 import java.util.concurrent.atomic.AtomicBoolean
@@ -20,6 +20,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Created by luis901101 on 05/30/19.
  */
 class Honeywell(private val activity: AppCompatActivity) : Scanner() {
+
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
+
     private var ls = AtomicBoolean(false)
     var lockScannerEvent: Boolean
         get() {
@@ -74,12 +77,12 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
          * Este es el nombre creado por defecto en los Honeywell
          * Settings / Scan Settings / Internal Scanner / + / Select an application / WarehouseCounter
          */
-        const val appProfile = "WarehouseCounter"
+        const val APP_PROFILE = "WarehouseCounter"
 
         /**
          * Categoría por defecto. En otros ejemplos se envía vacía.
          */
-        const val defaultCategory = "android.intent.category.DEFAULT"
+        const val DEFAULT_CATEGORY = "android.intent.category.DEFAULT"
 
         const val EXTRA_CONTROL = "com.honeywell.aidc.action.ACTION_CONTROL_SCANNER"
 
@@ -168,7 +171,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
 
     private fun init() {
         activityName = activity::class.java.simpleName
-        Log.v(this::class.java.simpleName, "Initializing scanner on ${activityName}...")
+        Log.v(tag, "Initializing scanner on ${activityName}...")
 
         broadcastReceiver = HoneywellBroadcastReceiver(this)
         intentFilter = IntentFilter(Constants.ACTION_BARCODE_DATA)
@@ -177,7 +180,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
     }
 
     private fun loadProperties() {
-        val sv = settingViewModel
+        val sv = settingsVm
         properties = Bundle()
 
         // Barcode camera scanner view
@@ -216,7 +219,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
         // Enable bad read response
         properties?.putBoolean(Constants.PROPERTY_NOTIFICATION_BAD_READ_ENABLED, true)
 
-        Log.v(this::class.java.simpleName, "Scanner minimal properties defined!")
+        Log.v(tag, "Scanner minimal properties defined!")
     }
 
     fun setProperties(mapProperties: Map<String, Any>?) {
@@ -294,7 +297,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
                        Android Settings > Honeywell Settings > Scanning > Internal scanner > "+"
                 - If we use "DEFAULT" it will apply the settings from the Default profile in Scanner settings
                 - If not found, it will use Factory default settings.
-                 */.putExtra(Constants.EXTRA_PROFILE, Constants.appProfile)
+                 */.putExtra(Constants.EXTRA_PROFILE, Constants.APP_PROFILE)
 
             sendBroadcast(intent)
             isOpened = true
@@ -315,10 +318,10 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
 
             /*
              * Always provide a non-empty category, for example "android.intent.category.DEFAULT"
-             */.addCategory(Constants.defaultCategory)
+             */.addCategory(Constants.DEFAULT_CATEGORY)
 
         if (sdkVersion < 26) {
-            Log.v(this::class.java.simpleName, "Send $intent (${activityName})")
+            Log.v(tag, "Send $intent (${activityName})")
             activity.sendBroadcast(intent)
         } else {
             //for Android O above "gives W/BroadcastQueue: Background execution not allowed: receiving Intent"
@@ -339,12 +342,12 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
                     resolveInfo.activityInfo.name
                 )
                 explicit.component = cn
-                Log.v(this::class.java.simpleName, "Send $explicit (${activityName})")
+                Log.v(tag, "Send $explicit (${activityName})")
                 appContext.sendBroadcast(explicit)
             }
         } else {
             // to be compatible with Android 9 and later version for dynamic receiver
-            Log.v(this::class.java.simpleName, "Send $i (${activityName})")
+            Log.v(tag, "Send $i (${activityName})")
             appContext.sendBroadcast(i)
         }
     }
@@ -363,7 +366,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
     }
 
     private fun registerReceiver() {
-        Log.v(this::class.java.simpleName, "Registering receiver (${activityName})")
+        Log.v(tag, "Registering receiver (${activityName})")
         try {
             activity.registerReceiver(broadcastReceiver, intentFilter)
         } catch (e: Exception) {
@@ -372,7 +375,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
     }
 
     private fun unregisterReceiver() {
-        Log.v(this::class.java.simpleName, "Unregistering receiver (${activityName})")
+        Log.v(tag, "Unregistering receiver (${activityName})")
         try {
             activity.unregisterReceiver(broadcastReceiver)
         } catch (e: Exception) {

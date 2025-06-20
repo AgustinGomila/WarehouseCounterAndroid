@@ -11,12 +11,68 @@
             android:layout_height="wrap_content"
             android:background="@drawable/rounded_corner_button_808f87"
             android:gravity="center_horizontal"
-            android:text="@string/printer"
+            android:text="@string/print_labels"
             android:textColor="@color/whitesmoke"
-            android:textSize="12sp"
+            android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent" android:layout_marginStart="1dp" android:layout_marginEnd="1dp"
+            android:layout_marginTop="1dp"/>
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/templatePanel"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/titleTextView">
+
+        <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/templateSearchImageView"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:alpha="0.5"
+                android:scaleType="fitCenter"
+                app:layout_constraintBottom_toBottomOf="@+id/templateTextView"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/templateTextView"
+                app:srcCompat="@drawable/ic_search_black"/>
+
+        <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/templateClearImageView"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_marginEnd="1dp"
+                android:alpha="0.5"
+                android:scaleType="fitCenter"
+                app:layout_constraintBottom_toBottomOf="@+id/templateTextView"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/templateTextView"
+                app:srcCompat="@drawable/ic_close_black"/>
+
+        <TextView
+                android:id="@+id/templateTextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:dropDownHeight="200dp"
+                android:ellipsize="end"
+                android:freezesText="true"
+                android:hint="@string/search_label_template_"
+                android:lines="1"
+                android:maxLines="1"
+                android:paddingStart="4dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="4dp"
+                android:paddingBottom="4dp"
+                android:text=""
+                android:visibility="visible"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/templateClearImageView"
+                app:layout_constraintStart_toEndOf="@+id/templateSearchImageView"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:layout_constraintLeft_creator="1"
+                tools:layout_constraintRight_creator="1"
+                tools:layout_constraintTop_creator="1"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/printerPanel"
@@ -24,7 +80,7 @@
             android:layout_height="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/titleTextView">
+            app:layout_constraintTop_toBottomOf="@+id/templatePanel">
 
         <TextView
                 android:id="@+id/printerTextView"

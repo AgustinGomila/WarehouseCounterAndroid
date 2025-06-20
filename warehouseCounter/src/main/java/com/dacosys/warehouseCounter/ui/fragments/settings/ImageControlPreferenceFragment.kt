@@ -1,32 +1,32 @@
 package com.dacosys.warehouseCounter.ui.fragments.settings
 
 import android.os.Bundle
+import android.os.Environment
 import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
 import androidx.preference.SwitchPreference
-import com.dacosys.imageControl.Statics.Companion.albumFolder
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.room.database.helper.FileHelper
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
+import com.dacosys.warehouseCounter.data.settings.utils.ImageControlCheckUser
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType
+import com.dacosys.warehouseCounter.data.sync.ClientPackage
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.room.database.FileHelper
-import com.dacosys.warehouseCounter.settings.SettingsRepository
-import com.dacosys.warehouseCounter.settings.utils.ImageControlCheckUser
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType
-import com.dacosys.warehouseCounter.sync.ClientPackage
-import com.dacosys.warehouseCounter.sync.ProgressStatus
+import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.bindPreferenceSummaryToValue
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import java.io.File
 
 /**
  * This fragment shows notification preferences only. It is used when the
@@ -57,22 +57,20 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
         super.onCreate(savedInstanceState)
 
         // region: Tamaño de la imagen
-        bindPreferenceSummaryToValue(this, settingRepository.icPhotoMaxHeightOrWidth)
+        bindPreferenceSummaryToValue(this, settingsRepository.icPhotoMaxHeightOrWidth)
         // endregion
 
         // region: QR de configuración
         val qrCodeButton = findPreference<Preference>("ic_qr_code")
         qrCodeButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            val icUrl = settingViewModel.icWsServer
-            val icNamespace = settingViewModel.icWsNamespace
-            val icUserWs = settingViewModel.icWsUser
-            val icPasswordWs = settingViewModel.icWsPass
+            val icUrl = settingsVm.icWsServer
+            val icNamespace = settingsVm.icWsNamespace
+            val icUserWs = settingsVm.icWsUser
+            val icPasswordWs = settingsVm.icWsPass
 
             if (icUrl.isEmpty() || icNamespace.isEmpty() || icUserWs.isEmpty() || icPasswordWs.isEmpty()) {
-                if (view != null) MakeText.makeText(
-                    requireView(),
-                    WarehouseCounterApp.context.getString(R.string.invalid_webservice_data),
-                    SnackBarType.ERROR
+                if (view != null) showSnackBar(
+                    WarehouseCounterApp.context.getString(R.string.invalid_webservice_data), SnackBarType.ERROR
                 )
                 return@OnPreferenceClickListener false
             }
@@ -106,9 +104,7 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
                 true
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                if (view != null) MakeText.makeText(
-                    requireView(), "${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR
-                )
+                if (view != null) showSnackBar("${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR)
                 ErrorLog.writeLog(null, this::class.java.simpleName, ex)
                 false
             }
@@ -116,20 +112,20 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
 
         val inputConfCodePref = findPreference<Preference>("input_config_code")
         inputConfCodePref?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            showSnackBar(SnackBarEventData(getString(R.string.no_available_option), SnackBarType.INFO))
+            showSnackBar(getString(R.string.no_available_option), SnackBarType.INFO)
             true
         }
         // endregion
 
         // region: Datos de conexión
-        bindPreferenceSummaryToValue(this, settingRepository.icWsServer)
-        val urlPref = findPreference<Preference>(settingRepository.icWsServer.key)
+        bindPreferenceSummaryToValue(this, settingsRepository.icWsServer)
+        val urlPref = findPreference<Preference>(settingsRepository.icWsServer.key)
 
-        bindPreferenceSummaryToValue(this, settingRepository.icWsNamespace)
-        val namespacePref = findPreference<Preference>(settingRepository.icWsNamespace.key)
+        bindPreferenceSummaryToValue(this, settingsRepository.icWsNamespace)
+        val namespacePref = findPreference<Preference>(settingsRepository.icWsNamespace.key)
 
-        val userPref = findPreference<Preference>(settingRepository.icUser.key)
-        val passPref = findPreference<Preference>(settingRepository.icPass.key)
+        val userPref = findPreference<Preference>(settingsRepository.icUser.key)
+        val passPref = findPreference<Preference>(settingsRepository.icPass.key)
 
         /*
         val userWsPref = findPreference<Preference>(P.icWsUser.key)
@@ -139,8 +135,8 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
         val testButton = findPreference<Preference>("ic_test")
         testButton?.onPreferenceClickListener = Preference.OnPreferenceClickListener {
             if (urlPref != null && namespacePref != null && userPref != null && passPref != null) {
-                val url = settingViewModel.icWsServer
-                val namespace = settingViewModel.icWsNamespace
+                val url = settingsVm.icWsServer
+                val namespace = settingsVm.icWsNamespace
 
                 testImageControlConnection(url = url, namespace = namespace)
             }
@@ -148,21 +144,21 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
         }
 
         if (BuildConfig.DEBUG) {
-            bindPreferenceSummaryToValue(this, settingRepository.icWsUser)
-            bindPreferenceSummaryToValue(this, settingRepository.icWsPass)
-            bindPreferenceSummaryToValue(this, settingRepository.icUser)
-            bindPreferenceSummaryToValue(this, settingRepository.icPass)
+            bindPreferenceSummaryToValue(this, settingsRepository.icWsUser)
+            bindPreferenceSummaryToValue(this, settingsRepository.icWsPass)
+            bindPreferenceSummaryToValue(this, settingsRepository.icUser)
+            bindPreferenceSummaryToValue(this, settingsRepository.icPass)
         }
         // endregion
 
         // region: Proxy preferences
-        val useProxyPref = findPreference<Preference>(settingRepository.icWsUseProxy.key) as SwitchPreference
+        val useProxyPref = findPreference<Preference>(settingsRepository.icWsUseProxy.key) as SwitchPreference
         useProxyPref.setOnPreferenceChangeListener { _, newValue ->
-            settingViewModel.icWsUseProxy = newValue == true
+            settingsVm.icWsUseProxy = newValue == true
             true
         }
-        bindPreferenceSummaryToValue(this, settingRepository.icWsProxy)
-        bindPreferenceSummaryToValue(this, settingRepository.icWsProxyPort)
+        bindPreferenceSummaryToValue(this, settingsRepository.icWsProxy)
+        bindPreferenceSummaryToValue(this, settingsRepository.icWsProxyPort)
 
         /*
         val proxyUrlPref = findPreference<Preference>(P.icWsProxy.key)
@@ -188,11 +184,18 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
         return AlertDialog.Builder(requireActivity())
             //set message, title, and icon
             .setTitle(getString(R.string.delete))
-            .setMessage(getString(R.string.do_you_want_to_delete_the_image_cache_question))
-            .setPositiveButton(getString(R.string.delete)) { dialog, _ ->
-                val album = albumFolder
-                if (album.isDirectory) {
-                    val files = album.listFiles()
+            .setMessage(getString(R.string.do_you_want_to_delete_the_image_cache_question)).setPositiveButton(
+                getString(R.string.delete)
+            ) { dialog, _ ->
+                //your deleting code
+                val albumFolder = File(
+                    WarehouseCounterApp.context.getExternalFilesDir(
+                        Environment.DIRECTORY_PICTURES
+                    ), "ImageControl"
+                )
+
+                if (albumFolder.isDirectory) {
+                    val files = albumFolder.listFiles()
                     if (files != null && files.any()) {
                         for (file in files) {
                             if (file.isFile) {
@@ -203,7 +206,9 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
                 }
 
                 dialog.dismiss()
-            }.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }.create()
+            }.setNegativeButton(
+                R.string.cancel
+            ) { dialog, _ -> dialog.dismiss() }.create()
     }
 
     private fun testImageControlConnection(
@@ -211,33 +216,29 @@ class ImageControlPreferenceFragment : PreferenceFragmentCompat(),
         namespace: String,
     ) {
         if (url.isEmpty() || namespace.isEmpty()) {
-            if (view != null) MakeText.makeText(
-                requireView(),
-                WarehouseCounterApp.context.getString(R.string.invalid_webservice_data),
-                SnackBarType.INFO
+            if (view != null) showSnackBar(
+                WarehouseCounterApp.context.getString(R.string.invalid_webservice_data), SnackBarType.INFO
             )
             return
         }
-        ImageControlCheckUser { showSnackBar(it) }.execute()
+        ImageControlCheckUser { showSnackBar(it.text, it.snackBarType) }.execute()
     }
 
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
-            if (view != null) MakeText.makeText(
-                requireView(), getString(R.string.configuration_applied), SnackBarType.INFO
+            if (view != null) showSnackBar(
+                getString(R.string.configuration_applied), SnackBarType.INFO
             )
             FileHelper.removeDataBases()
-            requireActivity().onBackPressed()
+            @Suppress("DEPRECATION") requireActivity().onBackPressed()
         } else if (status == ProgressStatus.crashed) {
-            if (view != null) MakeText.makeText(
-                requireView(), getString(R.string.error_setting_user_panel), SnackBarType.ERROR
-            )
+            if (view != null) showSnackBar(getString(R.string.error_setting_user_panel), SnackBarType.ERROR)
         }
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
         if (requireActivity().isDestroyed || requireActivity().isFinishing) return
 
-        MakeText.makeText(requireView(), it.text, it.snackBarType)
+        makeText(requireView(), text, snackBarType)
     }
 }

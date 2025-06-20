@@ -1,6 +1,8 @@
 package com.dacosys.warehouseCounter.ui.activities.main
 
 import android.Manifest
+import android.animation.Animator
+import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
@@ -9,13 +11,20 @@ import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.InputType
 import android.util.Log
-import android.view.*
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View.GONE
 import android.view.View.VISIBLE
-import android.view.inputmethod.EditorInfo
-import android.widget.*
+import android.view.WindowManager
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.Animation
+import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -25,62 +34,79 @@ import com.dacosys.imageControl.room.database.IcDatabase
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.ktor.v1.functions.GetClientPackages
+import com.dacosys.warehouseCounter.data.ktor.v1.service.PackagesResult
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.database.DatabaseData
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.database.GetDatabase
+import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest
+import com.dacosys.warehouseCounter.data.room.dao.client.ClientCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.itemCategory.ItemCategoryCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.itemCode.ItemCodeCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.itemRegex.ItemRegexCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.lot.LotCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.user.UserCoroutines
+import com.dacosys.warehouseCounter.data.room.database.WcDatabase
+import com.dacosys.warehouseCounter.data.room.database.WcTempDatabase
+import com.dacosys.warehouseCounter.data.room.database.helper.DownloadDb
+import com.dacosys.warehouseCounter.data.room.database.helper.DownloadStatus
+import com.dacosys.warehouseCounter.data.room.database.helper.FileType
+import com.dacosys.warehouseCounter.data.room.database.helper.statusEnd
+import com.dacosys.warehouseCounter.data.room.entity.user.User
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType.CREATOR.QRConfigApp
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType.CREATOR.QRConfigClientAccount
+import com.dacosys.warehouseCounter.data.sync.ClientPackage
+import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.getConfigFromScannedCode
+import com.dacosys.warehouseCounter.data.sync.ClientPackage.Companion.selectClientPackage
 import com.dacosys.warehouseCounter.databinding.LoginActivityBinding
-import com.dacosys.warehouseCounter.dto.clientPackage.Package
-import com.dacosys.warehouseCounter.ktor.functions.GetClientPackages.Companion.getConfig
-import com.dacosys.warehouseCounter.ktor.functions.GetDatabaseLocation
-import com.dacosys.warehouseCounter.misc.ImageControl.Companion.closeImageControl
-import com.dacosys.warehouseCounter.misc.ImageControl.Companion.setupImageControl
-import com.dacosys.warehouseCounter.misc.Md5
-import com.dacosys.warehouseCounter.misc.Proxy
+import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.Statics.Companion.appName
+import com.dacosys.warehouseCounter.misc.imageControl.ImageControl.Companion.closeImageControl
+import com.dacosys.warehouseCounter.misc.imageControl.ImageControl.Companion.setupImageControl
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.network.DbLocationResult
-import com.dacosys.warehouseCounter.network.PackagesResult
-import com.dacosys.warehouseCounter.room.dao.user.UserCoroutines
-import com.dacosys.warehouseCounter.room.database.WcDatabase
-import com.dacosys.warehouseCounter.room.entity.user.User
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.misc.objects.status.ProgressStatus
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType.CREATOR.QRConfigApp
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType.CREATOR.QRConfigClientAccount
-import com.dacosys.warehouseCounter.sync.ClientPackage
-import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.getConfigFromScannedCode
-import com.dacosys.warehouseCounter.sync.ClientPackage.Companion.selectClientPackage
-import com.dacosys.warehouseCounter.sync.DownloadDb
-import com.dacosys.warehouseCounter.sync.ProgressStatus
 import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment
-import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.*
+import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.CANCELED
+import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.CRASHED
+import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.FINISHED
+import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.RUNNING
+import com.dacosys.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.STARTING
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.Screen
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
+import io.github.cdimascio.dotenv.DotenvBuilder
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent
 import org.json.JSONObject
-import org.parceler.Parcels
 import java.lang.ref.WeakReference
 import kotlin.concurrent.thread
 
+
 class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedListener,
     UserSpinnerFragment.OnSpinnerFillListener, Scanner.ScannerListener,
-    Proxy.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded,
+    ProxySetup.Companion.TaskSetupProxyEnded, ClientPackage.Companion.TaskConfigPanelEnded,
     DownloadDb.DownloadDbTask {
+
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
+
     override fun onTaskConfigPanelEnded(status: ProgressStatus) {
         if (status == ProgressStatus.finished) {
             showSnackBar(
-                SnackBarEventData(
-                    getString(R.string.configuration_applied), SnackBarType.SUCCESS
-                )
+                getString(R.string.configuration_applied), SUCCESS
             )
             initialSetup()
         } else if (status == ProgressStatus.crashed) {
-            showSnackBar(SnackBarEventData(getString(R.string.error_setting_user_panel), ERROR))
+            showSnackBar(getString(R.string.error_setting_user_panel), ERROR)
         }
     }
 
@@ -95,7 +121,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
     private fun onGetPackagesEnded(packagesResult: PackagesResult) {
         val status: ProgressStatus = packagesResult.status
-        val result: ArrayList<Package> = packagesResult.result
+        val result: ArrayList<com.dacosys.warehouseCounter.data.ktor.v1.dto.clientPackage.Package> =
+            packagesResult.result
         val clientEmail: String = packagesResult.clientEmail
         val clientPassword: String = packagesResult.clientPassword
         val msg: String = packagesResult.msg
@@ -108,116 +135,90 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                         allPackage = result,
                         email = clientEmail,
                         password = clientPassword,
-                        onEventData = { showSnackBar(it) })
+                        onEventData = { showSnackBar(it.text, it.snackBarType) })
                 }
             } else {
-                showSnackBar(SnackBarEventData(msg, SnackBarType.INFO))
+                showSnackBar(msg, SnackBarType.INFO)
             }
         } else if (status == ProgressStatus.success) {
-            showSnackBar(SnackBarEventData(msg, SnackBarType.SUCCESS))
+            showSnackBar(msg, SUCCESS)
         } else if (status == ProgressStatus.crashed) {
-            showSnackBar(SnackBarEventData(msg, ERROR))
+            showSnackBar(msg, ERROR)
         }
     }
 
-    private fun onDatabaseLocationEnded(data: DbLocationResult) {
-        val status: ProgressStatus = data.status
-        val timeFileUrl: String = data.result.dbDate
-        val dbFileUrl: String = data.result.dbFile
-        val msg: String = data.msg
-
-        when (status) {
-            ProgressStatus.crashed -> {
-                showSnackBar(SnackBarEventData(msg, ERROR))
-                showProgressBar()
-
-                setButton(ButtonStyle.REFRESH)
-                attemptSync = false
-            }
-
-            ProgressStatus.running -> {
-                setButton(ButtonStyle.BUSY)
-            }
-
-            ProgressStatus.canceled -> {
-                showSnackBar(SnackBarEventData(msg, ERROR))
-                showProgressBar()
-                attemptSync = false
-
-                // Sin conexión
-                enableLogin()
-            }
-
-            ProgressStatus.finished -> {
-                thread {
-                    val sync = DownloadDb()
-                    sync.addParams(callBack = this,
-                        timeFileUrl = timeFileUrl,
-                        dbFileUrl = dbFileUrl,
-                        onEventData = { showSnackBar(it) })
-                    sync.execute()
-                }
-            }
-        }
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
-    }
-
-    override fun onDownloadDbTask(downloadStatus: DownloadDb.DownloadStatus) {
-        if (downloadStatus in DownloadDb.statusEnd()) {
+    override fun onDownloadDbTask(downloadStatus: DownloadStatus) {
+        if (downloadStatus in statusEnd()) {
             attemptSync = false
         }
 
         when (downloadStatus) {
-            DownloadDb.DownloadStatus.STARTING -> {
+            DownloadStatus.STARTING -> {
                 setButton(ButtonStyle.BUSY)
                 showProgressBar(getString(R.string.downloading_database))
             }
 
-            DownloadDb.DownloadStatus.FINISHED,
-            DownloadDb.DownloadStatus.CANCELED,
+            DownloadStatus.FINISHED, /* FINISHED = Ok */
+            DownloadStatus.CANCELED, /* CANCELED = Sin conexión */
             -> {
-                // FINISHED = Ok
-                // CANCELED = Sin conexión
-                showProgressBar()
-                enableLogin()
+                Handler(Looper.getMainLooper()).postDelayed({
+                    setHeader()
+                    closeCurrentInstances()
+
+                    if (BuildConfig.DEBUG) {
+                        setHeaderDbInfo()
+                    }
+
+                    enableLogin()
+                }, 200)
             }
 
-            DownloadDb.DownloadStatus.CRASHED -> {
+            DownloadStatus.CRASHED -> {
                 setButton(ButtonStyle.REFRESH)
-                showProgressBar()
+                hideProgressBar()
             }
 
-            DownloadDb.DownloadStatus.DOWNLOADING,
-            DownloadDb.DownloadStatus.COPYING,
+            DownloadStatus.DOWNLOADING,
+            DownloadStatus.COPYING,
             -> {
                 setButton(ButtonStyle.BUSY)
             }
 
-            DownloadDb.DownloadStatus.INFO -> {
+            DownloadStatus.INFO -> {
             }
         }
     }
 
-    private fun enableLogin() {
-        showProgressBar(getString(R.string.updating_item_codes))
+    private fun onGetDatabaseData(data: DatabaseData) {
+        thread {
+            val sync = DownloadDb.Builder()
+                .onEventData { showSnackBar(it.text, it.snackBarType) }
+                .callBack(this)
+                .timeFileUrl(data.dbDate)
+                .dbFileUrl(data.dbFile)
+                .build()
+            sync.execute()
+        }
+    }
 
-        Statics.insertItemCodes()
+    private fun enableLogin() {
         refreshUsers()
 
         setButton(ButtonStyle.READY)
-        showProgressBar()
+        hideProgressBar()
     }
 
     override fun onDownloadFileTask(
         msg: String,
-        fileType: DownloadDb.FileType,
-        downloadStatus: DownloadDb.DownloadStatus,
+        fileType: FileType,
+        downloadStatus: DownloadStatus,
         progress: Int?,
     ) {
-        if (downloadStatus == DownloadDb.DownloadStatus.DOWNLOADING || downloadStatus == DownloadDb.DownloadStatus.COPYING) {
+        if (downloadStatus == DownloadStatus.DOWNLOADING || downloadStatus == DownloadStatus.COPYING) {
             showProgressBar(msg, progress)
         }
     }
@@ -229,12 +230,17 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         installationCode: String,
     ) {
         if (status == ProgressStatus.finished) {
-            getConfig(
-                onEvent = { onGetPackagesEnded(it) },
-                email = email,
-                password = password,
-                installationCode = installationCode
-            )
+            if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
+                thread {
+                    GetClientPackages.Builder()
+                        .onEvent { onGetPackagesEnded(it) }
+                        .addParams(
+                            email = email,
+                            password = password,
+                            installationCode = installationCode
+                        ).build()
+                }
+            }
         }
     }
 
@@ -253,7 +259,6 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
     private fun setButton(style: ButtonStyle) {
         runOnUiThread {
-            connectionSuccess = style == ButtonStyle.READY
             when (style) {
                 ButtonStyle.READY -> setLoginButton()
                 ButtonStyle.REFRESH -> setRefreshButton()
@@ -270,19 +275,37 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             binding.loginImageView.contentDescription = getString(R.string.retry_connection)
             binding.loginImageView.foregroundTintList =
                 ColorStateList.valueOf(ResourcesCompat.getColor(resources, R.color.black, null))
+
+            binding.loginImageView.setOnClickListener {
+                initialSetup()
+            }
         }
     }
 
     private fun setWaitButton() {
         runOnUiThread {
-            binding.loginImageView.setImageResource(R.drawable.ic_hourglass)
+            binding.loginImageView.setOnClickListener { }
+
+            binding.loginImageView.setImageResource(R.drawable.ic_refresh_rotate)
             binding.loginImageView.background = ResourcesCompat.getDrawable(
                 resources, R.drawable.rounded_corner_button_steelblue, null
             )
             binding.loginImageView.contentDescription = getString(R.string.connecting)
             binding.loginImageView.foregroundTintList =
                 ColorStateList.valueOf(ResourcesCompat.getColor(resources, R.color.white, null))
+
+            val drawable: Drawable = binding.loginImageView.drawable ?: return@runOnUiThread
+            val anim = createRotationAnimator(drawable)
+            anim.start()
         }
+    }
+
+    private fun createRotationAnimator(drawable: Drawable): Animator {
+        val anim = ObjectAnimator.ofInt(drawable, "level", 0, 10000)
+        anim.setDuration(2000)
+        anim.repeatCount = Animation.INFINITE
+        anim.interpolator = AccelerateDecelerateInterpolator()
+        return anim
     }
 
     private fun setLoginButton() {
@@ -294,36 +317,31 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             binding.loginImageView.contentDescription = getString(R.string.sign_in)
             binding.loginImageView.foregroundTintList =
                 ColorStateList.valueOf(ResourcesCompat.getColor(resources, R.color.cornsilk, null))
+
+            binding.loginImageView.setOnClickListener {
+                user = userSpinnerFragment?.selectedUser
+                password = binding.passwordEditText.text.toString()
+                attemptLogin()
+            }
         }
     }
 
     override fun onResume() {
         super.onResume()
 
-        JotterListener.lockScanner(this, false)
+        LifecycleListener.lockScanner(this, false)
         rejectNewInstances = false
 
-        Statics.isLogged = false
-
-        // Parece que las actividades de tipo Setting no devuelven resultados
-        // así que de esta manera puedo volver a llenar el fragmento de usuarios
-        if (isReturnedFromSettings) {
-            isReturnedFromSettings = false
-
-            // Vamos a reconstruir el scanner por si cambió la configuración
-            JotterListener.autodetectDeviceModel(this)
-
-            initialSetup()
-        }
+        CurrentUser.isLogged = false
     }
 
     private fun refreshUsers() {
         if (Statics.downloadDbRequired) return
 
         try {
-            runOnUiThread { userSpinnerFragment!!.reFill() }
+            runOnUiThread { userSpinnerFragment?.reFill() }
         } catch (ex: Exception) {
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+            ErrorLog.writeLog(this, tag, ex.message.toString())
         }
 
         attemptSync = false
@@ -333,25 +351,22 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         setEditTextFocus()
     }
 
-    override fun onBackPressed() {
-        // Esto sirve para salir del programa desde la pantalla de Login
+    private fun isBackPressed() {
         moveTaskToBack(true)
     }
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putParcelable("user", userSpinnerFragment!!.selectedUser)
-        savedInstanceState.putString("password", binding.passwordEditText.text.toString())
+        savedInstanceState.putParcelable(ARG_USER, userSpinnerFragment?.selectedUser)
+        savedInstanceState.putString(ARG_PASSWORD, binding.passwordEditText.text.toString())
     }
 
     private var userSpinnerFragment: UserSpinnerFragment? = null
     private var rejectNewInstances = false
-    private var isReturnedFromSettings = false
 
     private var attemptSync = false
     private var attemptRunning = false
-    private var connectionSuccess = false
 
     private var user: User? = null
     private var password: String = ""
@@ -368,41 +383,29 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        //// INICIALIZAR CONTROLES
-        userSpinnerFragment =
-            supportFragmentManager.findFragmentById(R.id.userSpinnerFragment) as UserSpinnerFragment?
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
+        userSpinnerFragment = supportFragmentManager.findFragmentById(R.id.userSpinnerFragment) as UserSpinnerFragment?
 
         if (savedInstanceState != null) {
-            user = savedInstanceState.getParcelable("user")
-            password = savedInstanceState.getString("pass") ?: ""
+            user = savedInstanceState.parcelable(ARG_USER)
+            password = savedInstanceState.getString(ARG_PASSWORD) ?: ""
         } else {
             val extras = intent.extras
             if (extras != null) {
-                user = Parcels.unwrap<User>(extras.getParcelable<User>("user"))
-                password = extras.getString("password") ?: ""
+                user = extras.parcelable<User>(ARG_USER)
+                password = extras.getString(ARG_PASSWORD) ?: ""
             }
         }
 
-        // region Mostrar número de versión, etc...
-        val pInfo = packageManager.getPackageInfo(packageName, 0)
-        val str = "${getString(R.string.app_milestone)} ${pInfo.versionName}"
-        binding.versionTextView.text = str
-        // endregion
-
-        // region Mostar la imagen de cabecera
-        binding.imageView.setImageResource(0)
-
-        var draw = ContextCompat.getDrawable(this, R.drawable.wc)
-        draw = resize(draw!!)
-
-        binding.imageView.setImageDrawable(draw)
-        // endregion
-
-        userSpinnerFragment!!.selectedUser = user
-
         binding.passwordEditText.setText(password, TextView.BufferType.EDITABLE)
-        binding.passwordEditText.setOnKeyListener { _, keyCode, keyEvent ->
-            if (keyEvent.action == KeyEvent.ACTION_UP && (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER)) {
+        binding.passwordEditText.setOnKeyListener { _, _, event ->
+            if (isActionDone(event)) {
                 binding.loginImageView.performClick()
                 true
             } else {
@@ -416,32 +419,105 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 Screen.closeKeyboard(this)
             }
         }
-        binding.passwordEditText.setOnEditorActionListener { _, actionId, _ ->
-            return@setOnEditorActionListener when (actionId) {
-                EditorInfo.IME_ACTION_DONE -> {
-                    binding.loginImageView.performClick()
-                    true
-                }
-
-                else -> false
+        binding.passwordEditText.setOnEditorActionListener { _, actionId, event ->
+            return@setOnEditorActionListener if (isActionDone(actionId, event)) {
+                binding.loginImageView.performClick()
+                true
+            } else {
+                false
             }
         }
         binding.passwordEditText.requestFocus()
 
-        binding.loginImageView.setOnClickListener {
-            if (connectionSuccess) {
-                user = userSpinnerFragment!!.selectedUser
-                password = binding.passwordEditText.text.toString()
-                attemptLogin()
-            } else {
-                initialSetup()
-            }
-        }
+        Screen.setupUI(binding.root, this)
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        userSpinnerFragment?.selectedUser = user
+
+        setHeader()
 
         initialSetup()
+    }
 
-        // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        Screen.setupUI(binding.login, this)
+    private fun setHeader() {
+        runOnUiThread {
+            setHeaderUserName()
+            setHeaderVersion()
+            setHeaderImageBanner()
+        }
+    }
+
+    private fun setHeaderDbInfo() {
+        runOnUiThread {
+            binding.dbInfoLayout.visibility = VISIBLE
+        }
+
+        ItemCoroutines.count {
+            runOnUiThread {
+                binding.dbItemsTextView.text =
+                    String.format(getString(R.string._0_items), it.toString())
+            }
+        }
+        ItemCategoryCoroutines.count {
+            runOnUiThread {
+                binding.dbCategoriesTextView.text =
+                    String.format(getString(R.string._0_categories), it.toString())
+            }
+        }
+        ClientCoroutines.count {
+            runOnUiThread {
+                binding.dbClientsTextView.text =
+                    String.format(getString(R.string._0_clients), it.toString())
+            }
+        }
+        ItemCodeCoroutines.count {
+            runOnUiThread {
+                binding.dbItemCodesTextView.text =
+                    String.format(getString(R.string._0_item_codes), it.toString())
+            }
+        }
+        ItemRegexCoroutines.count {
+            runOnUiThread {
+                binding.dbItemRegexTextView.text =
+                    String.format(getString(R.string._0_item_regexs), it.toString())
+            }
+        }
+        LotCoroutines.count {
+            runOnUiThread {
+                binding.dbLotTextView.text =
+                    String.format(getString(R.string._0_lots), it.toString())
+            }
+        }
+        UserCoroutines.count {
+            runOnUiThread {
+                binding.dbUserTextView.text =
+                    String.format(getString(R.string._0_users), it.toString())
+            }
+        }
+    }
+
+    private fun setHeaderUserName() {
+        binding.clientTextView.text = settingsVm.installationCode
+    }
+
+    private fun setHeaderVersion() {
+        val pInfo = packageManager.getPackageInfo(packageName, 0)
+        val str = "${getString(R.string.app_milestone)} ${pInfo.versionName}"
+        binding.versionTextView.text = str
+    }
+
+    private fun setHeaderImageBanner() {
+        binding.imageView.setImageResource(0)
+        var draw = ContextCompat.getDrawable(this, R.drawable.wc)
+        draw = resize(draw!!)
+        binding.imageView.setImageDrawable(draw)
+    }
+
+    private fun hideProgressBar() {
+        showProgressBar()
     }
 
     private fun showProgressBar(msg: String = "", progress: Int? = null) {
@@ -464,15 +540,25 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     private fun initSync() {
-        try {
-            thread {
-                GetDatabaseLocation { onDatabaseLocationEnded(it) }.execute()
-            }
-        } catch (ex: Exception) {
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+        if (!ApiRequest.validUrl()) {
+            showSnackBar(context.getString(R.string.invalid_url), ERROR)
+            return
+        }
 
-            setButton(ButtonStyle.REFRESH)
-            attemptSync = false
+        thread {
+            GetDatabase(
+                onEvent = {
+                    if (it.snackBarType != SUCCESS) showSnackBar(it.text, it.snackBarType)
+                },
+                onFinish = {
+                    if (it != null) {
+                        onGetDatabaseData(it)
+                    } else {
+                        hideProgressBar()
+                        setButton(ButtonStyle.REFRESH)
+                        attemptSync = false
+                    }
+                }).execute()
         }
     }
 
@@ -482,32 +568,19 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
         setButton(ButtonStyle.BUSY)
 
-        if (settingViewModel.urlPanel.isEmpty()) {
-            showSnackBar(
-                SnackBarEventData(
-                    text = getString(R.string.server_is_not_configured), ERROR
-                )
-            )
+        if (settingsVm.urlPanel.isEmpty()) {
+            showSnackBar(text = getString(R.string.server_is_not_configured), ERROR)
 
             setButton(ButtonStyle.REFRESH)
             attemptSync = false
         } else {
             try {
-                /* Des-inicializamos IC para evitar que se
-                   suban imágenes pendientes antes de autentificarse.
-                   Escenario en el que el usuario ha vuelto a esta
-                   actividad después haber estado autentificado.
-                 */
-                closeImageControl()
-
-                WcDatabase.cleanInstance()
-                IcDatabase.cleanInstance()
-
+                closeCurrentInstances()
                 initSync()
             } catch (ex: Exception) {
-                showProgressBar()
-                showSnackBar(SnackBarEventData(text = ex.message.toString(), ERROR))
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+                hideProgressBar()
+                showSnackBar(ex.message.toString(), ERROR)
+                ErrorLog.writeLog(this, tag, ex.message.toString())
 
                 setButton(ButtonStyle.REFRESH)
                 attemptSync = false
@@ -515,8 +588,21 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         }
     }
 
+    private fun closeCurrentInstances() {
+        /** Cerramos ImageControl para evitar que se
+         *  suban imágenes pendientes antes de autentificarse.
+         *  Escenario en el que el usuario ha vuelto a esta
+         *  actividad después haber estado autentificado.
+         */
+        closeImageControl()
+
+        WcDatabase.cleanInstance()
+        WcTempDatabase.cleanInstance()
+        IcDatabase.cleanInstance()
+    }
+
     private fun configApp() {
-        val realPass = settingViewModel.confPassword
+        val realPass = settingsVm.confPassword
         if (realPass.isEmpty()) {
             attemptEnterConfig(realPass)
             return
@@ -534,18 +620,13 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             input.isFocusable = true
             input.isFocusableInTouchMode = true
-            input.setOnKeyListener { _, keyCode, event ->
-                if (event.action == KeyEvent.ACTION_DOWN) {
-                    when (keyCode) {
-                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                            if (alertDialog != null) {
-                                alertDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
-                                    .performClick()
-                            }
-                        }
-                    }
+            input.setOnKeyListener { _, _, event ->
+                if (isActionDone(event)) {
+                    alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
+                    true
+                } else {
+                    false
                 }
-                false
             }
 
             inputLayout.addView(input)
@@ -565,20 +646,27 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     private fun attemptEnterConfig(password: String) {
-        val realPass = settingViewModel.confPassword
+        val realPass = settingsVm.confPassword
         if (password == realPass) {
             if (!rejectNewInstances) {
                 rejectNewInstances = true
 
                 val intent = Intent(context, SettingsActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                startActivity(intent)
+                resultForSettings.launch(intent)
             }
-            isReturnedFromSettings = true
         } else {
-            showSnackBar(SnackBarEventData(getString(R.string.invalid_password), ERROR))
+            showSnackBar(getString(R.string.invalid_password), ERROR)
         }
     }
+
+    private val resultForSettings =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            // Vamos a reconstruir el scanner por si cambió la configuración
+            LifecycleListener.autodetectDeviceModel(this)
+
+            initialSetup()
+        }
 
     private fun resize(image: Drawable): Drawable {
         val bitmap = (image as BitmapDrawable).bitmap
@@ -593,8 +681,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         attemptRunning = true
 
         // Store values at the time of the login attempt.
-        val userId = userSpinnerFragment!!.selectedUserId ?: 0L
-        val userPass = userSpinnerFragment!!.selectedUserPass
+        val userId = userSpinnerFragment?.selectedUserId ?: 0L
+        val userPass = userSpinnerFragment?.selectedUserPass ?: ""
         val password = binding.passwordEditText.text.toString()
 
         attemptLogin(userId.toLong(), userPass, password)
@@ -609,10 +697,10 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
         // Check for a valid email address.
         if (userId == null || userId <= 0) {
-            showSnackBar(SnackBarEventData(getString(R.string.you_must_select_a_user), ERROR))
+            showSnackBar(getString(R.string.you_must_select_a_user), ERROR)
             cancel = true
         } else if (!isUserValid(userId)) {
-            showSnackBar(SnackBarEventData(getString(R.string.you_must_select_a_user), ERROR))
+            showSnackBar(getString(R.string.you_must_select_a_user), ERROR)
             cancel = true
         }
 
@@ -622,27 +710,21 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             // There was an error; don't attempt login and focus the first
             // form field with an error.
             runOnUiThread {
-                userSpinnerFragment!!.view?.requestFocus()
+                userSpinnerFragment?.view?.requestFocus()
             }
         } else {
             // Show a progress spinner and kick off a background task to
             // perform the user login attempt.
-            if (userPass == Md5.getMd5(password)) {
+            val tempUser = user
+            if (tempUser != null && userPass == Md5.getMd5(password)) {
 
-                Statics.cleanCurrentUser()
-                Statics.currentUserId = user!!.userId
-                Statics.currentUserName = user!!.name
-                Statics.isLogged = true
+                CurrentUser.set(tempUser)
 
                 setupImageControl()
 
                 finish()
             } else {
-                showSnackBar(
-                    SnackBarEventData(
-                        getString(R.string.wrong_user_password_combination), ERROR
-                    )
-                )
+                showSnackBar(getString(R.string.wrong_user_password_combination), ERROR)
             }
         }
     }
@@ -653,18 +735,17 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
+        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
+            LifecycleListener.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode && BuildConfig.DEBUG) makeText(
-            binding.root, scanCode, SnackBarType.INFO
+        if (settingsVm.showScannedCode && BuildConfig.DEBUG) showSnackBar(
+            scanCode, SnackBarType.INFO
         )
 
-        JotterListener.lockScanner(this, true)
-        JotterListener.hideWindow(this)
+        LifecycleListener.lockScanner(this, true)
+        LifecycleListener.hideWindow(this)
 
         try {
             val mainJson = JSONObject(scanCode)
@@ -677,15 +758,15 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 val password = confJson.getString("log_password")
 
                 if (userName.isNotEmpty() && password.isNotEmpty()) {
-                    UserCoroutines().getByName(userName) {
+                    UserCoroutines.getByName(userName) {
                         if (it != null) {
                             attemptLogin(it.userId, it.password ?: "", password)
                         } else {
-                            showSnackBar(SnackBarEventData(getString(R.string.invalid_user), ERROR))
+                            showSnackBar(getString(R.string.invalid_user), ERROR)
                         }
                     }
                 } else {
-                    showSnackBar(SnackBarEventData(getString(R.string.invalid_code), ERROR))
+                    showSnackBar(getString(R.string.invalid_code), ERROR)
                 }
                 return
             }
@@ -710,7 +791,7 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                             adb.show()
                         } catch (ex: java.lang.Exception) {
                             ex.printStackTrace()
-                            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                            ErrorLog.writeLog(this, tag, ex)
                         }
                     }
                 }
@@ -725,16 +806,16 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
                 }
 
                 else -> {
-                    showSnackBar(SnackBarEventData(getString(R.string.invalid_code), ERROR))
+                    showSnackBar(getString(R.string.invalid_code), ERROR)
                 }
             }
         } catch (ex: Exception) {
             ex.printStackTrace()
-            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+            showSnackBar(ex.message.toString(), ERROR)
+            ErrorLog.writeLog(this, tag, ex)
         } finally {
             // Unless is blocked, unlock the partial
-            JotterListener.lockScanner(this, false)
+            LifecycleListener.lockScanner(this, false)
         }
     }
 
@@ -743,14 +824,13 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_login, menu)
 
-        if (!settingViewModel.showConfButton) {
+        if (!settingsVm.showConfButton) {
             menu.removeItem(menu.findItem(R.id.action_settings).itemId)
         }
 
-        if (!settingViewModel.useBtRfid) {
+        if (!settingsVm.useBtRfid) {
             menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
         }
 
@@ -758,13 +838,9 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-
         return when (item.itemId) {
             R.id.home, android.R.id.home -> {
-                onBackPressed()
+                isBackPressed()
                 return true
             }
 
@@ -774,23 +850,35 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
             }
 
             R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
+                LifecycleListener.rfidStart(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_trigger_scan -> {
-                ///* For Debug */
-                //scannerCompleted(
-                //    """{"config":{"client_email":"miguel@dacosys.com","client_password":"sarasa123!!"}}""".trimIndent()
-                //)
-                //return super.onOptionsItemSelected(item)
+                if (Statics.TEST_MODE && BuildConfig.DEBUG) {
+                    val env = DotenvBuilder()
+                        .directory("/assets")
+                        .filename("env")
+                        .load()
 
-                JotterListener.trigger(this)
+                    var username = env["CLIENT_EMAIL"]
+                    var password = env["CLIENT_PASSWORD"]
+
+                    if (settingsVm.clientEmail.contains(username)) {
+                        username = env["CLIENT_EMAIL_ALT"]
+                        password = env["CLIENT_PASSWORD_ALT"]
+                    }
+
+                    scannerCompleted("""{"config":{"client_email":"$username","client_password":"$password"}}""".trimIndent())
+                    return super.onOptionsItemSelected(item)
+                }
+
+                LifecycleListener.trigger(this)
                 return super.onOptionsItemSelected(item)
             }
 
             R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
                 return super.onOptionsItemSelected(item)
             }
 
@@ -809,15 +897,15 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
             CANCELED, CRASHED -> {
                 setButton(ButtonStyle.REFRESH)
-                showProgressBar()
+                hideProgressBar()
             }
 
             FINISHED -> {
-                showProgressBar()
-                if (userSpinnerFragment!!.count < 1) {
+                hideProgressBar()
+                if ((userSpinnerFragment?.count ?: 0) < 1) {
                     setButton(ButtonStyle.REFRESH)
                     Log.d(
-                        this::class.java.simpleName,
+                        tag,
                         getString(R.string.there_are_no_users_in_the_database)
                     )
                 } else {
@@ -827,5 +915,10 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
             RUNNING -> {}
         }
+    }
+
+    companion object {
+        const val ARG_USER = "user"
+        const val ARG_PASSWORD = "password"
     }
 }

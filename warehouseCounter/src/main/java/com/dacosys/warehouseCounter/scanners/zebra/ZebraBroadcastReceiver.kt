@@ -6,6 +6,8 @@ import android.content.Intent
 import android.util.Log
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTION_RESULT
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTION_RESULT_NOTIFICATION
+import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.ACTIVITY_INTENT_FILTER_ACTION
+import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.DATA_WEDGE_INTENT_KEY_DATA
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_COMMAND
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_KEY_VALUE_CONFIGURATION_UPDATE
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_KEY_VALUE_NOTIFICATION_PROFILE_NAME
@@ -17,11 +19,12 @@ import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_RESULT_
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_RESULT_INFO
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_RESULT_NOTIFICATION
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.EXTRA_RESULT_NOTIFICATION_TYPE
-import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.activityIntentFilterAction
-import com.dacosys.warehouseCounter.scanners.zebra.Zebra.Constants.datawedgeIntentKeyData
 
-@Suppress("ConvertSecondaryConstructorToPrimary", "unused")
+@Suppress("unused")
 class ZebraBroadcastReceiver : BroadcastReceiver {
+
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
+
     private lateinit var zebra: Zebra
 
     constructor()
@@ -33,16 +36,16 @@ class ZebraBroadcastReceiver : BroadcastReceiver {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
         val b = intent.extras
-        Log.d(this::class.java.simpleName, "DataWedge Action:$action")
+        Log.d(tag, "DataWedge Action:$action")
 
         // Get DataWedge version info
         if (intent.hasExtra(EXTRA_RESULT_GET_VERSION_INFO)) {
             val versionInfo = intent.getBundleExtra(EXTRA_RESULT_GET_VERSION_INFO)
             val dwVersion = versionInfo!!.getString("DATAWEDGE")
-            Log.i(this::class.java.simpleName, "DataWedge Version: $dwVersion")
+            Log.i(tag, "DataWedge Version: $dwVersion")
         }
 
-        if (action == activityIntentFilterAction) {
+        if (action == ACTIVITY_INTENT_FILTER_ACTION) {
             //  Received a barcode scan
             try {
                 displayScanResult(intent)
@@ -69,13 +72,13 @@ class ZebraBroadcastReceiver : BroadcastReceiver {
                         }
                     }
                     Log.d(
-                        this::class.java.simpleName, """
+                        tag, """
      Command: $command
      Result: $result
      Result Info: $info""".trimIndent()
                     )
                     Log.d(
-                        this::class.java.simpleName,
+                        tag,
                         "Error Resulted. Command:$command\nResult: $result\nResult Info: $info"
                     )
                 }
@@ -95,7 +98,7 @@ class ZebraBroadcastReceiver : BroadcastReceiver {
                                 EXTRA_KEY_VALUE_NOTIFICATION_PROFILE_NAME
                             )
                             Log.i(
-                                this::class.java.simpleName,
+                                tag,
                                 "Scanner status: $displayScannerStatusText"
                             )
                         }
@@ -112,7 +115,7 @@ class ZebraBroadcastReceiver : BroadcastReceiver {
         if (zebra.lockScannerEvent) return
 
         // store decoded data
-        val codeRead = initiatingIntent.getStringExtra(datawedgeIntentKeyData)
+        val codeRead = initiatingIntent.getStringExtra(DATA_WEDGE_INTENT_KEY_DATA)
         // store decoder type
         // val decodedLabelType = initiatingIntent.getStringExtra(datawedgeIntentKeyLabelType)
 

@@ -8,6 +8,7 @@
                  android:layout_height="wrap_content"
                  android:background="@drawable/custom_spinner_item"
                  android:ellipsize="marquee"
+                 android:textColor="@color/text_dark"
                  android:paddingTop="8dp"
                  android:paddingBottom="8dp"
                  android:singleLine="true"

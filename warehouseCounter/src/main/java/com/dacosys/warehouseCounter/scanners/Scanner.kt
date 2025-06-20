@@ -4,8 +4,8 @@ import android.os.Build
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.isDigitsOnly
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.misc.objects.collectorType.CollectorType
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.scanners.collectorType.CollectorType
 import com.dacosys.warehouseCounter.scanners.honeywell.Honeywell
 import com.dacosys.warehouseCounter.scanners.honeywell.HoneywellNative
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra
@@ -37,7 +37,7 @@ open class Scanner {
         )
 
         try {
-            val idStr = settingViewModel.collectorType
+            val idStr = settingsVm.collectorType
             var collectorType: CollectorType = CollectorType.none
             if (idStr.isDigitsOnly()) collectorType = CollectorType.getById(idStr.toInt())
 
@@ -55,20 +55,12 @@ open class Scanner {
 
     fun activityName(): String {
         var r = ""
-        if (scannerDevice == null) return r
+        val scanner = scannerDevice ?: return r
         try {
-            when (scannerDevice!!.javaClass) {
-                Honeywell::class.java -> {
-                    r = (scannerDevice as Honeywell).activityName
-                }
-
-                HoneywellNative::class.java -> {
-                    r = (scannerDevice as HoneywellNative).activityName
-                }
-
-                Zebra::class.java -> {
-                    r = (scannerDevice as Zebra).activityName
-                }
+            when (scanner) {
+                is Honeywell -> r = scanner.activityName
+                is HoneywellNative -> r = scanner.activityName
+                is Zebra -> r = scanner.activityName
             }
         } catch (e: NoClassDefFoundError) {
             //handle carefully
@@ -77,64 +69,37 @@ open class Scanner {
     }
 
     fun onResume() {
-        if (scannerDevice != null) {
-            try {
-                when (scannerDevice!!.javaClass) {
-                    Honeywell::class.java -> {
-                        (scannerDevice as Honeywell).resume()
-                    }
-
-                    HoneywellNative::class.java -> {
-                        (scannerDevice as HoneywellNative).resume()
-                    }
-
-                    Zebra::class.java -> {
-                        (scannerDevice as Zebra).resume()
-                    }
-                }
-            } catch (e: NoClassDefFoundError) {
-                //handle carefully
+        val scanner = scannerDevice ?: return
+        try {
+            when (scanner) {
+                is Honeywell -> scanner.resume()
+                is HoneywellNative -> scanner.resume()
+                is Zebra -> scanner.resume()
             }
+        } catch (e: NoClassDefFoundError) {
+            //handle carefully
         }
     }
 
     fun onPause() {
-        if (scannerDevice != null) {
-            try {
-                when (scannerDevice!!.javaClass) {
-                    Honeywell::class.java -> {
-                        (scannerDevice as Honeywell).pause()
-                    }
-
-                    HoneywellNative::class.java -> {
-                        (scannerDevice as HoneywellNative).pause()
-                    }
-
-                    Zebra::class.java -> {
-                        (scannerDevice as Zebra).pause()
-                    }
-                }
-            } catch (e: NoClassDefFoundError) {
-                //handle carefully
+        val scanner = scannerDevice ?: return
+        try {
+            when (scanner) {
+                is Honeywell -> scanner.pause()
+                is HoneywellNative -> scanner.pause()
+                is Zebra -> scanner.pause()
             }
+        } catch (e: NoClassDefFoundError) {
+            //handle carefully
         }
     }
 
     fun onDestroy() {
-        if (scannerDevice != null) {
+        val scanner = scannerDevice
+        if (scanner != null) {
             try {
-                when (scannerDevice!!.javaClass) {
-                    Honeywell::class.java -> {
-                        //(scannerDevice as Honeywell).destroy()
-                    }
-
-                    HoneywellNative::class.java -> {
-                        (scannerDevice as HoneywellNative).destroy()
-                    }
-
-                    Zebra::class.java -> {
-                        //(scannerDevice as Zebra).destroy()
-                    }
+                when (scanner) {
+                    is HoneywellNative -> scanner.destroy()
                 }
             } catch (e: NoClassDefFoundError) {
                 //handle carefully
@@ -145,46 +110,28 @@ open class Scanner {
     }
 
     fun trigger() {
-        if (scannerDevice != null) {
-            try {
-                when (scannerDevice!!.javaClass) {
-                    Honeywell::class.java -> {
-                        (scannerDevice as Honeywell).triggerScanner()
-                    }
-
-                    HoneywellNative::class.java -> {
-                        (scannerDevice as HoneywellNative).triggerScanner()
-                    }
-
-                    Zebra::class.java -> {
-                        (scannerDevice as Zebra).triggerScanner()
-                    }
-                }
-            } catch (e: NoClassDefFoundError) {
-                //handle carefully
+        val scanner = scannerDevice ?: return
+        try {
+            when (scanner) {
+                is Honeywell -> scanner.triggerScanner()
+                is HoneywellNative -> scanner.triggerScanner()
+                is Zebra -> scanner.triggerScanner()
             }
+        } catch (e: NoClassDefFoundError) {
+            //handle carefully
         }
     }
 
     fun lockScanner(lock: Boolean) {
-        if (scannerDevice != null) {
-            try {
-                when (scannerDevice!!.javaClass) {
-                    Honeywell::class.java -> {
-                        (scannerDevice as Honeywell).lockScannerEvent = lock
-                    }
-
-                    HoneywellNative::class.java -> {
-                        (scannerDevice as HoneywellNative).lockScannerEvent = lock
-                    }
-
-                    Zebra::class.java -> {
-                        (scannerDevice as Zebra).lockScannerEvent = lock
-                    }
-                }
-            } catch (e: NoClassDefFoundError) {
-                //handle carefully
+        val scanner = scannerDevice ?: return
+        try {
+            when (scanner) {
+                is Honeywell -> scanner.lockScannerEvent = lock
+                is HoneywellNative -> scanner.lockScannerEvent = lock
+                is Zebra -> scanner.lockScannerEvent = lock
             }
+        } catch (e: NoClassDefFoundError) {
+            //handle carefully
         }
     }
 }

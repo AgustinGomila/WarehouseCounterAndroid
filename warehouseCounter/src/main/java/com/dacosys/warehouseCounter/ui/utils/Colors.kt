@@ -23,6 +23,9 @@ import kotlin.math.roundToInt
 
 class Colors {
     companion object {
+
+        private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
+
         fun changeDrawableColor(icon: Int, newColor: Int): Drawable {
             val mDrawable = ContextCompat.getDrawable(context, icon)!!.mutate()
 
@@ -83,7 +86,7 @@ class Colors {
                 if (l <= 128) textLightColor()
                 else textDarkColor()
             } catch (ex: Exception) {
-                Log.e(this::class.java.simpleName, ex.message.toString())
+                Log.e(tag, ex.message.toString())
                 textDarkColor()
             }
         }
@@ -98,7 +101,7 @@ class Colors {
                 if (l <= 128) textLightColor()
                 else textDarkColor()
             } catch (ex: Exception) {
-                Log.e(this::class.java.simpleName, ex.message.toString())
+                Log.e(tag, ex.message.toString())
                 textDarkColor()
             }
         }
@@ -113,7 +116,7 @@ class Colors {
                 if (l <= 128) textLightColor()
                 else textDarkColor()
             } catch (ex: Exception) {
-                Log.e(this::class.java.simpleName, ex.message.toString())
+                Log.e(tag, ex.message.toString())
                 textDarkColor()
             }
         }
@@ -138,6 +141,14 @@ class Colors {
             val g = (Color.green(color) * factor).roundToInt()
             val b = (Color.blue(color) * factor).roundToInt()
             return Color.argb(a, min(r, 255), min(g, 255), min(b, 255))
+        }
+
+        fun darkenColor(color: Int, factor: Float): Int {
+            val alpha = Color.alpha(color)
+            val red = (Color.red(color) * factor).toInt()
+            val green = (Color.green(color) * factor).toInt()
+            val blue = (Color.blue(color) * factor).toInt()
+            return Color.argb(alpha, red, green, blue)
         }
 
         fun getColorWithAlpha(colorId: Int, alpha: Int): Int {

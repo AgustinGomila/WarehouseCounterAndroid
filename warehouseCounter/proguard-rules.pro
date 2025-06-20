@@ -19,10 +19,5 @@
 -dontobfuscate
 -dontshrink
 
-# Parceler library
--keep interface org.parceler.Parcel
--keep @org.parceler.Parcel class * { *; }
--keep class **$$Parcelable { *; }
-
 -renamesourcefileattribute SourceFile
 -keepattributes SourceFile,LineNumberTable

@@ -4,13 +4,13 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.widget.*
+import android.widget.SeekBar
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.databinding.ScanMultiplierSelectBinding
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import org.parceler.Parcels
 
 class MultiplierSelectActivity : AppCompatActivity() {
     private var tempMultiplier: Int? = null
@@ -18,10 +18,9 @@ class MultiplierSelectActivity : AppCompatActivity() {
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("title", title.toString())
-        savedInstanceState.putInt("tempMultiplier", tempMultiplier ?: 1)
+        savedInstanceState.putString(ARG_TITLE, title.toString())
+        savedInstanceState.putInt(ARG_MULTIPLIER, tempMultiplier ?: 1)
     }
-
 
     private lateinit var binding: ScanMultiplierSelectBinding
 
@@ -36,26 +35,34 @@ class MultiplierSelectActivity : AppCompatActivity() {
         // fuera de la ventana. Esta actividad se ve como un diálogo.
         setFinishOnTouchOutside(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         var tempTitle = getString(R.string.select_multiplier)
 
         if (savedInstanceState != null) {
-            val t1 = savedInstanceState.getString("title")
+            val t1 = savedInstanceState.getString(ARG_TITLE)
             if (!t1.isNullOrEmpty()) tempTitle = t1
 
-            tempMultiplier = savedInstanceState.getInt("tempMultiplier")
+            tempMultiplier = savedInstanceState.getInt(ARG_MULTIPLIER)
         } else {
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
+                val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                tempMultiplier = extras.getInt("multiplier")
+                tempMultiplier = extras.getInt(ARG_MULTIPLIER)
             }
         }
 
         title = tempTitle
 
         binding.selectButton.setOnClickListener { multiplierSelect() }
+
         binding.multiplierSeekBar.setOnSeekBarChangeListener(object :
             SeekBar.OnSeekBarChangeListener {
             override fun onStopTrackingTouch(seekBar: SeekBar) {}
@@ -80,10 +87,11 @@ class MultiplierSelectActivity : AppCompatActivity() {
 
         binding.multiplierTextView.text = String.format("%sX", tempMultiplier)
 
-        binding.multiplierSelect.setOnClickListener { onBackPressed() }
+        binding.multiplierSelect.setOnClickListener {
+            isBackPressed()
+        }
 
-        // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        Screen.setupUI(binding.multiplierSelect, this)
+        Screen.setupUI(binding.root, this)
     }
 
     private fun multiplierSelect() {
@@ -94,18 +102,23 @@ class MultiplierSelectActivity : AppCompatActivity() {
             setResult(RESULT_CANCELED, null)
             finish()
         } else {
-            settingViewModel.scanMultiplier = tempMultiplier!!
+            settingsVm.scanMultiplier = tempMultiplier!!
 
-            data.putExtra("multiplier", Parcels.wrap(tempMultiplier))
+            data.putExtra(ARG_MULTIPLIER, tempMultiplier)
             setResult(RESULT_OK, data)
             finish()
         }
     }
 
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()
+    }
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_MULTIPLIER = "multiplier"
     }
 }

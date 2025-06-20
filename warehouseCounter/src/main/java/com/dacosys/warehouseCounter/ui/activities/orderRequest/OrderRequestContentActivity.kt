@@ -1,32 +1,27 @@
 package com.dacosys.warehouseCounter.ui.activities.orderRequest
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.text.InputFilter
 import android.text.InputType
 import android.text.format.DateFormat
 import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
-import android.view.*
-import android.view.View.GONE
-import android.view.View.VISIBLE
-import android.widget.EditText
+import android.view.Menu
+import android.view.MenuItem
+import android.view.WindowManager
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.constraintlayout.widget.ConstraintSet
-import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -35,253 +30,63 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.orderRequest.OrcAdapter
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getPendingPath
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.removeOrdersFiles
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.Log
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.GetItemCode
+import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.orderRequest.LogCoroutines
+import com.dacosys.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.dacosys.warehouseCounter.databinding.OrderRequestActivityBothPanelsCollapsedBinding
-import com.dacosys.warehouseCounter.dto.log.Log
-import com.dacosys.warehouseCounter.dto.log.LogContent
-import com.dacosys.warehouseCounter.dto.orderRequest.*
-import com.dacosys.warehouseCounter.dto.orderRequest.Item.CREATOR.fromItemRoom
-import com.dacosys.warehouseCounter.misc.ParcelLong
+import com.dacosys.warehouseCounter.misc.CurrentUser
 import com.dacosys.warehouseCounter.misc.Statics
+import com.dacosys.warehouseCounter.misc.Statics.Companion.DATE_FORMAT
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.confirm
 import com.dacosys.warehouseCounter.misc.objects.status.ConfirmStatus.CREATOR.modify
-import com.dacosys.warehouseCounter.room.dao.item.ItemCoroutines
-import com.dacosys.warehouseCounter.room.entity.itemCode.ItemCode
-import com.dacosys.warehouseCounter.room.entity.itemRegex.ItemRegex
-import com.dacosys.warehouseCounter.scanners.JotterListener
+import com.dacosys.warehouseCounter.scanners.LifecycleListener
 import com.dacosys.warehouseCounter.scanners.Scanner
 import com.dacosys.warehouseCounter.scanners.nfc.Nfc
 import com.dacosys.warehouseCounter.scanners.rfid.Rfid
+import com.dacosys.warehouseCounter.scanners.scanCode.GetOrderRequestContentFromCode
+import com.dacosys.warehouseCounter.scanners.scanCode.GetOrderRequestContentFromCode.OrderRequestContentResult
+import com.dacosys.warehouseCounter.scanners.scanCode.GetResultFromCode
 import com.dacosys.warehouseCounter.ui.activities.common.EnterCodeActivity
 import com.dacosys.warehouseCounter.ui.activities.common.MultiplierSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.common.QtySelectorActivity
 import com.dacosys.warehouseCounter.ui.activities.item.ItemSelectActivity
 import com.dacosys.warehouseCounter.ui.activities.log.LogContentActivity
+import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrcAdapter
+import com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
+import com.dacosys.warehouseCounter.ui.utils.ParcelLong
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import kotlinx.serialization.json.Json
-import org.parceler.Parcels
-import java.io.UnsupportedEncodingException
+import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.concurrent.thread
 
 class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChangedListener,
     OrcAdapter.EditQtyListener, OrcAdapter.EditDescriptionListener,
     Scanner.ScannerListener,
-    SwipeRefreshLayout.OnRefreshListener, Rfid.RfidDeviceListener {
-    override fun onEditDescriptionRequired(position: Int, orc: OrderRequestContent) {
-        showDialogForItemDescription(orc)
-    }
+    SwipeRefreshLayout.OnRefreshListener, Rfid.RfidDeviceListener, OrcAdapter.CheckedChangedListener {
 
-    private fun onCheckCodeEnded(it: CheckCode.CheckCodeEnded) {
-        val orc = it.orc ?: return
-        itemCode = it.itemCode
-
-        // El código fue chequeado, se agrega y se selecciona en la lista
-        runOnUiThread { adapter?.add(arrayListOf(orc)) }
-
-        // Definir las cantidades según el modo de ingreso actual
-        if (binding.requiredDescCheckBox.isChecked &&
-            orc.item?.itemDescription == context.getString(
-                R.string.unknown_item
-            )
-        ) {
-            // Antes agregar descripción si es obligatorio.
-            // La función itemDescriptionDialog(orc) al final llama a setQty(orc)
-            showDialogForAddDescription(orc)
-            return
-        }
-
-        // Esta pausa permite que el Adapter se actualice a tiempo
-        Handler(mainLooper).postDelayed({
-            setQty(orc)
-        }, 250)
-        gentlyReturn()
-    }
-
-    private val menuItemRandomIt = 999001
-    private val menuItemManualCode = 999002
-    private val menuItemRandomOnListL = 999003
-    private val menuRegexItem = 999004
-
-    @SuppressLint("RestrictedApi")
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        menuInflater.inflate(R.menu.menu_read_activity, menu)
-
-        if (!settingViewModel.useBtRfid) {
-            menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
-        }
-
-        if (BuildConfig.DEBUG || Statics.testMode) {
-            menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
-            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item")
-            menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
-            menu.add(Menu.NONE, menuRegexItem, Menu.NONE, "Regex")
-        }
-
-        if (menu is MenuBuilder) {
-            menu.setOptionalIconsVisible(true)
-        }
-
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-
-        when (item.itemId) {
-            R.id.home, android.R.id.home -> {
-                onBackPressed()
-                return true
-            }
-
-            R.id.action_rfid_connect -> {
-                JotterListener.rfidStart(this)
-                return super.onOptionsItemSelected(item)
-            }
-
-            R.id.action_trigger_scan -> {
-                /*
-                val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321"
-                val s = Random().ints(10, 0, source.length)
-                    .asSequence()
-                    .map(source::get)
-                    .joinToString("")
-                scannerCompleted(s)
-                return super.onOptionsItemSelected(item)
-                */
-                JotterListener.trigger(this)
-                return super.onOptionsItemSelected(item)
-            }
-
-            R.id.action_read_barcode -> {
-                JotterListener.toggleCameraFloatingWindowVisibility(this)
-                return super.onOptionsItemSelected(item)
-            }
-
-            menuItemRandomOnListL -> {
-                val codes: ArrayList<String> = ArrayList()
-
-                (adapter?.fullList ?: ArrayList<OrderRequestContent>()
-                    .filter { it.item != null && !it.item?.codeRead.isNullOrEmpty() })
-                    .mapTo(codes) { it.item?.codeRead ?: "" }
-
-                if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
-                return super.onOptionsItemSelected(item)
-            }
-
-            menuItemRandomIt -> {
-                ItemCoroutines().getCodes(true) {
-                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
-                }
-                return super.onOptionsItemSelected(item)
-            }
-
-            menuItemManualCode -> {
-                enterCode()
-                return super.onOptionsItemSelected(item)
-            }
-
-            menuRegexItem -> {
-                scannerCompleted("0SM20220721092826007792261002857001038858")
-                return super.onOptionsItemSelected(item)
-            }
-        }
-        return true
-    }
-
-    private fun enterCode() {
-        runOnUiThread {
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle(R.string.enter_code)
-
-            val input = EditText(this)
-            input.inputType = InputType.TYPE_CLASS_TEXT
-            builder.setView(input)
-
-            builder.setPositiveButton(R.string.ok) { _, _ ->
-                scannerCompleted(input.text.toString())
-            }
-            builder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
-
-            builder.show()
-        }
-    }
-
-    private fun setQty(orc: OrderRequestContent) {
-        if (lastRegexResult != null) {
-            val qty = lastRegexResult?.qty?.toDouble()
-            if (qty == null) showSnackBar(
-                SnackBarEventData(
-                    getString(R.string.null_quantity_in_regex), ERROR
-                )
-            )
-
-            setQtyCollected(orc = orc, qty = qty ?: 1.toDouble())
-        } else {
-            if (partial || partialBlock) {
-                setQtyManually(orc)
-            } else {
-                setQtyCollected(orc = orc, qty = 1.toDouble())
-            }
-        }
-    }
-
-    private fun checkLotEnabled(orc: OrderRequestContent) {
-        // Check LOT ENABLED
-        val item = orc.item ?: return
-        if ((item.itemId ?: 0) > 0 && item.lotEnabled == true) {
-            val tLot = lastRegexResult?.lot ?: orc.lot?.lotId?.toString() ?: ""
-            if (tLot.isNotEmpty()) {
-                lastRegexResult = null
-                setLotCode(orc, tLot)
-            } else {
-                lotCodeDialog(orc)
-            }
-        }
-    }
-
-    override fun onDataSetChanged() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                fillSummaryRow()
-            }
-        }, 100)
-    }
-
-    override fun onEditQtyRequired(
-        position: Int,
-        content: OrderRequestContent,
-        initialQty: Double,
-        minValue: Double,
-        maxValue: Double,
-        multiplier: Int,
-    ) {
-        qtySelectorDialog(
-            orc = content,
-            initialQty = initialQty,
-            minValue = minValue,
-            maxValue = maxValue,
-            multiplier = multiplier,
-            total = true
-        )
-    }
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     override fun onRefresh() {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshOrc.isRefreshing = false
-            }
+            binding.swipeRefreshItem.isRefreshing = false
         }, 100)
     }
 
@@ -292,11 +97,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var panelBottomIsExpanded = false
     private var panelTopIsExpanded = false
 
-    private var itemCode: ItemCode? = null
-    private var orderRequest: OrderRequest? = null
+    private lateinit var orderRequest: OrderRequest
+    private var id: Long = 0L
+    private var filename: String = ""
+
     private var completeList: ArrayList<OrderRequestContent> = ArrayList()
-    private var checkedIdArray: ArrayList<Long> = ArrayList()
-    private var isNew: Boolean = false
+    private var checkedHashArray: ArrayList<String> = ArrayList()
 
     private var partial = true
     private var partialBlock = true
@@ -308,7 +114,32 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private var firstVisiblePos: Int? = null
     private var currentScrollPosition: Int = 0
 
-    private var log: Log? = null
+    private lateinit var summaryFragment: SummaryFragment
+
+    private val itemCount: Int
+        get() {
+            return adapter?.itemCount ?: 0
+        }
+
+    private val countChecked: Int
+        get() {
+            return adapter?.countChecked() ?: 0
+        }
+
+    private val totalCollected: Int
+        get() {
+            return (adapter?.qtyCollectedTotal() ?: 0).toInt()
+        }
+
+    private val totalRequested: Int
+        get() {
+            return (adapter?.qtyRequestedTotal() ?: 0).toInt()
+        }
+
+    private val currentItem: OrderRequestContent?
+        get() {
+            return adapter?.currentItem()
+        }
 
     private var allowClicks = true
     private var rejectNewInstances = false
@@ -329,11 +160,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     }
 
     private fun saveSharedPreferences() {
-        settingViewModel.scanModeCount = when {
-            !partialBlock && !partial -> 1 // Parcial auto
-            partialBlock -> 2 // Parcial bloqueado
-            else -> 0 // Manual
-        }
+        saveCurrentScanMode()
     }
 
     public override fun onSaveInstanceState(savedInstanceState: Bundle) {
@@ -343,91 +170,113 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
     private fun saveBundleValues(b: Bundle) {
         if (adapter != null) {
-            b.putParcelable("lastSelected", adapter?.currentItem())
+            b.putParcelable("lastSelected", currentItem)
             b.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: RecyclerView.NO_POSITION)
-            b.putParcelableArrayList("completeList", adapter?.fullList)
-            b.putLongArray("checkedIdArray", adapter?.checkedIdArray?.map { it }?.toLongArray())
+            b.putStringArrayList("checkedHashArray", adapter?.checkedHashArray ?: ArrayList<String>())
             b.putInt("currentScrollPosition", currentScrollPosition)
         }
 
-        b.putParcelable("itemCode", itemCode)
-        b.putParcelable("orderRequest", orderRequest)
+        b.putLong(ARG_ID, id)
+        b.putString(ARG_FILENAME, filename)
 
-        b.putBoolean("isNew", isNew)
+        savePanelState(b)
+        saveScanMode(b)
 
-        b.putParcelable("log", log)
+        if (tempQty != null) b.putDouble("tempQty", tempQty!!)
+        if (tempLotCode != null) b.putString("tempLotCode", tempLotCode)
 
+        // Guardar en Room la orden
+        saveTempOrder()
+    }
+
+    private fun savePanelState(b: Bundle) {
         b.putBoolean("panelTopIsExpanded", panelTopIsExpanded)
         b.putBoolean("panelBottomIsExpanded", panelBottomIsExpanded)
+    }
 
+    private fun saveScanMode(b: Bundle) {
         b.putBoolean("partial", partial)
         b.putBoolean("partialBlock", partialBlock)
         b.putBoolean("divided", divided)
         b.putBoolean("dividedBlock", dividedBlock)
-
-        b.putParcelable("lastRegexResult", lastRegexResult)
-
-        b.putBoolean("tempCompleted", tempCompleted)
     }
 
     private fun loadBundleValues(b: Bundle) {
-        // region Recuperar el título de la ventana
-        val t1 = b.getString("title")
+        // Recuperar el título de la ventana
+        val t1 = b.getString(ARG_TITLE)
         if (!t1.isNullOrEmpty()) tempTitle = t1
-        // endregion
 
-        itemCode = b.getParcelable("itemCode")
-        orderRequest = b.getParcelable("orderRequest")
-        completeList = b.getParcelableArrayList("completeList") ?: ArrayList()
-        checkedIdArray = (b.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
-        lastSelected = b.getParcelable("lastSelected")
+        checkedHashArray = b.getStringArrayList("checkedHashArray") ?: ArrayList()
+        lastSelected = b.parcelable("lastSelected")
         firstVisiblePos = if (b.containsKey("firstVisiblePos")) b.getInt("firstVisiblePos") else -1
         currentScrollPosition = b.getInt("currentScrollPosition")
 
-        isNew = b.getBoolean("isNew")
+        id = b.getLong(ARG_ID)
+        filename = b.getString(ARG_FILENAME) ?: ""
 
-        log = b.getParcelable("log")
+        loadScanMode(b)
+        loadPanelState(b)
 
+        binding.requiredDescCheckBox.isChecked = b.getBoolean("requiredDescription")
+
+        if (b.containsKey("tempQty")) tempQty = b.getDouble("tempQty")
+        if (b.containsKey("tempLotCode")) tempLotCode = b.getString("tempLotCode")
+    }
+
+    private fun loadPanelState(b: Bundle) {
+        panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
+        panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
+    }
+
+    private fun loadScanMode(b: Bundle) {
         partial = b.getBoolean("partial")
         partialBlock = b.getBoolean("partialBlock")
         divided = b.getBoolean("divided")
         dividedBlock = b.getBoolean("dividedBlock")
-        binding.requiredDescCheckBox.isChecked = b.getBoolean("requiredDescription")
-
-        panelBottomIsExpanded = b.getBoolean("panelBottomIsExpanded")
-        panelTopIsExpanded = b.getBoolean("panelTopIsExpanded")
-
-        lastRegexResult = b.getParcelable("lastRegexResult")
-
-        tempCompleted = b.getBoolean("tempCompleted")
     }
 
     private fun loadExtraBundleValues(extras: Bundle) {
-        val t1 = extras.getString("title")
+        val t1 = extras.getString(ARG_TITLE)
         if (!t1.isNullOrEmpty()) tempTitle = t1
 
-        isNew = extras.getBoolean("isNew")
-        orderRequest = Parcels.unwrap<OrderRequest>(extras.getParcelable("orderRequest"))
-
-        loadDefaultValues()
+        id = extras.getLong(ARG_ID)
+        filename = extras.getString(ARG_FILENAME) ?: ""
     }
 
-    private fun loadDefaultValues() {
-        val or = orderRequest ?: return
-        completeList = ArrayList(orderRequest?.content ?: ArrayList())
+    private fun loadOrderRequest() {
+        OrderRequestCoroutines.getByIdAsKtor(
+            id = id,
+            filename = filename,
+            onResult = {
+                if (it != null) {
 
-        log = Log(
-            or.clientId,
-            Statics.currentUserId,
-            or.description,
-            DateFormat.format("yyyy-MM-dd hh:mm:ss", System.currentTimeMillis()).toString(),
-            ArrayList()
+                    orderRequest = it
+                    completeList = ArrayList(it.contents)
+
+                    fillOrderRequest()
+                }
+            }
+        )
+    }
+
+    private fun fillOrderRequest() {
+        showSnackBar(
+            String.format(
+                getString(R.string.requested_count_state_),
+                if (orderRequest.description == "") getString(R.string.no_description) else orderRequest.description,
+                if (orderRequest.completed == true) getString(R.string.completed) else getString(R.string.pending)
+            ), INFO
         )
 
-        when (settingViewModel.scanModeCount) {
+        fillHeader()
+        fillAdapter(completeList)
+    }
+
+    private fun loadLastScanMode() {
+        when (settingsVm.scanModeCount) {
             1 -> {
                 partialBlock = false
-                partial = false // Parcial auto
+                partial = false // Parcial Auto
             }
 
             2 -> partialBlock = true // Parcial bloqueado
@@ -435,6 +284,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 partialBlock = false
                 partial = true // Manual
             }
+        }
+    }
+
+    private fun saveCurrentScanMode() {
+        settingsVm.scanModeCount = when {
+            !partialBlock && !partial -> 1 // Parcial Auto
+            partialBlock -> 2 // Parcial bloqueado
+            else -> 0 // Manual
         }
     }
 
@@ -449,6 +306,13 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 currentScrollPosition =
@@ -459,6 +323,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         // Para el llenado en el onStart siguiente de onCreate
         fillRequired = true
 
+        summaryFragment = supportFragmentManager.findFragmentById(R.id.summaryFragment) as SummaryFragment
+
         if (savedInstanceState != null) {
             // Recuperar el estado previo de la actividad con los datos guardados
             loadBundleValues(savedInstanceState)
@@ -466,37 +332,17 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             // Inicializar la actividad. EXTRAS: Parámetros que recibe la actividad
             val extras = intent.extras
             if (extras != null) loadExtraBundleValues(extras)
+            loadLastScanMode()
         }
 
-        // Nunca debería ser NULL.
-        if (orderRequest != null) {
-            if (orderRequest!!.description.isNotEmpty()) {
-                tempTitle = "${context.getString(R.string.count)}: ${orderRequest!!.description}"
-            }
-
-            if (orderRequest!!.orderRequestedType != null) {
-                binding.orTypeTextView.text = when (orderRequest!!.orderRequestedType) {
-                    OrderRequestType.deliveryAudit -> OrderRequestType.deliveryAudit.description
-                    OrderRequestType.prepareOrder -> OrderRequestType.prepareOrder.description
-                    OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
-                    OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
-                    OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
-                    else -> context.getString(R.string.counted)
-                }
-            }
-        }
-
-        title = tempTitle
-
-        binding.swipeRefreshOrc.setOnRefreshListener(this)
-        binding.swipeRefreshOrc.setColorSchemeResources(
+        binding.swipeRefreshItem.setOnRefreshListener(this)
+        binding.swipeRefreshItem.setColorSchemeResources(
             android.R.color.holo_blue_bright,
             android.R.color.holo_green_light,
             android.R.color.holo_orange_light,
             android.R.color.holo_red_light
         )
 
-        // Para expandir y colapsar el panel inferior
         setBottomPanelAnimation()
         setTopPanelAnimation()
 
@@ -523,21 +369,23 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         binding.removeButton.setOnClickListener {
             if (allowClicks) {
+
                 allowClicks = false
-                removeItem()
+                LifecycleListener.lockScanner(this, true)
+
+                removeItem {
+                    gentlyReturn()
+                }
             }
         }
 
         binding.manualCodeButton.setOnClickListener {
-            if (allowClicks) {
-                allowClicks = false
-                manualAddItem()
-            }
+            enterCode()
         }
 
         binding.requiredDescCheckBox.setOnCheckedChangeListener(null)
         binding.requiredDescCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            settingViewModel.requiredDescription = isChecked
+            settingsVm.requiredDescription = isChecked
         }
 
         binding.partialButton.setOnClickListener {
@@ -565,7 +413,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
 
         // region Traer de la configuración guardada
-        binding.requiredDescCheckBox.isChecked = settingViewModel.requiredDescription
+        binding.requiredDescCheckBox.isChecked = settingsVm.requiredDescription
 
         binding.multiplierButton.setOnClickListener {
             if (allowClicks) {
@@ -573,58 +421,73 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 multiplierDialog()
             }
         }
-
-        setPanels()
-
-        setupPartial()
-        setupDivided()
-        setMultiplierButtonText()
     }
 
-    private fun setPanels() {
-        val currentLayout = ConstraintSet()
-        if (panelBottomIsExpanded) {
-            if (panelTopIsExpanded) currentLayout.load(this, R.layout.order_request_activity)
-            else currentLayout.load(this, R.layout.order_request_activity_top_panel_collapsed)
-        } else {
-            if (panelTopIsExpanded) currentLayout.load(this, R.layout.order_request_activity_bottom_panel_collapsed)
-            else currentLayout.load(this, R.layout.order_request_activity_both_panels_collapsed)
+    private val requiredLayout: Int
+        get() {
+            val r = if (panelBottomIsExpanded) {
+                if (panelTopIsExpanded) layoutBothPanelsExpanded
+                else layoutTopPanelCollapsed
+            } else {
+                if (panelTopIsExpanded) layoutBottomPanelCollapsed
+                else layoutBothPanelsCollapsed
+            }
+
+            if (BuildConfig.DEBUG) {
+                when (r) {
+                    layoutBothPanelsExpanded -> println("SELECTED LAYOUT: Both Panels Expanded")
+                    layoutBothPanelsCollapsed -> println("SELECTED LAYOUT: Both Panels Collapsed")
+                    layoutTopPanelCollapsed -> println("SELECTED LAYOUT: Top Panel Collapsed")
+                    layoutBottomPanelCollapsed -> println("SELECTED LAYOUT: Bottom Panel Collapsed")
+                }
+            }
+
+            return r
         }
 
-        val transition = ChangeBounds()
-        transition.interpolator = FastOutSlowInInterpolator()
-        transition.addListener(object : Transition.TransitionListener {
-            override fun onTransitionResume(transition: Transition?) {}
-            override fun onTransitionPause(transition: Transition?) {}
-            override fun onTransitionStart(transition: Transition?) {}
-            override fun onTransitionEnd(transition: Transition?) {}
-            override fun onTransitionCancel(transition: Transition?) {}
-        })
+    private val layoutBothPanelsExpanded: Int
+        get() {
+            return R.layout.order_request_activity
+        }
 
-        TransitionManager.beginDelayedTransition(binding.orderRequestContent, transition)
-        currentLayout.applyTo(binding.orderRequestContent)
+    private val layoutBothPanelsCollapsed: Int
+        get() {
+            return R.layout.order_request_activity_both_panels_collapsed
+        }
 
-        if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text = context.getString(R.string.collapse_panel)
-        else binding.expandBottomPanelButton?.text = context.getString(R.string.scan_options)
+    private val layoutTopPanelCollapsed: Int
+        get() {
+            return R.layout.order_request_activity_top_panel_collapsed
+        }
 
-        if (panelTopIsExpanded) binding.expandTopPanelButton?.text = context.getString(R.string.collapse_panel)
-        else binding.expandTopPanelButton?.text = context.getString(R.string.item_operations)
+    private val layoutBottomPanelCollapsed: Int
+        get() {
+            return R.layout.order_request_activity_bottom_panel_collapsed
+        }
+
+    private fun setPanels() {
+        runOnUiThread {
+            val currentLayout = ConstraintSet()
+            currentLayout.load(this, requiredLayout)
+            currentLayout.applyTo(binding.root)
+
+            if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text =
+                context.getString(R.string.collapse_panel)
+            else binding.expandBottomPanelButton?.text = context.getString(R.string.scan_options)
+
+            if (panelTopIsExpanded) binding.expandTopPanelButton?.text = context.getString(R.string.collapse_panel)
+            else binding.expandTopPanelButton?.text = context.getString(R.string.item_operations)
+        }
     }
 
     private fun setBottomPanelAnimation() {
         if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
         binding.expandBottomPanelButton!!.setOnClickListener {
-            val nextLayout = ConstraintSet()
-            if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_activity_bottom_panel_collapsed)
-                else nextLayout.load(this, R.layout.order_request_activity_both_panels_collapsed)
-            } else {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_activity)
-                else nextLayout.load(this, R.layout.order_request_activity_top_panel_collapsed)
-            }
-
             panelBottomIsExpanded = !panelBottomIsExpanded
+            val nextLayout = ConstraintSet()
+            nextLayout.load(this, requiredLayout)
+
             val transition = ChangeBounds()
             transition.interpolator = FastOutSlowInInterpolator()
             transition.addListener(object : Transition.TransitionListener {
@@ -638,13 +501,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 override fun onTransitionCancel(transition: Transition?) {}
             })
 
-            TransitionManager.beginDelayedTransition(binding.orderRequestContent, transition)
+            TransitionManager.beginDelayedTransition(binding.root, transition)
+            nextLayout.applyTo(binding.root)
 
             if (panelBottomIsExpanded) binding.expandBottomPanelButton?.text =
                 context.getString(R.string.collapse_panel)
             else binding.expandBottomPanelButton?.text = context.getString(R.string.scan_options)
-
-            nextLayout.applyTo(binding.orderRequestContent)
         }
     }
 
@@ -652,16 +514,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         if (resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT) return
 
         binding.expandTopPanelButton!!.setOnClickListener {
-            val nextLayout = ConstraintSet()
-            if (panelBottomIsExpanded) {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_activity_top_panel_collapsed)
-                else nextLayout.load(this, R.layout.order_request_activity)
-            } else {
-                if (panelTopIsExpanded) nextLayout.load(this, R.layout.order_request_activity_both_panels_collapsed)
-                else nextLayout.load(this, R.layout.order_request_activity_bottom_panel_collapsed)
-            }
-
             panelTopIsExpanded = !panelTopIsExpanded
+            val nextLayout = ConstraintSet()
+            nextLayout.load(this, requiredLayout)
 
             val transition = ChangeBounds()
             transition.interpolator = FastOutSlowInInterpolator()
@@ -676,20 +531,17 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 override fun onTransitionCancel(transition: Transition?) {}
             })
 
-            TransitionManager.beginDelayedTransition(binding.orderRequestContent, transition)
+            TransitionManager.beginDelayedTransition(binding.root, transition)
+            nextLayout.applyTo(binding.root)
 
             if (panelTopIsExpanded) binding.expandTopPanelButton?.text = context.getString(R.string.collapse_panel)
             else binding.expandTopPanelButton?.text = context.getString(R.string.item_operations)
-
-            nextLayout.applyTo(binding.orderRequestContent)
         }
     }
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshOrc.isRefreshing = show
-            }
+            binding.swipeRefreshItem.isRefreshing = show
         }, 20)
     }
 
@@ -755,29 +607,6 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         }
     }
 
-    private fun cancelCount() {
-        if ((adapter?.itemCount ?: 0) <= 0) {
-            finish()
-            return
-        }
-
-        runOnUiThread {
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle(getString(R.string.save_count))
-            builder.setMessage(getString(R.string.save_changes_and_continue_later))
-            builder.setNeutralButton(getString(R.string.cancel)) { dialog, _ ->
-                dialog.dismiss()
-            }
-            builder.setNegativeButton(R.string.no) { _, _ -> finish() }
-            builder.setPositiveButton(R.string.yes) { _, _ ->
-                processCount(completed = false, finishAtEnd = true)
-            }
-
-            val alertDialog: AlertDialog = builder.create()
-            alertDialog.show()
-        }
-    }
-
     private fun fillAdapter(t: ArrayList<OrderRequestContent>) {
         completeList = t
 
@@ -789,20 +618,19 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     // Si el adapter es NULL es porque aún no fue creado.
                     // Por lo tanto, puede ser que los valores de [lastSelected]
                     // sean valores guardados de la instancia anterior y queremos preservarlos.
-                    lastSelected = adapter?.currentItem()
+                    lastSelected = currentItem
                 }
 
-                adapter = OrcAdapter(
-                    recyclerView = binding.recyclerView,
-                    fullList = completeList,
-                    allowEditQty = true,
-                    allowEditDescription = true,
-                    checkedIdArray = checkedIdArray,
-                    orType = orderRequest?.orderRequestedType
-                        ?: OrderRequestType.stockAuditFromDevice,
-                )
-
-                refreshAdapterListeners()
+                adapter = OrcAdapter.Builder()
+                    .recyclerView(binding.recyclerView)
+                    .fullList(completeList)
+                    .allowEditQty(true, this)
+                    .allowEditDescription(true, this)
+                    .checkedHashArray(checkedHashArray)
+                    .orType(orderRequest.orderRequestType)
+                    .dataSetChangedListener(this)
+                    .checkedChangedListener(this)
+                    .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
                 binding.recyclerView.adapter = adapter
@@ -811,8 +639,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                     // Horrible wait for a full load
                 }
 
-                // Estas variables locales evitar posteriores cambios de estado.
-                val ls = lastSelected
+                // Variables locales para evitar cambios posteriores de estado.
+                val ls = lastSelected ?: t.firstOrNull()
                 val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
                     adapter?.selectItem(ls, false)
@@ -820,54 +648,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 showProgressBar(false)
-            }
-        }
-    }
-
-    private fun refreshAdapterListeners() {
-        adapter?.refreshListeners(
-            checkedChangedListener = null,
-            dataSetChangedListener = this,
-            editQtyListener = this,
-            editDescriptionListener = this
-        )
-    }
-
-    private fun fillSummaryRow() {
-        runOnUiThread {
-            if (orderRequest?.orderRequestedType != OrderRequestType.stockAuditFromDevice) {
-                binding.totalLabelTextView.text = context.getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context.getString(R.string.cant)
-                binding.selectedLabelTextView.visibility = VISIBLE
-                binding.selectedLabelTextView.text = context.getString(R.string.checked)
-
-                if (adapter != null) {
-                    val cont = adapter?.qtyRequestedTotal() ?: 0.0
-                    val t = adapter?.itemCount ?: 0
-                    binding.totalTextView.text = t.toString()
-                    binding.qtyReqTextView.text = Statics.roundToString(cont, 0)
-                    binding.selectedTextView.text = adapter!!.countChecked().toString()
-                }
-            } else {
-                binding.totalLabelTextView.text = context.getString(R.string.total)
-                binding.qtyReqLabelTextView.text = context.getString(R.string.cont_)
-                binding.selectedLabelTextView.visibility = GONE
-
-                if (adapter != null) {
-                    val cont = adapter?.qtyCollectedTotal() ?: 0.0
-                    val t = adapter?.itemCount ?: 0
-                    binding.totalTextView.text = t.toString()
-                    binding.qtyReqTextView.text = Statics.roundToString(cont, 0)
-                }
-            }
-
-            if (adapter == null) {
-                binding.totalTextView.text = 0.toString()
-                binding.qtyReqTextView.text = 0.toString()
-                binding.selectedTextView.text = 0.toString()
+                gentlyReturn()
             }
         }
     }
@@ -875,105 +659,112 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun setMultiplierButtonText() {
         runOnUiThread {
             binding.multiplierButton.text = String.format(
-                context.getString(R.string.multiplier_x), settingViewModel.scanMultiplier
+                context.getString(R.string.multiplier_x), settingsVm.scanMultiplier
             )
         }
     }
 
     @SuppressLint("SimpleDateFormat")
-    private fun removeItem() {
-        if (adapter?.currentItem() == null && (adapter?.countChecked() ?: 0) <= 0) {
-            allowClicks = true
+    private fun removeItem(onFinish: (Boolean) -> Unit) {
+
+        val currentItem = currentItem
+        if (currentItem == null && countChecked <= 0) {
+            onFinish(false)
             return
         }
 
         val orcsToRemove =
-            if ((adapter?.countChecked() ?: 0) > 0)
-                adapter?.getAllChecked() else arrayListOf(adapter?.currentItem()!!)
+            if (countChecked > 0) adapter?.getAllChecked() ?: arrayListOf()
+            else if (currentItem != null) arrayListOf(currentItem)
+            else arrayListOf()
 
         var allCodes = ""
-        if (orcsToRemove!!.isNotEmpty()) {
+        if (orcsToRemove.isNotEmpty()) {
             for (w in orcsToRemove) {
-                if (w.item != null) {
-                    allCodes = "${w.item?.ean}, $allCodes"
-                }
+                allCodes = "${w.ean}, $allCodes"
             }
 
             if (allCodes.endsWith(", ")) {
                 allCodes = allCodes.substring(0, allCodes.length - 2)
             }
 
-            allCodes = if (adapter!!.countChecked() > 1) {
+            allCodes = if (countChecked > 1) {
                 String.format(getString(R.string.do_you_want_to_remove_the_items), allCodes)
             } else {
                 String.format(getString(R.string.do_you_want_to_remove_the_item), allCodes)
             }
         }
 
-        JotterListener.pauseReaderDevices(this)
+        if (allCodes.isEmpty()) {
+            onFinish(false)
+            return
+        }
 
         runOnUiThread {
             try {
                 val adb = AlertDialog.Builder(this)
                 adb.setTitle(if (orcsToRemove.count() > 1) R.string.remove_items else R.string.remove_item)
                 adb.setMessage(allCodes)
-                adb.setNegativeButton(R.string.cancel, null)
+                adb.setOnCancelListener { onFinish(false) }
+                adb.setNegativeButton(R.string.cancel) { _, _ -> onFinish(false) }
                 adb.setPositiveButton(R.string.accept) { _, _ ->
+                    var isDone = false
 
-                    val logContent: ArrayList<LogContent> = ArrayList(log?.content ?: ArrayList())
+                    for ((index, i) in orcsToRemove.withIndex()) {
 
-                    for (i in orcsToRemove) {
-                        if (i.item != null && i.qty != null) {
-                            val itemObj = i.item!!
-                            val qtyObj = i.qty!!
-                            val lot = i.lot
+                        val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
+                        val now = df.format(Calendar.getInstance().time)
 
-                            val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
-                            val now = df.format(Calendar.getInstance().time)
+                        val variationQty = i.qtyCollected!! * -1
+                        if (variationQty != 0.toDouble()) {
 
-                            val variationQty = qtyObj.qtyCollected!! * -1
-                            if (variationQty != 0.toDouble()) {
-                                logContent.add(
-                                    LogContent(
-                                        itemId = itemObj.itemId,
-                                        itemStr = itemObj.itemDescription,
-                                        itemCode = itemObj.ean,
-                                        lotId = lot?.lotId,
-                                        lotCode = lot?.code ?: "",
-                                        scannedCode = itemObj.codeRead,
-                                        variationQty = variationQty,
-                                        finalQty = 0.toDouble(),
-                                        date = now
-                                    )
-                                )
-                            }
+                            LogCoroutines.add(
+                                orderId = id,
+                                log = Log(
+                                    clientId = orderRequest.clientId,
+                                    userId = CurrentUser.userId,
+                                    itemId = i.itemId,
+                                    itemDescription = i.itemDescription,
+                                    itemCode = i.ean,
+                                    scannedCode = i.codeRead,
+                                    variationQty = variationQty,
+                                    finalQty = 0.toDouble(),
+                                    date = now
+                                ),
+                                onResult = { isDone = index == orcsToRemove.lastIndex }
+                            )
+                        } else {
+                            isDone = index == orcsToRemove.lastIndex
                         }
                     }
 
-                    log?.content = logContent
+                    val startTime = System.currentTimeMillis()
+                    while (!isDone) {
+                        if (System.currentTimeMillis() - startTime == (settingsVm.connectionTimeout * 1000).toLong()) {
+                            isDone = true
+                        }
+                    }
 
-                    adapter!!.remove(orcsToRemove)
+                    adapter?.remove(orcsToRemove)
+                    onFinish(true)
                 }
                 adb.show()
             } catch (ex: java.lang.Exception) {
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+                ErrorLog.writeLog(this, tag, ex.message.toString())
+                onFinish(false)
             }
         }
-
-        JotterListener.resumeReaderDevices(this)
-        allowClicks = true
     }
 
     private fun selectItemDialog() {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, ItemSelectActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-
-        intent.putExtra("title", context.getString(R.string.select_item))
-        intent.putExtra("multiSelect", false)
+        intent.putExtra(ARG_TITLE, context.getString(R.string.select_item))
+        intent.putExtra(ItemSelectActivity.ARG_MULTI_SELECT, false)
         resultForItemSelect.launch(intent)
     }
 
@@ -983,45 +774,69 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
                     val items: ArrayList<ParcelLong> =
-                        data.getParcelableArrayListExtra("ids") ?: return@registerForActivityResult
+                        data.parcelableArrayList(ItemSelectActivity.ARG_IDS) ?: arrayListOf()
 
-                    if (items.isEmpty()) return@registerForActivityResult
-
-                    ItemCoroutines().getById(items.first().value) { it2 ->
-                        if (it2 == null) return@getById
-
-                        try {
-                            addOrc(OrderRequestContent().apply {
-                                item = fromItemRoom(it2)
-                                lot = null
-                                qty = Qty().apply {
+                    if (items.isNotEmpty()) {
+                        ItemCoroutines.getById(items.first().value) { it2 ->
+                            if (it2 != null) {
+                                addOrc(OrderRequestContent().apply {
+                                    codeRead = it2.ean
+                                    itemId = it2.itemId
+                                    itemDescription = it2.description
+                                    ean = it2.ean
+                                    price = it2.price?.toDouble()
+                                    itemActive = it2.active == 1
+                                    externalId = it2.externalId
+                                    itemCategoryId = it2.itemCategoryId
+                                    lotEnabled = it2.lotEnabled == 1
                                     qtyCollected = 0.toDouble()
                                     qtyRequested = 0.toDouble()
-                                }
-                            })
-                        } catch (ex: Exception) {
-                            val res =
-                                context.getString(R.string.an_error_occurred_while_trying_to_add_the_item)
-                            showSnackBar(SnackBarEventData(res, ERROR))
-                            android.util.Log.e(this::class.java.simpleName, res)
+                                })
+                            }
                         }
+                        gentlyReturn()
                     }
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
-            } finally {
+                ErrorLog.writeLog(this, tag, ex)
                 gentlyReturn()
             }
         }
 
     private fun finishCountDialog() {
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
+        saveTempOrder {
+            launchFinishDialog()
+        }
+    }
+
+    private fun saveTempOrder(onFinish: () -> Unit = {}) {
+        val fullList = adapter?.fullList?.toList() ?: listOf()
+
+        orderRequest.contents = fullList
+
+        OrderRequestCoroutines.update(
+            orderRequest = orderRequest,
+            onEvent = {
+                if (it.snackBarType != SnackBarType.SUCCESS) {
+                    showSnackBar(it.text, it.snackBarType)
+                }
+            },
+            onFilename = {
+                if (it.isNotEmpty()) {
+                    onFinish()
+                }
+            }
+        )
+    }
+
+    private fun launchFinishDialog() {
         val intent = Intent(this, OrderRequestConfirmActivity::class.java)
-
-        intent.putExtra("orderRequest", Parcels.wrap<OrderRequest>(orderRequest))
-        intent.putParcelableArrayListExtra("orcArray", adapter?.fullList ?: ArrayList())
+        intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        intent.putExtra(OrderRequestConfirmActivity.ARG_ID, id)
+        intent.putExtra(OrderRequestConfirmActivity.ARG_FILENAME, filename)
         resultForFinishCount.launch(intent)
     }
 
@@ -1030,116 +845,45 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    when (Parcels.unwrap<ConfirmStatus>(data.getParcelableExtra("confirmStatus"))) {
-                        modify -> processCount(completed = false, finishAtEnd = true)
-                        confirm -> processCount(completed = true, finishAtEnd = true)
+                    when (data.parcelable<ConfirmStatus>(OrderRequestConfirmActivity.ARG_CONFIRM_STATUS)) {
+                        modify -> processCount(completed = false)
+                        confirm -> processCount(completed = true)
                     }
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
         }
 
-    // Flag que guarda el estado "completed" en caso de que
-    // se requerirán permisos de escritura y se tenga que retomar la
-    // actividad después de que el usuario los otorgue.
-    private var tempCompleted = false
-    private var tempFinishAtEnd = false
+    private fun processCount(completed: Boolean) {
+        LogCoroutines.getByOrderId(
+            orderId = id,
+            onResult = {
+                orderRequest.completed = completed
+                orderRequest.finishDate =
+                    if (completed) DateFormat.format(DATE_FORMAT, System.currentTimeMillis()).toString()
+                    else ""
+                orderRequest.logs = it.toList()
 
-    private fun processCount(completed: Boolean, finishAtEnd: Boolean = false) {
-        val tOrderRequest = orderRequest ?: return
-
-        tempCompleted = completed
-        tempFinishAtEnd = finishAtEnd
-        var error = false
-
-        // Preparar el conteo
-        tOrderRequest.content = adapter?.fullList ?: ArrayList()
-        tOrderRequest.completed = tempCompleted
-        tOrderRequest.finishDate = if (tempCompleted) DateFormat.format(
-            "yyyy-MM-dd hh:mm:ss", System.currentTimeMillis()
-        ).toString()
-        else ""
-
-        if (tOrderRequest.filename.isEmpty()) {
-            val df = SimpleDateFormat("yyMMddHHmmssZ", Locale.getDefault())
-            tOrderRequest.filename = String.format("%s.json", df.format(Calendar.getInstance().time))
-        }
-        tOrderRequest.log = log ?: Log()
-
-        setImagesJson()
-
-        try {
-            orJson = Json.encodeToString(OrderRequest.serializer(), tOrderRequest)
-            android.util.Log.i(this::class.java.simpleName, orJson)
-            orFileName = tOrderRequest.filename.substringAfterLast('/')
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
-                PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
-            ) {
-                error = !Statics.writeJsonToFile(
-                    v = binding.root,
-                    filename = orFileName,
-                    value = orJson,
-                    completed = tempCompleted
-                )
-                if (!error && tempFinishAtEnd) finish()
-            } else {
-                requestPermissions(
-                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_EXTERNAL_STORAGE
-                )
+                saveTempOrder {
+                    finish()
+                }
             }
-        } catch (e: UnsupportedEncodingException) {
-            e.printStackTrace()
-            android.util.Log.e(this::class.java.simpleName, e.message ?: "")
-        }
-    }
-
-    private fun setImagesJson() {
-        /*
-        // IMAGE CONTROL
-        // LUEGO, CUANDO FINALMENTE SE ENVÍA LA RECOLECCIÓN,
-        // EL SERVIDOR DEVUELVE LOS ID'S NECESARIOS PARA COMPLETAR LOS DATOS DEL DOCUMENTO
-        // Y SUBIRLO AL FTP
-        if (docContObjArrayList.count() > 0) {
-            val docs: ArrayList<Document> = ArrayList()
-            docContObjArrayList.forEach { t ->
-
-                val x = Document()
-                x.description = t.description
-                x.observations = t.obs
-                x.reference = t.reference
-
-                val y = DocumentContent(
-                    t.filename_original,
-                    DocumentType.Jpg
-                )
-
-                x.content = arrayListOf(y)
-                docs.add(x)
-            }
-
-            orderRequest!!.docArray = docs
-        }
-        */
+        )
     }
 
     private fun showLogDialog() {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, LogContentActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-
-        intent.putExtra("title", context.getString(R.string.count_log))
-        intent.putExtra("log", log)
-        intent.putExtra("logContent", ArrayList(log?.content ?: ArrayList()))
+        intent.putExtra(LogContentActivity.ARG_TITLE, context.getString(R.string.count_log))
+        intent.putExtra(LogContentActivity.ARG_ID, id)
         resultForLog.launch(intent)
     }
 
@@ -1148,50 +892,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             gentlyReturn()
         }
 
-    private fun manualAddItem() {
-        runOnUiThread {
-            val input = EditText(this)
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle(R.string.manual_code)
-            builder.setMessage(R.string.enter_the_code)
-            builder.setView(input)
-            builder.setNegativeButton(R.string.cancel) { dialog, _ ->
-                dialog.dismiss()
-            }
-            builder.setPositiveButton(R.string.ok) { _, _ ->
-                scannerCompleted(input.text.toString())
-            }
-
-            val alert = builder.create()
-            alert.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
-            alert.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
-            alert.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-
-            input.isFocusable = true
-            input.isFocusableInTouchMode = true
-            input.maxLines = 1
-            input.inputType = InputType.TYPE_CLASS_TEXT
-            input.filters = arrayOf<InputFilter>(InputFilter.AllCaps())
-            input.setOnKeyListener { _, keyCode, event ->
-                if (event.action == KeyEvent.ACTION_DOWN) {
-                    when (keyCode) {
-                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                            alert.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
-                        }
-                    }
-                }
-                false
-            }
-
-            alert.show()
-            input.requestFocus()
-            allowClicks = true
-        }
-    }
-
     private fun setQtyManually(orc: OrderRequestContent) {
-        val multi = if (itemCode == null) settingViewModel.scanMultiplier
-        else itemCode?.qty ?: 0
+        val multi =
+            if (tempQty == null) settingsVm.scanMultiplier
+            else tempQty ?: 0
 
         qtySelectorDialog(
             orc = orc,
@@ -1206,12 +910,12 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun addOrc(tempOrc: OrderRequestContent?): Boolean {
         try {
             val count = adapter?.itemCount ?: 0
-            if (Statics.demoMode) {
+            if (Statics.DEMO_MODE) {
                 if (count >= 5) {
                     val res =
                         context.getString(R.string.maximum_amount_of_demonstration_mode_reached)
-                    showSnackBar(SnackBarEventData(res, ERROR))
-                    android.util.Log.e(this::class.java.simpleName, res)
+                    showSnackBar(res, ERROR)
+                    android.util.Log.e(tag, res)
                     return false
                 }
             }
@@ -1224,10 +928,9 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             // Buscar primero en el adaptador de la lista
             for (a in 0 until count) {
                 val orc = adapter?.currentList?.get(a) ?: continue
-                if (orc.item?.itemId == tempOrc.item?.itemId) {
-                    setQtyCollected(
-                        orc = orc, qty = tempOrc.qty?.qtyCollected ?: 0.toDouble(), manualAdd = true
-                    )
+                if (orc.itemId == tempOrc.itemId) {
+                    val qtyCollected = tempOrc.qtyCollected ?: 0.toDouble()
+                    setQtyCollected(orc = orc, qty = qtyCollected, manualAdd = true)
                     return true
                 }
             }
@@ -1244,8 +947,8 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
             return true
         } catch (ex: Exception) {
-            showSnackBar(SnackBarEventData(ex.message.toString(), ERROR))
-            android.util.Log.e(this::class.java.simpleName, ex.message.toString())
+            showSnackBar(ex.message.toString(), ERROR)
+            android.util.Log.e(tag, ex.message.toString())
             return false
         }
     }
@@ -1253,14 +956,14 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun showDialogForItemDescription(orc: OrderRequestContent) {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-        intent.putExtra("title", context.getString(R.string.enter_description))
-        intent.putExtra("hint", context.getString(R.string.item_description_hint))
-        intent.putExtra("orc", orc)
+        intent.putExtra(ARG_TITLE, context.getString(R.string.enter_description))
+        intent.putExtra(EnterCodeActivity.ARG_HINT, context.getString(R.string.item_description_hint))
+        intent.putExtra(EnterCodeActivity.ARG_ORC, orc)
         resultForEnterDescription.launch(intent)
     }
 
@@ -1269,10 +972,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (data != null) {
-                    val description = data.getStringExtra("code") ?: ""
-                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra("orc"))
+                    val description = data.getStringExtra(EnterCodeActivity.ARG_CODE) ?: ""
+                    val orc = data.parcelable<OrderRequestContent>(EnterCodeActivity.ARG_ORC)
 
-                    val item = orc.item ?: return@registerForActivityResult
+                    val item = orc ?: return@registerForActivityResult
 
                     if (it.resultCode == RESULT_OK) {
                         if (description.trim().isEmpty() && binding.requiredDescCheckBox.isChecked) {
@@ -1292,7 +995,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
@@ -1301,14 +1004,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun showDialogForAddDescription(orc: OrderRequestContent) {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-        intent.putExtra("title", context.getString(R.string.enter_description))
-        intent.putExtra("hint", context.getString(R.string.item_description_hint))
-        intent.putExtra("orc", orc)
+        intent.putExtra(ARG_TITLE, context.getString(R.string.enter_description))
+        intent.putExtra(EnterCodeActivity.ARG_HINT, context.getString(R.string.item_description_hint))
+        intent.putExtra(EnterCodeActivity.ARG_CAP_SENTENCES, true)
+        intent.putExtra(EnterCodeActivity.ARG_ORC, orc)
         resultForAddDescription.launch(intent)
     }
 
@@ -1317,10 +1021,10 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (data != null) {
-                    val description = data.getStringExtra("code") ?: ""
-                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra("orc"))
+                    val description = data.getStringExtra(EnterCodeActivity.ARG_CODE) ?: ""
+                    val orc = data.parcelable<OrderRequestContent>(EnterCodeActivity.ARG_ORC)
 
-                    val item = orc.item ?: return@registerForActivityResult
+                    val item = orc ?: return@registerForActivityResult
 
                     if (it.resultCode == RESULT_OK) {
                         if (description.trim().isEmpty() && binding.requiredDescCheckBox.isChecked) {
@@ -1341,7 +1045,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
@@ -1350,14 +1054,13 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun lotCodeDialog(orc: OrderRequestContent) {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(context, EnterCodeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-
-        intent.putExtra("title", context.getString(R.string.enter_lot_code))
-        intent.putExtra("hint", context.getString(R.string.lot_code))
-        intent.putExtra("orc", orc)
+        intent.putExtra(ARG_TITLE, context.getString(R.string.enter_lot_code))
+        intent.putExtra(EnterCodeActivity.ARG_HINT, context.getString(R.string.lot_code))
+        intent.putExtra(EnterCodeActivity.ARG_ORC, orc)
         resultForLotCodeSelect.launch(intent)
     }
 
@@ -1366,13 +1069,16 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val code = data.getStringExtra("code") ?: ""
-                    val orc = Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra("orc"))
-                    setLotCode(orc, code)
+                    val code = data.getStringExtra(EnterCodeActivity.ARG_CODE) ?: ""
+                    val orc = data.parcelable<OrderRequestContent>(EnterCodeActivity.ARG_ORC)
+
+                    if (orc != null) {
+                        setLotCode(orc = orc, lotCode = code)
+                    }
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
@@ -1396,17 +1102,80 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     public override fun onStart() {
         super.onStart()
 
-        thread {
-            if (fillRequired) {
-                fillRequired = false
-                fillAdapter(completeList)
-            }
+        setPanels()
+        setupPartial()
+        setupDivided()
+        setMultiplierButtonText()
+
+        if (fillRequired) {
+            fillRequired = false
+
+            loadOrderRequest()
+        } else {
+            gentlyReturn()
         }
-        gentlyReturn()
     }
 
-    override fun onBackPressed() {
+    private fun fillHeader() {
+        runOnUiThread {
+            if (orderRequest.description.isNotEmpty()) {
+                tempTitle = "${context.getString(R.string.count)}: ${orderRequest.description}"
+            }
+
+            binding.orTypeTextView.text = when (orderRequest.orderRequestType) {
+                OrderRequestType.deliveryAudit -> OrderRequestType.deliveryAudit.description
+                OrderRequestType.notDefined -> OrderRequestType.notDefined.description
+                OrderRequestType.packaging -> OrderRequestType.packaging.description
+                OrderRequestType.prepareOrder -> OrderRequestType.prepareOrder.description
+                OrderRequestType.receptionAudit -> OrderRequestType.receptionAudit.description
+                OrderRequestType.stockAudit -> OrderRequestType.stockAudit.description
+                OrderRequestType.stockAuditFromDevice -> OrderRequestType.stockAuditFromDevice.description
+                else -> context.getString(R.string.total_count)
+            }
+            binding.topAppbar.title = tempTitle
+        }
+    }
+
+    private fun isBackPressed() {
         cancelCount()
+    }
+
+    private fun removeOrderAndFinish() {
+        removeOrdersFiles(
+            path = getPendingPath(),
+            filesToRemove = arrayListOf(filename),
+            sendEvent = {
+                if (it.snackBarType == SnackBarType.SUCCESS) {
+                    OrderRequestCoroutines.removeById(
+                        id = id,
+                        onResult = { finish() })
+                }
+            }
+        )
+    }
+
+    private fun cancelCount() {
+        if (itemCount <= 0) {
+            removeOrderAndFinish()
+        } else {
+            runOnUiThread {
+                val builder = AlertDialog.Builder(this)
+                builder.setTitle(getString(R.string.save_count))
+                builder.setMessage(getString(R.string.save_changes_and_continue_later))
+                builder.setNeutralButton(getString(R.string.cancel)) { dialog, _ ->
+                    dialog.dismiss()
+                }
+                builder.setNegativeButton(R.string.no) { _, _ ->
+                    removeOrderAndFinish()
+                }
+                builder.setPositiveButton(R.string.yes) { _, _ ->
+                    processCount(completed = false)
+                }
+
+                val alertDialog: AlertDialog = builder.create()
+                alertDialog.show()
+            }
+        }
     }
 
     private fun qtySelectorDialog(
@@ -1419,17 +1188,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     ) {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
         val intent = Intent(this, QtySelectorActivity::class.java)
-
-        intent.putExtra("orderRequestContent", Parcels.wrap(orc))
-        intent.putExtra("partial", (partial || partialBlock))
-
-        intent.putExtra("initialValue", initialQty)
-        intent.putExtra("multiplier", multiplier.toLong())
-        intent.putExtra("minValue", minValue)
-        intent.putExtra("maxValue", maxValue)
+        intent.putExtra(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT, orc)
+        intent.putExtra(QtySelectorActivity.ARG_PARTIAL, (partial || partialBlock))
+        intent.putExtra(QtySelectorActivity.ARG_INITIAL_VALUE, initialQty)
+        intent.putExtra(QtySelectorActivity.ARG_MULTIPLIER, multiplier.toLong())
+        intent.putExtra(QtySelectorActivity.ARG_MIN_VALUE, minValue)
+        intent.putExtra(QtySelectorActivity.ARG_MAX_VALUE, maxValue)
         if (total) resultForTotalSelect.launch(intent)
         else resultForPartialSelect.launch(intent)
     }
@@ -1439,27 +1206,27 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val qty = data.getDoubleExtra("qty", 0.toDouble())
+                    val qty = data.getDoubleExtra(QtySelectorActivity.ARG_QTY, 0.toDouble())
                     val orc =
-                        Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra("orderRequestContent"))
+                        data.parcelable<OrderRequestContent>(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT)
 
-                    // La descripción puede modificarse desde el selector de cantidades
-                    setDescription(
-                        orc = orc,
-                        description = orc.item?.itemDescription ?: "",
-                        updateDb = false
-                    )
+                    if (orc != null) {
+                        /**
+                         * En este momento no nos preocupamos por la descripción, ya que puede modificarse
+                         * desde el selector de cantidades que se ejecuta a continuación
+                         */
+                        setDescription(
+                            orc = orc,
+                            description = orc.itemDescription,
+                            updateDb = false
+                        )
 
-                    setQtyCollected(
-                        orc = orc,
-                        qty = qty,
-                        manualAdd = true,
-                        total = true
-                    )
+                        setQtyCollected(orc = orc, qty = qty, manualAdd = true, total = true)
+                    }
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
@@ -1470,27 +1237,26 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
             val data = it?.data
             try {
                 if (it?.resultCode == RESULT_OK && data != null) {
-                    val qty = data.getDoubleExtra("qty", 0.toDouble())
-                    val orc =
-                        Parcels.unwrap<OrderRequestContent>(data.getParcelableExtra("orderRequestContent"))
+                    val qty = data.getDoubleExtra(QtySelectorActivity.ARG_QTY, 0.toDouble())
+                    val orc = data.parcelable<OrderRequestContent>(QtySelectorActivity.ARG_ORDER_REQUEST_CONTENT)
 
-                    // La descripción puede modificarse desde el selector de cantidades
-                    setDescription(
-                        orc = orc,
-                        description = orc.item?.itemDescription ?: "",
-                        updateDb = false
-                    )
+                    if (orc != null) {
+                        /**
+                         * En este momento no nos preocupamos por la descripción, ya que puede modificarse
+                         * desde el selector de cantidades que se ejecuta a continuación
+                         */
+                        setDescription(
+                            orc = orc,
+                            description = orc.itemDescription,
+                            updateDb = false
+                        )
 
-                    setQtyCollected(
-                        orc = orc,
-                        qty = qty,
-                        manualAdd = true,
-                        total = false
-                    )
+                        setQtyCollected(orc = orc, qty = qty, manualAdd = true, total = false)
+                    }
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
@@ -1499,13 +1265,13 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
     private fun multiplierDialog() {
         if (rejectNewInstances) return
         rejectNewInstances = true
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
-        val multiplier = settingViewModel.scanMultiplier
+        val multiplier = settingsVm.scanMultiplier
         val intent = Intent(context, MultiplierSelectActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.putExtra("title", context.getString(R.string.select_multiplier))
-        intent.putExtra("multiplier", multiplier)
+        intent.putExtra(MultiplierSelectActivity.ARG_TITLE, context.getString(R.string.select_multiplier))
+        intent.putExtra(MultiplierSelectActivity.ARG_MULTIPLIER, multiplier)
         resultForMultiplierSelect.launch(intent)
     }
 
@@ -1518,46 +1284,16 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 gentlyReturn()
             }
         }
 
-    private fun setLotCode(orc: OrderRequestContent, lotId: String) {
-        val lotCode = orc.item?.codeRead ?: ""
-        if (lotCode == "") return
+    private fun setLotCode(orc: OrderRequestContent, lotCode: String) {
+        if (lotCode.isEmpty()) return
 
-        val longLotId: Long
-        try {
-            longLotId = lotId.toLong()
-        } catch (ex: Exception) {
-            return
-        }
-
-        if (longLotId < 0) return
-
-        for (i in 0 until (adapter?.itemCount ?: 0)) {
-            val t = adapter?.fullList?.get(i)
-            if (t?.lot != null) {
-                if (equals(t.lot?.lotId, longLotId)) {
-                    // Encontrado, volver!
-                    return
-                }
-            }
-        }
-
-        val lot = Lot(longLotId, lotCode, true)
-
-        for (i in 0 until (adapter?.itemCount ?: 0)) {
-            val t = adapter?.fullList?.get(i)
-            if (t?.item != null) {
-                if (equals(t.item, orc.item)) {
-                    t.lot = lot
-                    break
-                }
-            }
-        }
+        adapter?.updateLotCode(orc.lotHash, lotCode)
     }
 
     private fun setDescription(
@@ -1565,14 +1301,15 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         description: String,
         updateDb: Boolean = true,
     ) {
-        val item = orc.item ?: return
         if (updateDb) {
-            val itemId = item.itemId ?: return
-            ItemCoroutines().updateDescription(itemId, description) {
-                adapter?.updateDescription(itemId, description)
+            val itemId = orc.itemId
+            if (itemId != null) {
+                ItemCoroutines.updateDescription(itemId, description) {
+                    adapter?.updateDescription(itemId, description)
+                }
             }
         } else {
-            adapter?.updateDescription(item, description)
+            adapter?.updateDescription(orc, description)
         }
     }
 
@@ -1584,184 +1321,111 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         total: Boolean = false,
     ) {
         if (orc == null || qty <= 0 && !manualAdd) {
-            lastRegexResult = null
+            tempQty = null
+            tempLotCode = null
             return
         }
 
-        // Si viene del selector de cantidad manual ya está aplicado el multiplicador
-        // Usar el valor del multiplicador si no se escaneó un código con cantidad determinada (itemCode)
+        /**
+         * 1. En caso de un agregado manual, venimos del selector de cantidades y ya está aplicado el multiplicador.
+         * 2. En caso de un ItemCode o ItemRegex, utilizar su multiplicador interno de código.
+         * 3. En caso contrario utilizar el multiplicador de la configuración.
+         */
+
         val multi: Long = when {
             manualAdd -> 1L
             else -> {
-                when (itemCode) {
-                    null -> settingViewModel.scanMultiplier.toLong()
-                    else -> itemCode?.qty?.toLong() ?: 0
+                when (tempQty) {
+                    null -> settingsVm.scanMultiplier.toLong()
+                    else -> tempQty?.toLong() ?: 0
                 }
             }
         }
 
-        val initialQty = orc.qty?.qtyCollected ?: 0.0
-        val logContent: ArrayList<LogContent> = ArrayList(log?.content ?: ArrayList())
+        val initialQty = orc.qtyCollected ?: 0.0
+        val lotHash = orc.lotHash
+        val tempOrc = adapter?.fullList?.firstOrNull { it.lotHash == lotHash } ?: return
 
-        for (i in 0 until (adapter?.itemCount ?: 0)) {
-            val tempOrc = adapter?.fullList?.get(i)
-            if (tempOrc == null ||
-                tempOrc != orc ||
-                !(tempOrc.item != null && tempOrc.qty != null)
-            ) continue
+        val multipliedQty: Double = if (!total) {
+            qty * multi + (tempOrc.qtyCollected ?: 0.toDouble())
+        } else {
+            qty * multi
+        }
 
-            val itemObj = tempOrc.item ?: return
-            val qtyObj = tempOrc.qty ?: return
-            val lot = tempOrc.lot
-
-            val tempQty: Double = if (!total) {
-                qty * multi + (qtyObj.qtyCollected ?: 0.toDouble())
-            } else {
-                qty * multi
+        if (multipliedQty <= 0) {
+            removeItem {
+                allowClicks = true
+                tempQty = null
+                tempLotCode = null
             }
+            return
+        }
 
-            if (tempQty <= 0) {
-                removeItem()
-                lastRegexResult = null
-                return
-            }
+        adapter?.updateQtyCollected(tempOrc, multipliedQty)
 
-            adapter?.updateQtyCollected(tempOrc, tempQty)
+        // Unless is blocked, unlock the partial
+        if (!partialBlock) {
+            partial = false
+            partialBlock = false
+            setupPartial()
+        }
 
-            // Unless is blocked, unlock the partial
-            if (!partialBlock) {
-                partial = false
-                partialBlock = false
-                setupPartial()
-            }
+        val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
+        val now = df.format(Calendar.getInstance().time)
 
-            val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss Z")
-            val now = df.format(Calendar.getInstance().time)
-
-            val variationQty = (qtyObj.qtyCollected ?: 0.0) - initialQty
-            if (variationQty != 0.toDouble()) {
-                logContent.add(
-                    LogContent(
-                        itemId = itemObj.itemId,
-                        itemStr = itemObj.itemDescription,
-                        itemCode = itemObj.ean,
-                        lotId = lot?.lotId,
-                        lotCode = lot?.code ?: "",
-                        scannedCode = itemObj.codeRead,
-                        variationQty = variationQty,
-                        finalQty = qtyObj.qtyCollected,
-                        date = now
-                    )
+        val variationQty = (tempOrc.qtyCollected ?: 0.0) - initialQty
+        if (variationQty != 0.toDouble()) {
+            LogCoroutines.add(
+                orderId = id,
+                log = Log(
+                    clientId = orderRequest.clientId,
+                    userId = CurrentUser.userId,
+                    itemId = tempOrc.itemId,
+                    itemDescription = tempOrc.itemDescription,
+                    itemCode = tempOrc.ean,
+                    scannedCode = tempOrc.codeRead,
+                    variationQty = variationQty,
+                    finalQty = tempOrc.qtyCollected,
+                    date = now
                 )
-            }
-
-            checkLotEnabled(tempOrc)
-            break
+            )
         }
 
-        log?.content = logContent
+        checkLotEnabled(tempOrc)
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray,
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissions.contains(Manifest.permission.BLUETOOTH_CONNECT)) JotterListener.onRequestPermissionsResult(
-            this, requestCode, permissions, grantResults
-        )
-        else {
-            when (requestCode) {
-                REQUEST_EXTERNAL_STORAGE -> {
-                    // If the request is canceled, the result arrays are empty.
-                    if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                        makeText(
-                            this, getString(R.string.cannot_write_images_to_external_storage), ERROR
-                        )
-                    } else {
-                        val error = !Statics.writeJsonToFile(
-                            v = binding.root,
-                            filename = orFileName,
-                            value = orJson,
-                            completed = tempCompleted
-                        )
-                        if (!error && tempFinishAtEnd) finish()
-                    }
-                }
-            }
-        }
-    }
-
-    // Este flag lo vamos a usar para saber si estamos tratando con un
-    private var lastRegexResult: ItemRegex.Companion.RegexResult? = null
+    private var tempQty: Double? = null
+    private var tempLotCode: String? = null
 
     override fun scannerCompleted(scanCode: String) {
-        if (settingViewModel.showScannedCode) showSnackBar(SnackBarEventData(scanCode, INFO))
+        if (settingsVm.showScannedCode) showSnackBar(scanCode, INFO)
+        println("Scanner ${tag}: $scanCode")
 
-        JotterListener.lockScanner(this, true)
+        LifecycleListener.lockScanner(this, true)
 
-        var code: String
+        var code: String = scanCode
+        val fullList = adapter?.fullList ?: ArrayList()
 
-        ItemRegex.tryToRegex(scanCode) { it ->
-            if (!it.any()) {
-                // No coincide con los Regex de la DB, lo
-                // usamos como un código corriente.
-                code = scanCode
-            } else {
-                // region Regex Founded
-                if (it.count() > 1) {
-                    // Mostrar advertencia.
-                    showSnackBar(
-                        SnackBarEventData(
-                            getString(R.string.there_are_multiple_regex_matches), INFO
-                        )
-                    )
-                }
-
-                // Utilizamos la primera coincidencia
-                lastRegexResult = it.first()
-
-                // Si la cantidad no es NULL proseguimos con el Regex
-                if (lastRegexResult!!.qty != null) {
-                    CheckCode(callback = { onCheckCodeEnded(it) },
-                        scannedCode = lastRegexResult!!.ean,
-                        list = adapter?.fullList ?: ArrayList(),
-                        onEventData = { showSnackBar(it) }).execute()
-
-                    return@tryToRegex
-                }
-
-                // Qty NULL →
-                //    Actualizar scanned code y proseguir como
-                //    un código corriente pero advertir sobre el error.
-
-                // Mostrar advertencia.
-                showSnackBar(SnackBarEventData("Cantidad nula en Regex", INFO))
-                code = lastRegexResult!!.ean
-
-                // endregion Regex Founded
+        if (divided) {
+            val splitCode = scanCode.split(settingsVm.divisionChar.toRegex())
+                .dropLastWhile { it2 -> it2.isEmpty() }
+            if (splitCode.any()) {
+                code = splitCode.toTypedArray()[0]
             }
-
-            if (divided) {
-                val splitCode = scanCode.split(settingViewModel.divisionChar.toRegex())
-                    .dropLastWhile { it2 -> it2.isEmpty() }
-                if (splitCode.any()) {
-                    code = splitCode.toTypedArray()[0]
-                }
-            }
-
-            CheckCode(callback = { onCheckCodeEnded(it) },
-                scannedCode = code,
-                list = adapter?.fullList ?: ArrayList(),
-                onEventData = { it2 -> showSnackBar(it2) }).execute()
-
-            gentlyReturn()
         }
+
+        GetOrderRequestContentFromCode(
+            code = code,
+            list = fullList,
+            onEvent = { it2 -> showSnackBar(it2.text, it2.snackBarType) },
+            onFinish = {
+                proceedByContentResult(it)
+            },
+        ).execute()
     }
 
-    private fun showSnackBar(it: SnackBarEventData) {
-        makeText(binding.root, it.text, it.snackBarType)
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
     }
 
     private fun gentlyReturn() {
@@ -1774,18 +1438,296 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
 
         Screen.closeKeyboard(this)
         allowClicks = true
-        JotterListener.lockScanner(this, false)
+        LifecycleListener.lockScanner(this, false)
         rejectNewInstances = false
     }
 
+    override fun onEditDescriptionRequired(position: Int, orc: OrderRequestContent) {
+        showDialogForItemDescription(orc)
+    }
+
+    private fun proceedByContentResult(it: OrderRequestContentResult) {
+        val orc = it.orc
+        if (rejectNewInstances || orc == null) {
+            gentlyReturn()
+            return
+        }
+
+        tempQty = it.qty
+        tempLotCode = it.lotCode
+
+        // El código fue chequeado, se agrega y se selecciona en la lista
+        runOnUiThread { adapter?.add(arrayListOf(orc)) }
+
+        // Definir las cantidades según el modo de ingreso actual
+        if (binding.requiredDescCheckBox.isChecked &&
+            orc.itemDescription == context.getString(R.string.unknown_item)
+        ) {
+            // En primer lugar, agregamos la descripción ya que es obligatoria.
+            // Esta función, si la descripción es válida, continuará con setQty
+            showDialogForAddDescription(orc)
+            return
+        }
+
+        // Esta pausa permite que el Adapter se actualice a tiempo
+        Handler(mainLooper).postDelayed({
+            setQty(orc)
+            gentlyReturn()
+        }, 250)
+    }
+
+    private val menuItemManualCode = 999001
+    private val menuItemRandomEan = 999002
+    private val menuItemRandomIt = 999003
+    private val menuItemRandomItUrl = 999004
+    private val menuItemRandomOnListL = 999005
+    private val menuRegexItem = 999006
+    private val menuItemRandomItemCode = 999007
+
+    @SuppressLint("RestrictedApi")
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_read_activity, menu)
+
+        if (!settingsVm.useBtRfid) {
+            menu.removeItem(menu.findItem(R.id.action_rfid_connect).itemId)
+        }
+
+        if (BuildConfig.DEBUG || Statics.TEST_MODE) {
+            menu.add(Menu.NONE, menuItemManualCode, Menu.NONE, "Manual code")
+            menu.add(Menu.NONE, menuItemRandomEan, Menu.NONE, "Random EAN")
+            menu.add(Menu.NONE, menuItemRandomIt, Menu.NONE, "Random item ID")
+            menu.add(Menu.NONE, menuItemRandomItUrl, Menu.NONE, "Random item ID URL")
+            menu.add(Menu.NONE, menuItemRandomOnListL, Menu.NONE, "Random item on list")
+            menu.add(Menu.NONE, menuRegexItem, Menu.NONE, "Regex")
+            menu.add(Menu.NONE, menuItemRandomItemCode, Menu.NONE, "Random Item Code")
+        }
+
+        if (menu is MenuBuilder) {
+            menu.setOptionalIconsVisible(true)
+        }
+
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.home, android.R.id.home -> {
+                isBackPressed()
+                return true
+            }
+
+            R.id.action_rfid_connect -> {
+                LifecycleListener.rfidStart(this)
+                return super.onOptionsItemSelected(item)
+            }
+
+            R.id.action_trigger_scan -> {
+                if (BuildConfig.DEBUG || Statics.TEST_MODE) {
+                    val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                    val shuffledSource = source.toList().shuffled(Random(System.currentTimeMillis()))
+                    val s = shuffledSource.take(10).joinToString("")
+                    scannerCompleted(s)
+                    return super.onOptionsItemSelected(item)
+                }
+
+                LifecycleListener.trigger(this)
+                return super.onOptionsItemSelected(item)
+            }
+
+            R.id.action_read_barcode -> {
+                LifecycleListener.toggleCameraFloatingWindowVisibility(this)
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomOnListL -> {
+                val codes: ArrayList<String> = ArrayList()
+
+                (adapter?.fullList ?: ArrayList<OrderRequestContent>()
+                    .filter { it.codeRead.isNotEmpty() })
+                    .mapTo(codes) { it.codeRead }
+
+                if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomIt -> {
+                ItemCoroutines.getEanCodes(true) {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuRegexItem -> {
+                scannerCompleted("0SM20220721092826007792261002857001038858")
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomItUrl -> {
+                ItemCoroutines.getIds(true) {
+                    if (it.any()) scannerCompleted("${GetResultFromCode.PREFIX_ITEM_URL}${it[Random().nextInt(it.count())]}")
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomEan -> {
+                ItemCoroutines.getEanCodes(true) {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())])
+                }
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemRandomItemCode -> {
+                GetItemCode(onFinish = {
+                    if (it.any()) scannerCompleted(it[Random().nextInt(it.count())].code)
+                }).execute()
+                return super.onOptionsItemSelected(item)
+            }
+
+            menuItemManualCode -> {
+                enterCode()
+                return super.onOptionsItemSelected(item)
+            }
+        }
+        return true
+    }
+
+    private fun enterCode() {
+        runOnUiThread {
+            var alertDialog: AlertDialog? = null
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle(getString(R.string.enter_code))
+
+            val inputLayout = TextInputLayout(this)
+            inputLayout.endIconMode = TextInputLayout.END_ICON_CLEAR_TEXT
+
+            val input = TextInputEditText(this)
+            input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS
+            input.isFocusable = true
+            input.isFocusableInTouchMode = true
+            input.setOnKeyListener { _, _, event ->
+                if (isActionDone(event)) {
+                    alertDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.performClick()
+                    true
+                } else {
+                    false
+                }
+            }
+
+            inputLayout.addView(input)
+            builder.setView(inputLayout)
+            builder.setPositiveButton(R.string.accept) { _, _ ->
+                scannerCompleted(input.text.toString())
+            }
+            builder.setNegativeButton(R.string.cancel, null)
+            alertDialog = builder.create()
+
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            alertDialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+            alertDialog.show()
+            input.requestFocus()
+        }
+    }
+
+    private fun setQty(orc: OrderRequestContent) {
+        if (tempLotCode != null && tempQty == null) showSnackBar(
+            getString(R.string.null_quantity_in_regex),
+            ERROR
+        )
+
+        if (partial || partialBlock) {
+            setQtyManually(orc)
+        } else {
+            setQtyCollected(orc = orc, qty = 1.toDouble())
+        }
+    }
+
+    private fun checkLotEnabled(orc: OrderRequestContent) {
+        // Check LOT ENABLED
+        val itemId = orc.itemId ?: 0
+        if (itemId <= 0 || orc.lotEnabled != true) return
+
+        val lotCode = tempLotCode ?: orc.lotCode.toString()
+        if (lotCode.isNotEmpty()) {
+
+            // Ya no lo necesitamos
+            tempLotCode = null
+
+            setLotCode(orc = orc, lotCode = lotCode)
+        } else {
+            lotCodeDialog(orc)
+        }
+    }
+
+    override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
+        fillSummaryFragment()
+    }
+
+    override fun onDataSetChanged() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            fillSummaryFragment()
+        }, 100)
+    }
+
+    private fun fillSummaryFragment() {
+        runOnUiThread {
+            val firstValue: Int
+            val firstLabel: String
+            val secondValue: Int
+            val secondLabel: String
+            var thirdValue = 0
+            var thirdLabel = ""
+
+            if (orderRequest.orderRequestType == OrderRequestType.stockAuditFromDevice) {
+                firstValue = totalCollected
+                firstLabel = getString(R.string.total)
+                secondValue = totalRequested
+                secondLabel = getString(R.string.requested)
+                thirdValue = itemCount
+                thirdLabel = getString(R.string.products)
+            } else {
+                firstValue = totalCollected
+                firstLabel = getString(R.string.total)
+                secondValue = itemCount
+                secondLabel = getString(R.string.products)
+            }
+
+            summaryFragment
+                .first(firstValue)
+                .firstLabel(firstLabel)
+                .second(secondValue)
+                .secondLabel(secondLabel)
+                .third(thirdValue)
+                .thirdLabel(thirdLabel)
+                .fill()
+        }
+    }
+
+    override fun onEditQtyRequired(
+        position: Int,
+        content: OrderRequestContent,
+        initialQty: Double,
+        minValue: Double,
+        maxValue: Double,
+        multiplier: Int,
+    ) {
+        qtySelectorDialog(
+            orc = content,
+            initialQty = initialQty,
+            minValue = minValue,
+            maxValue = maxValue,
+            multiplier = multiplier,
+            total = true
+        )
+    }
+
     companion object {
-        private const val REQUEST_EXTERNAL_STORAGE = 3001
+        const val ARG_TITLE = "title"
+        const val ARG_ID = "id"
+        const val ARG_FILENAME = "filename"
 
         fun equals(a: Any?, b: Any?): Boolean {
             return a != null && a == b
         }
-
-        private var orFileName = ""
-        private var orJson = ""
     }
 }

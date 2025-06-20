@@ -8,7 +8,11 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.*
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.MenuBuilder
@@ -25,31 +29,36 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingViewModel
-import com.dacosys.warehouseCounter.adapter.orderRequest.OrderRequestAdapter
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.json
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.completeCompletedPath
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getCompletedOrders
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.getPendingPath
+import com.dacosys.warehouseCounter.data.io.IOFunc.Companion.writeToFile
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
+import com.dacosys.warehouseCounter.data.ktor.v2.functions.order.SendOrder
+import com.dacosys.warehouseCounter.data.room.dao.pendingLabel.PendingLabelCoroutines
 import com.dacosys.warehouseCounter.databinding.OutboxActivityBinding
-import com.dacosys.warehouseCounter.dto.log.Log
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequest.CREATOR.getCompletedOrders
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestContent
-import com.dacosys.warehouseCounter.dto.orderRequest.OrderRequestType
-import com.dacosys.warehouseCounter.ktor.functions.SendOrder
-import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.misc.Statics.Companion.writeToFile
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
+import com.dacosys.warehouseCounter.ui.activities.order.OrderPrintLabelActivity
 import com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestDetailActivity
+import com.dacosys.warehouseCounter.ui.adapter.orderRequest.OrderRequestAdapter
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
+import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.SUCCESS
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
+import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
-import kotlinx.serialization.json.Json
-import org.parceler.Parcels
 import java.io.File
 import java.io.UnsupportedEncodingException
 import kotlin.concurrent.thread
 
 class OutboxActivity : AppCompatActivity() {
+
+    private val tag = this::class.java.enclosingClass?.simpleName ?: this::class.java.simpleName
 
     private var isListViewFilling = false
     private var multiSelect = true
@@ -66,20 +75,25 @@ class OutboxActivity : AppCompatActivity() {
     private var showCheckBoxes
         get() =
             if (!multiSelect) false
-            else settingViewModel.outboxShowCheckBoxes
+            else settingsVm.outboxShowCheckBoxes
         set(value) {
-            settingViewModel.outboxShowCheckBoxes = value
+            settingsVm.outboxShowCheckBoxes = value
         }
 
-    private fun onSendOrderEnded(snackBarEventData: SnackBarEventData) {
-        val msg = snackBarEventData.text
-
-        if (snackBarEventData.snackBarType == SnackBarType.SUCCESS) {
-            thread { fillAdapter(ArrayList()) }
-        } else if (snackBarEventData.snackBarType == ERROR) {
-            makeText(binding.root, msg, ERROR)
+    private val countChecked: Int
+        get() {
+            return adapter?.countChecked() ?: 0
         }
-    }
+
+    private val allChecked: ArrayList<OrderRequest>
+        get() {
+            return adapter?.getAllChecked() ?: arrayListOf()
+        }
+
+    private val currentItem: OrderRequest?
+        get() {
+            return adapter?.currentItem()
+        }
 
     override fun onDestroy() {
         destroyLocals()
@@ -93,16 +107,13 @@ class OutboxActivity : AppCompatActivity() {
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
 
-        savedInstanceState.putString("title", title.toString())
-        savedInstanceState.putBoolean("multiSelect", multiSelect)
+        savedInstanceState.putString(ARG_TITLE, title.toString())
+        savedInstanceState.putBoolean(ARG_MULTISELECT, multiSelect)
         if (adapter != null) {
-            savedInstanceState.putParcelable("lastSelected", (adapter ?: return).currentItem())
-            savedInstanceState.putInt("firstVisiblePos", (adapter ?: return).firstVisiblePos())
+            savedInstanceState.putParcelable("lastSelected", currentItem)
+            savedInstanceState.putInt("firstVisiblePos", adapter?.firstVisiblePos() ?: -1)
             savedInstanceState.putParcelableArrayList("completeList", adapter?.fullList)
-            savedInstanceState.putLongArray(
-                "checkedIdArray",
-                adapter?.getAllChecked()?.mapNotNull { it.orderRequestId }?.toLongArray()
-            )
+            savedInstanceState.putLongArray("checkedIdArray", allChecked.mapNotNull { it.orderRequestId }.toLongArray())
             savedInstanceState.putInt("currentScrollPosition", currentScrollPosition)
         }
     }
@@ -119,6 +130,13 @@ class OutboxActivity : AppCompatActivity() {
         setSupportActionBar(binding.topAppbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                isBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
+
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 currentScrollPosition =
@@ -133,40 +151,36 @@ class OutboxActivity : AppCompatActivity() {
 
         if (savedInstanceState != null) {
             // region Recuperar el título de la ventana
-            val t1 = savedInstanceState.getString("title")
+            val t1 = savedInstanceState.getString(ARG_TITLE)
             if (!t1.isNullOrEmpty()) tempTitle = t1
             // endregion
 
-            multiSelect = savedInstanceState.getBoolean("multiSelect", multiSelect)
+            multiSelect = savedInstanceState.getBoolean(ARG_MULTISELECT, multiSelect)
             checkedIdArray =
-                (savedInstanceState.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(java.util.ArrayList())
+                (savedInstanceState.getLongArray("checkedIdArray") ?: longArrayOf()).toCollection(ArrayList())
             completeList =
-                savedInstanceState.getParcelableArrayList<OrderRequest>("completeList") as java.util.ArrayList<OrderRequest>
-            lastSelected = savedInstanceState.getParcelable("lastSelected")
+                savedInstanceState.parcelableArrayList<OrderRequest>("completeList") as ArrayList<OrderRequest>
+            lastSelected = savedInstanceState.parcelable("lastSelected")
             firstVisiblePos =
                 if (savedInstanceState.containsKey("firstVisiblePos")) savedInstanceState.getInt("firstVisiblePos") else -1
             currentScrollPosition = savedInstanceState.getInt("currentScrollPosition")
         } else {
-            // Inicializar la actividad
-
-            // Traer los parámetros que recibe la actividad
             val extras = intent.extras
             if (extras != null) {
-                val t1 = extras.getString("title")
+                val t1 = extras.getString(ARG_TITLE)
                 if (!t1.isNullOrEmpty()) tempTitle = t1
 
-                multiSelect = extras.getBoolean("multiSelect", true)
+                multiSelect = extras.getBoolean(ARG_MULTISELECT, true)
             }
         }
 
-        title = tempTitle
+        binding.topAppbar.title = tempTitle
 
         binding.sendButton.setOnClickListener { sendDialog() }
         binding.detailButton.setOnClickListener { showDetail() }
         binding.removeResetButton.setOnClickListener { removeResetDialog() }
 
-        // ESTO SIRVE PARA OCULTAR EL TECLADO EN PANTALLA CUANDO PIERDEN EL FOCO LOS CONTROLES QUE LO NECESITAN
-        Screen.setupUI(binding.outbox, this)
+        Screen.setupUI(binding.root, this)
     }
 
     override fun onStart() {
@@ -212,7 +226,7 @@ class OutboxActivity : AppCompatActivity() {
 
         ViewCompat.setWindowInsetsAnimationCallback(
             rootView,
-            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
                 override fun onEnd(animation: WindowInsetsAnimationCompat) {
                     val isIme = animation.typeMask and WindowInsetsCompat.Type.ime() != 0
                     if (!isIme) return
@@ -222,7 +236,7 @@ class OutboxActivity : AppCompatActivity() {
 
                 override fun onProgress(
                     insets: WindowInsetsCompat,
-                    runningAnimations: MutableList<WindowInsetsAnimationCompat>
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>,
                 ): WindowInsetsCompat {
                     paddingBottomView(rootView, insets)
 
@@ -245,28 +259,27 @@ class OutboxActivity : AppCompatActivity() {
             paddingBottom
         )
 
-        android.util.Log.d(javaClass.simpleName, "IME Size: ${imeInsets.bottom}")
+        Log.d(javaClass.simpleName, "IME Size: ${imeInsets.bottom}")
     }
     // endregion
 
     private fun showDetail() {
-        if (adapter != null && adapter!!.currentItem() != null) {
-            val intent = Intent(context, OrderRequestDetailActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        val filename = currentItem?.filename ?: return
 
-            intent.putExtra("orderRequest", Parcels.wrap<OrderRequest>(adapter!!.currentItem()))
-
-            // Valid content
-            intent.putParcelableArrayListExtra("orcArray", ArrayList(adapter!!.currentItem()!!.content))
-
-            startActivity(intent)
-        }
+        val intent = Intent(context, OrderRequestDetailActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        intent.putExtra(OrderRequestDetailActivity.ARG_ID, currentItem?.roomId)
+        intent.putExtra(OrderRequestDetailActivity.ARG_FILENAME, File(completeCompletedPath, filename).toString())
+        startActivity(intent)
     }
 
     private fun sendDialog() {
+        val checked = countChecked
+        val orderRequest = currentItem
+
         val toSend = when {
-            ((adapter?.countChecked()) ?: 0) > 0 -> adapter?.getAllChecked()!!
-            adapter?.currentItem() != null -> arrayListOf(adapter!!.currentItem()!!)
+            checked > 0 -> allChecked
+            orderRequest != null -> arrayListOf(orderRequest)
             else -> return
         }
 
@@ -283,35 +296,64 @@ class OutboxActivity : AppCompatActivity() {
             alert.setNegativeButton(R.string.cancel, null)
             alert.setPositiveButton(R.string.ok) { _, _ ->
                 sendSelected(toSend)
+
+
+                toSend.first().roomId
             }
             alert.show()
         }
     }
 
     private fun sendSelected(orArray: ArrayList<OrderRequest>) {
-        try {
-            thread {
-                SendOrder(orderRequestArray = orArray) { onSendOrderEnded(it) }.execute()
-            }
-        } catch (ex: Exception) {
-            ErrorLog.writeLog(this, this::class.java.simpleName, ex.message.toString())
+        runOnUiThread {
+            SendOrder(
+                orders = orArray,
+                onEvent = {
+                    if (it.snackBarType != SUCCESS) {
+                        showSnackBar(it.text, it.snackBarType)
+                    }
+                },
+                onFinish = {
+                    PendingLabelCoroutines.add(it)
+
+                    fillAdapter()
+                    if (settingsVm.autoPrint) {
+                        launchOrderPrintLabelsActivity(it)
+                    }
+                }
+            )
         }
     }
 
+    private fun launchOrderPrintLabelsActivity(ids: ArrayList<Long>) {
+        val intent = Intent(baseContext, OrderPrintLabelActivity::class.java)
+        intent.putExtra(OrderPrintLabelActivity.ARG_TITLE, getString(R.string.print_order_labels))
+        intent.putExtra(OrderPrintLabelActivity.ARG_IDS, ids)
+        intent.putExtra(OrderPrintLabelActivity.ARG_MULTI_SELECT, true)
+        intent.putExtra(OrderPrintLabelActivity.ARG_HIDE_FILTER_PANEL, true)
+        intent.putExtra(OrderPrintLabelActivity.ARG_SHOW_SELECT_BUTTON, false)
+        startActivity(intent)
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(binding.root, text, snackBarType)
+    }
+
     private fun removeResetDialog() {
+        val or = currentItem
         val toRemoveReset = when {
-            (adapter?.countChecked() ?: 0) > 0 -> adapter?.getAllChecked()!!
-            adapter?.currentItem() != null -> arrayListOf(adapter!!.currentItem()!!)
+            countChecked > 0 -> allChecked
+            or != null -> arrayListOf(or)
             else -> return
         }
 
         val toRemove: ArrayList<OrderRequest> = ArrayList()
         val toReset: ArrayList<OrderRequest> = ArrayList()
-        for (or in toRemoveReset) {
-            if (or.orderRequestedType == OrderRequestType.stockAuditFromDevice) {
-                toRemove.add(or)
+        for (remOrder in toRemoveReset) {
+            if (remOrder.orderRequestType == OrderRequestType.stockAuditFromDevice) {
+                toRemove.add(remOrder)
             } else {
-                toReset.add(or)
+                toReset.add(remOrder)
             }
         }
 
@@ -346,26 +388,18 @@ class OutboxActivity : AppCompatActivity() {
 
     private fun removeSelected(toRemove: ArrayList<OrderRequest>) {
         var isOk = true
-
-        val currentDir = Statics.getCompletedPath()
         for (i in toRemove) {
-            val filePath = currentDir.absolutePath + File.separator + i.filename
-            val fl = File(filePath)
-            if (!fl.delete()) {
-                isOk = false
-                break
-            }
+            val filePath = File(completeCompletedPath, i.filename)
+            val fl = File(filePath.toString())
+            isOk = !fl.delete()
+            if (!isOk) break
         }
 
         if (!isOk) {
-            makeText(
-                binding.root,
-                getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
-                ERROR
-            )
+            showSnackBar(getString(R.string.an_error_occurred_while_trying_to_delete_the_count), ERROR)
         }
 
-        thread { fillAdapter(ArrayList()) }
+        thread { fillAdapter() }
     }
 
     private fun resetSelected(toReset: ArrayList<OrderRequest>) {
@@ -377,33 +411,31 @@ class OutboxActivity : AppCompatActivity() {
             orderRequest.finishDate = null
             orderRequest.userId = null
 
-            for (orderRequestContent in orderRequest.content) {
-                if (orderRequestContent.qty != null) {
-                    if (orderRequestContent.qty!!.qtyRequested == null || orderRequestContent.qty!!.qtyRequested == 0.toDouble()) {
-                        orcToRemove.add(orderRequestContent)
-                        continue
-                    }
-
-                    orderRequestContent.qty!!.qtyCollected = null
+            for (content in orderRequest.contents) {
+                if (content.qtyRequested == null || content.qtyRequested == 0.toDouble()) {
+                    orcToRemove.add(content)
+                    continue
                 }
+                content.qtyCollected = null
             }
 
-            val logContent: ArrayList<OrderRequestContent> = ArrayList(orderRequest.content)
+            val logContent: ArrayList<OrderRequestContent> = ArrayList(orderRequest.contents)
             logContent.removeAll(orcToRemove.toSet())
 
-            orderRequest.content = logContent
-            orderRequest.log = Log()
+            orderRequest.contents = logContent
+            orderRequest.logs = arrayListOf()
 
             try {
-                orJson = Json.encodeToString(OrderRequest.serializer(), orderRequest)
-                orderRequest.filename.substringAfterLast('/')
+                orJson = json.encodeToString(OrderRequest.serializer(), orderRequest)
+                orFileName = orderRequest.filename.substringAfterLast('/')
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
                     PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(
                         this, Manifest.permission.WRITE_EXTERNAL_STORAGE
                     )
                 ) {
-                    write(orFileName, orJson)
+                    isOk = write(orFileName, orJson)
+                    if (!isOk) break
                 } else {
                     requestPermissions(
                         arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
@@ -412,60 +444,52 @@ class OutboxActivity : AppCompatActivity() {
                 }
             } catch (e: UnsupportedEncodingException) {
                 e.printStackTrace()
-                android.util.Log.e(this::class.java.simpleName, e.message ?: "")
-            }
-
-            val fl = File(orderRequest.filename)
-            if (!fl.delete()) {
-                isOk = false
-                break
+                Log.e(tag, e.message ?: "")
             }
         }
 
-        if (!isOk) {
-            makeText(
-                binding.root,
-                getString(R.string.an_error_occurred_while_trying_to_delete_the_count),
-                ERROR
-            )
-        }
-
-        thread { fillAdapter(ArrayList()) }
-    }
-
-    private fun write(filename: String, value: String) {
-        val path = Statics.getPendingPath()
-        if (writeToFile(fileName = filename, data = value, directory = path)) {
+        if (isOk) {
+            val data = Intent()
+            data.putStringArrayListExtra(ARG_ORDER_REQUEST_FILENAMES, ArrayList(toReset.map { it.filename }))
+            setResult(RESULT_OK, data)
             finish()
         } else {
-            val res = getString(R.string.an_error_occurred_while_trying_to_save_the_count)
-            makeText(binding.root, res, ERROR)
-            android.util.Log.e(this::class.java.simpleName, res)
+            val res = getString(R.string.an_error_occurred_while_trying_to_reset_the_count)
+            showSnackBar(res, ERROR)
+            Log.e(tag, res)
+        }
+    }
+
+    private fun write(filename: String, value: String): Boolean {
+        val path = getPendingPath()
+        return if (writeToFile(directory = path, fileName = filename, data = value)) {
+
+            val fl = File(completeCompletedPath, filename)
+            fl.delete()
+
+        } else {
+            false
         }
     }
 
     private fun showProgressBar(show: Boolean) {
         Handler(Looper.getMainLooper()).postDelayed({
-            run {
-                binding.swipeRefreshItem.isRefreshing = show
-            }
+            binding.swipeRefreshItem.isRefreshing = show
         }, 20)
     }
 
-    private fun fillAdapter(t: ArrayList<OrderRequest>) {
+    private fun fillAdapter(t: ArrayList<OrderRequest> = ArrayList()) {
         if (isListViewFilling) return
         isListViewFilling = true
 
-        Handler(Looper.getMainLooper()).post { run { Screen.closeKeyboard(this) } }
+        Handler(Looper.getMainLooper()).post { Screen.closeKeyboard(this) }
 
         var temp = t
         if (!temp.any()) {
             temp = getCompletedOrders()
             if (temp.isEmpty()) {
-                makeText(
-                    binding.root,
-                    this.getString(R.string.there_are_no_completed_counts),
-                    SnackBarType.INFO
+                showSnackBar(
+                    this.getString(R.string.there_are_no_completed_counts), SnackBarType.INFO
                 )
             }
         }
@@ -479,19 +503,16 @@ class OutboxActivity : AppCompatActivity() {
                     // Si el adapter es NULL es porque aún no fue creado.
                     // Por lo tanto, puede ser que los valores de [lastSelected]
                     // sean valores guardados de la instancia anterior y queremos preservarlos.
-                    lastSelected = adapter?.currentItem()
+                    lastSelected = currentItem
                 }
 
-                adapter = OrderRequestAdapter(
-                    recyclerView = binding.recyclerView,
-                    fullList = completeList,
-                    checkedIdArray = checkedIdArray,
-                    multiSelect = multiSelect,
-                    showCheckBoxes = showCheckBoxes,
-                    showCheckBoxesChanged = { showCheckBoxes = it }
-                )
-
-                refreshAdapterListeners()
+                adapter = OrderRequestAdapter.Builder()
+                    .recyclerView(binding.recyclerView)
+                    .fullList(completeList)
+                    .checkedIdArray(checkedIdArray)
+                    .multiSelect(multiSelect)
+                    .showCheckBoxes(`val` = showCheckBoxes, listener = { showCheckBoxes = it })
+                    .build()
 
                 binding.recyclerView.layoutManager = LinearLayoutManager(this)
                 binding.recyclerView.adapter = adapter
@@ -500,8 +521,8 @@ class OutboxActivity : AppCompatActivity() {
                     // Horrible wait for a full load
                 }
 
-                // Estas variables locales evitar posteriores cambios de estado.
-                val ls = lastSelected
+                // Variables locales para evitar cambios posteriores de estado.
+                val ls = lastSelected ?: t.firstOrNull()
                 val cs = currentScrollPosition
                 Handler(Looper.getMainLooper()).postDelayed({
                     adapter?.selectItem(ls, false)
@@ -509,7 +530,7 @@ class OutboxActivity : AppCompatActivity() {
                 }, 200)
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ErrorLog.writeLog(this, this::class.java.simpleName, ex)
+                ErrorLog.writeLog(this, tag, ex)
             } finally {
                 showProgressBar(false)
                 isListViewFilling = false
@@ -517,58 +538,52 @@ class OutboxActivity : AppCompatActivity() {
         }
     }
 
-    private fun refreshAdapterListeners() {
-        adapter?.refreshListeners(
-            checkedChangedListener = null,
-            dataSetChangedListener = null
-        )
-    }
-
     private fun getPrefVisibleStatus(): ArrayList<OrderRequestType> {
         val visibleStatusArray: ArrayList<OrderRequestType> = ArrayList()
         //Retrieve the values
-        val set = settingViewModel.orderRequestVisibleStatus
+        val set = settingsVm.orderRequestVisibleStatus
         for (i in set) {
             if (i.trim().isEmpty()) continue
-            val status = OrderRequestType.getById(i.toLong())
-            if (status != null) {
-                visibleStatusArray.add(status)
-            }
+            visibleStatusArray.add(OrderRequestType.getById(i.toLong()))
         }
-
         return visibleStatusArray
     }
 
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
         if (menu is MenuBuilder) {
             menu.setOptionalIconsVisible(true)
         }
 
         // Opciones de visibilidad del menú
         for (i in OrderRequestType.getAll()) {
-            menu.add(0, i.id.toInt(), i.id.toInt(), i.description)
-                .setChecked(getPrefVisibleStatus().contains(i)).isCheckable = true
+            menu.add(
+                0,
+                i.id.toInt(),
+                i.id.toInt(),
+                i.description
+            ).setChecked(getPrefVisibleStatus().contains(i)).isCheckable = true
         }
 
         //region Icon colors
         val colors: ArrayList<Int> = ArrayList()
+        colors.add(getColor(R.color.status_default))
         colors.add(getColor(R.color.status_prepare_order))
         colors.add(getColor(R.color.status_stock_audit_from_device))
         colors.add(getColor(R.color.status_stock_audit))
         colors.add(getColor(R.color.status_reception_audit))
         colors.add(getColor(R.color.status_delivery_audit))
+        colors.add(getColor(R.color.status_packaging))
         //endregion Icon colors
 
         for (i in OrderRequestType.getAll()) {
             val icon = ResourcesCompat.getDrawable(context.resources, R.drawable.ic_lens, null)
             icon?.mutate()?.colorFilter =
                 BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                    colors[i.id.toInt() - 1], BlendModeCompat.SRC_IN
+                    colors[i.id.toInt()], BlendModeCompat.SRC_IN
                 )
 
-            val item = menu.getItem(i.id.toInt() - 1)
+            val item = menu.getItem(i.id.toInt())
             item.icon = icon
 
             // Keep the popup menu open
@@ -589,74 +604,32 @@ class OutboxActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         if (adapter == null) {
             return false
         }
 
         val id = item.itemId
         if (id == R.id.home || id == android.R.id.home) {
-            onBackPressed()
+            isBackPressed()
             return true
         }
 
+        val it = OrderRequestType.getById(id.toLong())
+
         item.isChecked = !item.isChecked
-        val visibleStatus = adapter?.visibleStatus ?: ArrayList()
+        var visibleStatus = adapter?.visibleStatus ?: ArrayList()
 
-        when (id) {
-            OrderRequestType.deliveryAudit.id.toInt() -> {
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.deliveryAudit)) {
-                    adapter!!.addVisibleStatus(OrderRequestType.deliveryAudit)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.deliveryAudit)) {
-                    adapter!!.removeVisibleStatus(OrderRequestType.deliveryAudit)
-                }
-            }
-
-            OrderRequestType.prepareOrder.id.toInt() -> {
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.prepareOrder)) {
-                    adapter!!.addVisibleStatus(OrderRequestType.prepareOrder)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.prepareOrder)) {
-                    adapter!!.removeVisibleStatus(OrderRequestType.prepareOrder)
-                }
-            }
-
-            OrderRequestType.receptionAudit.id.toInt() -> {
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.receptionAudit)) {
-                    adapter!!.addVisibleStatus(OrderRequestType.receptionAudit)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.receptionAudit)) {
-                    adapter!!.removeVisibleStatus(OrderRequestType.receptionAudit)
-                }
-            }
-
-            OrderRequestType.stockAudit.id.toInt() -> {
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.stockAudit)) {
-                    adapter!!.addVisibleStatus(OrderRequestType.stockAudit)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAudit)) {
-                    adapter!!.removeVisibleStatus(OrderRequestType.stockAudit)
-                }
-            }
-
-            OrderRequestType.stockAuditFromDevice.id.toInt() -> {
-                if (item.isChecked && !visibleStatus.contains(OrderRequestType.stockAuditFromDevice)) {
-                    adapter!!.addVisibleStatus(OrderRequestType.stockAuditFromDevice)
-                } else if (!item.isChecked && visibleStatus.contains(OrderRequestType.stockAuditFromDevice)) {
-                    adapter!!.removeVisibleStatus(OrderRequestType.stockAuditFromDevice)
-                }
-            }
-
-            else -> {
-                return super.onOptionsItemSelected(item)
-            }
+        if (item.isChecked && !visibleStatus.contains(it)) {
+            adapter?.addVisibleStatus(it)
+        } else if (!item.isChecked && visibleStatus.contains(it)) {
+            adapter?.removeVisibleStatus(it)
         }
 
         // Guardar los valores en las preferencias
+        visibleStatus = adapter?.visibleStatus ?: ArrayList()
         val set = HashSet<String>()
-        for (i in visibleStatus) {
-            set.add(i.id.toString())
-        }
-        settingViewModel.orderRequestVisibleStatus = set
+        visibleStatus.mapTo(set) { it.id.toString() }
+        settingsVm.orderRequestVisibleStatus = set
 
         return true
     }
@@ -668,29 +641,32 @@ class OutboxActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             REQUEST_EXTERNAL_STORAGE -> {
-                // If the request is canceled, the result arrays are empty.
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    makeText(
-                        binding.root, getString(R.string.cannot_write_to_external_storage), ERROR
+                    showSnackBar(
+                        getString(R.string.cannot_write_to_external_storage), ERROR
                     )
-                } else {
-                    write(orFileName, orJson)
+                    return
                 }
+                write(orFileName, orJson)
             }
         }
     }
 
-    companion object {
-        private const val REQUEST_EXTERNAL_STORAGE = 5001
-
-        private var orFileName = ""
-        private var orJson = ""
-    }
-
-    override fun onBackPressed() {
+    private fun isBackPressed() {
         Screen.closeKeyboard(this)
 
         setResult(RESULT_CANCELED)
         finish()
+    }
+
+    companion object {
+        const val ARG_TITLE = "title"
+        const val ARG_MULTISELECT = "multiSelect"
+        const val ARG_ORDER_REQUEST_FILENAMES = "filenames"
+
+        private const val REQUEST_EXTERNAL_STORAGE = 5001
+
+        private var orFileName = ""
+        private var orJson = ""
     }
 }

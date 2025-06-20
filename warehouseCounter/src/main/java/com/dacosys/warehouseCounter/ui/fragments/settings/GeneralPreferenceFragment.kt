@@ -8,15 +8,15 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingRepository
+import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsRepository
+import com.dacosys.warehouseCounter.data.settings.SettingsRepository
+import com.dacosys.warehouseCounter.data.settings.utils.QRConfigType
+import com.dacosys.warehouseCounter.data.sync.ClientPackage
 import com.dacosys.warehouseCounter.misc.Statics
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
-import com.dacosys.warehouseCounter.settings.SettingsRepository
-import com.dacosys.warehouseCounter.settings.utils.QRConfigType
-import com.dacosys.warehouseCounter.sync.ClientPackage
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.bindPreferenceSummaryToValue
 import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity.Companion.okDoShit
-import com.dacosys.warehouseCounter.ui.snackBar.MakeText
+import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import java.io.File
@@ -51,14 +51,14 @@ class GeneralPreferenceFragment : PreferenceFragmentCompat() {
         // to their values. When their values change, their summaries are
         // updated to reflect the new value, per the Android Design
         // guidelines.
-        bindPreferenceSummaryToValue(this, settingRepository.divisionChar)
-        bindPreferenceSummaryToValue(this, settingRepository.wcSyncInterval)
-        bindPreferenceSummaryToValue(this, settingRepository.wcSyncRefreshOrder)
+        bindPreferenceSummaryToValue(this, settingsRepository.divisionChar)
+        bindPreferenceSummaryToValue(this, settingsRepository.wcSyncInterval)
+        bindPreferenceSummaryToValue(this, settingsRepository.wcSyncRefreshOrder)
 
-        findPreference<Preference>(settingRepository.registryError.key) as Preference
-        findPreference<Preference>(settingRepository.showConfButton.key) as Preference
+        findPreference<Preference>(settingsRepository.registryError.key) as Preference
+        findPreference<Preference>(settingsRepository.showConfButton.key) as Preference
         if (BuildConfig.DEBUG) {
-            bindPreferenceSummaryToValue(this, settingRepository.confPassword)
+            bindPreferenceSummaryToValue(this, settingsRepository.confPassword)
         }
 
         val removeLogFiles = findPreference<Preference>("remove_log_files")
@@ -76,9 +76,7 @@ class GeneralPreferenceFragment : PreferenceFragmentCompat() {
                 true
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                if (view != null) MakeText.makeText(
-                    requireView(), "${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR
-                )
+                if (view != null) showSnackBar("${getString(R.string.error)}: ${ex.message}", SnackBarType.ERROR)
                 ErrorLog.writeLog(null, this::class.java.simpleName, ex)
                 false
             }
@@ -108,6 +106,10 @@ class GeneralPreferenceFragment : PreferenceFragmentCompat() {
             )
             true
         }
+    }
+
+    private fun showSnackBar(text: String, snackBarType: SnackBarType) {
+        makeText(requireView(), text, snackBarType)
     }
 
     private fun askForDelete(): AlertDialog {
