@@ -18,7 +18,7 @@ buildscript {
         viewPager2Version = '1.0.0'
         zxingCore = 'com.google.zxing:core:3.4.1'
 
-        jvmCompatibility = JavaVersion.VERSION_1_8
+        jvmCompatibility = JavaVersion.VERSION_18
 
         // testing
         androidxJunitVersion = '1.1.2'

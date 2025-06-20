@@ -84,6 +84,11 @@ android {
         sourceCompatibility jvmCompatibility
     }
 
+    kotlinOptions {
+        jvmTarget = project.jvmCompatibility
+        freeCompilerArgs = freeCompilerArgs + "-opt-in=kotlin.RequiresOptIn"
+    }
+
     buildFeatures {
         dataBinding true
         viewBinding true
@@ -95,9 +100,7 @@ android {
     }
     productFlavors {}
     buildToolsVersion = buildToolsVer
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
+
     defaultConfig {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         proguardFiles

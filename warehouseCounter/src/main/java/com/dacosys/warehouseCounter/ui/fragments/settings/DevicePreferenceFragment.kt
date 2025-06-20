@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.text.InputFilter
-import android.text.Spanned
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -40,8 +39,6 @@ import com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity
 import com.dacosys.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.google.android.gms.common.api.CommonStatusCodes
-import java.util.regex.Matcher
-import java.util.regex.Pattern
 import kotlin.concurrent.thread
 
 /**
@@ -148,8 +145,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
         SettingsActivity.bindPreferenceSummaryToValue(this, sp.collectorType)
 
         // PERMITE ACTUALIZAR EN PANTALLA EL ITEM SELECCIONADO EN EL SUMMARY DEL CONTROL
-        val collectorTypeListPreference =
-            findPreference<Preference>(sp.collectorType.key) as CollectorTypePreference
+        val collectorTypeListPreference = findPreference<Preference>(sp.collectorType.key) as CollectorTypePreference
         if (collectorTypeListPreference.value == null) {
             // to ensure we don't selectByItemId a null value
             // set first value by default
@@ -165,19 +161,6 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
                 Statics.collectorTypeChanged = true
                 true
             }
-    }
-
-    private val ipv4Regex =
-        "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." + "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." + "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." + "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-
-    private val ipv4Pattern: Pattern = Pattern.compile(ipv4Regex)
-
-    fun filter(source: CharSequence, start: Int, end: Int, dest: Spanned?, dStart: Int, dEnd: Int): CharSequence? {
-        if (source == "") return null // Para el backspace
-        val builder = java.lang.StringBuilder(dest.toString())
-        builder.replace(dStart, dEnd, source.subSequence(start, end).toString())
-        val matcher: Matcher = ipv4Pattern.matcher(builder)
-        return if (!matcher.matches()) "" else null
     }
 
     private fun getPrinterName(): String {
@@ -219,22 +202,24 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
         //endregion //// DEVICE LIST
 
         //region //// PRINTER IP / PORT
-        val portNetPrinterPref =
-            findPreference<Preference>(sp.portNetPrinter.key) as EditTextPreference
+        val portNetPrinterPref = findPreference<Preference>(sp.portNetPrinter.key) as EditTextPreference
         portNetPrinterPref.summary = portNetPrinterPref.text
 
-        val ipNetPrinterPref =
-            findPreference<Preference>(sp.ipNetPrinter.key) as EditTextPreference
+        val ipNetPrinterPref = findPreference<Preference>(sp.ipNetPrinter.key) as EditTextPreference
         ipNetPrinterPref.summary = ipNetPrinterPref.text
-
-        // TODO: Crear un filtro para IPs
-        // ipNetPrinterPref.setOnBindEditTextListener {
-        //     val filters = arrayOfNulls<InputFilter>(1)
-        //     filters[0] = InputFilter { source, start, end, dest, dStart, dEnd ->
-        //         filter(source, start, end, dest, dStart, dEnd)
-        //     }
-        //     it.filters = filters
-        // }
+        ipNetPrinterPref.setOnBindEditTextListener { editText ->
+            val filters = arrayOf(InputFilter { source, _, _, dest, _, _ ->
+                val input = (dest.toString() + source.toString())
+                if (input.matches(Regex("^([0-9]{1,3}\\.){0,3}[0-9]{0,3}\$"))) {
+                    val segments = input.split('.')
+                    if (segments.all { it.isEmpty() || (it.toIntOrNull() in 0..255) }) {
+                        return@InputFilter null
+                    }
+                }
+                ""
+            })
+            editText.filters = filters
+        }
         ipNetPrinterPref.setOnPreferenceChangeListener { _, newValue ->
             if (vm.useNetPrinter && newValue != null) {
                 ipNetPrinterPref.summary = newValue.toString()
@@ -276,7 +261,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
                 try {
                     val input = (dest.toString() + source.toString()).toInt()
                     if (input in 1 until maxPower) return@InputFilter null
-                } catch (ignore: NumberFormatException) {
+                } catch (_: NumberFormatException) {
                 }
                 ""
             })
@@ -296,7 +281,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
                 try {
                     val input = (dest.toString() + source.toString()).toInt()
                     if (input in 1 until maxSpeed) return@InputFilter null
-                } catch (ignore: NumberFormatException) {
+                } catch (_: NumberFormatException) {
                 }
                 ""
             })
@@ -387,8 +372,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
         //endregion //// USE RFID
 
         //region //// BLUETOOTH NAME
-        rfidDeviceNamePreference =
-            findPreference<Preference>("rfid_bluetooth_name") as EditTextPreference
+        rfidDeviceNamePreference = findPreference<Preference>("rfid_bluetooth_name") as EditTextPreference
         if (Rfid.rfidDevice != null && (Rfid.rfidDevice as Vh75Bt).getState() == Vh75Bt.STATE_CONNECTED) {
             (Rfid.rfidDevice as Vh75Bt).getBluetoothName()
         }
@@ -413,8 +397,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
         //endregion //// BLUETOOTH NAME
 
         //region //// DEVICE LIST PREFERENCE
-        val deviceListPreference =
-            findPreference<Preference>(sp.rfidBtAddress.key) as DevicePreference
+        val deviceListPreference = findPreference<Preference>(sp.rfidBtAddress.key) as DevicePreference
         if (deviceListPreference.value == null) {
             // to ensure we don't selectByItemId a null value
             // set first value by default
@@ -433,8 +416,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
         //endregion //// DEVICE LIST PREFERENCE
 
         //region //// RFID POWER
-        val rfidReadPower =
-            findPreference<Preference>(sp.rfidReadPower.key) as SeekBarPreference
+        val rfidReadPower = findPreference<Preference>(sp.rfidReadPower.key) as SeekBarPreference
         rfidReadPower.setOnPreferenceChangeListener { _, newValue ->
             rfidReadPower.summary = "$newValue dB"
             true
@@ -531,7 +513,7 @@ class DevicePreferenceFragment : PreferenceFragmentCompat(), Rfid.RfidDeviceList
             }
 
             val mPairedDevices = mBluetoothAdapter!!.bondedDevices
-            if (mPairedDevices.size > 0) {
+            if (mPairedDevices.isNotEmpty()) {
                 for (mDevice in mPairedDevices) {
                     if (mDevice.address == vm.rfidBtAddress) {
                         s = mDevice.name.toString()
