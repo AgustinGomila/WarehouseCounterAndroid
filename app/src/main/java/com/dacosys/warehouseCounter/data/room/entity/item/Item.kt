@@ -5,7 +5,10 @@ import android.os.Parcelable
 import androidx.room.*
 import androidx.room.ColumnInfo.Companion.NOCASE
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
+import com.dacosys.warehouseCounter.ui.adapter.generic.HasUUID
 import com.dacosys.warehouseCounter.ui.adapter.item.ItemStatus
+import com.dacosys.warehouseCounter.ui.utils.toVersion5UUID
+import java.util.*
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item as ItemKtor
 import com.dacosys.warehouseCounter.data.room.entity.item.ItemEntry as Entry
 
@@ -38,7 +41,7 @@ data class Item(
         else if (lotEnabled != 1 && active == 1) ItemStatus.ACTIVE_LOT_DISABLED
         else if (lotEnabled == 1) ItemStatus.INACTIVE_LOT_ENABLED
         else ItemStatus.INACTIVE_LOT_DISABLED
-) : Parcelable {
+) : Parcelable, HasUUID {
     constructor(parcel: Parcel) : this(
         itemId = parcel.readLong(),
         description = parcel.readString() ?: "",
@@ -121,6 +124,15 @@ data class Item(
             price = price?.toDouble() ?: 0.0,
         )
     }
+
+    @Ignore
+    override val uuid: UUID = funUUID()
+    private fun funUUID(): UUID {
+        return itemId.toVersion5UUID()
+    }
+
+    @Ignore
+    override val parentUuid: UUID? = null
 
     companion object CREATOR : Parcelable.Creator<Item> {
         override fun createFromParcel(parcel: Parcel): Item {

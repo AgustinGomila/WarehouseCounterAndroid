@@ -364,7 +364,7 @@ class ItemCategorySelectActivity : AppCompatActivity(),
         }
     }
 
-    override fun contractsRetrieved(count: Int) {
+    override fun contractsRetrieved(tag: Any?, count: Int) {
         if (count > 0) {
             adjustDropDownHeight()
         } else {

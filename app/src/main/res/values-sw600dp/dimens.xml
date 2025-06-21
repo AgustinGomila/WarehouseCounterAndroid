@@ -1,4 +1,5 @@
 <resources>
     <!-- Default screen margins, per the Android Design guidelines. -->
     <bool name="isTab">true</bool>
+    <dimen name="top_app_bar_height">64dp</dimen> <!-- Para tablets o pantallas más grandes -->
 </resources>

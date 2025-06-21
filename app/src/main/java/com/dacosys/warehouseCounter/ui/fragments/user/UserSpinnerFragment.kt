@@ -6,13 +6,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.data.room.dao.user.UserCoroutines
 import com.dacosys.warehouseCounter.data.room.entity.user.User
 import com.dacosys.warehouseCounter.databinding.FragmentSpinnerBinding
 import com.dacosys.warehouseCounter.misc.Statics
-import com.dacosys.warehouseCounter.ui.adapter.user.UserAdapter
+import com.dacosys.warehouseCounter.ui.adapter.generic.GenericAdapter
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 
 /**
@@ -40,115 +41,34 @@ class UserSpinnerFragment : Fragment() {
     private var initialUserId: Long? = null
 
     var selectedUser: User?
-        get() {
-            if (_binding == null) return null
-
-            val temp = binding.fragmentSpinner.selectedItem
-            return when {
-                temp != null -> {
-                    val r = temp as User
-                    when (r.userId) {
-                        0L -> null
-                        else -> r
-                    }
-                }
-
-                else -> null
-            }
-        }
+        get() = (binding.fragmentSpinner.selectedItem as? User)?.takeIf { it.userId != 0L }
         set(user) {
-            initialUserId = user?.userId
-            if (_binding == null) return
-
-            if (user == null) {
-                activity?.runOnUiThread {
-                    binding.fragmentSpinner.setSelection(0)
-                }
-                return
-            }
-
-            val adapter = binding.fragmentSpinner.adapter as UserAdapter
-            for (i in 0 until adapter.count) {
-                if (equals(user, adapter.getItem(i))) {
-                    activity?.runOnUiThread {
-                        binding.fragmentSpinner.setSelection(i)
-                    }
-                    break
+            _binding?.let { binding ->
+                val adapter = binding.fragmentSpinner.adapter as? GenericAdapter<*> ?: return
+                val index = (0 until adapter.count).firstOrNull { user == adapter.getItem(it) }
+                this.requireActivity().runOnUiThread {
+                    binding.fragmentSpinner.setSelection(index ?: 0)
                 }
             }
         }
 
-    val selectedUserPass: String
-        get() {
-            if (_binding == null) return ""
+    val selectedUserPass
+        get() = (binding.fragmentSpinner.selectedItem as? User)?.password.orEmpty()
 
-            val temp = binding.fragmentSpinner.selectedItem
-            return when {
-                temp != null -> {
-                    val r = temp as User
-                    when {
-                        r.userId <= 0 -> ""
-                        else -> r.password ?: ""
-                    }
-                }
-
-                else -> ""
-            }
-        }
-
-    var selectedUserId: Int?
-        get() {
-            if (_binding == null) return null
-
-            val temp = binding.fragmentSpinner.selectedItem
-            return when {
-                temp != null -> {
-                    val r = temp as User
-                    when (r.userId) {
-                        0L -> null
-                        else -> r.userId.toInt()
-                    }
-                }
-
-                else -> null
-            }
-        }
-        set(id) {
-            initialUserId = id?.toLong()
-            if (_binding == null) return
-
-            if (id == null || id <= 0) {
-                if (binding.fragmentSpinner.adapter != null) {
-                    activity?.runOnUiThread {
-                        binding.fragmentSpinner.setSelection(0)
-                    }
-                }
-                return
-            }
-
-            if (binding.fragmentSpinner.adapter != null) {
-                val adapter = binding.fragmentSpinner.adapter as UserAdapter
-                for (i in 0 until adapter.count) {
-                    if (adapter.getItem(i) == null) {
-                        continue
-                    }
-
-                    if (equals(id, adapter.getItem(i)!!.userId)) {
-                        activity?.runOnUiThread {
-                            binding.fragmentSpinner.setSelection(i)
-                        }
-                        break
-                    }
+    var selectedUserId: Long?
+        get() = (binding.fragmentSpinner.selectedItem as? User)?.userId
+        set(user) {
+            _binding?.let { binding ->
+                val adapter = binding.fragmentSpinner.adapter as? GenericAdapter<*> ?: return
+                val index = (0 until adapter.count).firstOrNull { user == adapter.getItem(it) }
+                this.requireActivity().runOnUiThread {
+                    binding.fragmentSpinner.setSelection(index ?: 0)
                 }
             }
         }
 
     val count: Int
-        get() = when {
-            _binding == null -> 0
-            binding.fragmentSpinner.adapter != null -> binding.fragmentSpinner.adapter.count
-            else -> 0
-        }
+        get() = binding.fragmentSpinner.adapter?.count ?: 0
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
@@ -173,7 +93,7 @@ class UserSpinnerFragment : Fragment() {
         super.onAttach(context)
 
         if (initialUserId != null) {
-            selectedUserId = initialUserId?.toInt()
+            selectedUserId = initialUserId
             initialUserId = null
         }
     }
@@ -286,21 +206,27 @@ class UserSpinnerFragment : Fragment() {
     }
 
     private fun fillAdapter() {
-        allUser!!.sortWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
-        val spinnerArrayAdapter = UserAdapter(
-            resource = R.layout.custom_spinner_dropdown_item, user = allUser!!
+        val spinnerAdapter = GenericAdapter(
+            resource = R.layout.custom_spinner_dropdown_item,
+            items = allUser.orEmpty(),
+            getText = { it.name },
+            getTextColor = { user ->
+                val gray = ResourcesCompat.getColor(requireContext().resources, R.color.dimgray, null)
+                val black = ResourcesCompat.getColor(requireContext().resources, R.color.black, null)
+                if (user.userId == 0L) gray else black
+            }
         )
 
-        activity?.runOnUiThread {
-            binding.fragmentSpinner.adapter = spinnerArrayAdapter
-            if (oldPos >= 0) {
-                binding.fragmentSpinner.setSelection(oldPos)
-            }
-            spinnerArrayAdapter.notifyDataSetChanged()
+        // Actualización de la UI en el hilo principal
+        requireActivity().runOnUiThread {
+            binding.fragmentSpinner.adapter = spinnerAdapter
+            if (oldPos >= 0) binding.fragmentSpinner.setSelection(oldPos)
+            spinnerAdapter.notifyDataSetChanged()
         }
 
+        // Esperar hasta que el adapter esté cargado (si es realmente necesario)
         while (binding.fragmentSpinner.adapter == null) {
-            // Horrible wait for a full load
+            // Horrible wait for full load
         }
 
         if (mListener != null) {

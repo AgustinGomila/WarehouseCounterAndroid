@@ -11,6 +11,7 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.widget.AdapterView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +19,7 @@ import androidx.constraintlayout.widget.ConstraintSet
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.room.dao.item.ItemCoroutines
+import com.dacosys.warehouseCounter.data.room.entity.item.Item
 import com.dacosys.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.dacosys.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.dacosys.warehouseCounter.scanners.Scanner
@@ -220,38 +222,65 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
     }
 
     private var isFilling = false
+    private val fillAdapterLock = Any()
     private fun fillAdapter() {
-        if (isFilling) return
-        isFilling = true
+        synchronized(fillAdapterLock) {
+            if (isFilling) return
+            isFilling = true
+        }
 
         try {
-            Log.d(tag, "Selecting items...")
+            Log.d(tag, "Loading items for adapter...")
+            showProgressBar(VISIBLE)
 
-            ItemCoroutines.get {
-                val adapter = ItemAdapter(
-                    resource = R.layout.item_row_simple,
-                    activity = this,
-                    itemList = it,
-                    suggestedList = ArrayList()
-                )
-
+            ItemCoroutines.get { itemList ->
                 runOnUiThread {
-                    binding.autoCompleteTextView.setAdapter(adapter)
-                    (binding.autoCompleteTextView.adapter as ItemAdapter).notifyDataSetChanged()
-
-                    while (binding.autoCompleteTextView.adapter == null) {
-                        // Wait for complete loaded
+                    try {
+                        createAndSetAdapter(itemList)
+                    } catch (ex: Exception) {
+                        handleAdapterError(ex)
+                    } finally {
+                        showProgressBar(GONE)
+                        isFilling = false
                     }
-                    refreshCodeText(cleanText = false, focus = false)
-                    showProgressBar(GONE)
                 }
             }
-        } catch (ex: java.lang.Exception) {
-            ex.printStackTrace()
-            ErrorLog.writeLog(this, tag, ex)
-        } finally {
+        } catch (ex: Exception) {
+            handleAdapterError(ex)
             isFilling = false
         }
+    }
+
+    private fun createAndSetAdapter(itemList: List<Item>) {
+        val adapter = ItemAdapter(
+            resource = R.layout.item_row_simple,
+            activity = this,
+            itemList = ArrayList(itemList),
+            suggestedList = arrayListOf()
+        )
+        val tag = tag
+
+        binding.autoCompleteTextView.apply {
+            setAdapter(adapter)
+
+            // Verificación asíncrona
+            if (adapter.isEmpty) {
+                Log.i(tag, "Adapter created with empty dataset")
+            }
+
+            // Operaciones posteriores a la creación
+            post {
+                // Adapter completamente cargado
+                refreshCodeText(cleanText = false, focus = false)
+            }
+        }
+    }
+
+    private fun handleAdapterError(ex: Exception) {
+        Log.e(tag, "Error filling adapter", ex)
+        ErrorLog.writeLog(this, tag, ex)
+        showProgressBar(GONE)
+        showMessage("Error loading items", ERROR)
     }
 
     @Suppress("SameParameterValue")
@@ -343,7 +372,7 @@ class CodeSelectActivity : AppCompatActivity(), Scanner.ScannerListener,
         }
     }
 
-    override fun contractsRetrieved(count: Int) {
+    override fun contractsRetrieved(tag: Any?, count: Int) {
         if (count > 0) {
             adjustDropDownHeight()
         } else {

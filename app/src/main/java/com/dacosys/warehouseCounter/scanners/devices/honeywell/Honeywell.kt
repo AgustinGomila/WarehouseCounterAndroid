@@ -70,9 +70,9 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
 
         /**
          * Este es el nombre creado por defecto en los Honeywell
-         * Settings / Scan Settings / Internal Scanner / + / Select an application / StockControl
+         * Settings / Scan Settings / Internal Scanner / + / Select an application / WarehouseCounter
          */
-        const val appProfile = "StockControl"
+        const val appProfile = "WarehouseCounter"
 
         /**
          * Categoría por defecto. En otros ejemplos se envía vacía.
@@ -293,7 +293,7 @@ class Honeywell(private val activity: AppCompatActivity) : Scanner() {
             )
                 .putExtra(Constants.EXTRA_PROPERTIES, properties)
                 /*
-                We are using "StockControl", so a profile with this name has to be created in Scanner settings:
+                We are using "WarehouseCounter", so a profile with this name has to be created in Scanner settings:
                        Android Settings > Honeywell Settings > Scanning > Internal scanner > "+"
                 - If we use "DEFAULT" it will apply the settings from the Default profile in Scanner settings
                 - If not found, it will use Factory default settings.
