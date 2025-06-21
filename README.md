@@ -5,18 +5,20 @@
     </a>
 
 <h3 align="center">WarehouseCounter</h3>
-    <p align="center">
-        App para conteo de bodega
-        <br/>
-		<a href="http://resources.dacosys.com/Warehouse_Counter/Milestone12/installers/android/warehouseCounter-release.apk">Descarga</a>
-        ·
-        <a href="https://github.com/AgustinGomila/warehouse_counter_android/issues">Reportar Bug</a>
-        ·
-        <a href="https://github.com/AgustinGomila/warehouse_counter_android/issues">Solicitar cambios</a>
-    </p>
+<p align="center">
+App para conteo de bodega
+<br/>
+<a href="http://resources.dacosys.com/Warehouse_Counter/Milestone12/installers/android/warehouseCounter-release.apk">
+Descarga</a>
+·
+<a href="https://github.com/AgustinGomila/warehouse_counter_android/issues">Reportar Bug</a>
+·
+<a href="https://github.com/AgustinGomila/warehouse_counter_android/issues">Solicitar cambios</a>
+</p>
 </p>
 
 <!-- TABLE OF CONTENTS -->
+
 ## Tabla de contenidos
 
 * [Librerías utilizadas](#librerías-utilizadas)
@@ -46,23 +48,27 @@
 
 ## Acerca del proyecto
 
-**WarehouseCounter** es una aplicación para Android escrita en Kotlin diseñada especialmente para dispositivos móviles de lectura de códigos y forma parte de una solución integral de gestión de inventario.
-Esta solución más amplia ofrece un funcionamiento en remoto que puede mantener sincronización de datos con otros gestores de inventario, permitiendo una administración eficiente y centralizada.
+**WarehouseCounter** es una aplicación para Android escrita en Kotlin diseñada especialmente para dispositivos móviles
+de lectura de códigos y forma parte de una solución integral de gestión de inventario.
+Esta solución más amplia ofrece un funcionamiento en remoto que puede mantener sincronización de datos con otros
+gestores de inventario, permitiendo una administración eficiente y centralizada.
 
 Proporciona funciones como arqueos de bodega, auditorías de stock, recepciones y despachos, *Pick to Light*.
-Permite la vinculación de nuevos códigos a productos existentes y la captura de imágenes para una identificación visual más precisa.
-Además, ofrece soporte para lectores de códigos de múltiples simbologías y la posibilidad de imprimir etiquetas en impresoras de red o Bluetooth.
+Permite la vinculación de nuevos códigos a productos existentes y la captura de imágenes para una identificación visual
+más precisa.
+Además, ofrece soporte para lectores de códigos de múltiples simbologías y la posibilidad de imprimir etiquetas en
+impresoras de red o Bluetooth.
 La aplicación es multiusuario y permite la configuración a través de escaneo de códigos para una fácil implementación.
 
 ### Capturas de pantalla
 
-| <img src="warehouseCounter/wc_capture1.png" alt="WarehouseCounter Screenshot" width="300"/> | <img src="warehouseCounter/wc_capture2.png" alt="WarehouseCounter Screenshot" width="300"/> |
-|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| Pantalla principal de la aplicación.                                                        | Pantalla de Catálogo de productos, <br/>impresión de etiquetas, etc.                        |
+| <img src="/screenshots/wc_capture1.png" alt="WarehouseCounter Screenshot" width="300"/> | <img src="/screenshots/wc_capture2.png" alt="WarehouseCounter Screenshot" width="300"/> |
+|-----------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| Pantalla principal de la aplicación.                                                    | Pantalla de Catálogo de productos, <br/>impresión de etiquetas, etc.                    |
 
-| <img src="warehouseCounter/wc_capture3.png" alt="WarehouseCounter Screenshot" width="300"/> | <img src="warehouseCounter/wc_capture4.png" alt="WarehouseCounter Screenshot" width="300"/> |
-|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| Pantalla de *Pick to Light*.                                                                | Pantalla de Detalle de Arqueo de bodega.                                                    |
+| <img src="/screenshots/wc_capture3.png" alt="WarehouseCounter Screenshot" width="300"/> | <img src="/screenshots/wc_capture4.png" alt="WarehouseCounter Screenshot" width="300"/> |
+|-----------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| Pantalla de *Pick to Light*.                                                            | Pantalla de Detalle de Arqueo de bodega.                                                |
 
 ## Contacto
 
