@@ -16,13 +16,7 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCodeResponse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderPackage
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.OrderResponseContent
+import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.*
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.GetItem
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.GetItemCode
 import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack

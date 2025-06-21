@@ -29,7 +29,6 @@ dependencyResolutionManagement {
             "67926409" to "DEPLOY_TOKEN_EASY_FLOAT",
             "67926057" to "DEPLOY_TOKEN_IMAGE_FLOAT",
             "67926390" to "DEPLOY_TOKEN_ZXING",
-            "67926176" to "DEPLOY_TOKEN_DATE_PICKER",
             "68106455" to "DEPLOY_TOKEN_HONEYWELL_SCANNER"
         ).forEach { (projectId, tokenProperty) ->
             maven {
