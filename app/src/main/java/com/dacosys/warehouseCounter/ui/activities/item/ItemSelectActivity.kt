@@ -18,6 +18,7 @@ import android.view.WindowManager
 import android.widget.Button
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -25,6 +26,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import androidx.core.view.doOnNextLayout
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
@@ -79,13 +83,14 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.INFO
 import com.dacosys.warehouseCounter.ui.utils.ParcelLong
-import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
-import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.closeKeyboard
 import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
+import com.dacosys.warehouseCounter.ui.viewmodel.ItemSelectUiState
+import com.dacosys.warehouseCounter.ui.viewmodel.ItemSelectViewModel
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.launch
 import kotlin.concurrent.thread
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item as ItemKtor
 
@@ -96,6 +101,8 @@ class ItemSelectActivity(
     ItemRecyclerAdapter.AddPhotoRequiredListener, ItemRecyclerAdapter.AlbumViewRequiredListener,
     SearchTextFragment.OnSearchTextFocusChangedListener, SearchTextFragment.OnSearchTextChangedListener,
     SelectFilterFragment.OnFilterItemChangedListener {
+
+    private val viewModel: ItemSelectViewModel by viewModels()
 
     // region Set Panels
     override val stateConfig: PanelController.PanelStateConfiguration
@@ -138,7 +145,7 @@ class ItemSelectActivity(
     }
 
     private fun postTopPanelAnimation() {
-        if (panelBottomState == PanelState.EXPANDED) printLabelFragment?.refreshViews()
+        if (panelBottomState == PanelState.EXPANDED) printLabelFragment.refreshViews()
     }
     // endregion Set Panels
 
@@ -160,26 +167,12 @@ class ItemSelectActivity(
         }, 100)
     }
 
-    private var tempTitle = ""
-
     private var rejectNewInstances = false
     private var isFinishingByUser = false
     private var printQtyIsFocused = false
     private var searchTextIsFocused = false
-    private var showSelectButton = true
 
-    private var multiSelect = false
     private var adapter: ItemRecyclerAdapter? = null
-    private var lastSelected: Item? = null
-    private var firstVisiblePos: Int? = null
-    private var currentScrollPosition: Int = 0
-
-    private var completeList: ArrayList<Item> = ArrayList()
-    private var checkedIdArray: ArrayList<Long> = ArrayList()
-
-    // Se usa para saber si estamos en onStart luego de onCreate
-    private var fillRequired = false
-    private var hideFilterPanel = false
 
     private val menuItemShowImages = 9999
     private var showImages
@@ -190,114 +183,63 @@ class ItemSelectActivity(
 
     private var showCheckBoxes
         get() =
-            if (!multiSelect) false
+            if (!viewModel.multiSelect) false
             else settingsVm.itemSelectShowCheckBoxes
         set(value) {
             settingsVm.itemSelectShowCheckBoxes = value
         }
 
-    private val countChecked: Int
-        get() = adapter?.countChecked() ?: 0
-
-    private val allChecked: ArrayList<Item>
-        get() = adapter?.getAllChecked() ?: arrayListOf()
-
-    private val currentItem: Item?
-        get() = adapter?.currentItem()
+    private val countChecked: Int get() = adapter?.countChecked() ?: 0
+    private val currentItem: Item? get() = adapter?.currentItem()
 
     private lateinit var filterFragment: SelectFilterFragment
-    private var printLabelFragment: PrintLabelFragment? = null
+    private lateinit var printLabelFragment: PrintLabelFragment
     private lateinit var summaryFragment: SummaryFragment
     private lateinit var searchTextFragment: SearchTextFragment
 
-    private var filterItemDescription: String = ""
-    private var filterItemEan: String = ""
-    private var filterItemCategory: ItemCategory? = null
-    private var filterItemExternalId: String = ""
-    private var filterOnlyActive: Boolean = true
-
-    private var searchedText: String = ""
-
-    private var currentPrintQty: Int = 1
-    private var currentTemplateId: Long = 0L
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        saveBundleValues(outState)
-    }
-
-    private fun saveBundleValues(b: Bundle) {
-        b.putString(ARG_TITLE, tempTitle)
-        b.putBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
-        b.putBoolean(ARG_MULTI_SELECT, multiSelect)
-        b.putBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
-
-        if (adapter != null) {
-            b.putParcelable(ARG_LAST_SELECTED, currentItem)
-            b.putInt(ARG_FIRST_VISIBLE_POS, adapter?.firstVisiblePos() ?: -1)
-            b.putParcelableArrayList(ARG_COMPLETE_LIST, adapter?.fullList)
-            b.putLongArray(ARG_CHECKED_ID_ARRAY, allChecked.map { it.itemId }.toLongArray())
-            b.putInt(ARG_CURRENT_SCROLL_POSITION, currentScrollPosition)
-        }
-
-        b.putString(ARG_FILTER_ITEM_DESCRIPTION, filterItemDescription)
-        b.putString(ARG_FILTER_ITEM_EAN, filterItemEan)
-        b.putParcelable(ARG_FILTER_ITEM_CATEGORY, filterItemCategory)
-        b.putString(ARG_FILTER_ITEM_CODE, filterItemExternalId)
-        b.putBoolean(ARG_FILTER_ONLY_ACTIVE, filterOnlyActive)
-
-        b.putString(ARG_SEARCHED_TEXT, searchedText)
-
-        b.putInt(ARG_CURRENT_PRINT_QTY, currentPrintQty)
-        b.putLong(ARG_CURRENT_TEMPLATE_ID, currentTemplateId)
-    }
-
-    private fun loadBundleValues(b: Bundle) {
-        tempTitle = b.getString(ARG_TITLE) ?: ""
-        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
-
-        showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
-
-        multiSelect = b.getBoolean(ARG_MULTI_SELECT, multiSelect)
-        hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL, hideFilterPanel)
-
-        // Adapter
-        checkedIdArray = (b.getLongArray(ARG_CHECKED_ID_ARRAY) ?: longArrayOf()).toCollection(ArrayList())
-        completeList = b.parcelableArrayList(ARG_COMPLETE_LIST) ?: ArrayList()
-        lastSelected = b.parcelable(ARG_LAST_SELECTED)
-        firstVisiblePos = if (b.containsKey(ARG_FIRST_VISIBLE_POS)) b.getInt(ARG_FIRST_VISIBLE_POS) else -1
-        currentScrollPosition = b.getInt(ARG_CURRENT_SCROLL_POSITION)
-
-        // Filter Fragment
-        filterItemDescription = b.getString(ARG_FILTER_ITEM_DESCRIPTION) ?: ""
-        filterItemEan = b.getString(ARG_FILTER_ITEM_EAN) ?: ""
-        filterItemCategory = b.parcelable(ARG_FILTER_ITEM_CATEGORY)
-        filterItemExternalId = b.getString(ARG_FILTER_ITEM_CODE) ?: ""
-        filterOnlyActive = b.getBoolean(ARG_FILTER_ONLY_ACTIVE)
-
-        // Search Text Fragment
-        searchedText = b.getString(ARG_SEARCHED_TEXT) ?: ""
-
-        // Printer Fragment
-        currentPrintQty = b.getInt(ARG_CURRENT_PRINT_QTY)
-        currentTemplateId = b.getLong(ARG_CURRENT_TEMPLATE_ID)
-    }
-
-    private fun loadExtrasBundleValues(b: Bundle) {
-        tempTitle = b.getString(ARG_TITLE) ?: ""
-        if (tempTitle.isEmpty()) tempTitle = context.getString(R.string.select_item)
-
-        hideFilterPanel = b.getBoolean(ARG_HIDE_FILTER_PANEL)
-        multiSelect = b.getBoolean(ARG_MULTI_SELECT, multiSelect)
-
-        showSelectButton = b.getBoolean(ARG_SHOW_SELECT_BUTTON, showSelectButton)
-    }
-
     private lateinit var binding: ItemPrintLabelActivityTopPanelCollapsedBinding
 
-    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
+        binding = ItemPrintLabelActivityTopPanelCollapsedBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         super.onCreate(savedInstanceState)
+
+        setSupportActionBar(binding.topAppbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        setupObservers()
+        setupActivity(savedInstanceState)
+    }
+
+    private fun setupObservers() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    updateUI(state)
+                }
+            }
+        }
+    }
+
+    private fun updateUI(state: ItemSelectUiState) {
+        binding.topAppbar.title = state.title
+        binding.expandBottomPanelButton?.visibility =
+            if (state.hideFilterPanel) GONE else View.VISIBLE
+
+        // Actualizar adapter
+        adapter?.let {
+            it.setMultiSelect(state.multiSelect)
+            it.setCheckedIds(state.checkedIds)
+            it.setFullList(state.completeList)
+            it.refreshFilter(FilterOptions(state.searchedText))
+        }
+
+        // Controlar loading
+        binding.swipeRefreshItem.isRefreshing = state.isLoading
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    fun setupActivity(savedInstanceState: Bundle?) {
         Screen.setScreenRotation(this)
         binding = ItemPrintLabelActivityTopPanelCollapsedBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -307,35 +249,31 @@ class ItemSelectActivity(
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         setBackPressCallback()
-
-        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                currentScrollPosition =
-                    (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
-            }
-        })
-
-        // Para el llenado en el onStart siguiente de onCreate
-        fillRequired = true
-        restoreInstanceState(savedInstanceState)
+        setScrollListener()
 
         setFragments()
         setupFilterFragment()
         setupSearchTextFragment()
         setupPrintLabelFragment()
 
-        binding.swipeRefreshItem.setOnRefreshListener(this)
-        binding.swipeRefreshItem.setColorSchemeResources(
-            android.R.color.holo_blue_bright,
-            android.R.color.holo_green_light,
-            android.R.color.holo_orange_light,
-            android.R.color.holo_red_light
-        )
-
+        setupSwipe()
         setButtons()
-        setSearchPanelVisibility(!hideFilterPanel)
+        setSearchPanelVisibility()
 
         Screen.setupUI(binding.root, this)
+    }
+
+    private fun setScrollListener() {
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                viewModel.updateState {
+                    it.copy(
+                        currentScrollPosition =
+                            (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+                    )
+                }
+            }
+        })
     }
 
     private fun setBackPressCallback() {
@@ -347,16 +285,6 @@ class ItemSelectActivity(
         onBackPressedDispatcher.addCallback(this, callback)
     }
 
-    private fun restoreInstanceState(b: Bundle?) {
-        if (b != null) {
-            loadBundleValues(b)
-        } else {
-            val extras = intent.extras
-            if (extras != null) loadExtrasBundleValues(extras)
-        }
-        binding.topAppbar.title = tempTitle
-    }
-
     private fun setFragments() {
         filterFragment = supportFragmentManager.findFragmentById(R.id.filterFragment) as SelectFilterFragment
         printLabelFragment = supportFragmentManager.findFragmentById(R.id.printFragment) as PrintLabelFragment
@@ -364,12 +292,22 @@ class ItemSelectActivity(
         searchTextFragment = supportFragmentManager.findFragmentById(R.id.searchTextFragment) as SearchTextFragment
     }
 
+    private fun setupSwipe() {
+        binding.swipeRefreshItem.setOnRefreshListener(this)
+        binding.swipeRefreshItem.setColorSchemeResources(
+            android.R.color.holo_blue_bright,
+            android.R.color.holo_green_light,
+            android.R.color.holo_orange_light,
+            android.R.color.holo_red_light
+        )
+    }
+
     private fun setButtons() {
         binding.okButton.setOnClickListener { itemSelect() }
     }
 
-    private fun setSearchPanelVisibility(visible: Boolean) {
-        if (!visible) {
+    private fun setSearchPanelVisibility() {
+        if (viewModel.hideFilterPanel) {
             handlePanelState(PanelType.BOTTOM, PanelState.COLLAPSED)
             if (lastOrientation == Configuration.ORIENTATION_PORTRAIT)
                 binding.expandBottomPanelButton?.visibility = GONE
@@ -379,16 +317,16 @@ class ItemSelectActivity(
     private fun setupPrintLabelFragment() {
         binding.printFragment.visibility = View.VISIBLE
 
-        if (currentTemplateId == 0L) {
-            currentTemplateId = settingsVm.defaultItemTemplateId
+        if (viewModel.templateId == 0L) {
+            viewModel.updateState { it.copy(templateId = settingsVm.defaultItemTemplateId) }
         }
 
-        printLabelFragment?.saveSharedPreferences()
+        printLabelFragment.saveSharedPreferences()
         val fragment =
             PrintLabelFragment.Builder()
                 .setTemplateTypeIdList(arrayListOf(BarcodeLabelType.item.id))
-                .setTemplateId(currentTemplateId)
-                .setQty(currentPrintQty)
+                .setTemplateId(viewModel.templateId)
+                .setQty(viewModel.printQty)
                 .build()
         printLabelFragment = fragment
         supportFragmentManager.beginTransaction().replace(R.id.printFragment, fragment).commit()
@@ -399,7 +337,7 @@ class ItemSelectActivity(
             SearchTextFragment.Builder()
                 .focusChangedCallback(this)
                 .searchTextChangedCallback(this)
-                .setSearchText(searchedText)
+                .setSearchText(viewModel.searchedText)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.searchTextFragment, searchTextFragment).commit()
     }
@@ -413,11 +351,11 @@ class ItemSelectActivity(
                 .searchByItemEan(sv.itemSearchByItemEan, sr.itemSearchByItemEan)
                 .searchByItemExternalId(sv.itemSearchByItemExternalId, sr.itemSearchByItemExternalId)
                 .searchByCategory(sv.itemSearchByCategory, sr.itemSearchByCategory)
-                .itemDescription(filterItemDescription)
-                .itemEan(filterItemEan)
-                .itemExternalId(filterItemExternalId)
-                .itemCategory(filterItemCategory)
-                .onlyActive(filterOnlyActive)
+                .itemDescription(viewModel.filterItemDescription)
+                .itemEan(viewModel.filterItemEan)
+                .itemExternalId(viewModel.filterItemExternalId)
+                .itemCategory(viewModel.filterItemCategory)
+                .onlyActive(viewModel.filterOnlyActive)
                 .build()
         supportFragmentManager.beginTransaction().replace(R.id.filterFragment, filterFragment).commit()
     }
@@ -429,13 +367,7 @@ class ItemSelectActivity(
         itemCategory: ItemCategory?,
         onlyActive: Boolean
     ) {
-        filterItemDescription = description
-        filterItemEan = ean
-        filterItemCategory = itemCategory
-        filterItemExternalId = externalId
-        filterOnlyActive = onlyActive
-
-        Handler(Looper.getMainLooper()).postDelayed({ getItems() }, 200)
+        viewModel.applyFilters(description, ean, itemCategory, externalId, onlyActive)
     }
 
     private fun showProgressBar(show: Boolean) {
@@ -445,14 +377,13 @@ class ItemSelectActivity(
     }
 
     private fun itemSelect() {
-        closeKeyboard(this)
-
         val itemArray = adapter?.selectedItems() ?: arrayListOf()
-
         if (!itemArray.any()) {
             showMessage(getString(R.string.you_must_select_at_least_one_item), ERROR)
             return
         }
+
+        closeKeyboard(this)
 
         val data = Intent()
         data.putParcelableArrayListExtra(ARG_IDS, itemArray.map { ParcelLong(it.itemId) } as ArrayList<ParcelLong>)
@@ -462,50 +393,19 @@ class ItemSelectActivity(
         finish()
     }
 
-    private fun getItems() {
-        // Limpiamos los ítems marcados
-        checkedIdArray.clear()
-
-        val itemEan = filterFragment.getItemEan().trim()
-        val itemDescription = filterFragment.getDescription().trim()
-        val externalId = filterFragment.getItemExternalId().trim()
-        val itemCategory = filterFragment.getItemCategory()
-
-        if (itemEan.isEmpty() && externalId.isEmpty() && itemDescription.isEmpty() && itemCategory == null) {
-            fillAdapter(arrayListOf())
-            return
-        }
-
-        try {
-            Log.d(tag, "Selecting items...")
-            ItemCoroutines.getByQuery(
-                ean = itemEan,
-                externalId = externalId,
-                description = itemDescription,
-                itemCategoryId = itemCategory?.itemCategoryId,
-                useLike = true
-            ) {
-                fillAdapter(it)
-            }
-        } catch (ex: java.lang.Exception) {
-            ErrorLog.writeLog(this, tag, ex.message.toString())
-            showProgressBar(false)
-        }
-    }
-
-    private fun fillAdapter(t: ArrayList<Item>) {
+    private fun fillAdapter(t: List<Item>) {
         Screen.closeKeyboard(this)
         handlePanelState(PanelType.BOTTOM, PanelState.COLLAPSED)
         showProgressBar(true)
 
-        completeList = t
+        viewModel.updateState { it.copy(completeList = t) }
 
         runOnUiThread {
             try {
                 // Preservar selección solo si ya existe un adapter
                 val preserveSelection = adapter != null
                 if (preserveSelection) {
-                    lastSelected = currentItem
+                    viewModel.updateState { it.copy(lastSelected = currentItem) }
                 }
 
                 adapter = createNewAdapter()
@@ -514,10 +414,10 @@ class ItemSelectActivity(
 
                 // Programar acciones posteriores al layout
                 binding.recyclerView.doOnNextLayout { view ->
-                    val targetItem = if (preserveSelection) lastSelected else t.firstOrNull()
+                    val targetItem = if (preserveSelection) viewModel.lastSelected else t.firstOrNull()
                     adapter?.apply {
                         selectItem(targetItem, false)
-                        scrollToPos(currentScrollPosition, true)
+                        scrollToPos(viewModel.currentScrollPosition, true)
                     }
                     showProgressBar(false)
                 }
@@ -537,12 +437,12 @@ class ItemSelectActivity(
     private fun createNewAdapter(): ItemRecyclerAdapter {
         return ItemRecyclerAdapter.Builder()
             .recyclerView(binding.recyclerView)
-            .fullList(completeList)
-            .checkedIdArray(checkedIdArray)
-            .multiSelect(multiSelect)
+            .fullList(ArrayList(viewModel.completeList ?: listOf()))
+            .checkedIdArray(ArrayList(viewModel.checkedIds))
+            .multiSelect(viewModel.multiSelect)
             .showCheckBoxes(showCheckBoxes) { showCheckBoxes = it }
             .showImages(showImages) { showImages = it }
-            .filterOptions(FilterOptions(searchedText))
+            .filterOptions(FilterOptions(viewModel.searchedText))
             .checkedChangedListener(this)
             .dataSetChangedListener(this)
             .addPhotoRequiredListener(this)
@@ -553,13 +453,7 @@ class ItemSelectActivity(
     public override fun onStart() {
         super.onStart()
         rejectNewInstances = false
-
         closeKeyboard(this)
-
-        if (fillRequired) {
-            fillRequired = false
-            fillAdapter(completeList)
-        }
     }
 
     override fun onSearchTextFocusChange(hasFocus: Boolean) {
@@ -570,9 +464,9 @@ class ItemSelectActivity(
     }
 
     override fun onSearchTextChanged(searchText: String) {
-        searchedText = searchText
+        viewModel.updateState { it.copy(searchedText = searchText) }
         runOnUiThread {
-            adapter?.refreshFilter(FilterOptions(searchedText))
+            adapter?.refreshFilter(FilterOptions(viewModel.searchedText))
         }
     }
 
@@ -645,10 +539,7 @@ class ItemSelectActivity(
             }
         },
         DebugMenuItem(999005, "Random item on list") {
-            (adapter?.fullList ?: emptyList())
-                .map { it.ean }
-                .takeIf { it.isNotEmpty() }
-                ?.let { scannerCompleted(it.random()) }
+            adapter?.allEan()?.let { scannerCompleted(it.random()) }
         },
         DebugMenuItem(999006, "Random order") {
             GetOrder(onFinish = {
@@ -888,24 +779,22 @@ class ItemSelectActivity(
             runOnUiThread {
                 filterFragment.setItemEan(item.ean)
                 thread {
-                    completeList = arrayListOf(item)
-                    checkedIdArray.clear()
-                    fillAdapter(completeList)
+                    viewModel.updateState { it.copy(completeList = arrayListOf(item), checkedIds = setOf()) }
+                    fillAdapter(viewModel.completeList ?: listOf())
                 }
             }
         }
     }
 
     override fun onFilterChanged(printer: String, template: BarcodeLabelTemplate?, qty: Int?) {
-        currentPrintQty = qty ?: 1
-        currentTemplateId = template?.templateId ?: return
-
-        settingsVm.defaultItemTemplateId = currentTemplateId
+        val templateId = template?.templateId ?: return
+        viewModel.updateState { it.copy(printQty = qty ?: 1, templateId = templateId) }
+        settingsVm.defaultItemTemplateId = viewModel.templateId
     }
 
     override fun onPrintRequested(printer: String, qty: Int) {
         val itemArray = adapter?.selectedItems() ?: arrayListOf()
-        val template = printLabelFragment?.template ?: return
+        val template = printLabelFragment.template ?: return
 
         if (!itemArray.any()) {
             showMessage(getString(R.string.you_must_select_at_least_one_item), ERROR)
@@ -920,7 +809,7 @@ class ItemSelectActivity(
             ),
             onEvent = { if (it.snackBarType != SnackBarType.SUCCESS) showMessage(it.text, it.snackBarType) },
             onFinish = {
-                printLabelFragment?.printBarcodes(labelArray = it, onFinish = {})
+                printLabelFragment.printBarcodes(labelArray = it, onFinish = {})
             }
         ).execute()
     }
@@ -933,6 +822,7 @@ class ItemSelectActivity(
     }
 
     override fun onCheckedChanged(isChecked: Boolean, pos: Int) {
+        // viewModel.handleItemSelection(pos, isChecked)
         fillSummaryFragment()
     }
 
@@ -954,7 +844,6 @@ class ItemSelectActivity(
     }
 
     // region READERS Reception
-
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Nfc.nfcHandleIntent(intent, this)
@@ -1094,24 +983,6 @@ class ItemSelectActivity(
     //endregion ImageControl
 
     companion object {
-        const val ARG_TITLE = "title"
-        const val ARG_MULTI_SELECT = "multiSelect"
-        const val ARG_SHOW_SELECT_BUTTON = "showSelectButton"
-        const val ARG_HIDE_FILTER_PANEL = "hideFilterPanel"
         const val ARG_IDS = "ids"
-
-        const val ARG_LAST_SELECTED = "lastSelected"
-        const val ARG_FIRST_VISIBLE_POS = "firstVisiblePos"
-        const val ARG_COMPLETE_LIST = "completeList"
-        const val ARG_CHECKED_ID_ARRAY = "checkedIdArray"
-        const val ARG_CURRENT_SCROLL_POSITION = "currentScrollPosition"
-        const val ARG_FILTER_ITEM_DESCRIPTION = "filterItemDescription"
-        const val ARG_FILTER_ITEM_EAN = "filterItemEan"
-        const val ARG_FILTER_ITEM_CATEGORY = "filterItemCategory"
-        const val ARG_FILTER_ITEM_CODE = "filterItemCode"
-        const val ARG_FILTER_ONLY_ACTIVE = "filterOnlyActive"
-        const val ARG_SEARCHED_TEXT = "searchedText"
-        const val ARG_CURRENT_PRINT_QTY = "currentPrintQty"
-        const val ARG_CURRENT_TEMPLATE_ID = "currentTemplateId"
     }
 }

@@ -999,9 +999,7 @@ class LinkCodeActivity : AppCompatActivity(), Scanner.ScannerListener, Rfid.Rfid
             }
 
             menuItemRandomOnListL -> {
-                val codes: ArrayList<String> = ArrayList()
-                (adapter?.fullList ?: ArrayList()).mapTo(codes) { it.ean }
-                if (codes.any()) scannerCompleted(codes[Random().nextInt(codes.count())])
+                adapter?.allEan()?.let { scannerCompleted(it.random()) }
                 return super.onOptionsItemSelected(item)
             }
 

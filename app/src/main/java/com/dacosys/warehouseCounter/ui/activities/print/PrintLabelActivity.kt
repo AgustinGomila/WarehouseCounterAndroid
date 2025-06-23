@@ -18,6 +18,7 @@ import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
 import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.setScreenRotation
 import com.dacosys.warehouseCounter.ui.utils.Screen.Companion.setupUI
+import com.dacosys.warehouseCounter.ui.viewmodel.ItemSelectViewModel
 
 class PrintLabelActivity : AppCompatActivity() {
     override fun onResume() {
@@ -47,9 +48,9 @@ class PrintLabelActivity : AppCompatActivity() {
                 rejectNewInstances = true
 
                 val intent = Intent(context, ItemSelectActivity::class.java)
-                intent.putExtra(ItemSelectActivity.ARG_TITLE, getString(R.string.print_code))
-                intent.putExtra(ItemSelectActivity.ARG_MULTI_SELECT, true)
-                intent.putExtra(ItemSelectActivity.ARG_SHOW_SELECT_BUTTON, false)
+                intent.putExtra(ItemSelectViewModel.ARG_TITLE, getString(R.string.print_code))
+                intent.putExtra(ItemSelectViewModel.ARG_MULTI_SELECT, true)
+                intent.putExtra(ItemSelectViewModel.ARG_SHOW_SELECT_BUTTON, false)
                 startActivity(intent)
             }
         }

@@ -50,13 +50,13 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
 
     private val recyclerView: RecyclerView
     var fullList: ArrayList<Item> = ArrayList()
-    var checkedIdArray: ArrayList<Long> = ArrayList()
+    private var checkedIds: ArrayList<Long> = ArrayList()
     private var multiSelect: Boolean = false
-    var showCheckBoxes: Boolean = false
+    private var showCheckBoxes: Boolean = false
     private var showCheckBoxesChanged: (Boolean) -> Unit = { }
     private var showImages: Boolean = false
     private var showImagesChanged: (Boolean) -> Unit = { }
-    private var visibleStatus: ArrayList<ItemStatus> = ArrayList(ItemStatus.values().toList())
+    private var visibleStatus: ArrayList<ItemStatus> = ArrayList(ItemStatus.entries)
     private var filterOptions: FilterOptions = FilterOptions()
 
     // Este Listener debe usarse para los cambios de cantidad o de ítems marcados de la lista,
@@ -99,6 +99,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
      * The state is defined by settingViewModel.useImageControl preference property.
      *
      */
+    @Suppress("unused")
     fun showImageControlPanel() {
         notifyItemRangeChanged(currentIndex, 1, PAYLOADS.IMAGE_CONTROL_VISIBILITY)
     }
@@ -114,8 +115,20 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
     // Permiso de edición de ítems
     private val userHasPermissionToEdit: Boolean by lazy { settingsVm.editItems }
 
+    fun setMultiSelect(value: Boolean) {
+        multiSelect = value
+    }
+
+    fun setCheckedIds(ids: Set<Long>) {
+        checkedIds = ArrayList(ids)
+    }
+
+    fun setFullList(newItems: List<Item>) {
+        fullList = ArrayList(newItems)
+    }
+
     fun clear() {
-        checkedIdArray.clear()
+        checkedIds.clear()
         idWithImage.clear()
 
         fullList.clear()
@@ -201,9 +214,9 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
                 PAYLOADS.CHECKBOX_STATE -> {
                     val item = getItem(position)
                     if (position == currentIndex)
-                        (holder as SelectedViewHolder).bindCheckBoxState(checkedIdArray.contains(item.itemId))
+                        (holder as SelectedViewHolder).bindCheckBoxState(checkedIds.contains(item.itemId))
                     else
-                        (holder as UnselectedViewHolder).bindCheckBoxState(checkedIdArray.contains(item.itemId))
+                        (holder as UnselectedViewHolder).bindCheckBoxState(checkedIds.contains(item.itemId))
                 }
 
                 PAYLOADS.IMAGE_VISIBILITY -> {
@@ -420,15 +433,15 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
             val newState = !checkBox.isChecked
             if (newState) {
                 currentList.mapIndexed { pos, item ->
-                    if (item.itemId !in checkedIdArray) {
-                        checkedIdArray.add(item.itemId)
+                    if (item.itemId !in checkedIds) {
+                        checkedIds.add(item.itemId)
                         notifyItemChanged(pos, PAYLOADS.CHECKBOX_STATE)
                     }
                 }
             } else {
                 currentList.mapIndexed { pos, item ->
-                    if (item.itemId in checkedIdArray) {
-                        checkedIdArray.remove(item.itemId)
+                    if (item.itemId in checkedIds) {
+                        checkedIds.remove(item.itemId)
                         notifyItemChanged(pos, PAYLOADS.CHECKBOX_STATE)
                     }
                 }
@@ -441,7 +454,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
         // Important to remove previous checkedChangedListener before calling setChecked
         checkBox.setOnCheckedChangeListener(null)
 
-        checkBox.isChecked = checkedIdArray.contains(item.itemId)
+        checkBox.isChecked = checkedIds.contains(item.itemId)
         checkBox.isLongClickable = true
         checkBox.tag = position
 
@@ -565,7 +578,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
 
     fun remove(position: Int) {
         val id = getItemId(position)
-        checkedIdArray.remove(id)
+        checkedIds.remove(id)
 
         fullList.removeAt(position)
         submitList(fullList).apply {
@@ -691,7 +704,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
 
     fun getAllChecked(): ArrayList<Item> {
         val items = ArrayList<Item>()
-        checkedIdArray.mapNotNullTo(items) { getItemById(it) }
+        checkedIds.mapNotNullTo(items) { getItemById(it) }
         return items
     }
 
@@ -702,7 +715,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
     }
 
     fun countChecked(): Int {
-        return checkedIdArray.size
+        return checkedIds.size
     }
 
     fun totalVisible(): Int {
@@ -717,11 +730,11 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
     fun setChecked(item: Item, isChecked: Boolean, suspendRefresh: Boolean = false) {
         val pos = getIndexById(item.itemId)
         if (isChecked) {
-            if (!checkedIdArray.contains(item.itemId)) {
-                checkedIdArray.add(item.itemId)
+            if (!checkedIds.contains(item.itemId)) {
+                checkedIds.add(item.itemId)
             }
         } else {
-            checkedIdArray.remove(item.itemId)
+            checkedIds.remove(item.itemId)
         }
 
         checkedChangedListener?.onCheckedChanged(isChecked, pos)
@@ -757,7 +770,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
 
         // Quitamos los ítems con el estado seleccionado de la lista marcados.
         val uncheckedItems = ArrayList(fullList.mapNotNull { if (it.itemStatus == status) it.itemId else null })
-        checkedIdArray.removeAll(uncheckedItems.toSet())
+        checkedIds.removeAll(uncheckedItems.toSet())
 
         refreshFilter()
     }
@@ -1104,7 +1117,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
         // Set values from Builder
         recyclerView = builder.recyclerView
         fullList = builder.fullList
-        checkedIdArray = builder.checkedIdArray
+        checkedIds = builder.checkedIdArray
         multiSelect = builder.multiSelect
         showCheckBoxes = builder.showCheckBoxes
         showCheckBoxesChanged = builder.showCheckBoxesChanged
@@ -1185,6 +1198,10 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
         return itemArray
     }
 
+    fun allEan(): List<String>? {
+        return fullList.map { it.ean }.takeIf { it.isNotEmpty() }
+    }
+
     class Builder {
         fun build(): ItemRecyclerAdapter {
             return ItemRecyclerAdapter(this)
@@ -1198,7 +1215,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
         internal var showCheckBoxesChanged: (Boolean) -> Unit = { }
         internal var showImages: Boolean = false
         internal var showImagesChanged: (Boolean) -> Unit = { }
-        internal var visibleStatus: ArrayList<ItemStatus> = ArrayList(ItemStatus.values().toList())
+        internal var visibleStatus: ArrayList<ItemStatus> = ArrayList(ItemStatus.entries)
         internal var filterOptions: FilterOptions = FilterOptions()
 
         internal var dataSetChangedListener: DataSetChangedListener? = null

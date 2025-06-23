@@ -180,10 +180,10 @@
     <string name="item_codes">Códigos de ítems</string>
     <string name="item_description_hint">Descripción del ítem</string>
     <string name="item_id">Ítem Id</string>
-    <string name="item_linked_to_code">Ítem %1$s vinculado al código %2$s</string>
+    <string name="item_linked_to_code">Ítem %1$d vinculado al código %2$s</string>
     <string name="item_select_search_by_item_category">Categoría</string>
     <string name="item_select_search_by_item_ean">EAN o descripción del ítem</string>
-    <string name="item_unlinked_from_codes">Ítem %s desvinculado de códigos</string>
+    <string name="item_unlinked_from_codes">Ítem %d desvinculado de códigos</string>
     <string name="order_location_search_by_order_id">Buscar por número de pedido…</string>
     <string name="order_location_search_by_order_external_id">Buscar por número externo de pedido…</string>
     <string name="order_location_search_by_warehouse">Buscar por depósito…</string>

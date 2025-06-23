@@ -73,6 +73,7 @@ import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelable
 import com.dacosys.warehouseCounter.ui.utils.ParcelUtils.parcelableArrayList
 import com.dacosys.warehouseCounter.ui.utils.Screen
 import com.dacosys.warehouseCounter.ui.utils.TextViewUtils.Companion.isActionDone
+import com.dacosys.warehouseCounter.ui.viewmodel.ItemSelectViewModel
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.text.SimpleDateFormat
@@ -765,7 +766,7 @@ class OrderRequestContentActivity : AppCompatActivity(), OrcAdapter.DataSetChang
         val intent = Intent(context, ItemSelectActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
         intent.putExtra(ARG_TITLE, context.getString(R.string.select_item))
-        intent.putExtra(ItemSelectActivity.ARG_MULTI_SELECT, false)
+        intent.putExtra(ItemSelectViewModel.ARG_MULTI_SELECT, false)
         resultForItemSelect.launch(intent)
     }
 
