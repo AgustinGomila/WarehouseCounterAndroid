@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -19,6 +18,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.graphics.scale
 import com.dacosys.warehouseCounter.BuildConfig
 import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
@@ -365,10 +366,8 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
 
     private fun resize(image: Drawable): Drawable {
         val bitmap = (image as BitmapDrawable).bitmap
-        val bitmapResized = Bitmap.createScaledBitmap(
-            bitmap, (bitmap.width * 0.5).toInt(), (bitmap.height * 0.5).toInt(), false
-        )
-        return BitmapDrawable(resources, bitmapResized)
+        val bitmapResized = bitmap.scale((bitmap.width * 0.5).toInt(), (bitmap.height * 0.5).toInt(), false)
+        return bitmapResized.toDrawable(resources)
     }
 
     override fun onRequestPermissionsResult(

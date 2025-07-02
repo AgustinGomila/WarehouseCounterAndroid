@@ -9,10 +9,6 @@ import com.dacosys.warehouseCounter.scanners.devices.honeywell.HoneywellNative
 import com.dacosys.warehouseCounter.scanners.zebra.Zebra
 import java.lang.ref.WeakReference
 
-/**
- * Created by Agustin on 19/10/2017.
- */
-
 open class Scanner {
     interface ScannerListener {
         fun scannerCompleted(scanCode: String)

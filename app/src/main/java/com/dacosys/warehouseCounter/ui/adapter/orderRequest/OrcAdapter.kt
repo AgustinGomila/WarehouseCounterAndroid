@@ -40,11 +40,6 @@ import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
 import java.util.*
 
-
-/**
- * Created by Agustin on 10/03/2023.
- */
-
 class OrcAdapter private constructor(builder: Builder) :
     ListAdapter<OrderRequestContent, ViewHolder>(OrderRequestContentDiffUtilCallback), Filterable {
 

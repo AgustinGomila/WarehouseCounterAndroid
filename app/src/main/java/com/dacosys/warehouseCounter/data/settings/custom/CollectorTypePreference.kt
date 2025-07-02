@@ -5,10 +5,6 @@ import android.util.AttributeSet
 import androidx.preference.ListPreference
 import com.dacosys.warehouseCounter.scanners.collector.CollectorType
 
-/**
- * Created by Agustin on 16/01/2017.
- */
-
 class CollectorTypePreference
 //...
 

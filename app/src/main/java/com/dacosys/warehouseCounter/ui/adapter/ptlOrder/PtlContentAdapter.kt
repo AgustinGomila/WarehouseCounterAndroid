@@ -40,11 +40,6 @@ import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
 import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.manipulateColor
 import java.util.*
 
-
-/**
- * Created by Agustin on 10/03/2023.
- */
-
 class PtlContentAdapter private constructor(builder: Builder) :
     ListAdapter<PtlContent, ViewHolder>(PtlContentDiffUtilCallback), Filterable {
 

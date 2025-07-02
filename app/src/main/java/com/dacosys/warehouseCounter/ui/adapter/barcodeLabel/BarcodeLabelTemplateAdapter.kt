@@ -19,10 +19,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelType
 import java.util.*
 
 
-/**
- * Created by Agustin on 18/01/2017.
- */
-
 class BarcodeLabelTemplateAdapter(
     private var activity: AppCompatActivity,
     private var resource: Int,

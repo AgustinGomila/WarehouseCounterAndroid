@@ -1,10 +1,10 @@
 package com.dacosys.warehouseCounter.ui.activities.main
 
 import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.ApplicationInfo
-import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.media.Ringtone
@@ -26,6 +26,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.graphics.scale
 import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
@@ -260,12 +262,11 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
         }
     }
 
+    @SuppressLint("UseKtx")
     private fun resize(image: Drawable): Drawable {
         val bitmap = (image as BitmapDrawable).bitmap
-        val bitmapResized = Bitmap.createScaledBitmap(
-            bitmap, (bitmap.width * 0.5).toInt(), (bitmap.height * 0.5).toInt(), false
-        )
-        return BitmapDrawable(resources, bitmapResized)
+        val bitmapResized = bitmap.scale((bitmap.width * 0.5).toInt(), (bitmap.height * 0.5).toInt(), false)
+        return bitmapResized.toDrawable(resources)
     }
 
     override fun onButtonClicked(button: Button) {
@@ -486,10 +487,9 @@ class HomeActivity : AppCompatActivity(), Scanner.ScannerListener, ButtonPageFra
 
                     showMessage(
                         String.format(
-                            getString(R.string.area),
+                            getString(R.string.area_),
                             warehouseArea.description,
-                            lineSeparator,
-                            "(${warehouseArea.locationParentStr})"
+                            warehouseArea.locationParentStr
                         ), INFO
                     )
 

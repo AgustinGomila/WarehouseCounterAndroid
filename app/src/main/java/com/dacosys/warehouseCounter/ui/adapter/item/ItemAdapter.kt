@@ -20,10 +20,6 @@ import com.dacosys.warehouseCounter.ui.utils.Colors.Companion.getBestContrastCol
 import java.util.*
 
 
-/**
- * Created by Agustin on 18/01/2017.
- */
-
 class ItemAdapter(
     private var resource: Int,
     private var activity: AppCompatActivity,

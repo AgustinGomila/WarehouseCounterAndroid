@@ -20,10 +20,6 @@ import java.net.Proxy
 import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.X509TrustManager
 
-/**
- * Created by Agustin on 24/01/2017.
- */
-
 class WarehouseCounterApp : Application(), KoinComponent {
     override fun onCreate() {
         super.onCreate()

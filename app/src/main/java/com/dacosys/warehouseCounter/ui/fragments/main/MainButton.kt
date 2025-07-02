@@ -6,10 +6,6 @@ import com.dacosys.warehouseCounter.R
 import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import java.util.*
 
-/**
- * Created by Agustin on 16/01/2017.
- */
-
 class MainButton(
     mainButton: Long = 0,
     description: String = "",

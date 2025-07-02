@@ -16,10 +16,6 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
 import java.util.*
 
-/**
- * Created by Agustin on 18/01/2017.
- */
-
 class WarehouseAdapter(
     private var activity: AppCompatActivity,
     private var resource: Int,

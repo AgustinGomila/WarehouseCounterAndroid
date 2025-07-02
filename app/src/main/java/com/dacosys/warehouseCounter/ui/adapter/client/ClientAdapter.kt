@@ -16,10 +16,6 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.dacosys.warehouseCounter.data.room.entity.client.Client
 import java.util.*
 
-/**
- * Created by Agustin on 18/01/2017.
- */
-
 class ClientAdapter(
     private var activity: AppCompatActivity,
     private var resource: Int,

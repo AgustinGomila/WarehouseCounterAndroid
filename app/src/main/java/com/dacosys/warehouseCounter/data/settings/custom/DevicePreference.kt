@@ -12,10 +12,6 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.preference.ListPreference
 
-/**
- * Created by Agustin on 16/01/2017.
- */
-
 class DevicePreference
 @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
     ListPreference(context, attrs) {

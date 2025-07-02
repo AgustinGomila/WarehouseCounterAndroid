@@ -18,10 +18,6 @@ import com.dacosys.warehouseCounter.data.room.entity.itemCategory.ItemCategory
 import java.util.*
 
 
-/**
- * Created by Agustin on 18/01/2017.
- */
-
 @Suppress("SpellCheckingInspection")
 class ItemCategoryAdapter(
     private var activity: AppCompatActivity,

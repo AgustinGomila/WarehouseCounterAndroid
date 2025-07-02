@@ -18,10 +18,6 @@ import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.dacosys.warehouseCounter.ui.activities.item.ItemSelectActivity
 import kotlin.experimental.or
 
-/**
- * Created by Agustin on 28/11/2017.
- */
-
 object Nfc {
     private var mNfcAdapter: NfcAdapter? = null
     fun setupNFCReader(targetActivity: AppCompatActivity?) {

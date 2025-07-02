@@ -641,6 +641,7 @@
     <string name="ptl_orders">Órdenes</string>
     <string name="zone">Zona</string>
     <string name="search_area_">Buscar área…</string>
+    <string name="area_">Área: $1%s - ($2%s)</string>
     <string name="area">Área</string>
     <string name="select_area_to_ptl">Seleccione el área PTL</string>
     <string name="select_area">Seleccionar área</string>

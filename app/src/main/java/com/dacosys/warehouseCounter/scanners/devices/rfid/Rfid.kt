@@ -13,10 +13,6 @@ import com.dacosys.warehouseCounter.scanners.devices.vh75.Utility
 import com.dacosys.warehouseCounter.scanners.devices.vh75.Vh75Bt
 import kotlin.reflect.KClass
 
-/**
- * Created by Agustin on 19/10/2017.
- */
-
 open class Rfid {
     interface RfidDeviceListener {
         fun onStateChanged(state: Int)

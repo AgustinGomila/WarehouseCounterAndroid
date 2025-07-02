@@ -17,10 +17,6 @@ import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
 import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
 import java.util.*
 
-/**
- * Created by Agustin on 18/01/2017.
- */
-
 class RackAdapter(
     private var activity: AppCompatActivity,
     private var resource: Int,

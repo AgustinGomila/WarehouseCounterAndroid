@@ -7,7 +7,6 @@ import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -29,6 +28,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.graphics.scale
 import androidx.core.view.ViewCompat
 import com.dacosys.imageControl.room.database.IcDatabase
 import com.dacosys.warehouseCounter.BuildConfig
@@ -669,10 +670,8 @@ class LoginActivity : AppCompatActivity(), UserSpinnerFragment.OnItemSelectedLis
 
     private fun resize(image: Drawable): Drawable {
         val bitmap = (image as BitmapDrawable).bitmap
-        val bitmapResized = Bitmap.createScaledBitmap(
-            bitmap, (bitmap.width * 0.5).toInt(), (bitmap.height * 0.5).toInt(), false
-        )
-        return BitmapDrawable(resources, bitmapResized)
+        val bitmapResized = bitmap.scale((bitmap.width * 0.5).toInt(), (bitmap.height * 0.5).toInt(), false)
+        return bitmapResized.toDrawable(resources)
     }
 
     private fun attemptLogin() {
