@@ -87,3 +87,6 @@ imageControl/
 #Example Android Libs
 androidLibs/
 warehouseCounter/src/main/assets/env
+
+#Env file
+/app/src/main/assets/env

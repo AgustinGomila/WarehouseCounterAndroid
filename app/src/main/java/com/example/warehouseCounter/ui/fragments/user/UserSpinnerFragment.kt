@@ -194,7 +194,7 @@ class UserSpinnerFragment : Fragment() {
             UserCoroutines.add(
                 User(
                     name = fantasyNames[i - 1],
-                    password = "81dc9bdb52d04dc20036dbd8313ed055"
+                    password = "xxxx"
                 )
             )
         }
