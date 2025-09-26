@@ -107,6 +107,19 @@ class SettingsViewModel : ViewModel() {
             settingsRepository.installationCode.value = value
         }
 
+    // API HOST
+    var apiHost: String
+        get() = settingsRepository.apiHost.value as String
+        set(value) {
+            settingsRepository.apiHost.value = value
+        }
+
+    var apiMaster: String
+        get() = settingsRepository.apiMaster.value as String
+        set(value) {
+            settingsRepository.apiMaster.value = value
+        }
+
     // URL Server
     var urlPanel: String
         get() = settingsRepository.urlPanel.value as String

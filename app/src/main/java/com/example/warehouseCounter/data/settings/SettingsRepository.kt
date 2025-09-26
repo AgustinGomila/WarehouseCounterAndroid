@@ -537,6 +537,19 @@ class SettingsRepository {
     )
     //endregion Symbologies */
 
+    // region API
+    var apiHost: Preference = Preference(
+        key = "api_host",
+        default = context.getString(R.string.api_host),
+        description = ""
+    )
+    var apiMaster: Preference = Preference(
+        key = "api_master",
+        default = context.getString(R.string.api_master),
+        description = ""
+    )
+    // endregion API
+
     /* region WarehouseCounter Server */
     var clientPackage = Preference(
         key = "client_package",
@@ -863,6 +876,9 @@ class SettingsRepository {
                 sr.showConfButton,
                 sr.signMandatory,
                 sr.soundOnPendingOrders,
+
+                sr.apiHost,
+                sr.apiMaster,
 
                 sr.clientPackage,
                 sr.installationCode,

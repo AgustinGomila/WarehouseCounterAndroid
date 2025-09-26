@@ -1,16 +1,16 @@
-package com.example.warehouseCounter.scanners.jotter
+package com.example.warehouseCounter.scanners.deviceLifecycle
 
 import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
-import com.example.warehouseCounter.scanners.jotter.event.ActivityEvent
-import com.example.warehouseCounter.scanners.jotter.event.FragmentEvent
-import com.example.warehouseCounter.scanners.jotter.util.LifecycleListener
-import com.example.warehouseCounter.scanners.jotter.util.Logger
+import com.example.warehouseCounter.scanners.deviceLifecycle.event.ActivityEvent
+import com.example.warehouseCounter.scanners.deviceLifecycle.event.FragmentEvent
+import com.example.warehouseCounter.scanners.deviceLifecycle.util.LifecycleListener
+import com.example.warehouseCounter.scanners.deviceLifecycle.util.Logger
 
-class Jotter private constructor(private val builder: Builder) {
+class DeviceLifecycle private constructor(private val builder: Builder) {
 
     private var listener: Listener? = null
     private var isLogEnabled: Boolean = false
@@ -41,29 +41,29 @@ class Jotter private constructor(private val builder: Builder) {
         internal var listener: Listener? = null
         internal var tag: String = TAG
         internal var activityEvents = listOf(
-            ActivityEvent.Companion.CREATE,
-            ActivityEvent.Companion.START,
-            ActivityEvent.Companion.RESUME,
-            ActivityEvent.Companion.PAUSE,
-            ActivityEvent.Companion.STOP,
-            ActivityEvent.Companion.SAVE_INSTANCE_STATE,
-            ActivityEvent.Companion.DESTROY
+            ActivityEvent.CREATE,
+            ActivityEvent.START,
+            ActivityEvent.RESUME,
+            ActivityEvent.PAUSE,
+            ActivityEvent.STOP,
+            ActivityEvent.SAVE_INSTANCE_STATE,
+            ActivityEvent.DESTROY
         )
         internal var fragmentEvents = listOf(
-            FragmentEvent.Companion.PRE_ATTACH,
-            FragmentEvent.Companion.ATTACH,
-            FragmentEvent.Companion.CREATE,
-            FragmentEvent.Companion.ACTIVITY_CREATE,
-            FragmentEvent.Companion.PRE_CREATE,
-            FragmentEvent.Companion.VIEW_CREATE,
-            FragmentEvent.Companion.START,
-            FragmentEvent.Companion.RESUME,
-            FragmentEvent.Companion.PAUSE,
-            FragmentEvent.Companion.STOP,
-            FragmentEvent.Companion.SAVE_INSTANCE_STATE,
-            FragmentEvent.Companion.DESTROY,
-            FragmentEvent.Companion.VIEW_DESTROY,
-            FragmentEvent.Companion.DETACH
+            FragmentEvent.PRE_ATTACH,
+            FragmentEvent.ATTACH,
+            FragmentEvent.CREATE,
+            FragmentEvent.ACTIVITY_CREATE,
+            FragmentEvent.PRE_CREATE,
+            FragmentEvent.VIEW_CREATE,
+            FragmentEvent.START,
+            FragmentEvent.RESUME,
+            FragmentEvent.PAUSE,
+            FragmentEvent.STOP,
+            FragmentEvent.SAVE_INSTANCE_STATE,
+            FragmentEvent.DESTROY,
+            FragmentEvent.VIEW_DESTROY,
+            FragmentEvent.DETACH
         )
 
         fun setLogEnable(isLogEnabled: Boolean): Builder {
@@ -93,7 +93,7 @@ class Jotter private constructor(private val builder: Builder) {
             return this
         }
 
-        fun build() = Jotter(this)
+        fun build() = DeviceLifecycle(this)
     }
 
     fun startListening() {
@@ -126,27 +126,27 @@ class Jotter private constructor(private val builder: Builder) {
     companion object {
         @JvmStatic
         @Volatile
-        private var INSTANCE: Jotter? = null
+        private var INSTANCE: DeviceLifecycle? = null
 
         @Synchronized
-        fun getInstance(): Jotter = INSTANCE
+        fun getInstance(): DeviceLifecycle = INSTANCE
             ?: throw RuntimeException(Constant.INSTANCE_MESSAGE)
 
         @Synchronized
         @Suppress("unused")
-        fun getDefaultInstance(application: Application): Jotter {
+        fun getDefaultInstance(application: Application): DeviceLifecycle {
             if (INSTANCE == null) {
                 INSTANCE = Builder(application).build()
             }
             return INSTANCE!!
         }
 
-        private const val TAG = "Jotter"
+        private const val TAG = "DeviceLifecycle"
     }
 
     private object Constant {
         const val INSTANCE_MESSAGE =
-            "Jotter isn't initialized yet. Please use Jotter.Builder(application)!"
+            "DeviceLifecycle isn't initialized yet. Please use DeviceLifecycle.Builder(application)!"
         const val LISTENER_MESSAGE =
             "Listener not found, you can't receive callbacks, please set it first via Builder or setLifecycleListener API!"
     }

@@ -23,7 +23,7 @@ import com.example.warehouseCounter.data.ktor.v2.functions.location.GetRack
 import com.example.warehouseCounter.data.ktor.v2.functions.location.GetWarehouse
 import com.example.warehouseCounter.data.ktor.v2.functions.location.GetWarehouseArea
 import com.example.warehouseCounter.databinding.LocationSelectActivityBinding
-import com.example.warehouseCounter.scanners.jotter.ScannerManager
+import com.example.warehouseCounter.scanners.deviceLifecycle.ScannerManager
 import com.example.warehouseCounter.ui.adapter.location.RackAdapter
 import com.example.warehouseCounter.ui.adapter.location.WarehouseAdapter
 import com.example.warehouseCounter.ui.adapter.location.WarehouseAreaAdapter

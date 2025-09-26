@@ -3,6 +3,9 @@ package com.example.warehouseCounter.data.ktor.v1.functions
 import com.example.warehouseCounter.R
 import com.example.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.example.warehouseCounter.WarehouseCounterApp.Companion.dacoService
+import com.example.warehouseCounter.data.ktor.v1.dto.clientPackage.AuthDataCont
+import com.example.warehouseCounter.data.ktor.v1.dto.clientPackage.ClientAuthData
+import com.example.warehouseCounter.data.ktor.v1.dto.clientPackage.Package
 import com.example.warehouseCounter.data.ktor.v1.service.PackagesResult
 import com.example.warehouseCounter.misc.Statics.Companion.APP_VERSION_ID
 import com.example.warehouseCounter.misc.Statics.Companion.APP_VERSION_ID_IMAGECONTROL
@@ -17,7 +20,7 @@ import kotlinx.coroutines.withContext
 
 class GetClientPackages private constructor(builder: Builder) {
 
-    private var _result: ArrayList<com.example.warehouseCounter.data.ktor.v1.dto.clientPackage.Package> = ArrayList()
+    private var _result: ArrayList<Package> = ArrayList()
 
     private var _onEvent: (PackagesResult) -> Unit = {}
     private var _email = ""
@@ -53,8 +56,8 @@ class GetClientPackages private constructor(builder: Builder) {
 
     private val body by lazy {
         // Autentificación del Cliente
-        com.example.warehouseCounter.data.ktor.v1.dto.clientPackage.AuthDataCont().apply {
-            authData = com.example.warehouseCounter.data.ktor.v1.dto.clientPackage.ClientAuthData().apply {
+        AuthDataCont().apply {
+            authData = ClientAuthData().apply {
                 version = "1"
                 email = _email
                 password = _password

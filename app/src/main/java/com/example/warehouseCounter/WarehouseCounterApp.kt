@@ -3,13 +3,14 @@ package com.example.warehouseCounter
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import com.dacosys.imageControl.ImageControl
 import com.example.warehouseCounter.data.ktor.v1.impl.DacoServiceImpl
 import com.example.warehouseCounter.data.ktor.v2.impl.ApiRequest
 import com.example.warehouseCounter.data.ktor.v2.sync.Sync
 import com.example.warehouseCounter.data.ktor.v2.sync.SyncViewModel
 import com.example.warehouseCounter.data.settings.SettingsRepository
 import com.example.warehouseCounter.data.settings.SettingsViewModel
-import com.example.warehouseCounter.scanners.jotter.Jotter
+import com.example.warehouseCounter.scanners.deviceLifecycle.DeviceLifecycle
 import io.ktor.client.*
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.koin.androidContext
@@ -32,12 +33,12 @@ class WarehouseCounterApp : Application(), KoinComponent {
 
     private fun initialize() {
         /** Star listening activities events **/
-        jotter.startListening()
+        deviceLifecycle.startListening()
     }
 
     companion object {
         val context: Context by lazy { get().get() }
-        val jotter: Jotter by lazy { get().get() }
+        val deviceLifecycle: DeviceLifecycle by lazy { get().get() }
         val settingsRepository: SettingsRepository by lazy { get().get() }
         val settingsVm: SettingsViewModel by lazy { get().get() }
         val syncVm: SyncViewModel by lazy { get().get() }
@@ -51,6 +52,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
         val sharedPreferences: SharedPreferences by lazy { get().get() }
         val apiRequest: ApiRequest by lazy { get().get() }
         val sync: Sync by lazy { get().get() }
+        val imageControl: ImageControl by lazy { get().get() }
 
         val applicationName: String
             get() {

@@ -1,4 +1,4 @@
-package com.example.warehouseCounter.scanners.jotter.util
+package com.example.warehouseCounter.scanners.deviceLifecycle.util
 
 import android.app.Activity
 import android.app.Application
@@ -9,16 +9,16 @@ import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
-import com.example.warehouseCounter.scanners.jotter.Jotter
-import com.example.warehouseCounter.scanners.jotter.event.ActivityEvent
-import com.example.warehouseCounter.scanners.jotter.event.FragmentEvent
+import com.example.warehouseCounter.scanners.deviceLifecycle.DeviceLifecycle
+import com.example.warehouseCounter.scanners.deviceLifecycle.event.ActivityEvent
+import com.example.warehouseCounter.scanners.deviceLifecycle.event.FragmentEvent
 import java.lang.ref.WeakReference
 
 internal object LifecycleListener {
 
     internal fun register(
         application: Application,
-        listener: Jotter.Listener?,
+        listener: DeviceLifecycle.Listener?,
         activityFilter: List<String>,
         fragmentFilter: List<String>
     ) {
@@ -116,7 +116,7 @@ internal object LifecycleListener {
 
     private fun registerToFragmentLifecycle(
         activity: Activity,
-        listener: Jotter.Listener?,
+        listener: DeviceLifecycle.Listener?,
         fragmentFilter: List<String>
     ): FragmentManager.FragmentLifecycleCallbacks? {
         if (activity is FragmentActivity) {

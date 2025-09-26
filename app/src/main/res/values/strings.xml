@@ -822,4 +822,6 @@
         predeterminadas del sistema?
     </string>
     <string name="default_values">Valores predeterminados</string>
+    <string name="api_master">Maestro de API</string>
+    <string name="api_host">API URL</string>
 </resources>

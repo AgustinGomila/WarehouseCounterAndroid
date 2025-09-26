@@ -1,4 +1,4 @@
-package com.example.warehouseCounter.scanners.jotter
+package com.example.warehouseCounter.scanners.deviceLifecycle
 
 import android.Manifest
 import android.app.Activity
@@ -115,7 +115,7 @@ import com.google.android.gms.common.api.CommonStatusCodes
 //                                                                              //
 //------------------------------------------------------------------------------//
 
-object ScannerManager : Jotter.Listener {
+object ScannerManager : DeviceLifecycle.Listener {
     private const val REQUEST_BLUETOOTH_CONNECT = 2001
 
     /**

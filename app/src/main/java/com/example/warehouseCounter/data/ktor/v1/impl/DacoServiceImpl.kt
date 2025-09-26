@@ -14,7 +14,7 @@ import javax.net.ssl.SSLHandshakeException
 
 class DacoServiceImpl : DacoService {
     companion object {
-        private val dacoUrl by lazy { "https://config.example.com" }
+        private val dacoUrl by lazy { "https://config.dacosys.com" }
     }
 
     override suspend fun getClientPackage(

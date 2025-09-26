@@ -31,7 +31,7 @@ import com.example.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
 import com.example.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
 import com.example.warehouseCounter.data.room.dao.orderRequest.OrderRequestCoroutines
 import com.example.warehouseCounter.databinding.OrderRequestConfirmActivityBinding
-import com.example.warehouseCounter.misc.imageControl.Table
+import com.example.warehouseCounter.misc.Table
 import com.example.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.example.warehouseCounter.misc.objects.status.ConfirmStatus
 import com.example.warehouseCounter.ui.adapter.orderRequest.OrcAdapter
@@ -354,7 +354,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                 val orId = tempOrId.toString()
 
                 imageControlFragment = ImageControlButtonsFragment.newInstance(
-                    tableId = Table.orderRequest.tableId.toLong(),
+                    tableId = Table.orderRequest.id.toLong(),
                     objectId1 = orId
                 )
 
@@ -377,7 +377,7 @@ class OrderRequestConfirmActivity : AppCompatActivity(), SwipeRefreshLayout.OnRe
                         .commitAllowingStateLoss()
                 }
             } else {
-                imageControlFragment?.setTableId(Table.orderRequest.tableId)
+                imageControlFragment?.setTableId(Table.orderRequest.id)
                 imageControlFragment?.setObjectId1(tempOrId)
                 imageControlFragment?.setObjectId2(null)
             }

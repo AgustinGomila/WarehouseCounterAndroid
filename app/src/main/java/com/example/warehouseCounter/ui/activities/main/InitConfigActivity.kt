@@ -24,6 +24,7 @@ import com.example.warehouseCounter.BuildConfig
 import com.example.warehouseCounter.R
 import com.example.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.example.warehouseCounter.WarehouseCounterApp.Companion.sharedPreferences
+import com.example.warehouseCounter.data.ktor.v1.dto.clientPackage.Package
 import com.example.warehouseCounter.data.ktor.v1.functions.GetClientPackages
 import com.example.warehouseCounter.data.ktor.v1.service.PackagesResult
 import com.example.warehouseCounter.data.room.database.helper.FileHelper.Companion.removeDataBases
@@ -36,7 +37,7 @@ import com.example.warehouseCounter.misc.Statics
 import com.example.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.example.warehouseCounter.misc.objects.status.ProgressStatus
 import com.example.warehouseCounter.scanners.Scanner
-import com.example.warehouseCounter.scanners.jotter.ScannerManager
+import com.example.warehouseCounter.scanners.deviceLifecycle.ScannerManager
 import com.example.warehouseCounter.ui.activities.main.ProxySetup.Companion.setupProxy
 import com.example.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.example.warehouseCounter.ui.snackBar.SnackBarType
@@ -67,7 +68,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
 
     private fun onGetPackagesEnded(packagesResult: PackagesResult) {
         val status: ProgressStatus = packagesResult.status
-        val result: ArrayList<com.example.warehouseCounter.data.ktor.v1.dto.clientPackage.Package> =
+        val result: ArrayList<Package> =
             packagesResult.result
         val clientEmail: String = packagesResult.clientEmail
         val clientPassword: String = packagesResult.clientPassword
@@ -437,15 +438,7 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
 
             R.id.action_trigger_scan -> {
                 if (Statics.TEST_MODE && BuildConfig.DEBUG) {
-                    val env = DotenvBuilder()
-                        .directory("/assets")
-                        .filename("env")
-                        .load()
-
-                    val username = env["CLIENT_EMAIL"]
-                    val password = env["CLIENT_PASSWORD"]
-
-                    scannerCompleted("""{"config":{"client_email":"$username","client_password":"$password"}}""".trimIndent())
+                    loadFromEnv()
                     return super.onOptionsItemSelected(item)
                 }
 
@@ -461,6 +454,38 @@ class InitConfigActivity : AppCompatActivity(), Scanner.ScannerListener,
             else -> {
                 super.onOptionsItemSelected(item)
             }
+        }
+    }
+
+    private fun loadDirectFromEnv() {
+        try {
+            val env = DotenvBuilder()
+                .directory("/assets")
+                .filename("env")
+                .load()
+
+            val username = env["CLIENT_EMAIL"]
+            val password = env["CLIENT_PASSWORD"]
+
+            scannerCompleted("""{"config":{"client_email":"$username","client_password":"$password"}}""".trimIndent())
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
+    }
+
+    private fun loadFromEnv() {
+        try {
+            val env = DotenvBuilder()
+                .directory("/assets")
+                .filename("env")
+                .load()
+
+            val username = env["CLIENT_EMAIL"]
+            val password = env["CLIENT_PASSWORD"]
+
+            scannerCompleted("""{"config":{"client_email":"$username","client_password":"$password"}}""".trimIndent())
+        } catch (ex: Exception) {
+            ex.printStackTrace()
         }
     }
 

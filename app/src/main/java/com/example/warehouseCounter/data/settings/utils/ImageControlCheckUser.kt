@@ -4,7 +4,7 @@ import com.dacosys.imageControl.ImageControl.Companion.imageControl
 import com.dacosys.imageControl.dto.UserAuthResult
 import com.example.warehouseCounter.R
 import com.example.warehouseCounter.WarehouseCounterApp.Companion.context
-import com.example.warehouseCounter.misc.imageControl.ImageControl.Companion.setupImageControl
+import com.example.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.example.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.example.warehouseCounter.ui.snackBar.SnackBarEventData
 import com.example.warehouseCounter.ui.snackBar.SnackBarType

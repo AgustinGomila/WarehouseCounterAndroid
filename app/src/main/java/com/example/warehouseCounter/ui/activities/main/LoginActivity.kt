@@ -62,14 +62,14 @@ import com.example.warehouseCounter.data.sync.ClientPackage.Companion.getConfigF
 import com.example.warehouseCounter.data.sync.ClientPackage.Companion.selectClientPackage
 import com.example.warehouseCounter.databinding.LoginActivityBinding
 import com.example.warehouseCounter.misc.CurrentUser
+import com.example.warehouseCounter.misc.ImageControl.Companion.closeImageControl
+import com.example.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.example.warehouseCounter.misc.Statics
 import com.example.warehouseCounter.misc.Statics.Companion.appName
-import com.example.warehouseCounter.misc.imageControl.ImageControl.Companion.closeImageControl
-import com.example.warehouseCounter.misc.imageControl.ImageControl.Companion.setupImageControl
 import com.example.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.example.warehouseCounter.misc.objects.status.ProgressStatus
 import com.example.warehouseCounter.scanners.Scanner
-import com.example.warehouseCounter.scanners.jotter.ScannerManager
+import com.example.warehouseCounter.scanners.deviceLifecycle.ScannerManager
 import com.example.warehouseCounter.ui.fragments.user.UserSpinnerFragment
 import com.example.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.CANCELED
 import com.example.warehouseCounter.ui.fragments.user.UserSpinnerFragment.Companion.SyncStatus.CRASHED

@@ -1,4 +1,4 @@
-package com.example.warehouseCounter.scanners.jotter.event
+package com.example.warehouseCounter.scanners.deviceLifecycle.event
 
 import androidx.annotation.StringDef
 

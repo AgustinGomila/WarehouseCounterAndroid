@@ -17,9 +17,9 @@ import com.example.warehouseCounter.data.settings.SettingsRepository
 import com.example.warehouseCounter.data.settings.SettingsViewModel
 import com.example.warehouseCounter.misc.CurrentUser
 import com.example.warehouseCounter.misc.Statics
-import com.example.warehouseCounter.scanners.jotter.Jotter
-import com.example.warehouseCounter.scanners.jotter.ScannerManager
-import com.example.warehouseCounter.scanners.jotter.event.ActivityEvent.Companion.scannerListenerEvents
+import com.example.warehouseCounter.scanners.deviceLifecycle.DeviceLifecycle
+import com.example.warehouseCounter.scanners.deviceLifecycle.ScannerManager
+import com.example.warehouseCounter.scanners.deviceLifecycle.event.ActivityEvent.Companion.scannerListenerEvents
 import com.example.warehouseCounter.ui.adapter.order.OrderViewModel
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
@@ -118,9 +118,9 @@ val appModule = module {
     /** Setup ImageControl app identification */
     single { ImageControl.Builder(Statics.INTERNAL_IMAGE_CONTROL_APP_ID).build() }
 
-    /** Jotter! */
+    /** DeviceLifecycle! */
     single {
-        Jotter.Builder(androidApplication())
+        DeviceLifecycle.Builder(androidApplication())
             .setLogEnable(true)
             .setActivityEventFilter(scannerListenerEvents)
             .setLifecycleListener(ScannerManager)

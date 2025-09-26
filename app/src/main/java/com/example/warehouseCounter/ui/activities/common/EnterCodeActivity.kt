@@ -15,7 +15,7 @@ import com.example.warehouseCounter.databinding.EnterCodeActivityBinding
 import com.example.warehouseCounter.scanners.Scanner
 import com.example.warehouseCounter.scanners.devices.rfid.Rfid
 import com.example.warehouseCounter.scanners.devices.vh75.Vh75Bt
-import com.example.warehouseCounter.scanners.jotter.ScannerManager
+import com.example.warehouseCounter.scanners.deviceLifecycle.ScannerManager
 import com.example.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.example.warehouseCounter.ui.snackBar.SnackBarType
 import com.example.warehouseCounter.ui.snackBar.SnackBarType.CREATOR.ERROR

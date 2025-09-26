@@ -43,7 +43,7 @@ import com.example.warehouseCounter.data.ktor.v2.dto.location.Location
 import com.example.warehouseCounter.data.ktor.v2.dto.location.LocationType
 import com.example.warehouseCounter.databinding.LocationRowBinding
 import com.example.warehouseCounter.databinding.LocationRowExpandedBinding
-import com.example.warehouseCounter.misc.imageControl.Table
+import com.example.warehouseCounter.misc.Table
 import com.example.warehouseCounter.ui.adapter.FilterOptions
 import com.example.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
 import com.example.warehouseCounter.ui.utils.Colors.Companion.getColorWithAlpha
@@ -100,9 +100,9 @@ class LocationAdapter private constructor(builder: Builder) :
     }
 
     private fun tableId(locationType: LocationType) = when (locationType) {
-        LocationType.RACK -> Table.rack.tableId
-        LocationType.WAREHOUSE -> Table.warehouse.tableId
-        LocationType.WAREHOUSE_AREA -> Table.warehouseArea.tableId
+        LocationType.RACK -> Table.rack.id
+        LocationType.WAREHOUSE -> Table.warehouse.id
+        LocationType.WAREHOUSE_AREA -> Table.warehouseArea.id
     }
 
     /**

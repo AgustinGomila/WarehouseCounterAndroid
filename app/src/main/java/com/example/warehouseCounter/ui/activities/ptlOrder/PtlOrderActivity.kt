@@ -52,7 +52,7 @@ import com.example.warehouseCounter.scanners.Scanner
 import com.example.warehouseCounter.scanners.devices.nfc.Nfc
 import com.example.warehouseCounter.scanners.devices.rfid.Rfid
 import com.example.warehouseCounter.scanners.devices.vh75.Vh75Bt
-import com.example.warehouseCounter.scanners.jotter.ScannerManager
+import com.example.warehouseCounter.scanners.deviceLifecycle.ScannerManager
 import com.example.warehouseCounter.ui.adapter.ptlOrder.PtlContentAdapter
 import com.example.warehouseCounter.ui.fragments.common.SummaryFragment
 import com.example.warehouseCounter.ui.fragments.print.PrintLabelFragment

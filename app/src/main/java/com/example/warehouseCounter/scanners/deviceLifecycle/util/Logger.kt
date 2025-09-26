@@ -1,11 +1,11 @@
-package com.example.warehouseCounter.scanners.jotter.util
+package com.example.warehouseCounter.scanners.deviceLifecycle.util
 
 import android.util.Log
 
 internal object Logger {
 
     internal var logEnabled: Boolean = true
-    internal var tag = "Jotter"
+    internal var tag = "DeviceLifecycle"
 
     internal fun debug(message: String) {
         if (logEnabled) {

@@ -28,7 +28,7 @@ import com.example.warehouseCounter.databinding.SettingsActivityBinding
 import com.example.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.example.warehouseCounter.misc.objects.status.ProgressStatus
 import com.example.warehouseCounter.scanners.Scanner
-import com.example.warehouseCounter.scanners.jotter.ScannerManager
+import com.example.warehouseCounter.scanners.deviceLifecycle.ScannerManager
 import com.example.warehouseCounter.ui.fragments.settings.HeaderFragment
 import com.example.warehouseCounter.ui.snackBar.MakeText.Companion.makeText
 import com.example.warehouseCounter.ui.snackBar.SnackBarType

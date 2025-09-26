@@ -63,13 +63,13 @@ import com.example.warehouseCounter.data.room.entity.orderRequest.AddOrder
 import com.example.warehouseCounter.data.room.entity.orderRequest.RepackOrder
 import com.example.warehouseCounter.databinding.ActivityHomeBinding
 import com.example.warehouseCounter.misc.CurrentUser
+import com.example.warehouseCounter.misc.ImageControl.Companion.setupImageControl
 import com.example.warehouseCounter.misc.Statics.Companion.lineSeparator
-import com.example.warehouseCounter.misc.imageControl.ImageControl.Companion.setupImageControl
 import com.example.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.example.warehouseCounter.misc.objects.status.ProgressStatus
 import com.example.warehouseCounter.printer.Printer
 import com.example.warehouseCounter.scanners.Scanner
-import com.example.warehouseCounter.scanners.jotter.ScannerManager
+import com.example.warehouseCounter.scanners.deviceLifecycle.ScannerManager
 import com.example.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity
 import com.example.warehouseCounter.ui.activities.linkCode.LinkCodeActivity
 import com.example.warehouseCounter.ui.activities.order.OrderMoveActivity

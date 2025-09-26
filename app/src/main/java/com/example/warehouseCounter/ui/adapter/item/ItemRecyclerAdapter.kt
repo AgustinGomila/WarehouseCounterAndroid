@@ -42,7 +42,7 @@ import com.example.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
 import com.example.warehouseCounter.data.room.entity.item.Item
 import com.example.warehouseCounter.databinding.ItemRowBinding
 import com.example.warehouseCounter.databinding.ItemRowExpandedBinding
-import com.example.warehouseCounter.misc.imageControl.Table
+import com.example.warehouseCounter.misc.Table
 import com.example.warehouseCounter.misc.utils.NumberUtils.Companion.roundToString
 import com.example.warehouseCounter.ui.adapter.FilterOptions
 import com.example.warehouseCounter.ui.utils.Colors.Companion.getBestContrastColor
@@ -357,7 +357,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
         albumImageView.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
                 albumViewRequiredListener?.onAlbumViewRequired(
-                    tableId = Table.item.tableId, itemId = item.itemId
+                    tableId = Table.item.id, itemId = item.itemId
                 )
             }
             true
@@ -369,7 +369,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
         addPhotoImageView.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
                 addPhotoRequiredListener?.onAddPhotoRequired(
-                    tableId = Table.item.tableId, itemId = item.itemId, description = item.description
+                    tableId = Table.item.id, itemId = item.itemId, description = item.description
                 )
             }
             true
@@ -388,7 +388,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
         editImageView.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
                 editItemRequiredListener?.onEditItemRequired(
-                    tableId = Table.item.tableId, itemId = item.itemId
+                    tableId = Table.item.id, itemId = item.itemId
                 )
             }
             true
@@ -1090,7 +1090,7 @@ class ItemRecyclerAdapter private constructor(builder: Builder) :
                     ImageAdapter.getImages(
                         context = context,
                         programData = ProgramData(
-                            programObjectId = Table.item.tableId.toLong(),
+                            programObjectId = Table.item.id.toLong(),
                             objId1 = item.itemId.toString()
                         ), onProgress = {
                             when (it.status) {

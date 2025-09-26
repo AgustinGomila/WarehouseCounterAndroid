@@ -29,7 +29,7 @@ import com.example.warehouseCounter.data.room.entity.item.Item
 import com.example.warehouseCounter.databinding.CodeSelectActivityBinding
 import com.example.warehouseCounter.misc.objects.errorLog.ErrorLog
 import com.example.warehouseCounter.scanners.Scanner
-import com.example.warehouseCounter.scanners.jotter.ScannerManager
+import com.example.warehouseCounter.scanners.deviceLifecycle.ScannerManager
 import com.example.warehouseCounter.ui.adapter.generic.GenericDropDownAdapter
 import com.example.warehouseCounter.ui.adapter.generic.getViewTotalHeight
 import com.example.warehouseCounter.ui.adapter.generic.toItemStatus
