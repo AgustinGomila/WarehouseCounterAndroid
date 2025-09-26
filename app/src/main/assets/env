@@ -1,13 +1,5 @@
-CLIENT_EMAIL=miguel@dacosys.com
+CLIENT_EMAIL=agustin.gomila@gmail.com
 CLIENT_PASSWORD=sarasa123!!
-
-CLIENT_EMAIL_ALT=administracion@casapalm.com.ar
-CLIENT_PASSWORD_ALT=9827a
-
-USER_ID_TEST=1
-USER_NAME_TEST=mario
-PASSWORD_TEST=81dc9bdb52d04dc20036dbd8313ed055
-API_TEST_URL=https://client.dacosys.com:443/7RDRHHAH/panel/web
 
 API_USER=admin
 API_PASSWORD=sarasa123

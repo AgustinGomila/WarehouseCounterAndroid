@@ -23,7 +23,7 @@
             tools:layout_constraintRight_creator="1"
             tools:layout_constraintTop_creator="1"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/autoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

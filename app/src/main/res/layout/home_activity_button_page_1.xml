@@ -4,7 +4,7 @@
                                                    android:layout_width="match_parent"
                                                    android:layout_height="match_parent"
                                                    android:fitsSystemWindows="true"
-                                                   tools:context="com.dacosys.warehouseCounter.ui.activities.main.HomeActivity"
+                                                   tools:context="com.example.warehouseCounter.ui.activities.main.HomeActivity"
                                                    tools:layout_editor_absoluteX="0dp"
                                                    tools:layout_editor_absoluteY="25dp">
 

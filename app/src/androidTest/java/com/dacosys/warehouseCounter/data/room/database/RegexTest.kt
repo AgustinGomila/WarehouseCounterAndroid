@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.data.room.database
+package com.example.warehouseCounter.data.room.database
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.runTest

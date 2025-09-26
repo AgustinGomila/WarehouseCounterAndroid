@@ -41,7 +41,7 @@
             app:layout_constraintStart_toEndOf="@+id/checkBoxConstraintLayout"
             app:layout_constraintTop_toTopOf="parent">
 
-        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+        <com.example.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/descriptionTextView"
                 android:layout_width="0dp"
                 android:layout_height="24dp"
@@ -94,7 +94,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toStartOf="@+id/guidelineTypeStatusPanel500">
 
-                <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+                <com.example.warehouseCounter.ui.views.AutoResizeTextView
                         android:id="@+id/orderTypeTextView"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -154,7 +154,7 @@
                         android:layout_marginTop="1dp"
                         app:layout_constraintStart_toEndOf="@+id/dividerInternalStatus"
                         android:layout_marginStart="4dp"/>
-                <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+                <com.example.warehouseCounter.ui.views.AutoResizeTextView
                         android:id="@+id/statusTextView"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -193,7 +193,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"/>
 
-            <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+            <com.example.warehouseCounter.ui.views.AutoResizeTextView
                     android:id="@+id/extIdTextView"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -253,7 +253,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"/>
 
-            <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+            <com.example.warehouseCounter.ui.views.AutoResizeTextView
                     android:id="@+id/zoneTextView"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -312,7 +312,7 @@
                         app:layout_constraintStart_toStartOf="parent"
                         android:layout_marginStart="4dp" app:layout_constraintTop_toTopOf="parent"
                         android:layout_marginTop="1dp"/>
-                <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+                <com.example.warehouseCounter.ui.views.AutoResizeTextView
                         android:id="@+id/creationDateTextView"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"

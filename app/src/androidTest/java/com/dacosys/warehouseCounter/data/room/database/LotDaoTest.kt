@@ -1,17 +1,17 @@
-package com.dacosys.warehouseCounter.data.room.database
+package com.example.warehouseCounter.data.room.database
 
 import android.content.Context
 import androidx.room.Room.inMemoryDatabaseBuilder
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.dacosys.warehouseCounter.data.room.dao.lot.LotDao
+import com.example.warehouseCounter.data.room.dao.lot.LotDao
 import com.github.javafaker.Faker
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import com.dacosys.warehouseCounter.data.room.entity.lot.Lot as LotRoom
+import com.example.warehouseCounter.data.room.entity.lot.Lot as LotRoom
 
 @RunWith(AndroidJUnit4::class)
 class LotDaoTest {

@@ -5,7 +5,7 @@
                                                    android:id="@+id/code_check"
                                                    android:layout_width="match_parent"
                                                    android:layout_height="match_parent"
-                                                   tools:context="com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity"
+                                                   tools:context="com.example.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity"
                                                    tools:layout_editor_absoluteX="0dp"
                                                    tools:layout_editor_absoluteY="81dp">
 
@@ -161,7 +161,7 @@
 
             <androidx.fragment.app.FragmentContainerView
                     android:id="@+id/printFragment"
-                    android:name="com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment"
+                    android:name="com.example.warehouseCounter.ui.fragments.print.PrintLabelFragment"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     app:layout_constraintEnd_toEndOf="parent"

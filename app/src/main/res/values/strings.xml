@@ -86,7 +86,7 @@
     <string name="counted">contado</string>
     <string name="counted_plural">contados</string>
     <string name="creation_date">Creado</string>
-    <string name="dacosys_logo">Dacosys logo</string>
+    <string name="app_logo">App logo</string>
     <string name="database_is_not_created_yet">La base de datos aún no fue creada</string>
     <string name="database_name_is_invalid">Nombre inválido de la base de datos</string>
     <string name="take_off">Quitar</string>
@@ -180,10 +180,10 @@
     <string name="item_codes">Códigos de ítems</string>
     <string name="item_description_hint">Descripción del ítem</string>
     <string name="item_id">Ítem Id</string>
-    <string name="item_linked_to_code">Ítem %1$s vinculado al código %2$s</string>
+    <string name="item_linked_to_code">Ítem %1$d vinculado al código %2$s</string>
     <string name="item_select_search_by_item_category">Categoría</string>
     <string name="item_select_search_by_item_ean">EAN o descripción del ítem</string>
-    <string name="item_unlinked_from_codes">Ítem %s desvinculado de códigos</string>
+    <string name="item_unlinked_from_codes">Ítem %d desvinculado de códigos</string>
     <string name="order_location_search_by_order_id">Buscar por número de pedido…</string>
     <string name="order_location_search_by_order_external_id">Buscar por número externo de pedido…</string>
     <string name="order_location_search_by_warehouse">Buscar por depósito…</string>
@@ -641,6 +641,7 @@
     <string name="ptl_orders">Órdenes</string>
     <string name="zone">Zona</string>
     <string name="search_area_">Buscar área…</string>
+    <string name="area_">Área: $1%s - ($2%s)</string>
     <string name="area">Área</string>
     <string name="select_area_to_ptl">Seleccione el área PTL</string>
     <string name="select_area">Seleccionar área</string>

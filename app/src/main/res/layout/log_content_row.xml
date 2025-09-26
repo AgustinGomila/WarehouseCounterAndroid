@@ -14,7 +14,7 @@
                                                    tools:layout_editor_absoluteX="0dp"
                                                    tools:layout_editor_absoluteY="81dp">
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/eanAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -39,7 +39,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/descriptionAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

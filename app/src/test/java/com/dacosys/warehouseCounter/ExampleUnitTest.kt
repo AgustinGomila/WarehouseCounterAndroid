@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter
+package com.example.warehouseCounter
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

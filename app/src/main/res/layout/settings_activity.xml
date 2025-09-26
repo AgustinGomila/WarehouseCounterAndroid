@@ -18,7 +18,7 @@
                                                    xmlns:tools="http://schemas.android.com/tools"
                                                    android:layout_width="match_parent"
                                                    android:layout_height="match_parent"
-                                                   tools:context="com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity">
+                                                   tools:context="com.example.warehouseCounter.ui.activities.main.SettingsActivity">
 
     <androidx.appcompat.widget.Toolbar
             android:id="@+id/top_appbar"

@@ -7,7 +7,7 @@
                                                    android:layout_height="match_parent"
                                                    android:orientation="vertical"
                                                    android:weightSum="1"
-                                                   tools:context="com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestConfirmActivity">
+                                                   tools:context="com.example.warehouseCounter.ui.activities.orderRequest.OrderRequestConfirmActivity">
 
     <androidx.appcompat.widget.Toolbar
             android:id="@+id/top_appbar"
@@ -111,7 +111,7 @@
 
         <androidx.fragment.app.FragmentContainerView
                 android:id="@+id/summaryFragment"
-                android:name="com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment"
+                android:name="com.example.warehouseCounter.ui.fragments.common.SummaryFragment"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 tools:layout="@layout/summary_fragment"

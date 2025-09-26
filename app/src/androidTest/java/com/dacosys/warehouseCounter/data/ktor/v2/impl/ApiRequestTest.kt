@@ -1,39 +1,45 @@
-package com.dacosys.warehouseCounter.data.ktor.v2.impl
+package com.example.warehouseCounter.data.ktor.v2.impl
 
 import android.util.Base64
 import androidx.preference.PreferenceManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.currentProxy
-import com.dacosys.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.apiParam.ListResponse
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.database.DatabaseData
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.Item
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCode
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCodePayload
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.item.ItemCodeResponse
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Rack
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.Warehouse
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
-import com.dacosys.warehouseCounter.data.ktor.v2.dto.order.*
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.item.GetItem
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.itemCode.GetItemCode
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetRack
-import com.dacosys.warehouseCounter.data.ktor.v2.functions.location.GetWarehouse
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.BARCODE_LABEL_TEMPLATE_PATH
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ITEM_CODE_PATH
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ITEM_PATH
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.RACK_PATH
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.WAREHOUSE_AREA_PATH
-import com.dacosys.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.WAREHOUSE_PATH
-import com.dacosys.warehouseCounter.data.room.entity.user.User
-import com.dacosys.warehouseCounter.data.settings.SettingsRepository
-import com.dacosys.warehouseCounter.data.settings.SettingsViewModel
-import com.dacosys.warehouseCounter.misc.CurrentUser
-import com.dacosys.warehouseCounter.scanners.scanCode.testDispatcherModule
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarEventData
-import com.dacosys.warehouseCounter.ui.snackBar.SnackBarType
+import com.example.warehouseCounter.WarehouseCounterApp.Companion.currentProxy
+import com.example.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.example.warehouseCounter.data.ktor.v2.dto.apiParam.ListResponse
+import com.example.warehouseCounter.data.ktor.v2.dto.barcode.BarcodeLabelTemplate
+import com.example.warehouseCounter.data.ktor.v2.dto.database.DatabaseData
+import com.example.warehouseCounter.data.ktor.v2.dto.item.Item
+import com.example.warehouseCounter.data.ktor.v2.dto.item.ItemCode
+import com.example.warehouseCounter.data.ktor.v2.dto.item.ItemCodePayload
+import com.example.warehouseCounter.data.ktor.v2.dto.item.ItemCodeResponse
+import com.example.warehouseCounter.data.ktor.v2.dto.location.Rack
+import com.example.warehouseCounter.data.ktor.v2.dto.location.Warehouse
+import com.example.warehouseCounter.data.ktor.v2.dto.location.WarehouseArea
+import com.example.warehouseCounter.data.ktor.v2.dto.order.OrderMovePayload
+import com.example.warehouseCounter.data.ktor.v2.dto.order.OrderPackage
+import com.example.warehouseCounter.data.ktor.v2.dto.order.OrderRequest
+import com.example.warehouseCounter.data.ktor.v2.dto.order.OrderRequestContent
+import com.example.warehouseCounter.data.ktor.v2.dto.order.OrderRequestType
+import com.example.warehouseCounter.data.ktor.v2.dto.order.OrderResponse
+import com.example.warehouseCounter.data.ktor.v2.dto.order.OrderResponseContent
+import com.example.warehouseCounter.data.ktor.v2.functions.item.GetItem
+import com.example.warehouseCounter.data.ktor.v2.functions.itemCode.GetItemCode
+import com.example.warehouseCounter.data.ktor.v2.functions.location.GetRack
+import com.example.warehouseCounter.data.ktor.v2.functions.location.GetWarehouse
+import com.example.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.BARCODE_LABEL_TEMPLATE_PATH
+import com.example.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ITEM_CODE_PATH
+import com.example.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.ITEM_PATH
+import com.example.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.RACK_PATH
+import com.example.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.WAREHOUSE_AREA_PATH
+import com.example.warehouseCounter.data.ktor.v2.impl.ApiRequest.Companion.WAREHOUSE_PATH
+import com.example.warehouseCounter.data.room.entity.user.User
+import com.example.warehouseCounter.data.settings.SettingsRepository
+import com.example.warehouseCounter.data.settings.SettingsViewModel
+import com.example.warehouseCounter.misc.CurrentUser
+import com.example.warehouseCounter.scanners.scanCode.testDispatcherModule
+import com.example.warehouseCounter.ui.snackBar.SnackBarEventData
+import com.example.warehouseCounter.ui.snackBar.SnackBarType
 import com.github.javafaker.Faker
 import io.github.cdimascio.dotenv.DotenvBuilder
 import io.ktor.client.*
@@ -342,7 +348,8 @@ class ApiRequestTest : KoinTest {
         if (event != null) sendEvent(event.text, event.snackBarType)
     }
 
-    private fun sendEvent(msg: String, type: SnackBarType) {
+    private fun sendEvent(msg: String, id: Int) {
+        val type = SnackBarType.getById(id)
         println("${type.description}: $msg")
     }
 
