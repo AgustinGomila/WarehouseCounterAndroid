@@ -12,7 +12,7 @@
             android:title="@string/use_image_control"/>
 
     <PreferenceCategory android:title="@string/images_size">
-        <com.dacosys.warehouseCounter.data.settings.custom.IntEditTextPreference
+        <com.example.warehouseCounter.data.settings.custom.IntEditTextPreference
                 android:icon="@drawable/ic_photo_size"
                 android:inputType="number"
                 android:key="ic_photo_max_height_or_width"
@@ -135,7 +135,7 @@
                 android:selectAllOnFocus="true"
                 android:singleLine="true"
                 android:title="@string/proxy"/>
-        <com.dacosys.warehouseCounter.data.settings.custom.IntEditTextPreference
+        <com.example.warehouseCounter.data.settings.custom.IntEditTextPreference
                 android:icon="@drawable/ic_port"
                 android:inputType="number"
                 android:key="ic_ws_proxy_port"

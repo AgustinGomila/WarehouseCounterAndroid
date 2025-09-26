@@ -205,7 +205,7 @@
 
         <androidx.fragment.app.FragmentContainerView
                 android:id="@+id/summaryFragment"
-                android:name="com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment"
+                android:name="com.example.warehouseCounter.ui.fragments.common.SummaryFragment"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 tools:layout="@layout/summary_fragment"

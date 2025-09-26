@@ -49,7 +49,7 @@
             app:layout_constraintStart_toEndOf="@+id/checkBoxConstraintLayout"
             app:layout_constraintTop_toTopOf="parent" app:layout_constraintEnd_toStartOf="@+id/imageConstraintLayout">
 
-        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+        <com.example.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/eanTextView"
                 android:layout_width="0dp"
                 android:layout_height="24dp"
@@ -82,7 +82,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/eanTextView"/>
 
-        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+        <com.example.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/descriptionTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -231,7 +231,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"/>
 
-        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+        <com.example.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/categoryTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"

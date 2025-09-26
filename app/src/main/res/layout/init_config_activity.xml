@@ -6,7 +6,7 @@
                                                    android:layout_height="match_parent"
                                                    android:gravity="center_horizontal"
                                                    android:orientation="vertical"
-                                                   tools:context="com.dacosys.warehouseCounter.ui.activities.main.InitConfigActivity"
+                                                   tools:context="com.example.warehouseCounter.ui.activities.main.InitConfigActivity"
                                                    tools:layout_editor_absoluteX="0dp"
                                                    tools:layout_editor_absoluteY="81dp" android:id="@+id/init">
 
@@ -42,7 +42,7 @@
                 android:layout_width="0dp"
                 android:layout_height="20dp"
                 android:background="#FFCC33"
-                android:contentDescription="@string/dacosys_logo"
+                android:contentDescription="@string/app_logo"
                 app:srcCompat="@drawable/wc" app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"/>
     </androidx.constraintlayout.widget.ConstraintLayout>

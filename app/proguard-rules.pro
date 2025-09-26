@@ -56,7 +56,7 @@
 }
 
 # Mantener Retrofit/Ktor
--keep class com.dacosys.warehouseCounter.data.ktor.** { *; }
+-keep class com.example.warehouseCounter.data.ktor.** { *; }
 -keepclasseswithmembers class * {
     @io.ktor.client.features.json.* <methods>;
 }

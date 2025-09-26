@@ -38,7 +38,7 @@
                 app:layout_constraintTop_toTopOf="@+id/autoCompleteTextView"
                 app:srcCompat="@drawable/ic_clear"/>
 
-        <com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
+        <com.example.warehouseCounter.ui.views.ContractsAutoCompleteTextView
                 android:id="@+id/autoCompleteTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"

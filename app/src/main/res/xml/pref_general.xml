@@ -34,7 +34,7 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/program_options">
-        <com.dacosys.warehouseCounter.data.settings.custom.IntEditTextPreference
+        <com.example.warehouseCounter.data.settings.custom.IntEditTextPreference
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:defaultValue="60"
@@ -46,7 +46,7 @@
                 android:selectAllOnFocus="true"
                 android:singleLine="true"
                 android:title="@string/sync_interval"/>
-        <com.dacosys.warehouseCounter.data.settings.custom.IntEditTextPreference
+        <com.example.warehouseCounter.data.settings.custom.IntEditTextPreference
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:defaultValue="10"

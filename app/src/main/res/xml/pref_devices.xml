@@ -86,7 +86,7 @@
             android:summary="@string/send_check_digit"
             android:title="@string/check_digit"/>
 
-    <com.dacosys.warehouseCounter.data.settings.custom.CollectorTypePreference
+    <com.example.warehouseCounter.data.settings.custom.CollectorTypePreference
             android:defaultValue="0"
             android:icon="@drawable/ic_devices"
             android:key="collector_type"
@@ -102,7 +102,7 @@
                 android:defaultValue="false"
                 android:key="conf_printer_use_bt_default"
                 android:title="@string/printer_use_bt_default"/>
-        <com.dacosys.warehouseCounter.data.settings.custom.DevicePreference
+        <com.example.warehouseCounter.data.settings.custom.DevicePreference
                 android:defaultValue="0"
                 android:dependency="conf_printer_use_bt_default"
                 android:key="printer_bt_address"
@@ -120,7 +120,7 @@
                 android:key="printer_net_ip"
                 android:summary="%s"
                 android:title="@string/printer_ip_net"/>
-        <com.dacosys.warehouseCounter.data.settings.custom.IntEditTextPreference
+        <com.example.warehouseCounter.data.settings.custom.IntEditTextPreference
                 android:defaultValue="9100"
                 android:dependency="conf_printer_use_net_default"
                 android:inputType="number"
@@ -130,13 +130,13 @@
         <PreferenceCategory
                 android:textColor="@color/triad4"
                 android:title="@string/printer_preferences">
-            <com.dacosys.warehouseCounter.data.settings.custom.IntEditTextPreference
+            <com.example.warehouseCounter.data.settings.custom.IntEditTextPreference
                     android:defaultValue="5"
                     android:inputType="number"
                     android:key="printer_power"
                     android:summary="%s"
                     android:title="@string/printer_power"/>
-            <com.dacosys.warehouseCounter.data.settings.custom.IntEditTextPreference
+            <com.example.warehouseCounter.data.settings.custom.IntEditTextPreference
                     android:defaultValue="1"
                     android:inputType="number"
                     android:key="printer_speed"
@@ -166,7 +166,7 @@
                 android:defaultValue="false"
                 android:key="conf_rfid_use_bt_default"
                 android:title="@string/use_rfid_device"/>
-        <com.dacosys.warehouseCounter.data.settings.custom.DevicePreference
+        <com.example.warehouseCounter.data.settings.custom.DevicePreference
                 android:defaultValue="0"
                 android:dependency="conf_rfid_use_bt_default"
                 android:key="rfid_bt_address"

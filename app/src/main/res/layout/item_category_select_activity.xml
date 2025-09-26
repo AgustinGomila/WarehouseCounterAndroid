@@ -62,7 +62,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
-            <com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
+            <com.example.warehouseCounter.ui.views.ContractsAutoCompleteTextView
                     android:id="@+id/category"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"

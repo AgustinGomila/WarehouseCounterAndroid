@@ -9,7 +9,7 @@
                                                    android:layout_marginBottom="8dp"
                                                    android:theme="@style/Theme.AppCompat.Light">
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/levelsAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -43,7 +43,7 @@
             android:orientation="vertical"
             app:layout_constraintGuide_percent="0.5"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/codeAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -76,7 +76,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/codeAutoResizeTextView"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/idAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -102,7 +102,7 @@
             app:layout_constraintStart_toStartOf="@+id/guideline500"
             app:layout_constraintTop_toBottomOf="@+id/codeAutoResizeTextView"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/extIdAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -139,7 +139,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/dividerInternal1"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/warehouseAreaAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

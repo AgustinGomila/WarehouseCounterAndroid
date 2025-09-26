@@ -1,4 +1,4 @@
-package com.dacosys.warehouseCounter.scanners.scanCode
+package com.example.warehouseCounter.scanners.scanCode
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.test.StandardTestDispatcher

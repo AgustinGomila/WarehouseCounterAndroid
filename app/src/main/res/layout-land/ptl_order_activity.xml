@@ -45,7 +45,7 @@
 
         <androidx.fragment.app.FragmentContainerView
                 android:id="@+id/headerFragment"
-                android:name="com.dacosys.warehouseCounter.ui.fragments.ptlOrder.PtlOrderHeaderFragment"
+                android:name="com.example.warehouseCounter.ui.fragments.ptlOrder.PtlOrderHeaderFragment"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -94,7 +94,7 @@
 
         <androidx.fragment.app.FragmentContainerView
                 android:id="@+id/summaryFragment"
-                android:name="com.dacosys.warehouseCounter.ui.fragments.common.SummaryFragment"
+                android:name="com.example.warehouseCounter.ui.fragments.common.SummaryFragment"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 tools:layout="@layout/summary_fragment"
@@ -207,7 +207,7 @@
 
         <androidx.fragment.app.FragmentContainerView
                 android:id="@+id/printFragment"
-                android:name="com.dacosys.warehouseCounter.ui.fragments.print.PrintLabelFragment"
+                android:name="com.example.warehouseCounter.ui.fragments.print.PrintLabelFragment"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="1dp"

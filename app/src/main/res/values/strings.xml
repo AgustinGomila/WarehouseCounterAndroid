@@ -86,7 +86,7 @@
     <string name="counted">contado</string>
     <string name="counted_plural">contados</string>
     <string name="creation_date">Creado</string>
-    <string name="dacosys_logo">Dacosys logo</string>
+    <string name="app_logo">App logo</string>
     <string name="database_is_not_created_yet">La base de datos aún no fue creada</string>
     <string name="database_name_is_invalid">Nombre inválido de la base de datos</string>
     <string name="take_off">Quitar</string>

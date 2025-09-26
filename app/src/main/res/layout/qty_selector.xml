@@ -15,7 +15,7 @@
                                                    android:paddingBottom="4sp"
                                                    android:theme="@style/Theme.AppCompat.Light">
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/codeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -51,7 +51,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/itemDescriptionTextView"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/itemDescriptionTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -137,7 +137,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/textInputLayout"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/multiplierTextView"
             android:layout_width="22dp"
             android:layout_height="50dp"

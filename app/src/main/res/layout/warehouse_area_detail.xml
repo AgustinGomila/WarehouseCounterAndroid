@@ -16,7 +16,7 @@
             android:orientation="vertical"
             app:layout_constraintGuide_percent="0.5"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/descriptionAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -42,7 +42,7 @@
             android:orientation="vertical"
             app:layout_constraintGuide_percent="0.8"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/acronymAutoResizeTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -67,7 +67,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/descriptionAutoResizeTextView"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/idAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -93,7 +93,7 @@
             app:layout_constraintStart_toStartOf="@+id/guideline500"
             app:layout_constraintTop_toBottomOf="@+id/descriptionAutoResizeTextView"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/extIdAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -130,7 +130,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/dividerInternal1"/>
 
-    <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+    <com.example.warehouseCounter.ui.views.AutoResizeTextView
             android:id="@+id/warehouseAutoResizeTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

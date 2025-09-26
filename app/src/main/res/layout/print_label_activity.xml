@@ -6,7 +6,7 @@
                                                    android:layout_width="match_parent"
                                                    android:layout_height="match_parent"
                                                    android:fitsSystemWindows="true"
-                                                   tools:context="com.dacosys.warehouseCounter.ui.activities.print.PrintLabelActivity"
+                                                   tools:context="com.example.warehouseCounter.ui.activities.print.PrintLabelActivity"
                                                    tools:layout_editor_absoluteX="0dp"
                                                    tools:layout_editor_absoluteY="25dp">
 

@@ -44,7 +44,7 @@
             android:required="false"/>
 
     <application
-            android:name="com.dacosys.warehouseCounter.WarehouseCounterApp"
+            android:name="com.example.warehouseCounter.WarehouseCounterApp"
             android:hardwareAccelerated="true"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
@@ -67,7 +67,7 @@
                 android:enabled="true"
                 android:exported="false">
             <intent-filter>
-                <action android:name="com.dacosys.warehousecounter.intent.action.BARCODE"/>
+                <action android:name="com.example.warehousecounter.intent.action.BARCODE"/>
             </intent-filter>
         </receiver>
         <!-- END HONEYWELL -->
@@ -98,7 +98,7 @@
         </provider>
 
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.main.HomeActivity"
+                android:name="com.example.warehouseCounter.ui.activities.main.HomeActivity"
                 android:exported="true"
                 android:theme="@style/Theme.App.SplashScreen"
                 android:windowSoftInputMode="stateAlwaysHidden">
@@ -108,13 +108,13 @@
             </intent-filter>
         </activity>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.main.LoginActivity"
+                android:name="com.example.warehouseCounter.ui.activities.main.LoginActivity"
                 android:configChanges="keyboardHidden|orientation|screenSize"
                 android:exported="false"
                 android:label="@string/title_activity_login"
                 android:launchMode="singleTop"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.main.SettingsActivity"
+                android:name="com.example.warehouseCounter.ui.activities.main.SettingsActivity"
                 android:configChanges="keyboardHidden|orientation|screenSize"
                 android:label="@string/title_activity_settings">
             <meta-data
@@ -122,7 +122,7 @@
                     android:value=".ui.activities.main.HomeActivity"/>
         </activity>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity"
+                android:name="com.example.warehouseCounter.ui.activities.codeCheck.CodeCheckActivity"
                 android:configChanges="keyboardHidden"
                 android:exported="false"
                 android:label="@string/code_read"
@@ -137,70 +137,70 @@
                     android:resource="@xml/nfc_tech_filter"/>
         </activity>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.linkCode.LinkCodeActivity"
+                android:name="com.example.warehouseCounter.ui.activities.linkCode.LinkCodeActivity"
                 android:configChanges="keyboardHidden"
                 android:exported="false"
                 android:label="@string/code_link"
                 android:windowSoftInputMode="stateHidden|adjustResize"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.orderRequest.NewCountActivity"
+                android:name="com.example.warehouseCounter.ui.activities.orderRequest.NewCountActivity"
                 android:configChanges="keyboardHidden"
                 android:exported="false"
                 android:label="@string/setup_new_count"
                 android:windowSoftInputMode="stateHidden|adjustResize"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity"
+                android:name="com.example.warehouseCounter.ui.activities.orderRequest.OrderRequestContentActivity"
                 android:exported="false"
                 android:label="@string/count"
                 android:windowSoftInputMode="stateAlwaysHidden"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.log.LogContentActivity"
+                android:name="com.example.warehouseCounter.ui.activities.log.LogContentActivity"
                 android:configChanges="keyboardHidden|orientation|screenSize"
                 android:exported="false"
                 android:label="@string/log"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.orderRequest.OrderRequestConfirmActivity"
+                android:name="com.example.warehouseCounter.ui.activities.orderRequest.OrderRequestConfirmActivity"
                 android:exported="false"
                 android:label="@string/confirm_count"
                 android:windowSoftInputMode="stateAlwaysHidden"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.sync.InboxActivity"
+                android:name="com.example.warehouseCounter.ui.activities.sync.InboxActivity"
                 android:configChanges="keyboardHidden"
                 android:exported="false"
                 android:label="@string/count_select"
                 android:windowSoftInputMode="stateHidden|adjustResize"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.sync.OutboxActivity"
+                android:name="com.example.warehouseCounter.ui.activities.sync.OutboxActivity"
                 android:configChanges="keyboardHidden"
                 android:exported="false"
                 android:label="@string/completed_counts"
                 android:windowSoftInputMode="stateHidden|adjustResize"/>
-        <activity android:name="com.dacosys.warehouseCounter.ui.snackBar.MakeText"/>
+        <activity android:name="com.example.warehouseCounter.ui.snackBar.MakeText"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.common.QtySelectorActivity"
+                android:name="com.example.warehouseCounter.ui.activities.common.QtySelectorActivity"
                 android:configChanges="keyboardHidden|orientation|screenSize"
                 android:excludeFromRecents="true"
                 android:label="@string/enter_qty"
                 android:theme="@style/Theme.AppCompat.DayNight.Dialog"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.common.MultiplierSelectActivity"
+                android:name="com.example.warehouseCounter.ui.activities.common.MultiplierSelectActivity"
                 android:configChanges="keyboardHidden|orientation|screenSize"
                 android:excludeFromRecents="true"
                 android:label="@string/select_multiplier"
                 android:theme="@style/Theme.AppCompat.DayNight.Dialog"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.main.InitConfigActivity"
+                android:name="com.example.warehouseCounter.ui.activities.main.InitConfigActivity"
                 android:configChanges="orientation|screenSize"
                 android:exported="false"
                 android:label="@string/initial_configuration"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.common.EnterCodeActivity"
+                android:name="com.example.warehouseCounter.ui.activities.common.EnterCodeActivity"
                 android:configChanges="keyboardHidden|orientation|screenSize"
                 android:excludeFromRecents="true"
                 android:theme="@style/Theme.AppCompat.DayNight.Dialog"
                 android:windowSoftInputMode="stateAlwaysVisible"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.common.ObservationActivity"
+                android:name="com.example.warehouseCounter.ui.activities.common.ObservationActivity"
                 android:windowSoftInputMode="stateHidden|adjustResize"/>
         <activity android:name=".ui.activities.orderRequest.OrderRequestDetailActivity"/>
         <activity
@@ -228,52 +228,52 @@
                 android:theme="@style/Theme.AppCompat.Translucent"
                 android:windowSoftInputMode="adjustResize"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.ptlOrder.NewPtlOrdersActivity"
+                android:name="com.example.warehouseCounter.ui.activities.ptlOrder.NewPtlOrdersActivity"
                 android:exported="false"
                 android:label="@string/setup_new_ptl"
                 android:windowSoftInputMode="stateAlwaysHidden"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderActivity"
+                android:name="com.example.warehouseCounter.ui.activities.ptlOrder.PtlOrderActivity"
                 android:configChanges="keyboardHidden"
                 android:exported="false"
                 android:label="@string/ptl_order"
                 android:windowSoftInputMode="stateHidden|adjustResize"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.ptlOrder.PtlOrderSelectActivity"
+                android:name="com.example.warehouseCounter.ui.activities.ptlOrder.PtlOrderSelectActivity"
                 android:exported="false"
                 android:label="@string/setup_new_ptl"
                 android:windowSoftInputMode="stateHidden|adjustResize"/>
         <activity
-                android:name="com.dacosys.warehouseCounter.ui.activities.location.LocationSelectActivity"
+                android:name="com.example.warehouseCounter.ui.activities.location.LocationSelectActivity"
                 android:configChanges="keyboardHidden|orientation|screenSize"
                 android:excludeFromRecents="true"
                 android:theme="@style/Theme.AppCompat.Translucent"
                 android:windowSoftInputMode="adjustResize"/>
-        <activity android:name="com.dacosys.warehouseCounter.ui.activities.orderLocation.OrderLocationSelectActivity"
+        <activity android:name="com.example.warehouseCounter.ui.activities.orderLocation.OrderLocationSelectActivity"
                   android:configChanges="keyboardHidden"
                   android:exported="false"
                   android:windowSoftInputMode="stateHidden|adjustResize"/>
-        <activity android:name="com.dacosys.warehouseCounter.ui.activities.print.PrintLabelActivity"
+        <activity android:name="com.example.warehouseCounter.ui.activities.print.PrintLabelActivity"
                   android:windowSoftInputMode="adjustResize"
                   android:exported="false"/>
-        <activity android:name="com.dacosys.warehouseCounter.ui.activities.location.LocationPrintLabelActivity"
+        <activity android:name="com.example.warehouseCounter.ui.activities.location.LocationPrintLabelActivity"
                   android:windowSoftInputMode="adjustResize"
                   android:exported="false"/>
-        <activity android:name="com.dacosys.warehouseCounter.ui.activities.barcodeLabel.TemplateSelectActivity"
+        <activity android:name="com.example.warehouseCounter.ui.activities.barcodeLabel.TemplateSelectActivity"
                   android:configChanges="keyboardHidden|orientation|screenSize"
                   android:excludeFromRecents="true"
                   android:theme="@style/Theme.AppCompat.Translucent"
                   android:windowSoftInputMode="adjustResize"/>
-        <activity android:name="com.dacosys.warehouseCounter.ui.activities.order.OrderPrintLabelActivity"
+        <activity android:name="com.example.warehouseCounter.ui.activities.order.OrderPrintLabelActivity"
                   android:windowSoftInputMode="adjustResize"
                   android:exported="false"/>
-        <activity android:name="com.dacosys.warehouseCounter.ui.activities.order.OrderMoveActivity"
+        <activity android:name="com.example.warehouseCounter.ui.activities.order.OrderMoveActivity"
                   android:windowSoftInputMode="adjustResize"
                   android:exported="false"/>
-        <activity android:name="com.dacosys.warehouseCounter.ui.activities.order.OrderPackUnpackActivity"
+        <activity android:name="com.example.warehouseCounter.ui.activities.order.OrderPackUnpackActivity"
                   android:windowSoftInputMode="adjustResize"
                   android:exported="false"/>
-        <activity android:name="com.dacosys.warehouseCounter.ui.activities.order.OrderPagingActivity"
+        <activity android:name="com.example.warehouseCounter.ui.activities.order.OrderPagingActivity"
                   android:windowSoftInputMode="adjustResize"
                   android:exported="false"/>
         <meta-data

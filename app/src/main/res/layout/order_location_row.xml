@@ -53,7 +53,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/eanTextView"
                 app:layout_constraintEnd_toStartOf="@+id/dividerInternalVert" android:layout_marginEnd="4dp"/>
-        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+        <com.example.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/eanTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -74,7 +74,7 @@
                 app:layout_constraintTop_toTopOf="parent" app:layout_constraintEnd_toStartOf="@+id/qtyTextView"
                 android:layout_marginEnd="4dp"/>
 
-        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+        <com.example.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/descriptionTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -94,7 +94,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/dividerInternal"
                 app:layout_constraintEnd_toStartOf="@+id/guideline8" android:layout_marginEnd="4dp"/>
 
-        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+        <com.example.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/qtyTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -122,7 +122,7 @@
                 app:layout_constraintEnd_toStartOf="@+id/guideline8"
                 app:layout_constraintStart_toStartOf="@+id/guideline8" app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" android:layout_marginTop="4dp"/>
-        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+        <com.example.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/orderLabelTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -140,7 +140,7 @@
                 app:layout_constraintTop_toTopOf="parent"
                 android:layout_marginStart="4dp" android:layout_marginTop="1dp"
                 android:textColor="@color/darkslategray" android:textStyle="bold"/>
-        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+        <com.example.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/orderNbrTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -159,7 +159,7 @@
                 android:layout_marginBottom="1dp" app:layout_constraintTop_toBottomOf="@+id/orderLabelTextView"
                 app:layout_constraintStart_toStartOf="@+id/guideline8" android:layout_marginStart="4dp"
                 android:layout_marginTop="1dp"/>
-        <com.dacosys.warehouseCounter.ui.views.AutoResizeTextView
+        <com.example.warehouseCounter.ui.views.AutoResizeTextView
                 android:id="@+id/orderDescriptionTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"

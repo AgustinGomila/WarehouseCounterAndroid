@@ -13,7 +13,7 @@ plugins {
 }
 
 android {
-    namespace = "com.dacosys.warehouseCounter"
+    namespace = "com.example.warehouseCounter"
     compileSdk = libs.versions.androidTargetSdk.get().toInt()
 
     // Manejo de versiones
@@ -45,7 +45,7 @@ android {
     versionPropsFile.writer().use { versionProps.store(it, null) }
 
     defaultConfig {
-        applicationId = "com.dacosys.warehouseCounterM12"
+        applicationId = "com.example.warehouseCounterM12"
         minSdk = libs.versions.androidMinSdk.get().toInt()
         targetSdk = libs.versions.androidTargetSdk.get().toInt()
         versionCode = versionNumber
@@ -208,7 +208,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.koin.test)
 
-    // Dacosys
+    // External Libs
     implementation(libs.imagecontrol)
     implementation(libs.easyfloat)
     implementation(libs.zxingandroid)

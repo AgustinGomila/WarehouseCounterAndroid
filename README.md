@@ -8,13 +8,9 @@
 <p align="center">
 App para conteo de bodega
 <br/>
-<a href="http://resources.dacosys.com/Warehouse_Counter/Milestone12/installers/android/warehouseCounter-release.apk">
-Descarga</a>
-·
 <a href="https://github.com/AgustinGomila/warehouse_counter_android/issues">Reportar Bug</a>
 ·
 <a href="https://github.com/AgustinGomila/warehouse_counter_android/issues">Solicitar cambios</a>
-</p>
 </p>
 
 <!-- TABLE OF CONTENTS -->
@@ -72,4 +68,4 @@ La aplicación es multiusuario y permite la configuración a través de escaneo 
 
 ## Contacto
 
-Proyecto: [https://github.com/AgustinGomila/warehouse_counter_android](https://github.com/AgustinGomila/warehouse_counter_android)
+[GitHub](https://github.com/AgustinGomila)

@@ -34,7 +34,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
-            <com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
+            <com.example.warehouseCounter.ui.views.ContractsAutoCompleteTextView
                     android:id="@+id/warehouseArea"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -85,7 +85,7 @@
                     app:layout_constraintTop_toTopOf="@+id/warehouseArea"
                     app:srcCompat="@drawable/ic_clear"/>
 
-            <com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
+            <com.example.warehouseCounter.ui.views.ContractsAutoCompleteTextView
                     android:id="@+id/warehouse"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -138,7 +138,7 @@
                     app:layout_constraintTop_toTopOf="@+id/warehouse"
                     app:srcCompat="@drawable/ic_clear"/>
 
-            <com.dacosys.warehouseCounter.ui.views.ContractsAutoCompleteTextView
+            <com.example.warehouseCounter.ui.views.ContractsAutoCompleteTextView
                     android:id="@+id/rackCode"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
