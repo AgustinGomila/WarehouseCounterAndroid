@@ -1,6 +1,7 @@
 package com.example.warehouseCounter.misc
 
 import com.example.warehouseCounter.WarehouseCounterApp.Companion.applicationName
+import io.github.cdimascio.dotenv.DotenvBuilder
 
 class Statics {
     companion object {
@@ -12,13 +13,61 @@ class Statics {
         const val DATE_FORMAT: String = "yyyy-MM-dd hh:mm:ss"
         const val LIST_SEPARATOR: Char = ','
 
-        /**
-         * Modo DEMO
-         */
-        const val DEMO_MODE = false
-        const val SUPER_DEMO_MODE = false
-        const val DOWNLOAD_DB_ALWAYS = false
-        const val TEST_MODE = false
+        // region Variables para DEBUG/DEMO
+
+        val GOD_MODE: Boolean =
+            try {
+                val env = DotenvBuilder()
+                    .directory("/assets")
+                    .filename("env")
+                    .load()
+
+                env["ENV_GOD_MODE"] == "true"
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                false
+            }
+
+        val DEMO_MODE: Boolean =
+            try {
+                val env = DotenvBuilder()
+                    .directory("/assets")
+                    .filename("env")
+                    .load()
+
+                env["ENV_DEMO"] == "true"
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                false
+            }
+
+        val TEST_MODE: Boolean =
+            try {
+                val env = DotenvBuilder()
+                    .directory("/assets")
+                    .filename("env")
+                    .load()
+
+                env["ENV_TEST"] == "true"
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                false
+            }
+
+        val DOWNLOAD_DB_ALWAYS: Boolean =
+            try {
+                val env = DotenvBuilder()
+                    .directory("/assets")
+                    .filename("env")
+                    .load()
+
+                env["ENV_DOWNLOAD_DB_ALWAYS"] == "true"
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                false
+            }
+
+        // endregion Variables para DEBUG/DEMO
 
         // Estos números se corresponden con package_id https://manager.example.com/package/index
         const val APP_VERSION_ID: Int = 8 // WarehouseCounter Milestone12

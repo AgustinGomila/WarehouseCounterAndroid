@@ -171,7 +171,7 @@ class UserSpinnerFragment : Fragment() {
 
     private fun getUsers() {
         UserCoroutines.get {
-            if (!it.any() && Statics.SUPER_DEMO_MODE) {
+            if (!it.any() && Statics.GOD_MODE) {
                 addFantasyUsers()
             } else {
                 allUser = it
