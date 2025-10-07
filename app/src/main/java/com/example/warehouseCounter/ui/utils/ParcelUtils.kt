@@ -40,4 +40,16 @@ object ParcelUtils {
         SDK_INT >= 33 -> getParcelableArrayListExtra(key, T::class.java)
         else -> @Suppress("DEPRECATION") getParcelableArrayListExtra(key)
     }
+
+    @Suppress("unused")
+    inline fun <reified T> toArrayList(
+        classToCastTo: Class<T>,
+        values: Collection<Any>,
+    ): ArrayList<T> {
+        val collection = ArrayList<T>()
+        for (value in values) {
+            collection.add(classToCastTo.cast(value)!!)
+        }
+        return collection
+    }
 }

@@ -5,67 +5,31 @@ import io.github.cdimascio.dotenv.DotenvBuilder
 
 class Statics {
     companion object {
-        var appName: String = "${applicationName}M12"
-
+        private const val MILESTONE = "M12"
+        var appName: String = "${applicationName}${MILESTONE}"
         var downloadDbRequired = false
-
         val lineSeparator: String = System.lineSeparator()
-        const val DATE_FORMAT: String = "yyyy-MM-dd hh:mm:ss"
-        const val LIST_SEPARATOR: Char = ','
 
         // region Variables para DEBUG/DEMO
 
-        val GOD_MODE: Boolean =
+        private val env by lazy {
             try {
-                val env = DotenvBuilder()
+                DotenvBuilder()
                     .directory("/assets")
                     .filename("env")
                     .load()
-
-                env["ENV_GOD_MODE"] == "true"
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                false
+                null
             }
+        }
 
-        val DEMO_MODE: Boolean =
-            try {
-                val env = DotenvBuilder()
-                    .directory("/assets")
-                    .filename("env")
-                    .load()
-
-                env["ENV_DEMO"] == "true"
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                false
-            }
-
-        val TEST_MODE: Boolean =
-            try {
-                val env = DotenvBuilder()
-                    .directory("/assets")
-                    .filename("env")
-                    .load()
-
-                env["ENV_TEST"] == "true"
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                false
-            }
-
-        val DOWNLOAD_DB_ALWAYS: Boolean =
-            try {
-                val env = DotenvBuilder()
-                    .directory("/assets")
-                    .filename("env")
-                    .load()
-
-                env["ENV_DOWNLOAD_DB_ALWAYS"] == "true"
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                false
-            }
+        val GOD_MODE: Boolean by lazy { env?.get("ENV_GOD_MODE") == "true" }
+        val DEMO_MODE: Boolean by lazy { env?.get("ENV_DEMO") == "true" }
+        val TEST_MODE: Boolean by lazy { env?.get("ENV_TEST_MODE") == "true" }
+        val DOWNLOAD_DB_ALWAYS: Boolean by lazy { env?.get("ENV_DOWNLOAD_DB_ALWAYS") == "true" }
+        val LIST_SEPARATOR: Char by lazy { env?.get("ENV_LIST_SEPARATOR")?.first() ?: ',' }
+        val DATE_FORMAT: String by lazy { env?.get("ENV_DATE_FORMAT") ?: "yyyy-MM-dd hh:mm:ss" }
 
         // endregion Variables para DEBUG/DEMO
 
@@ -77,17 +41,5 @@ class Statics {
         // Lo utiliza internamente ImageControl para identificar la aplicación que lo está usando.
         // Ver: https://source.cloud.google.com/assetcontrol/libs_windows/+/master:Collector/Identification/Program.cs
         const val INTERNAL_IMAGE_CONTROL_APP_ID: Int = 4
-
-        @Suppress("unused")
-        inline fun <reified T> toArrayList(
-            classToCastTo: Class<T>,
-            values: Collection<Any>,
-        ): ArrayList<T> {
-            val collection = ArrayList<T>()
-            for (value in values) {
-                collection.add(classToCastTo.cast(value)!!)
-            }
-            return collection
-        }
     }
 }
