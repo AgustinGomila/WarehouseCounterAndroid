@@ -1,48 +1,58 @@
 package com.example.warehouseCounter.misc
 
+import com.dacosys.imageControl.dto.UserAuthResult
 import com.example.warehouseCounter.R
 import com.example.warehouseCounter.WarehouseCounterApp.Companion.context
 import com.example.warehouseCounter.WarehouseCounterApp.Companion.imageControl
-import com.example.warehouseCounter.WarehouseCounterApp.Companion.settingsVm
+import com.example.warehouseCounter.data.settings.SettingsViewModel
 import com.example.warehouseCounter.misc.trust.CustomSSLContext
 
 class ImageControl {
 
     companion object {
-
-        var state: Int = 0
-
         fun closeImageControl() {
-            imageControl.cleanInstance()
+            if (ic == null) return
+            ic.cleanInstance()
+        }
+
+        val ic = imageControl
+
+        fun checkImageControlUser(): UserAuthResult? {
+            if (ic == null) return null
+            return ic.webservice.imageControlUserCheck()
         }
 
         fun setupImageControl() {
-            imageControl.cleanInstance()
+            if (ic == null) return
+            val svm = SettingsViewModel()
 
-            imageControl.appAllowScreenRotation = settingsVm.allowScreenRotation
+            ic.cleanInstance()
 
-//            imageControl.userId = Statics.currentUserId.orZero()
-//            imageControl.userName = Statics.currentUserName
+            ic.appAllowScreenRotation = svm.allowScreenRotation
 
-            imageControl.useImageControl = settingsVm.useImageControl
-//            imageControl.wsIcUrl = settingsVm.wsIcUrl
-//            imageControl.wsIcNamespace = settingsVm.wsIcNamespace
-//            imageControl.wsIcProxy = settingsVm.wsIcProxy
-//            imageControl.wsIcProxyPort = settingsVm.wsIcProxyPort.toInt()
-//            imageControl.wsIcUseProxy = settingsVm.wsIcUseProxy
-//            imageControl.wsIcProxyUser = settingsVm.wsIcProxyUser
-//            imageControl.wsIcProxyPass = settingsVm.wsIcProxyPass
-//            imageControl.icUser = settingsVm.icUser
-//            imageControl.icPass = settingsVm.icPass
-//            imageControl.wsIcUser = settingsVm.wsIcUser
-//            imageControl.wsIcPass = settingsVm.wsIcPass
-//            imageControl.maxHeightOrWidth = settingsVm.maxHeightOrWidth.toInt()
-            imageControl.connectionTimeout = 2000 // settingsVm.connectionTimeout
+            // val currentUser = currentUser()
+            // if (currentUser != null) {
+            //     ic.userId = currentUser.id
+            //     ic.userName = currentUser.name
+            // }
+
+            ic.useImageControl = svm.useImageControl
+            // ic.wsIcUrl = svm.wsIcUrl
+            // ic.wsIcNamespace = svm.wsIcNamespace
+            // ic.wsIcProxy = svm.wsIcProxy
+            // ic.wsIcProxyPort = svm.wsIcProxyPort
+            // ic.wsIcUseProxy = svm.wsIcUseProxy
+            // ic.wsIcProxyUser = svm.wsIcProxyUser
+            // ic.wsIcProxyPass = svm.wsIcProxyPass
+            ic.icUser = svm.icUser
+            ic.icPass = svm.icPass
+            // ic.wsIcUser = svm.wsIcUser
+            // ic.wsIcPass = svm.wsIcPass
+            // ic.maxHeightOrWidth = svm.maxHeightOrWidth
+            ic.connectionTimeout = svm.connectionTimeout
 
             val sslContext = CustomSSLContext.createCustomSSLContext()
-            if (sslContext != null) {
-                imageControl.sslSocketFactory = sslContext.socketFactory
-            }
+            ic.sslSocketFactory = sslContext?.socketFactory
         }
     }
 }

@@ -52,7 +52,7 @@ class WarehouseCounterApp : Application(), KoinComponent {
         val sharedPreferences: SharedPreferences by lazy { get().get() }
         val apiRequest: ApiRequest by lazy { get().get() }
         val sync: Sync by lazy { get().get() }
-        val imageControl: ImageControl by lazy { get().get() }
+        val imageControl: ImageControl? by lazy { get().get() }
 
         val applicationName: String
             get() {
